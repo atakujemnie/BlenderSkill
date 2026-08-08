@@ -9,6 +9,7 @@ on:
       - 'executors/**/*.py'
       - 'tools/build_full_library.py'
       - 'tools/promote_v011.py'
+      - 'tools/v011_preserve_v010_docs.py'
       - 'tools/test_v09_shape_graph.py'
       - 'tools/test_v010_reference_fidelity.py'
       - 'tools/test_v011_execution_enforcement.py'
@@ -29,6 +30,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Preserve v0.10 controller knowledge and apply v0.11 amendments
+        run: python tools/v011_preserve_v010_docs.py
       - name: Promote canonical release metadata to v0.11.0
         run: python tools/promote_v011.py
       - name: Run v0.9 Shape Graph regression smoke tests
@@ -39,19 +42,20 @@ jobs:
         run: python tools/test_v011_execution_enforcement.py
       - name: Generate compiled snapshot
         run: python tools/build_full_library.py
-      - name: Commit generated/release metadata if changed
+      - name: Commit generated/release/controller files if changed
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md)" ]; then
-            echo 'No generated or release metadata changes.'
+          FILES='MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md 00_governance/02_STATE_MACHINE.md 00_governance/04_KNOWLEDGE_ROUTER.md 00_governance/05_SEMANTIC_SKILL_REGISTRY.md 05_execution/70_RECONSTRUCTION_NODE_EXECUTION_PROTOCOL.md 06_prompts/60_SYSTEM_PROMPT.md 06_prompts/68_SHAPE_GRAPH_PLANNER_PROMPT.md 10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md 10_reconstruction/107_MULTI_VIEW_CONFLICT_RESOLUTION.md 10_reconstruction/178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md'
+          if [ -z "$(git status --porcelain -- $FILES)" ]; then
+            echo 'No generated or release/controller changes.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md
+          git add $FILES
           if git diff --cached --quiet; then
-            echo 'No generated or release metadata changes.'
+            echo 'No generated or release/controller changes.'
             exit 0
           fi
-          git commit -m 'Promote BlenderSkill to v0.11.0 and regenerate library'
+          git commit -m 'Preserve v0.10 knowledge and finalize v0.11.0 controller docs'
           git push
