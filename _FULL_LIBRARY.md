@@ -136,112 +136,148 @@ Wyjątek: wymaganie runtime lub jawna decyzja projektowa.
 
 ### S0 — DISCOVER
 Cel:
-- ustalić narzędzia,
-- wersję Blendera,
-- stan sceny,
-- jednostki,
-- aktywny plik,
-- obecne kolekcje i assety.
+- ustalić narzędzia, Blender version, stan sceny, jednostki, aktywny plik;
+- związać capabilities;
+- załadować matching project profile.
 
 Wyjście:
-`Scene Snapshot`.
+`Scene Snapshot` + Tool/Project Context.
 
 ### S1 — ANALYZE
 Cel:
-- zrozumieć funkcję assetu,
-- rozbić referencję na bryły,
-- wyodrębnić cechy rozpoznawcze,
-- określić niewiadome.
+- zrozumieć funkcję assetu;
+- zinwentaryzować evidence/views;
+- wyodrębnić dimensions/landmarks/features;
+- określić niewiadome i conflicts.
 
 Wyjście:
-`Asset Brief`.
+`Asset Brief` + Reference/Evidence state.
 
 ### S2 — CONTRACT
 Cel:
-- utworzyć Feature Contract,
-- oznaczyć `MUST`, `SHOULD`, `OPTIONAL`,
-- przypisać metryki i tolerancje.
+- utworzyć Feature Contract;
+- oznaczyć `MUST`, `SHOULD`, `OPTIONAL`;
+- przypisać metryki, tolerancje i authority.
 
 Wyjście:
 `Feature Contract`.
 
-### S3 — PLAN
+### S3 — PLAN / SHAPE UNDERSTANDING
+
+Dla reference reconstruction ten stan **nie zaczyna od operatorów Blendera**.
+
 Cel:
-- dobrać technikę modelowania,
-- rozdzielić obiekt na części,
-- ustalić modyfikatory,
-- zaplanować checkpointy,
-- przewidzieć UV/material/export.
+- rozbić asset na G0–G5 design forms;
+- zbudować `Reconstruction Shape Graph`;
+- przypisać parent/dependencies;
+- sklasyfikować mathematical shape representation;
+- przypisać authoritative views + controlled properties;
+- przypisać RDL0–RDL5;
+- zaplanować node gates i stage barriers;
+- dopiero potem dobrać semantic skills/implementation.
 
 Wyjście:
-`Build Plan`.
+`Shape Graph` + `Node Contracts` + `RDL Plan`.
 
-### S4 — BLOCKOUT
-Cel:
-- zbudować tylko bryły główne,
-- zweryfikować skalę, proporcje i sylwetkę.
+`Shape Graph != PASS` blokuje produkcyjną geometrię poza diagnostic RDL0.
+
+### S4 — COARSE FORM / BLOCKOUT
+
+Dla zwykłych assetów: blockout.
+
+Dla reference reconstruction:
+- RDL0 envelope;
+- RDL1 primary forms node-by-node;
+- każdy node musi przejść required multi-view gate;
+- RDL1 stage barrier przed secondary forms.
 
 Zakaz:
-- drobnych detali,
-- finalnych materiałów,
-- kosztownych beveli.
+- budowy G2–G5 przed odpowiednim barrier;
+- finalnych materiałów;
+- monolitycznego builda tworzącego wiele poziomów formy.
 
-### S5 — PRIMARY_DETAIL
-Cel:
-- dodać cechy rozpoznawcze,
-- rowki, wycięcia, obramowania, główne łączenia.
+### S5 — STRUCTURAL FORMS / FEATURES
 
-### S6 — SECONDARY_DETAIL
-Cel:
-- śruby, szczeliny, uchwyty, panele, drobne zaokrąglenia,
-- tylko jeżeli wpływają na odbiór lub specyfikację.
+Dla reconstruction:
+- RDL2 secondary structural forms node-by-node;
+- RDL3 structural features tylko na ACCEPTED hosts;
+- leaf skills takie jak panel lines/recess/layer stack dopiero tutaj.
+
+### S6 — EDGE / SECONDARY DETAIL
+
+Dla reconstruction:
+- RDL4 edge language;
+- bevel/fillet/chamfer/SubD support dopiero po accepted form;
+- microgeometry wymagane przez contract.
 
 ### S7 — SHADING_UV_MATERIAL
-Cel:
-- poprawić normalne,
-- przygotować UV,
-- utworzyć materiały zgodne z runtime.
+
+Dla reconstruction najpierw RDL5 surface/detail, potem:
+- UV;
+- normals/shading;
+- runtime material strategy.
+
+UV/runtime nie może rozpocząć się, jeżeli Reconstruction Fidelity Gate jeszcze nie PASS.
 
 ### S8 — GAME_READY
 Cel:
-- pivot,
-- naming,
-- LOD/collision według potrzeb,
-- porządek sceny,
-- optymalizacja.
+- runtime LOD;
+- collision;
+- pivot/naming;
+- bake/runtime textures;
+- optimization;
+- package preparation.
+
+Runtime LOD jest downstream od RDL. `RDL != LOD`.
 
 ### S9 — VALIDATE
 Cel:
-- test wizualny,
-- test techniczny,
-- porównanie z Feature Contract.
+- reconstruction final fidelity proof;
+- mesh/runtime validation;
+- package readback;
+- completion gate.
 
-### S10 — EXPORT
+### S10 — EXPORT / INTEGRATE
 Cel:
-- wyeksportować,
-- sprawdzić wynik po eksporcie,
-- nie tylko stan w Blenderze.
+- export;
+- round-trip invariants;
+- target-engine proof dla Level D;
+- final completion report.
 
-## Gates
+## Core gates
 
-Nie wolno przejść:
-- S4 -> S5 bez pozytywnego silhouette check,
-- S5 -> S6 bez spełnienia cech `MUST`,
-- S7 -> S8 przy błędnym shadingu,
-- S9 -> S10 przy niespełnionym `MUST`.
+Reference reconstruction:
+
+```text
+Shape Graph PASS
+-> RDL0 PASS
+-> G1 node gates + RDL1 barrier
+-> G2 node gates + RDL2 barrier
+-> G3 node gates + RDL3 barrier
+-> RDL4 edge barrier
+-> RDL5 as required
+-> RECON_FIDELITY_GATE
+-> runtime/game-ready
+```
+
+Nie wolno:
+- budować child na failed/unverified required parent;
+- używać detail skill do naprawy primary form;
+- przejść do runtime przy reconstruction FAIL/UNVERIFIED;
+- maskować błędu późniejszym etapem.
 
 ## Cofnięcie
 
-Każdy failed gate kieruje do najwcześniejszego stanu, w którym powstał błąd.
-Nie maskuj błędu późniejszym etapem.
+Każdy failed gate kieruje do najwcześniejszego ownera:
+- evidence/registration;
+- Shape Graph/representation;
+- konkretny Shape Node;
+- właściwy RDL;
+- runtime stage.
 
 ## Reconstruction branch
 
-Jeżeli zadanie jest rekonstrukcją z wielowidokowej referencji lub blueprint-like concept sheet,
-przed standardowym `BLOCKOUT` uruchom `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`.
-
-Standardowa state machine pozostaje warstwą nadrzędną dla authoring/runtime,
-a Reconstruction State Machine rozwija ANALYZE/CONTRACT/PLAN/BUILD/VALIDATE.
+Dla wielowidokowej/blueprint/concept-sheet reconstruction `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md` rozwija S1–S9 i jest canonical controllerem formy.
 
 
 ---
