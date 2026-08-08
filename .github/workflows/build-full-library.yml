@@ -8,6 +8,7 @@ on:
       - 'MANIFEST.json'
       - 'executors/**/*.py'
       - 'tools/build_full_library.py'
+      - 'tools/promote_v011.py'
       - 'tools/test_v09_shape_graph.py'
       - 'tools/test_v010_reference_fidelity.py'
       - 'tools/test_v011_execution_enforcement.py'
@@ -28,6 +29,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Promote canonical release metadata to v0.11.0
+        run: python tools/promote_v011.py
       - name: Run v0.9 Shape Graph regression smoke tests
         run: python tools/test_v09_shape_graph.py
       - name: Run v0.10 reference appearance/fidelity smoke tests
@@ -36,19 +39,19 @@ jobs:
         run: python tools/test_v011_execution_enforcement.py
       - name: Generate compiled snapshot
         run: python tools/build_full_library.py
-      - name: Commit generated snapshot if changed
+      - name: Commit generated/release metadata if changed
         shell: bash
         run: |
-          if [ -z "$(git status --porcelain -- _FULL_LIBRARY.md)" ]; then
-            echo 'No generated changes.'
+          if [ -z "$(git status --porcelain -- MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md)" ]; then
+            echo 'No generated or release metadata changes.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add _FULL_LIBRARY.md
+          git add MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md
           if git diff --cached --quiet; then
-            echo 'No generated changes.'
+            echo 'No generated or release metadata changes.'
             exit 0
           fi
-          git commit -m 'Regenerate _FULL_LIBRARY.md'
+          git commit -m 'Promote BlenderSkill to v0.11.0 and regenerate library'
           git push
