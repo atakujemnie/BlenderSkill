@@ -6,196 +6,161 @@ Biblioteka powinna być testowana na benchmarkach, a nie oceniana wyłącznie op
 
 ### B1 — Primitive fidelity
 Zbuduj asset z dokładnymi wymiarami i kilkoma cechami MUST.
-
-Mierzy:
-- precision,
-- naming,
-- transforms,
-- idempotency.
+Mierzy precision, naming, transforms, idempotency.
 
 ### B2 — Reference fidelity
 Zbuduj hard-surface prop z front/side/top.
-
-Mierzy:
-- silhouette,
-- proportions,
-- feature retention.
+Mierzy silhouette, proportions, feature retention.
 
 ### B3 — Repair
 Dostarcz celowo wadliwy asset.
-
-Mierzy:
-- scene inspection,
-- local patch,
-- regression avoidance.
+Mierzy scene inspection, local patch, regression avoidance.
 
 ### B4 — API trap
-Ustaw:
-- zły active object,
-- Edit Mode,
-- nietypową selection,
-- unsaved `.blend`,
-- render-engine/property differences covered by compatibility preflight.
-
-Mierzy:
-- odporność na context,
-- version/runtime discovery,
-- path stability.
+Ustaw zły active object/Edit Mode/selection, unsaved `.blend` i version-sensitive API differences.
+Mierzy context safety, runtime discovery i path stability.
 
 ### B5 — Optimization
 Dostarcz zbyt ciężki asset.
-
-Mierzy:
-- czy agent redukuje koszt bez utraty MUST,
-- czy nie używa bezmyślnie Decimate,
-- czy potrafi generować LOD parametrycznie,
-- czy protected features przeżywają redukcję.
+Mierzy protected-feature retention, LOD generation, triangle reduction bez ślepego Decimate.
 
 ### B6 — Export
-Dostarcz hierarchy + materials + animation/texture references as applicable.
-
-Mierzy:
-- poprawność transform,
-- export,
-- post-export verification,
-- survival of decals/material/texture bindings.
+Dostarcz hierarchy + materials + texture/animation references as applicable.
+Mierzy transform/export/readback i survival runtime bindings.
 
 ### B7 — End-to-end asset completion
 
-Dostarcz technical concept sheet + brief i wymagaj assetu game-ready.
-
-Mierzy cały pipeline:
-
 ```text
-reference
--> reconstruction
--> modeling
--> surface
--> bake/runtime material closure
--> LOD/collision
--> export
--> completion report
--> optional catalog integration
+reference -> reconstruction -> modeling -> surface -> bake/runtime closure
+-> LOD/collision -> export -> completion -> optional catalog integration
 ```
 
-Required checks:
-- truthful completion level;
-- material not left Blender-only without runtime disposition;
-- emissive authoring separated from runtime glow;
-- supplied branding source preserved;
-- no hidden floating feature;
-- no destructive build-script import side effects;
-- reusable executors preferred over duplicate ad-hoc helpers.
-
-Canonical first B7 benchmark:
+Canonical first B7:
 - `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md`.
 
 ### B8 — Bake/runtime closure regression
 
 Start from accepted geometry/material authoring state and require Level C game-ready closure.
 
-Pipeline under test:
-
 ```text
-UV contract
--> dirty-channel plan
--> runtime texture bake
--> semantic bake validation
--> runtime material bind
--> LOD/package export
--> exported-file readback
--> baked-runtime QA
+UV contract -> dirty-channel plan -> bake -> bake validation
+-> runtime material -> package export/readback -> baked-runtime QA
 ```
 
 Measures:
-- bake operator cancellation handling;
-- target image node binding;
-- semantic BaseColor/Metallic/Emissive channel extraction;
-- AO scene isolation;
-- UV contract stability across bake source and LODs;
-- decal/dynamic UV separation;
-- number of full multichannel rebakes;
-- clean channels reused through dirty-stage cache;
-- timeout/job handling;
-- imported helper side effects;
-- source/scratch collection ownership;
-- runtime LOD/material/image package correctness;
-- baked-runtime visual match.
+- bake cancellation/target binding;
+- BaseColor/Metallic/Emissive semantics;
+- AO isolation;
+- UV/LOD stability;
+- foreign decal UV separation;
+- clean channel reuse;
+- long-job timeout handling;
+- import-safe helper behavior;
+- runtime package correctness.
 
-Canonical v0.6 B8 benchmark:
+Canonical B8:
 - `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`.
+
+### B9 — Pipeline integration proof and infrastructure reuse
+
+Start from a Level C/game-ready exported asset and require truthful `PIPELINE_INTEGRATED`.
+
+```text
+canonical runtime root
+-> package/round-trip invariants
+-> catalog registration
+-> target engine loader/test
+-> trustworthy test oracle
+-> completion gate with evidence kind
+```
+
+Measures:
+- stale Blender image datablock detection without unnecessary rebake;
+- canonical engine-visible asset-root reuse;
+- absence of lookalike-root writes;
+- final exported hard dimensions/contact datum;
+- Blender round-trip kept separate from engine proof;
+- engine loader/test actually resolves the final artifact;
+- direct executable exit status rather than formatter/pipeline status;
+- controlled bite-test validity for new assertions;
+- Pipeline DAG stage reuse after local repairs;
+- zero repeated build-system discovery when a matching project profile exists.
+
+Canonical v0.7 B9:
+- `07_examples/76_LAFAR_CIVIC_BOLLARD_PIPELINE_INTEGRATION_REGRESSION_BENCHMARK.md`.
 
 ## Metrics
 
 Quality/runtime:
-- feature pass rate,
-- MUST regression count,
-- dimension error,
-- silhouette/reference deviation,
-- triangle count per LOD,
-- collision cost,
-- material slot count,
-- bake/runtime material status,
-- BaseColor/Normal/ORM/Emissive semantic validation,
-- UV contract pass/fail,
-- exported texture/decal survival,
-- exported node/material/image readback,
-- baked-runtime QA,
-- completion level reached,
-- runtime contract violations,
+- MUST pass rate;
+- hard dimension/contact error after export;
+- silhouette/reference deviation;
+- triangle count per LOD;
+- collision cost;
+- bake/runtime material status;
+- BaseColor/Normal/ORM/Emissive semantic validation;
+- image cache coherence status;
+- UV contract status;
+- package node/material/image readback;
+- runtime asset root status;
+- engine loader status/evidence kind;
+- test oracle status;
+- completion level;
+- runtime contract violations;
 - human visual score when available.
 
 Efficiency:
-- total token usage,
-- stage token usage,
-- tokens before first valid blockout,
-- number of tool calls,
-- number of Blender mutation calls,
-- number of failed tool calls,
-- retry count,
-- strategy switches,
-- broad reference rescans,
-- raw outputs exceeding Tool Output Budget,
-- complete source-code echoes after artifact creation,
-- repair iterations,
-- full multichannel bake runs,
-- channels rebaked,
-- accepted channels reused,
-- expensive jobs relaunched after timeout,
-- time-to-valid-blockout,
-- time-to-target-completion.
+- total/stage token usage;
+- tool calls and Blender mutation calls;
+- failed tool calls/retries/strategy switches;
+- broad reference rescans;
+- complete code echoes after artifact creation;
+- full multichannel bake runs;
+- channels rebaked;
+- stages executed vs reused;
+- full pipeline restarts;
+- project profile rediscovery calls;
+- build-system discovery calls;
+- test runs and invalid/ambiguous test results;
+- expensive jobs relaunched after timeout;
+- time to requested completion.
 
-Unknown metrics remain `null`; do not invent them after the run.
+Unknown metrics remain `null`; do not invent them.
 
 ## Najważniejsze metryki agenta
 
 1. `MUST pass rate`
 2. `reference/runtime correctness`
 3. `regressions per repair`
-4. `failed API calls`
-5. `tool calls per accepted feature`
-6. `completion truthfulness`
-7. `token/context efficiency at equal quality`
-8. `full-stage recomputes avoided`
-9. `baked-runtime package correctness`
+4. `failed API/tool calls`
+5. `completion truthfulness`
+6. `token/context efficiency at equal quality`
+7. `full-stage recomputes avoided`
+8. `baked-runtime package correctness`
+9. `runtime-root correctness`
+10. `engine-proof/test-oracle integrity`
 
 ## Release gate biblioteki
 
-Nowa wersja biblioteki nie powinna być uznana za lepszą tylko dlatego, że ma więcej treści.
+Nowa wersja nie jest lepsza tylko dlatego, że ma więcej treści.
 
 Release passes only if benchmark evidence shows at least one of:
 - higher quality with comparable cost;
 - lower cost with no quality regression;
 - elimination of a previously observed failure class;
-- higher completion level without breaking protected reference features.
+- stronger proven completion level without breaking protected features.
 
 ## Efficiency comparison rule
 
 Token reduction is secondary to fidelity and runtime correctness.
 
-For the first Lafar Civic Bollard full baseline (~60k tokens), later releases must reduce cost without visual/runtime regression.
+Known Bollard evidence:
+- first full baseline: ~60k tokens;
+- captured v0.5 B8 continuation: ~36k tokens before full closure;
+- final continuation after that: user-reported ~45k additional tokens;
+- combined post-v0.5 continuation cost: roughly ~81k tokens.
 
-For the captured v0.5 B8 game-ready continuation (~36k tokens before full closure), v0.6 preferred target for an equivalent accepted hard-surface asset is:
+Preferred v0.6 B8 target for an equivalent accepted hard-surface game-ready finish:
 
 ```yaml
 stage_tokens: <= 15000
@@ -206,4 +171,16 @@ missing_uv_contracts: 0
 baked_runtime_qa_required: true
 ```
 
-These are benchmark targets, not universal limits for every asset class.
+Preferred v0.7 B9 target once Level C is already accepted and a matching project profile exists:
+
+```yaml
+pipeline_integration_tokens: <= 10000
+project_profile_rediscovery_calls: 0
+ambiguous_runtime_root_writes: 0
+false_green_test_results: 0
+blender_import_used_as_level_d_proof: 0
+full_pipeline_restarts_after_local_repair: 0
+engine_evidence_kind_required: true
+```
+
+These are benchmark goals, not universal limits.
