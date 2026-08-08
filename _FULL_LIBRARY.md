@@ -9071,52 +9071,120 @@ Mierzy:
 Ustaw:
 - zły active object,
 - Edit Mode,
-- nietypową selection.
+- nietypową selection,
+- unsaved `.blend`,
+- render-engine/property differences covered by compatibility preflight.
 
 Mierzy:
-- odporność na context.
+- odporność na context,
+- version/runtime discovery,
+- path stability.
 
 ### B5 — Optimization
 Dostarcz zbyt ciężki asset.
 
 Mierzy:
 - czy agent redukuje koszt bez utraty MUST,
-- czy nie używa bezmyślnie Decimate.
+- czy nie używa bezmyślnie Decimate,
+- czy potrafi generować LOD parametrycznie,
+- czy protected features przeżywają redukcję.
 
 ### B6 — Export
-Dostarcz hierarchy + materials + animation.
+Dostarcz hierarchy + materials + animation/texture references as applicable.
 
 Mierzy:
 - poprawność transform,
 - export,
-- post-export verification.
+- post-export verification,
+- survival of decals/material/texture bindings.
+
+### B7 — End-to-end asset completion
+
+Dostarcz technical concept sheet + brief i wymagaj assetu game-ready.
+
+Mierzy cały pipeline:
+
+```text
+reference
+-> reconstruction
+-> modeling
+-> surface
+-> bake/runtime material closure
+-> LOD/collision
+-> export
+-> completion report
+-> optional catalog integration
+```
+
+Required checks:
+- truthful completion level;
+- material not left Blender-only without runtime disposition;
+- emissive authoring separated from runtime glow;
+- supplied branding source preserved;
+- no hidden floating feature;
+- no destructive build-script import side effects;
+- reusable executors preferred over duplicate ad-hoc helpers.
+
+Canonical v0.5 B7 benchmark:
+- `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md`.
 
 ## Metrics
 
+Quality/runtime:
 - feature pass rate,
 - MUST regression count,
 - dimension error,
-- triangle count,
+- silhouette/reference deviation,
+- triangle count per LOD,
+- collision cost,
 - material slot count,
+- bake/runtime material status,
+- exported texture/decal survival,
+- completion level reached,
+- runtime contract violations,
+- human visual score when available.
+
+Efficiency:
+- total token usage,
+- tokens before first valid blockout,
 - number of tool calls,
 - number of failed tool calls,
+- retry count,
+- strategy switches,
+- broad reference rescans,
+- raw outputs exceeding Tool Output Budget,
+- complete source-code echoes after artifact creation,
 - repair iterations,
-- bytes/tokens instrukcji załadowanych do zadania,
-- time-to-valid-asset.
+- time-to-valid-blockout,
+- time-to-target-completion.
+
+Unknown metrics remain `null`; do not invent them after the run.
 
 ## Najważniejsze metryki agenta
 
 1. `MUST pass rate`
-2. `regressions per repair`
-3. `failed API calls`
-4. `tool calls per accepted feature`
-5. `reference deviation`
-6. `runtime contract violations`
+2. `reference/runtime correctness`
+3. `regressions per repair`
+4. `failed API calls`
+5. `tool calls per accepted feature`
+6. `completion truthfulness`
+7. `token/context efficiency at equal quality`
 
 ## Release gate biblioteki
 
 Nowa wersja biblioteki nie powinna być uznana za lepszą tylko dlatego, że ma więcej treści.
-Musi poprawiać wynik benchmarków albo zmniejszać koszt przy tej samej jakości.
+
+Release passes only if benchmark evidence shows at least one of:
+- higher quality with comparable cost;
+- lower cost with no quality regression;
+- elimination of a previously observed failure class;
+- higher completion level without breaking protected reference features.
+
+## Efficiency comparison rule
+
+Token reduction is secondary to fidelity and runtime correctness.
+
+For the Lafar Civic Bollard baseline (~60k tokens), v0.5 targets at least 35% reduction on an equivalent run, with preferred total <=35k and no visual/runtime regression.
 
 
 ---
