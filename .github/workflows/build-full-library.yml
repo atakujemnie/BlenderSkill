@@ -9,6 +9,7 @@ on:
       - 'executors/**/*.py'
       - 'tools/build_full_library.py'
       - 'tools/test_v09_shape_graph.py'
+      - 'tools/test_v010_reference_fidelity.py'
       - '.github/workflows/build-full-library.yml'
 
 permissions:
@@ -28,8 +29,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run v0.9 Shape Graph smoke tests
+      - name: Run v0.9 Shape Graph regression smoke tests
         run: python tools/test_v09_shape_graph.py
+
+      - name: Run v0.10 reference appearance/fidelity smoke tests
+        run: python tools/test_v010_reference_fidelity.py
 
       - name: Generate compiled snapshot
         run: python tools/build_full_library.py
