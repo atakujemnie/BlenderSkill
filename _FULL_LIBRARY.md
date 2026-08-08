@@ -13699,6 +13699,16 @@ Important integration corrections:
 - reconstruction confidence vocabulary is aligned with the existing `LOCKED/HIGH/MEDIUM/LOW/UNKNOWN` ledger;
 - image-space quality thresholds are defined as overridable heuristics, not universal hard limits.
 
+Agent-runtime readiness pass:
+- added `00_governance/05_SEMANTIC_SKILL_REGISTRY.md` as the stable intent -> skill -> capability -> validation routing layer;
+- added `02_blender_api/28_AGENT_TOOL_API_PROFILE.md` with required runtime capabilities, discovery/binding states and preflight rules;
+- added `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md` to stop blind repeated API/tool attempts;
+- registered `HS_PANEL_LINE` and `SUBD_TOPOLOGY_CONTROL` as canonical skills;
+- added the existing panel-line and SubD skill files to `MANIFEST.json`, so they are now included in `_FULL_LIBRARY.md`;
+- expanded the Knowledge Router with session preflight, panel-line routing, SubD routing and retry-budget loading;
+- updated the system prompt to require capability binding, semantic skill selection and a strategy switch after repeated failure;
+- canonical module count increased from 163 to 168.
+
 ## 0.3.0
 
 Added full Reconstruction Layer:
