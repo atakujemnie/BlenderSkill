@@ -2,204 +2,172 @@
 
 ## Unreleased
 
-No canonical changes after the v0.6.0 release baseline yet.
+No canonical changes after the v0.7.0 release baseline yet.
+
+## 0.7.0
+
+v0.7.0 is the **runtime-proof integrity + project infrastructure reuse** release. It is based on the final Lafar Civic Bollard continuation after v0.6 bake closure.
+
+The user reported approximately **45k additional tokens** for this final segment. Combined with the previous ~36k-token continuation, the post-v0.5 completion work consumed roughly **81k tokens**. The asset ultimately reached `PIPELINE_INTEGRATED`, but the run exposed silent cache, path, round-trip and test-oracle failures that should never be rediscovered on the next asset.
+
+### Blender image cache coherence
+- added `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`;
+- external file freshness is explicitly separated from `bpy.data.images` freshness;
+- correct PNG + stale Blender image datablock is classified as `STALE_IMAGE_DATABLOCK`;
+- disk-authoritative textures are reloaded/synchronized before runtime-material QA;
+- stale runtime binding normally dirties binding/QA only, not the accepted baked texture;
+- added `executors/image_cache_coherence.py`.
+
+### Executable incremental pipeline
+- added `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`;
+- Dirty-Stage Cache is now enforced through explicit dependency closure rather than treated as advisory prose;
+- a local repair must emit execute/reuse plan before replaying build/bake/export stages;
+- geometry, decal, individual bake channels, runtime material, package, round-trip, catalog and engine test can be invalidated independently;
+- added pure-Python `executors/pipeline_dag.py` candidate;
+- full pipeline replay after a local repair is now a benchmark regression unless the DAG proves every stage dirty.
+
+### Post-export invariant validation
+- added `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`;
+- final exported/re-imported artifact must re-pass protected hard dimensions, contact datum and other declared invariants;
+- source geometry PASS no longer implies exported artifact PASS;
+- Blender round-trip evidence is explicitly Level C evidence, not Level D engine proof;
+- added `executors/export_roundtrip_validate.py` candidate.
+
+### Runtime root/path contract
+- added `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`;
+- filesystem existence is separated from engine visibility;
+- canonical path authority is profile > build/engine definition > production loader > engine test > sibling exporter > heuristic;
+- per-script root guessing is forbidden when one Runtime Path Context can be injected;
+- wrong sibling output trees are handled as packaging/path dirtiness rather than texture rebake;
+- added `executors/runtime_path_resolver.py`.
+
+### Verified RPG project profile
+- added `09_engine/profiles/RPG_PROJECT_ASSET_PIPELINE_PROFILE.md` from the real Bollard integration evidence;
+- verified engine asset directory: `<repo>/Assets`;
+- verified runtime game-asset root: `<repo>/Assets/GameAssets`;
+- `<repo>/GameAssets` recorded as a forbidden lookalike root for this project configuration;
+- persisted one-file multi-node LOD packaging, `_LODn` convention, current X-mirror compensation, catalog source, production loader, CMake debug build directory and `ModelTests` target/binary;
+- future matching assets should not rediscover these facts through repeated shell probing.
+
+### Engine integration proof
+- added `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md`;
+- target-engine production loader/test/instantiation is required for Level D;
+- Blender glTF re-import remains Level C round-trip evidence;
+- engine test should reuse existing project infrastructure and pin real contract failures rather than irrelevant implementation details;
+- loader exceptions should become readable non-interactive test failures when possible.
+
+### Test-oracle integrity
+- added `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`;
+- explicitly captures the shell trap `./test | tail; echo $?`, where `$?` can belong to `tail`;
+- direct executable/subprocess exit status is preferred;
+- test results distinguish assertion failure, load failure, crash and ambiguous status;
+- new regression assertions should perform a controlled bite test when safe;
+- crash/abort is not accepted as proof that the intended assertion bites;
+- added `executors/test_oracle.py`.
+
+### Completion gate hardening
+- `executors/completion_gate.py` now requires exported round-trip invariants for `GAME_READY_COMPLETE`;
+- `PIPELINE_INTEGRATED` runtime import/instantiation must include an evidence kind;
+- accepted Level D evidence kinds are `ENGINE_PRODUCTION_LOADER`, `ENGINE_REGRESSION_TEST`, `ENGINE_INSTANTIATION`;
+- a bare string `PASS` for runtime import no longer closes Level D;
+- existing Bollard run proved the old gate correctly blocked Level D while runtime import was `UNVERIFIED`; the new evidence-kind extension remains `CONTRACT_READY` until the next run tests it directly.
+
+### Project profile schema
+- expanded `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md` with canonical runtime paths, forbidden lookalike roots, loader, build system, narrow runtime test target/binary and test-oracle policy;
+- project profiles now carry exactly the infrastructure facts that consumed repeated discovery calls in the Bollard run;
+- profile freshness/invalidation is explicit when build/importer/catalog configuration changes.
+
+### Routing and task packs
+- `SESSION_PREFLIGHT` can resolve matching project profile/runtime root once;
+- `GAME_READY_FINISH` now includes image-cache coherence, Pipeline DAG, runtime-root preflight and export round-trip invariants;
+- `PIPELINE_INTEGRATION` now requires canonical runtime root, target-engine smoke test and trustworthy test oracle;
+- Knowledge Router adds direct routes for stale image cache, local dirty-stage repair, ambiguous runtime roots, post-export dimension/contact regressions and false-green shell tests;
+- System Prompt distinguishes Level C round-trip evidence from Level D engine evidence and forbids habitual full pipeline replay.
+
+### New semantic skills
+- `IMAGE_CACHE_COHERENCE`;
+- `PIPELINE_DAG_PLAN`;
+- `EXPORT_ROUNDTRIP_VALIDATE`;
+- `RUNTIME_PATH_RESOLVE`;
+- `TEST_ORACLE`;
+- `ENGINE_INTEGRATION_PROOF`.
+
+All new v0.7 executors remain `CONTRACT_READY` pending the next real benchmark. `MESH_VALIDATE` remains `EXECUTOR_READY`.
+
+### B9 benchmark
+- added `07_examples/76_LAFAR_CIVIC_BOLLARD_PIPELINE_INTEGRATION_REGRESSION_BENCHMARK.md`;
+- records the stale image datablock, 1048-vs-1050 mm exported dimension regression, wrong runtime root, false `EXIT=0`, invalid first bite-test interpretation, unnecessary stage replay and repeated build-system discovery;
+- preferred v0.7 target after Level C with matching profile: <=10k integration tokens, zero project-profile rediscovery, zero false-green test results, zero ambiguous runtime-root writes and zero full pipeline restarts after local repair.
+
+Canonical module count after manifest release: **198**.
 
 ## 0.6.0
 
-v0.6.0 is the **deterministic bake/runtime closure** release. It is based on the continuing Lafar Civic Bollard v0.5 production run, where reconstruction/geometry quality was already strong but the game-ready continuation had consumed roughly 36k tokens at the captured point while still debugging bake/UV/export infrastructure.
+v0.6.0 is the **deterministic bake/runtime closure** release, based on the ~36k-token captured game-ready continuation of the real Lafar Civic Bollard run.
 
-### Deterministic bake execution
-- added `04_game_ready/51_BAKE_EXECUTION_AND_CHANNEL_SEMANTICS.md`;
-- bake operator result must contain `FINISHED`; silent `CANCELLED` is a hard failure;
-- multi-material bake target nodes follow verified selection order: deselect all -> select target -> set active -> verify;
-- added explicit authored-channel semantics for BaseColor, Roughness, Metallic, AO, Normal and Emissive;
-- metallic BaseColor is no longer generically derived from DIFFUSE response;
-- Emissive accounts for color + strength, supports reference-strength normalization and forbids baked bloom;
-- AO/ray-dependent bake requires non-destructive scene isolation.
-
-### Stable UV/LOD contract
-- added `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`;
-- introduced semantic part IDs and `UV_CONTRACT_ID` as canonical atlas ownership;
-- Blender `.001/.002` suffixes are explicitly non-semantic;
-- missing atlas assignment is a hard FAIL instead of a silent skip;
-- bake source and every consuming runtime LOD must use the same declared UV contract;
-- external decal/dynamic-display UV owners remain separate from structural bake atlases;
-- min/max UV rect normalization is documented as a compatibility method, not universally correct cross-LOD correspondence.
-
-### Incremental execution and long-running work
-- added `05_execution/64_LONG_RUNNING_JOB_AND_POLL_PROTOCOL.md`;
-- tool/MCP timeout is distinguished from proven Blender job failure;
-- expensive jobs are inspected through job/artifact state before retry;
-- added Blender threading caution instead of moving arbitrary `bpy` mutation into background threads;
-- added `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`;
-- local fixes now dirty only dependent channels/artifacts when possible;
-- accepted BaseColor/Normal/AO/etc. should be reused rather than full rebake after an unrelated local repair.
-
-### Bake validation
-- added `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`;
-- bake output validation is semantic and region-aware rather than "PNG exists";
-- validates image degeneracy, ranges, expected material regions, AO plausibility, metal/dielectric regions, emissive containment and clipping;
-- final surface QA must use runtime LOD + baked runtime material, not only the original procedural material.
-
-### Import-safe script architecture
-- added `08_scripts/94_IMPORT_SAFE_PYTHON_MODULE_PATTERN.md`;
-- reusable build/bake/export modules may not execute production work merely when imported for helpers;
-- production entrypoints are explicitly guarded;
-- source, bake scratch, export scratch and QA scratch collection ownership are separated;
-- clearing/reset helpers must make destructive behavior explicit;
-- caller-owned source objects must not be removed or overwritten by nested helper calls.
-
-### Runtime packaging
-- added `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`;
-- project-specific LOD packaging, collision representation, node naming, handedness/mirror compensation, material binding and image URI policy are persisted in Engine/Project profiles;
-- asymmetric branding/service details are required for handedness verification when relevant;
-- exported glTF/module content is read back instead of trusting export console success;
-- verified project packaging facts should not be rediscovered from long sibling exporter scripts per asset.
-
-### Reusable v0.6 executors
-- added `executors/bake_runtime_textures.py` with deterministic target-node binding, checked bake operator results and direct Principled channel extraction;
-- added `executors/uv_atlas_contract.py` with semantic part IDs, atlas rect validation and explicit missing-assignment failures;
-- added `executors/bake_validate.py` for compact image/region statistics and emissive containment validation;
-- added `executors/gltf_package_validate.py` for pure-Python glTF node/material/image readback;
-- new v0.6 executors remain `CONTRACT_READY` until a later real Blender benchmark proves them end-to-end.
-
-### First executor maturity promotion
-- `MESH_VALIDATE` is promoted from `CONTRACT_READY` to `EXECUTOR_READY`;
-- runtime evidence comes from the Lafar Civic Bollard continuation under Blender 5.1;
-- the executor correctly rejected a non-canonical topology intent vocabulary and then validated nine asset parts with the canonical intent set;
-- future sessions still require runtime binding/import capability before calling it `RUNTIME_BOUND`.
-
-### Task packs and system prompt
-- `GAME_READY_FINISH` now has an internal order: UV contract -> dirty graph -> bake -> bake validation -> runtime material -> package export -> package readback -> baked-runtime QA -> completion gate;
-- the pack prefers the new bake/UV/validation/package executors;
-- System Prompt now treats bake target binding, `FINISHED` operator result, semantic UV identity, dirty-stage reuse, long-job timeout handling and exported readback as hard rules;
-- Knowledge Router includes measured failure routes for cancelled bake, black AO, metallic BaseColor failure, emissive contamination, UV mismatch and export-package mismatch.
-
-### Regression benchmark
-- added `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`;
-- captured user-reported ~36k-token v0.5 game-ready continuation before full bake closure;
-- transcript contained ~20 Blender Python execution calls and multiple full/repeated bake corrections;
-- records 14 concrete failure classes: target-node binding, silent cancellation, AO contamination, channel semantics, UV suffix/LOD mismatch, decal contamination, import side effects, collection ownership, packaging rediscovery, repeated full rebakes and timeout handling;
-- preferred v0.6 target for a standard accepted hard-surface prop GAME_READY_FINISH stage: <=15k operational tokens, <=10 Blender Python mutation calls, <=2 full multichannel bake runs, zero accepted silent-cancelled bakes.
-
-Canonical module count after manifest release: **190**.
+Key changes:
+- deterministic bake execution with checked `FINISHED` result and correct active image-node binding;
+- explicit BaseColor/Roughness/Metallic/AO/Normal/Emissive channel semantics;
+- semantic `UV_CONTRACT_ID` shared by bake source and LODs;
+- incremental Dirty-Stage Cache and long-running job protocol;
+- semantic bake validation;
+- import-safe build/bake/export modules;
+- runtime packaging/readback contract;
+- executors for bake, UV atlas, image validation and glTF package readback;
+- `MESH_VALIDATE` promoted to `EXECUTOR_READY`;
+- B8 benchmark `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`;
+- canonical module count: **190**.
 
 ## 0.5.0
 
-v0.5.0 is the first benchmark-driven **agent execution + completion** release. It incorporates lessons from the real Lafar Civic Bollard run (~60k-token baseline, final human visual assessment 9/10) and converts them into routing, reusable executors, runtime gates and truthful completion states.
+v0.5.0 is the first benchmark-driven **agent execution + completion** release.
 
-### Completion and runtime closure
-- added `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md` with explicit levels: `RECONSTRUCTION_COMPLETE`, `MODELING_COMPLETE`, `GAME_READY_COMPLETE`, `PIPELINE_INTEGRATED`;
-- added `05_execution/63_REFERENCE_TO_RUNTIME_COMPLETENESS_REPORT.md` so exported-but-unbaked/unintegrated assets cannot be reported as unconditionally DONE;
-- expanded Game Asset Contract and Final Validation with completion target, bake/runtime material state, emissive state and catalog integration;
-- clarified `10_reconstruction/159_RECONSTRUCTION_DEFINITION_OF_DONE.md` as reconstruction acceptance rather than full game-asset completion.
-
-### Blender 5.1 compatibility
-- added `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md` based on observed runtime traps;
-- added `executors/runtime_compat.py` for render-engine/property/path discovery;
-- captured unsaved `.blend` path risk, viewport-vs-render visibility, import-time builder side effects and mutable default capture;
-- updated API strategy and session preflight to discover version-sensitive behavior instead of guessing it.
-
-### Execution acceleration
-- retained/registered candidate executors for reference measurement, axisymmetric profile generation and mesh validation;
-- added `executors/radial_repeat.py` for radial fastener placement and annulus containment;
-- added `executors/qa_scene_isolation.py` for non-destructive render isolation;
-- added `executors/completion_gate.py` for machine-readable completion evaluation;
-- expanded Semantic Skill Registry with `RADIAL_REPEAT`, `RUNTIME_COMPAT`, `QA_SCENE_ISOLATE`, `MATERIAL_FINISH_CIVIC`, `EMISSIVE_HANDOFF`, `BAKE_RUNTIME_TEXTURES`, `ASSET_COMPLETION`, `ASSET_CATALOG_INTEGRATE`;
-- candidate executors remain `CONTRACT_READY` until individually benchmarked in the active runtime.
-
-### Surface and material finish
-- substantially expanded `11_playbooks/114_BRUSHED_METAL_AND_DARK_COMPOSITE.md` with macro/meso/micro breakup, channel separation, restrained civic wear and exposure/manufacturing logic;
-- material target is maintained/used/not-sterile, not generic global grunge;
-- expanded civic hard-surface playbook with structural subtype routing and dedicated axisymmetric fast path.
-
-### Emissive/runtime separation
-- added `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md`;
-- expanded Integrated Light Strip playbook;
-- separated emitter geometry/mask/color/export from engine bloom/exposure/tone mapping;
-- final runtime neon/glow may remain `UNVERIFIED` even when Blender emitter authoring passes.
-
-### Bake gate
-- added `04_game_ready/50_GAME_READY_BAKE_GATE.md`;
-- corrected the assumption that every bake requires a separate high-poly mesh;
-- procedural-to-texture bake can use authoring geometry, while high-to-low detail transfer requires an appropriate high-detail source;
-- Level C cannot pass while Blender-only procedural effects have no runtime disposition.
-
-### Floating detail and decal hardening
-- expanded `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md` with the explicit rule that floating geometry adds surfaces but cannot cut negative depth from the host;
-- visible floating panels/emitters require visibility/occlusion proof;
-- authoritative logo/branding sources must be used when supplied instead of guessed geometry/font approximations;
-- LOD/export rebuilds must not delete decal owners through import-time side effects.
-
-### Pipeline integration
-- added `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` for stable asset IDs, conflict classification, registration readback and importer smoke tests;
-- Level D is BLOCKED when project catalog write capability is missing rather than silently downgraded.
-
-### Task packs and routing
-- expanded Task Pack Protocol with `SURFACE_FINISH`, `GAME_READY_FINISH` and `PIPELINE_INTEGRATION`;
-- Knowledge Router now routes compatibility, radial repetition, civic material finish, emissive handoff, bake closure and final completion explicitly;
-- System Prompt now requires target completion level and truthful end-state reporting.
-
-### Benchmarking
-- added `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md` as the first real end-to-end B7 benchmark;
-- baseline: ~60k tokens, final geometry 210×210×1050 mm, LOD0/1/2/3 = 2716/1152/480/128 tris, collision = 88 tris;
-- records real detected failures: loose/duplicate geometry, dimension overshoot, fastener annulus overflow, hidden emitter, destructive builder import, material exposure issue;
-- target for equivalent v0.5 run: no quality regression and at least 35% token reduction, preferred <=35k total;
-- expanded Agent Evaluation Harness with B7 end-to-end completion and efficiency metrics.
-
-### Previous v0.5 development passes folded into release
-- production-grade Trim Sheet semantic skill integration;
-- reconstruction controller integration without duplicate parallel skills;
-- Semantic Skill Registry and Agent Tool API Profile;
-- Retry Budget and Strategy Switch;
-- Tool Output Budget and Task Packs;
-- Reference Analysis Cache and measurement executor pattern;
-- Project Asset Pipeline Profile schema;
-- Code Artifact and Patch Protocol;
-- `AXISYMMETRIC_PROFILE` semantic primitive;
-- `MESH_VALIDATE` topology-intent-aware validation;
-- canonical panel-line and SubD topology skills.
-
-Canonical module count: **182**.
+Key changes:
+- explicit completion levels from reconstruction through pipeline integration;
+- Blender 5.1 compatibility matrix and runtime preflight;
+- reusable reference/profile/radial/mesh/runtime/QA/completion executors;
+- maintained-civic material finish model;
+- emissive authoring/runtime separation;
+- Game-Ready Bake Gate;
+- floating detail/decal hardening;
+- asset catalog integration contract;
+- Task Packs, routing and benchmark-driven efficiency targets;
+- first full Lafar Civic Bollard B7 benchmark;
+- canonical module count: **182**.
 
 ## 0.3.0
 
 Added full Reconstruction Layer:
-- 70 reconstruction modules/playbooks/scripts/prompts/benchmark elements,
-- evidence/provenance model,
-- concept-sheet segmentation,
-- authority/conflict system,
-- dimension graph and locks,
-- landmark and calibration system,
-- geometry inference rules,
-- exact feature/material/branding handling,
-- parametric reconstruction workflow,
-- multi-view QA and regression gates,
-- specialized modes for blueprint/photo/stylized references,
-- Lafar Street Bench reconstruction benchmark.
+- evidence/provenance model;
+- concept-sheet segmentation;
+- authority/conflict system;
+- dimension graph and locks;
+- landmark/calibration system;
+- geometry inference rules;
+- exact feature/material/branding handling;
+- parametric reconstruction workflow;
+- multi-view QA/regression gates;
+- blueprint/photo/stylized modes;
+- Lafar Street Bench benchmark.
 
 ## 0.2.0
 
 Added production layer:
-- camera/reference matching,
-- Visual Feature Map,
-- high/low-poly workflow,
-- baking pipeline,
-- trim sheets,
-- decals/floating details,
-- curve authoring,
-- Geometry Nodes authoring,
-- procedural material authoring,
-- texture packing/mip safety,
-- asset variants/randomization,
-- automated visual diff,
-- reference fidelity levels,
-- authoring-to-runtime handoff,
-- engine profile schema,
-- engine adapter protocol,
-- deterministic QA render pattern,
-- visual diff script pattern.
+- camera/reference matching;
+- Visual Feature Map;
+- high/low-poly workflow;
+- baking pipeline;
+- trim sheets;
+- decals/floating details;
+- curve/Geometry Nodes/procedural material authoring;
+- texture packing/mip safety;
+- asset variants/randomization;
+- automated visual diff;
+- reference fidelity levels;
+- authoring-to-runtime handoff;
+- engine profile/adapter;
+- deterministic QA render/diff patterns.
 
-Architecture decision:
-- modular MD files are canonical,
-- `_FULL_LIBRARY.md` is generated from them.
+Architecture decision retained across releases:
+- modular MD files are canonical;
+- `_FULL_LIBRARY.md` is generated from `MANIFEST.json`.
