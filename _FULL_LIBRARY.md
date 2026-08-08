@@ -361,7 +361,6 @@ Load:
 Jeżeli agent potrzebuje jednej informacji, nie ładuj całego folderu.
 Najpierw użyj routera, potem najwęższego modułu.
 
-
 ## High -> low + bake
 Load:
 - High-Poly / Low-Poly Workflow
@@ -370,6 +369,20 @@ Load:
 - Texture Packing and Mip Safety
 - Automated Visual Diff
 - Authoring to Runtime Handoff
+
+## Trim-sheet UV texturing
+Load:
+- `03_modeling/40_TRIM_SHEETS.md`
+- `03_modeling/34_UV_TEXEL_DENSITY_MATERIALS.md`
+- `04_game_ready/43_TEXTURE_MATERIAL_RUNTIME.md`
+- `04_game_ready/47_TEXTURE_PACKING_AND_MIP_SAFETY.md`
+
+If unique local graphics are present, additionally load:
+- `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md`
+
+If runtime material/draw-call cost is part of the task, additionally load:
+- `04_game_ready/46_DRAW_CALLS_INSTANCING_AND_BATCHING.md`
+- the active Engine Profile.
 
 ## Procedural / repeated asset
 Load:
@@ -380,13 +393,18 @@ Load:
 - Draw Calls/Instancing/Batching
 
 ## Reference reconstruction
-Load:
+Load first:
+- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
+
+Then load only the modules required by the failing or current reconstruction stage:
 - Reference Decomposition
 - Reference Measurement Protocol
 - Camera and Reference Matching
 - Visual Feature Map
 - Reference Fidelity Protocol
 - Automated Visual Diff
+
+Do not load detail/modeling skills before the controller has passed camera, scale, silhouette and primary-form gates.
 
 ## Runtime integration
 Load:
@@ -2167,65 +2185,552 @@ Każdy typ błędu wymaga innej naprawy.
 
 ## FILE: `03_modeling/40_TRIM_SHEETS.md`
 
-# Trim Sheets
+# Blender Agent Skill — Game Assets Trim Sheet UV Texturing
 
-## Cel
+## Purpose
 
-Współdzielić teksturę pomiędzy wieloma powierzchniami i assetami bez tworzenia unikalnego zestawu tekstur dla każdego obiektu.
+This module defines how a Blender AI agent classifies game-asset surfaces, decides when trim sheets are appropriate, maps UVs to reusable trim regions deterministically, and validates a production-safe result.
 
-## Dobry kandydat
+It replaces the previous short trim-sheet note with a production skill while keeping this canonical path stable.
 
-- architektura modularna,
-- ramy,
-- listwy,
-- metalowe profile,
-- powtarzalne panele,
-- przewody,
-- krawędzie technologiczne.
+The agent must reason in terms of:
 
-## Nie używaj, gdy
+`surface strategy -> trim region -> UV orientation -> physical texture scale -> material reuse -> validation`
 
-- asset wymaga unikalnego malowania na całej powierzchni,
-- kierunek i skala trimu nie mogą być utrzymane,
-- workflow komplikuje asset bardziej niż oszczędza.
+not in terms of manual UV Editor clicks.
 
-## Projekt trim sheet
+---
 
-Zdefiniuj pasy:
-- wide structural trim,
-- medium trim,
-- narrow edge trim,
-- panel detail,
-- optional emissive strip.
+## 1. Relationship to other canonical skills
 
-## UV
+This skill owns **reusable banded UV/material mapping**.
 
-UV dla trimów powinno:
-- utrzymywać stałą skalę,
-- zachować orientację,
-- snapować się do odpowiednich pasów,
-- minimalizować przypadkowe interpolacje pomiędzy regionami.
+It does not own:
+- geometric seam creation — use `blender-agent-procedural-hard-surface-panel-lines.md` or the relevant geometry skill;
+- general UV/PBR policy — see `03_modeling/34_UV_TEXEL_DENSITY_MATERIALS.md`;
+- decals and unique local graphics — see `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md`;
+- runtime material portability — see `04_game_ready/43_TEXTURE_MATERIAL_RUNTIME.md`;
+- draw-call/instancing policy — see `04_game_ready/46_DRAW_CALLS_INSTANCING_AND_BATCHING.md`;
+- mip/padding/compression policy — see `04_game_ready/47_TEXTURE_PACKING_AND_MIP_SAFETY.md`.
 
-## Geometry relation
+Trim sheets are therefore one part of a hybrid production strategy, not a replacement for geometry, decals, tiling materials, or unique bakes.
 
-Trim nie zastępuje geometrii, która:
-- zmienia silhouette,
-- tworzy duży recess,
-- rzuca istotny cień.
+---
 
-## Modular consistency
+## 2. When to use trim sheets
 
-W jednym zestawie lokacji preferuj małą liczbę zatwierdzonych trim sheets zamiast unikalnych tekstur dla każdego modułu.
+Prefer this skill when most of the following are true:
+- the asset belongs to a modular or repeated family;
+- many assets share the same material language;
+- the surface is a long strip, border, rail, frame, casing edge, profile, seal, vent band, panel border, or emissive band;
+- detail can be reused without unique storytelling;
+- reducing unique texture sets is valuable;
+- the trim can preserve its intended direction and physical scale.
 
-## QA
+Typical candidates:
+- wall and corridor modules;
+- door/window frames;
+- façade modules;
+- benches, bollards, railings and kiosks;
+- repeated furniture frames;
+- sci-fi panel borders;
+- emissive strips;
+- rubber seals and painted/metallic trims.
 
-Sprawdź:
-- stretching,
-- kierunek,
-- seams,
-- zgodność skali między modułami,
-- mip behavior z dystansu.
+---
 
+## 3. When not to use trim sheets
+
+Do not force a trim workflow when:
+- the feature changes silhouette and therefore belongs in geometry;
+- the surface needs a unique high-to-low bake over most of its area;
+- unique wear, damage or narrative information dominates;
+- the shape is strongly organic and cannot be mapped coherently to reusable bands;
+- a broad homogeneous surface is better served by a tiling material;
+- a small unique graphic is better served by a decal;
+- the available trim catalog has no semantically compatible region.
+
+Hero assets may still use trim sheets for structural sub-parts, but unique surfaces should not be made generic merely to satisfy reuse.
+
+---
+
+## 4. Surface strategy decision tree
+
+Before creating UVs, classify each semantically coherent visible surface group:
+
+```text
+SURFACE
+|
++-- repeated structural strip / frame / border
+|      -> TRIM
+|
++-- broad homogeneous surface
+|      -> TILING
+|
++-- small unique graphic / marking
+|      -> DECAL
+|
++-- unique hero surface / bespoke baked detail
+|      -> UNIQUE_UV_OR_BAKE
+|
++-- tiny depth-only repeated detail
+       -> GEOMETRY / NORMAL / TRIM HYBRID
+```
+
+The agent must not default to a unique texture set before this classification.
+
+---
+
+## 5. Semantic trim-sheet contract
+
+### Trim sheet
+
+```yaml
+trim_sheet:
+  id: LAFAR_TRIMS_01
+  material_name: MTL_LAFAR_TRIMS_01
+  orientation: HORIZONTAL
+  uv_space: [0.0, 0.0, 1.0, 1.0]
+  texture_resolution_px: [2048, 2048]
+  texture_set:
+    base_color: /textures/LAFAR_TRIMS_01_basecolor.png
+    normal: /textures/LAFAR_TRIMS_01_normal.png
+    roughness: /textures/LAFAR_TRIMS_01_roughness.png
+    metallic: /textures/LAFAR_TRIMS_01_metallic.png
+```
+
+### Trim region
+
+```yaml
+trim_region:
+  id: PAINTED_METAL_EDGE_MEDIUM
+  u_min: 0.0
+  u_max: 1.0
+  v_min: 0.68
+  v_max: 0.80
+  role: STRUCTURAL_EDGE
+  material_family: PAINTED_METAL
+  profile_class: EDGE
+  width_class: MEDIUM
+  direction: U
+  allow_u_tiling: true
+  allow_mirror: true
+```
+
+### Surface assignment
+
+Persistent intent should use a semantic face-group identifier, attribute, or other stable region identity.
+
+```yaml
+trim_assignment:
+  object: Bench_Frame
+  surface_id: OUTER_FRAME
+  strategy: TRIM
+  trim_sheet: LAFAR_TRIMS_01
+  trim_region: PAINTED_METAL_EDGE_MEDIUM
+  orientation: AUTO
+  texel_density_px_per_m: 512
+  allow_overlap: SHARED_TRIM_ONLY
+```
+
+Raw face indices may be used as short-lived execution data, but must not be the only persistent identity because topology edits can invalidate them.
+
+---
+
+## 6. Standard semantic operations
+
+The execution layer should expose operations equivalent to:
+
+- `TRIM_ANALYZE_ASSET`
+- `TRIM_CLASSIFY_SURFACES`
+- `TRIM_SELECT_REGION`
+- `TRIM_UNWRAP_LINEAR_STRIP`
+- `TRIM_ALIGN_TO_REGION`
+- `TRIM_MATCH_PHYSICAL_SCALE`
+- `TRIM_APPLY_MATERIAL`
+- `TRIM_VALIDATE`
+- `TRIM_REPAIR`
+
+The LLM should normally call these semantic operations instead of generating a new low-level UV implementation for every asset.
+
+---
+
+## 7. Face/surface grouping
+
+A trim assignment begins with coherent surface groups.
+
+Good groups are:
+- geometrically continuous or intentionally related;
+- materially coherent;
+- similarly oriented;
+- semantically reusable.
+
+Example:
+
+```text
+Bench_Frame
++-- OUTER_FRAME       -> TRIM
++-- INNER_SUPPORTS    -> TRIM or TILING
++-- UNDERSIDE_HIDDEN  -> simplified TILING/TRIM
++-- SEAT_BRACKETS     -> TRIM
++-- LOGO_REGION       -> DECAL
+```
+
+Do not combine unrelated surfaces merely because they are adjacent in topology.
+
+---
+
+## 8. Region-selection logic
+
+Choose a trim region by semantic compatibility, in this order:
+
+1. material family;
+2. role/function;
+3. profile class;
+4. width class / physical appearance;
+5. directional constraints;
+6. visibility importance;
+7. family consistency with sibling assets.
+
+A heavy painted structural edge must not receive a plastic decorative band merely because that region happens to fit the UV island.
+
+For a coherent asset family, reuse the same approved region for the same semantic role whenever possible.
+
+---
+
+## 9. Orientation rules
+
+For a horizontal trim sheet:
+- the long/repeating axis normally spans `U`;
+- band identity is controlled by the selected `V` interval.
+
+For a vertical trim sheet, invert the logic.
+
+When `orientation=AUTO`:
+1. determine the dominant world/object-space direction of the surface group;
+2. determine the trim's repeat direction;
+3. choose a discrete UV rotation that preserves the material's intended direction;
+4. validate the result visually.
+
+Do not mirror directional wear, text, brushing, gradients, asymmetrical normal details or one-way patterns unless the trim region explicitly permits mirroring.
+
+---
+
+## 10. Physical scale and texel density
+
+`texel_density` must always carry a unit. Prefer an explicit field such as:
+
+`texel_density_px_per_m`
+
+Do not store a bare value such as `512` without defining whether it means px/m, px/cm, or a project-specific class.
+
+### Important trim-specific rule
+
+A trim sheet is not ordinary unique UV packing.
+
+Across the **band width**, the region often represents a specific physical trim width/profile. The agent must preserve that design relationship and must not arbitrarily rescale the island just to hit a generic texel-density number.
+
+Along the **repeat direction**, scaling/tiling may be permitted when the trim was authored for repetition.
+
+Therefore `TRIM_MATCH_PHYSICAL_SCALE` should consider:
+- texture resolution;
+- trim-region pixel width/height;
+- represented real-world trim width, when defined;
+- project texel-density target;
+- whether U/V tiling is permitted.
+
+Project tolerances may define warning/fail bands. Suggested percentages are heuristics, not universal standards.
+
+---
+
+## 11. UV mapping strategies
+
+Use the simplest valid strategy.
+
+### Linear strip mapping
+For rails, frames, bands and near-rectangular strips.
+
+### Aligned quad strip
+For connected quad sequences that must maintain continuous spacing and orientation.
+
+### Box-like decomposition
+For rectangular frame objects where different sides map independently to the same compatible trim family.
+
+### Hybrid mapping
+A single object may legitimately use:
+- trim sheet for structural borders;
+- tiling material for broad surfaces;
+- decals for branding;
+- unique UV/bake for hero regions.
+
+Hybrid classification is often preferable to forcing the whole object into one technique.
+
+---
+
+## 12. Intentional UV reuse and overlap
+
+Trim sheets intentionally reuse the same texture regions across multiple surfaces and assets.
+
+Therefore overlap is **not automatically an error**.
+
+Classify overlap as:
+- `INTENTIONAL_SHARED_TRIM` — allowed;
+- `INTENTIONAL_MIRROR` — allowed only if region semantics permit;
+- `ACCIDENTAL_CROSS_REGION` — fail;
+- `ACCIDENTAL_INCOMPATIBLE_STACK` — fail.
+
+Validation must distinguish intentional trim reuse from accidental UV collisions.
+
+---
+
+## 13. Tiling along the trim axis
+
+A region may allow UVs to extend/repeat along its long axis only if:
+- the texture was authored as repeatable in that direction;
+- sampler/wrap behavior in the target runtime supports it;
+- repetition cannot sample neighboring atlas regions incorrectly;
+- padding/mips remain safe.
+
+`allow_u_tiling` or `allow_v_tiling` must be part of the region contract when relevant.
+
+Do not assume atlas boundaries are safe under repeat wrapping.
+
+---
+
+## 14. Materials and runtime cost
+
+Trim sheets can reduce unique texture memory and improve visual consistency, but they do **not automatically guarantee fewer draw calls**.
+
+Actual runtime cost depends on:
+- material slots;
+- shader/render state;
+- engine batching;
+- texture bindings;
+- instancing strategy.
+
+The agent should reuse the same material instance/data-block when possible and avoid duplicate material slots that point to equivalent trim materials.
+
+A heuristic such as `1 material ideal, 2 acceptable, 3+ justify` may be useful for simple environment props, but it is not a global engine rule. The engine profile has final authority.
+
+---
+
+## 15. Decal and tiling fallback
+
+Use decals for:
+- logos;
+- numbers;
+- warnings;
+- local UI labels;
+- unique marks.
+
+Use tiling materials for:
+- large homogeneous walls;
+- floors;
+- ceilings;
+- broad painted-metal panels without banded detail.
+
+Never distort a trim region to solve a problem that belongs to another texturing strategy.
+
+---
+
+## 16. Hidden surfaces
+
+Hidden/internal surfaces may receive:
+- simplified tiling mapping;
+- a generic low-priority trim region;
+- intentionally stacked UVs;
+- no high-fidelity treatment when they cannot be observed and runtime allows it.
+
+Do not spend premium trim logic on invisible cavities without a project requirement.
+
+---
+
+## 17. Blender API strategy
+
+Prefer direct data access and controlled BMesh/data-layer operations over UI-dependent editing.
+
+The executor should:
+- resolve the semantic surface group;
+- ensure/reuse the UV map;
+- inspect UV loops for the selected polygons;
+- unwrap/project by a deterministic algorithm or a controlled operator adapter;
+- rotate/scale/translate UV coordinates directly;
+- ensure/reuse the intended material data-block and slot;
+- validate the resulting loops against the region contract.
+
+Any context-sensitive unwrap operator must be isolated behind a tested adapter and followed by deterministic UV transformation and validation.
+
+---
+
+## 18. Suggested executor architecture
+
+```text
+blender_agent/
+  trim_sheets/
+    analysis.py
+    surface_groups.py
+    region_catalog.py
+    region_selection.py
+    uv_mapping.py
+    physical_scale.py
+    material_assignment.py
+    validation.py
+    repair.py
+```
+
+Example high-level contract:
+
+```python
+result = trim.apply(
+    target="Bench_Frame",
+    surface="OUTER_FRAME",
+    sheet="LAFAR_TRIMS_01",
+    region="PAINTED_METAL_EDGE_MEDIUM",
+    orientation="AUTO",
+    physical_scale="PROJECT",
+)
+```
+
+---
+
+## 19. Validation
+
+Every autonomous trim operation must validate at least:
+
+### Structural
+- target mesh exists;
+- semantic surface group resolves;
+- UV layer exists;
+- trim material exists/is reused;
+- selected region exists in the catalog.
+
+### UV
+- assigned loops remain in the allowed band orthogonal to the repeat axis;
+- any out-of-0..1 tiling is explicitly allowed;
+- no accidental sampling of neighboring trim regions;
+- orientation is correct;
+- mirroring is semantically allowed;
+- overlap classification is intentional.
+
+### Scale
+- physical trim width/profile is plausible and consistent;
+- texel-density class/target is respected where applicable;
+- sibling assets using the same semantic region remain consistent.
+
+### Runtime
+- duplicate materials are not created;
+- material-slot growth is justified;
+- mip/padding rules remain safe;
+- the target engine can reproduce the material behavior.
+
+---
+
+## 20. Validation report
+
+```yaml
+trim_validation:
+  object: Bench_Frame
+  surface: OUTER_FRAME
+  region: PAINTED_METAL_EDGE_MEDIUM
+  result: PASS
+  checks:
+    semantic_surface_resolved: PASS
+    region_role_compatible: PASS
+    orientation: PASS
+    band_bounds: PASS
+    repeat_axis: PASS
+    overlap: INTENTIONAL_SHARED_TRIM
+    physical_scale: PASS
+    texel_density_px_per_m:
+      target: 512
+      measured: 498
+      status: PASS
+    material_reuse: PASS
+```
+
+Do not return PASS merely because UV coordinates exist.
+
+---
+
+## 21. Repair strategy
+
+Repair the narrowest failure:
+
+- wrong semantic region -> re-run region selection;
+- wrong orientation -> rotate/reverse the strip;
+- stretching -> split into more coherent surface groups;
+- wrong physical width -> correct band/scale selection;
+- generic density mismatch -> recalculate scale without violating the trim profile;
+- cross-region leakage -> clamp/re-fit orthogonal band occupancy;
+- inappropriate trim strategy -> reclassify as TILING, DECAL, UNIQUE or GEOMETRY;
+- excessive material slots -> consolidate equivalent materials.
+
+Prefer local repair over complete remapping when the failure is local.
+
+---
+
+## 22. Common failure modes
+
+- choosing a region by geometric fit instead of semantic material role;
+- rotating directional trim incorrectly;
+- treating any UV overlap as invalid even though trim reuse is intentional;
+- using a bare, unitless `texel_density` value;
+- stretching the narrow axis of a trim until its physical profile is wrong;
+- allowing UV tiling to sample neighboring atlas regions;
+- creating duplicate materials for the same trim sheet;
+- forcing unique hero surfaces into generic trim regions;
+- forcing large homogeneous surfaces into a narrow trim band;
+- assuming trim sheets automatically reduce draw calls;
+- persisting only raw polygon indices after topology-changing operations.
+
+---
+
+## 23. Autonomous decision table
+
+| Condition | Action |
+|---|---|
+| Repeated structural border/profile | TRIM |
+| Broad homogeneous area | TILING |
+| Unique local graphic | DECAL |
+| Unique baked hero area | UNIQUE_UV_OR_BAKE |
+| Feature changes silhouette | GEOMETRY |
+| No compatible trim region | Escalate/reclassify |
+| Directional region + requested mirror | Validate direction before mirroring |
+| Shared trim overlap | Allow and classify intentionally |
+| Runtime sampler cannot safely repeat atlas axis | Keep UV inside safe region / use alternative |
+
+---
+
+## 24. Completion criteria
+
+A trim-sheet assignment is complete only when:
+
+```text
+[ ] surface strategy is classified
+[ ] semantic surface group is stable
+[ ] trim region is semantically compatible
+[ ] material is reused rather than duplicated unnecessarily
+[ ] UV orientation is correct
+[ ] physical trim scale is correct
+[ ] texel-density unit/target is explicit where used
+[ ] intentional overlap/tiling is classified
+[ ] UVs do not leak into unrelated regions
+[ ] mip/padding behavior is safe
+[ ] runtime material behavior is supported
+[ ] validation report is PASS or documented WARN
+```
+
+---
+
+## 25. Final instruction
+
+Think in terms of **surface strategy and resource reuse**, not manual UV manipulation.
+
+The correct pipeline is:
+
+`classify -> choose region -> map -> preserve physical scale -> reuse material -> validate -> repair`
+
+Trim sheets are successful when they preserve the asset's design language while reducing unnecessary unique texture work without creating hidden runtime or UV problems.
 
 ---
 
@@ -5022,7 +5527,7 @@ oraz test importera.
 
 ## FILE: `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
 
-# Reconstruction Layer Index
+# Reconstruction Layer Index and Reference Reconstruction Controller
 
 Warstwa `10_reconstruction` służy do ścisłego odtwarzania obiektu 3D na podstawie:
 - concept sheet,
@@ -5037,17 +5542,88 @@ Warstwa `10_reconstruction` służy do ścisłego odtwarzania obiektu 3D na pods
 Nie jest to warstwa "inspiracji".
 Celem jest maksymalnie wierna rekonstrukcja przy jawnej obsłudze niepewności.
 
-## Pipeline
+Ten plik jest również **wysokopoziomowym controllerem rekonstrukcji z obrazu**. Nie powiela szczegółowych algorytmów z pozostałych modułów; ustala kolejność pracy i routuje agent do właściwych kompetencji.
+
+---
+
+## 1. Fundamental rule
+
+**Reconstruct shape and proportion before detail.**
+
+Model z perfekcyjnymi rowkami, śrubami i materiałami, ale błędną sylwetką lub proporcjami, jest nieudaną rekonstrukcją.
+
+Nie używaj detalu do maskowania błędów bryły.
+
+---
+
+## 2. Task-facing reconstruction priority
+
+Dla rekonstrukcji z reference images agent optymalizuje wynik w tej kolejności:
+
+```text
+CAMERA
+-> SCALE
+-> BOUNDING BOX
+-> SILHOUETTE
+-> PRIMARY MASSES
+-> PROPORTIONS
+-> SECONDARY MASSES
+-> MAJOR CUTOUTS / STRUCTURAL TRANSITIONS
+-> EDGE TREATMENT
+-> PANEL LINES / GROOVES / VENTS / SEAMS
+-> MICRODETAIL
+-> MATERIALS / TEXTURING
+-> RUNTIME
+```
+
+Ta kolejność jest warstwą kontrolną. Szczegółowy stan procesu znajduje się w `149_RECONSTRUCTION_STATE_MACHINE.md`.
+
+---
+
+## 3. Full reconstruction pipeline
 
 `INGEST -> SEGMENT -> CLASSIFY -> AUTHORITY -> REGISTER -> CONSTRAIN -> DECOMPOSE -> PLAN -> BLOCKOUT -> MATCH -> DETAIL -> SHADE -> MULTIVIEW_QA -> RUNTIME`
 
-## Pakiety wiedzy
+### Mapping controller -> pipeline
+
+- `CAMERA` -> CLASSIFY / REGISTER
+- `SCALE + BOUNDING BOX` -> CONSTRAIN
+- `SILHOUETTE + PRIMARY MASSES` -> BLOCKOUT / MATCH
+- `PROPORTIONS` -> CONSTRAIN / MATCH
+- `SECONDARY MASSES` -> DETAIL
+- `SURFACE` -> SHADE
+- `VALIDATION` -> MULTIVIEW_QA
+- `GAME READY` -> RUNTIME
+
+---
+
+## 4. Packages of knowledge
 
 ### Evidence
 100–109
 
+Key modules:
+- `102_EVIDENCE_MODEL.md`
+- `103_REFERENCE_INGESTION_PROTOCOL.md`
+- `104_CONCEPT_SHEET_SEGMENTATION.md`
+- `105_VIEW_CLASSIFICATION.md`
+- `106_VIEW_AUTHORITY_MATRIX.md`
+- `107_MULTI_VIEW_CONFLICT_RESOLUTION.md`
+- `108_UNCERTAINTY_AND_CONFIDENCE_LEDGER.md`
+
 ### Geometry constraints
 110–123
+
+Key modules:
+- `110_DIMENSION_GRAPH.md`
+- `111_DIMENSION_LOCKING_AND_TOLERANCES.md`
+- `112_LANDMARK_AND_KEYPOINT_SYSTEM.md`
+- `113_REFERENCE_COORDINATE_REGISTRATION.md`
+- `114_ORTHOGRAPHIC_REFERENCE_CALIBRATION.md`
+- `115_PERSPECTIVE_CAMERA_SOLVING.md`
+- `116_SILHOUETTE_CONSTRAINT_SYSTEM.md`
+- `117_NEGATIVE_SPACE_AND_CLEARANCE.md`
+- `119_HIDDEN_AND_OCCLUDED_GEOMETRY_POLICY.md`
 
 ### Surface/material evidence
 124–127
@@ -5064,16 +5640,440 @@ Celem jest maksymalnie wierna rekonstrukcja przy jawnej obsłudze niepewności.
 ### Specialized reconstruction
 160–169
 
-## Fundamental rule
+---
 
-Rekonstrukcja 1:1 nie oznacza "model wygląda podobnie".
-Oznacza:
-- wszystkie znane wymiary są respektowane,
-- wszystkie kanoniczne widoki są równocześnie zgodne,
-- cechy rozpoznawcze nie giną,
-- niepewne obszary są oznaczone jako niepewne,
-- agent nie inventuje szczegółów, których nie da się obronić dowodem.
+## 5. Reference input contract
 
+The controller should receive as much of the following as available:
+
+```yaml
+reference_set:
+  asset_id: bench_01
+  target_scale_unit: METERS
+  known_dimensions:
+    - id: WIDTH
+      value_m: 1.80
+      confidence: LOCKED
+
+  images:
+    - id: front
+      type: ORTHOGRAPHIC_OR_APPROX_FRONT
+      path: /references/bench_front.png
+
+    - id: side
+      type: ORTHOGRAPHIC_OR_APPROX_SIDE
+      path: /references/bench_side.png
+
+    - id: perspective
+      type: PERSPECTIVE
+      path: /references/bench_perspective.png
+```
+
+If only one image exists, continue only with explicit uncertainty tracking. Do not manufacture unsupported depth or hidden detail.
+
+---
+
+## 6. Reference analysis before modeling
+
+Before geometry creation the agent must identify:
+
+```text
+REFERENCE
+|
++-- object bounding box
++-- principal axes / orientation
++-- projection class
++-- symmetry evidence
++-- outer silhouette
++-- internal silhouette breaks / negative spaces
++-- major landmarks
++-- dominant planes / curves
++-- repeated structures
++-- depth / perspective cues
++-- material boundaries
++-- hidden or uncertain geometry
+```
+
+The authoritative data model for these observations is the Evidence/Constraint/Feature system defined by the detailed reconstruction modules.
+
+---
+
+## 7. Camera-first mismatch rule
+
+The agent must never deform geometry merely because a perspective reference does not line up.
+
+When a screen-space mismatch is detected, diagnose in this order:
+
+```text
+1. projection class
+2. reference calibration
+3. focal length / ortho scale
+4. camera rotation and shift
+5. object/reference orientation
+6. only then geometry
+```
+
+Detailed camera behavior belongs to:
+- `01_analysis/15_CAMERA_REFERENCE_MATCHING.md`
+- `114_ORTHOGRAPHIC_REFERENCE_CALIBRATION.md`
+- `115_PERSPECTIVE_CAMERA_SOLVING.md`
+- `141_RECONSTRUCTION_QA_CAMERA_RIG.md`
+
+QA cameras are evidence instruments, not artistic cameras. Once calibrated they must not be moved to hide geometric error.
+
+---
+
+## 8. Bounding volume and normalized proportion model
+
+Before detailed modeling, create a proportion model from known dimensions and calibrated views.
+
+Use normalized ratios when exact metric data is incomplete:
+
+```text
+object width  = 1.000
+object height = 0.540
+object depth  = 0.430
+seat height   = 0.287
+seat depth    = 0.438
+```
+
+If one dimension is known, resolve derived dimensions from ratios only when the relevant view/calibration supports that inference.
+
+Do not convert an uncertain pixel estimate into fake metric precision.
+
+The canonical implementation is the Dimension Graph plus the confidence/evidence ledger.
+
+---
+
+## 9. Landmark system
+
+Use semantic landmarks to constrain reconstruction, such as:
+- extreme corners;
+- seat/front/back junctions;
+- major panel corners;
+- centers of circular features;
+- armrest peaks;
+- attachment points;
+- dominant transition edges.
+
+Landmarks should use normalized image coordinates where practical and remain semantically stable across topology changes.
+
+Do not use transient vertex indices as landmark identity.
+
+Detailed representation and projection rules are defined in `112_LANDMARK_AND_KEYPOINT_SYSTEM.md` and the QA scripts.
+
+---
+
+## 10. Silhouette-first blockout
+
+The first real geometry must solve:
+- world-scale bounds;
+- primary silhouette;
+- negative spaces;
+- primary landmarks;
+- primary mass relationships.
+
+Preferred blockout primitives:
+- cube/box;
+- plane/extruded profile;
+- cylinder;
+- sphere only when appropriate;
+- Mirror;
+- Array for actual repetition.
+
+Forbidden as a substitute for unresolved primary form:
+- panel lines;
+- vents;
+- screws;
+- decorative booleans;
+- micro-bevels;
+- final UV/textures.
+
+The blockout gate is controlled by `131_DIMENSION_LOCKED_BLOCKOUT.md` and `146_MULTI_VIEW_CONSISTENCY_GATE.md`.
+
+---
+
+## 11. Primitive/part decomposition
+
+Before topology refinement, decompose the asset into semantic masses.
+
+Example:
+
+```text
+BENCH
++-- seat shell
++-- back shell
++-- left structural housing
++-- right structural housing
++-- base / feet
++-- utility insert
++-- trim / lighting / branding
+```
+
+For each part record:
+- semantic role;
+- primitive/profile class;
+- symmetry relationship;
+- feature ownership;
+- likely modeling strategy.
+
+Use `128_RECONSTRUCTION_OBJECT_DECOMPOSITION.md` and `129_FEATURE_TO_MODELING_STRATEGY_MAP.md` for the canonical data model.
+
+---
+
+## 12. Symmetry controller rule
+
+Classify the asset as:
+- `FULL_SYMMETRY`
+- `PARTIAL_SYMMETRY`
+- `ASYMMETRIC`
+
+Use Mirror for the symmetric core when evidence supports it.
+
+Do not mirror asymmetric utility panels, branding, wear, ports, or reference-specific detail merely because the base shell is symmetric.
+
+The canonical policy is `120_SYMMETRY_AND_ASYMMETRY_POLICY.md`.
+
+---
+
+## 13. Multi-view consistency
+
+Multiple views constrain one 3D object.
+
+Typical authority:
+
+```text
+FRONT -> width, height
+SIDE  -> depth, height, profile
+TOP   -> width, depth
+REAR  -> rear features/material boundaries
+BOTTOM -> underside/service geometry
+HERO  -> material/edge language and spatial confirmation
+```
+
+Do not silently average contradictory drawings.
+
+Conflicts must be recorded and resolved using the Evidence Model and View Authority Matrix.
+
+---
+
+## 14. Confidence-aware reconstruction
+
+Use the canonical confidence vocabulary from `108_UNCERTAINTY_AND_CONFIDENCE_LEDGER.md`:
+
+- `LOCKED`
+- `HIGH`
+- `MEDIUM`
+- `LOW`
+- `UNKNOWN`
+
+When helpful, evidence provenance may separately classify a value as observed/derived/inferred.
+
+For low-confidence hidden geometry:
+
+**Use the simplest continuous solution compatible with all visible evidence.**
+
+Do not add speculative decorative detail to increase perceived sophistication.
+
+---
+
+## 15. Screen-space validation loop
+
+At each accepted stage:
+
+```text
+matched QA camera
+-> deterministic render/mask
+-> compare against reference
+-> measure error
+-> identify highest-level cause
+-> repair
+-> revalidate
+```
+
+Minimum categories:
+- bounding box;
+- silhouette;
+- landmarks;
+- negative spaces;
+- major internal feature boundaries.
+
+Prefer measurements over statements such as "looks close".
+
+Use:
+- `142_ORTHOGRAPHIC_OVERLAY_VALIDATION.md`
+- `143_SILHOUETTE_DIFF_PROTOCOL.md`
+- `144_NUMERIC_AND_LANDMARK_VALIDATION.md`
+- `145_FEATURE_ROI_VALIDATION.md`
+- `146_MULTI_VIEW_CONSISTENCY_GATE.md`
+
+---
+
+## 16. Quality-gate defaults
+
+Project contracts and explicit dimensions always override generic defaults.
+
+For image-derived reconstruction, the following can be used as **starting heuristics**, not universal truth:
+
+### Blockout gate
+- bounding-box error < 3%
+- major landmark error < 5%
+
+### Primary geometry gate
+- silhouette mean error < 2%
+- major landmark mean error < 2%
+
+### Final image-reconstruction gate
+- silhouette mean error < 1%
+- major landmark mean error < 1.5%
+
+These thresholds must be tightened or relaxed according to:
+- reference resolution;
+- projection confidence;
+- asset importance;
+- explicit project tolerances;
+- whether the input is a real technical drawing or stylized concept art.
+
+Hard numeric dimensions use the tolerance rules in `111` and `148`, not these image-space heuristics.
+
+---
+
+## 17. Repair priority
+
+When validation fails, repair the highest-level error first:
+
+```text
+1. camera/reference registration
+2. metric scale / bounding box
+3. silhouette
+4. primary masses
+5. primary landmarks / proportions
+6. secondary geometry
+7. edge treatment
+8. detail
+9. materials
+```
+
+Never repair a panel line while the primary silhouette is still failing.
+
+---
+
+## 18. Detail routing after primary pass
+
+Only after primary geometry passes should the controller route work to specialized skills.
+
+Examples:
+
+```text
+structural/cosmetic narrow seam
+-> blender-agent-procedural-hard-surface-panel-lines.md
+
+SubD topology / support-loop problem
+-> blender-agent-subdivision-topology-control.md
+
+reusable structural texture band
+-> 03_modeling/40_TRIM_SHEETS.md
+
+logo / unique marking
+-> 03_modeling/41_DECALS_AND_FLOATING_DETAILS.md
+
+high-to-low detail
+-> 03_modeling/38_HIGH_LOW_POLY_WORKFLOW.md
+-> 03_modeling/39_BAKING_PIPELINE.md
+```
+
+This controller orchestrates. Specialized skills execute.
+
+---
+
+## 19. Single-image mode
+
+When only one image exists:
+
+1. classify projection;
+2. estimate/match camera;
+3. extract visible silhouette and landmarks;
+4. solve known dimensions or normalized proportions;
+5. infer depth conservatively;
+6. explicitly separate observed, derived and inferred information;
+7. assign confidence;
+8. keep hidden geometry minimal;
+9. do not claim literal full 1:1 certainty in unobserved regions.
+
+A single-view result may be an evidence-constrained 3D interpretation rather than a fully determined reconstruction.
+
+---
+
+## 20. Output contract
+
+A controller pass should be able to emit:
+
+```yaml
+reconstruction_result:
+  asset: bench_01
+  stage: PRIMARY_GEOMETRY
+  status: PASS
+
+  dimensions:
+    width_error_pct: 0.8
+    height_error_pct: 1.1
+    depth_error_pct: 1.4
+
+  silhouette:
+    mean_error_pct: 0.9
+    max_error_pct: 2.8
+
+  landmarks:
+    mean_error_pct: 1.2
+    max_error_pct: 2.1
+
+  unresolved_geometry:
+    - underside_rear_shell
+```
+
+The detailed final report schema is defined in `152_RECONSTRUCTION_REPORT_SCHEMA.md`.
+
+---
+
+## 21. Controller completion criteria
+
+Before routing to final detail/material/runtime, verify:
+
+```text
+[ ] reference projection/classification is resolved sufficiently
+[ ] camera/reference registration is validated
+[ ] known scale/dimensions are respected
+[ ] bounding volume is within tolerance
+[ ] primary silhouette passes required views
+[ ] major negative spaces pass
+[ ] primary landmarks pass
+[ ] multi-view conflicts are resolved or explicitly documented
+[ ] low-confidence regions are identified
+[ ] primary object decomposition is stable
+[ ] no lower-level detail contradicts the accepted primary form
+```
+
+The full asset is complete only when `159_RECONSTRUCTION_DEFINITION_OF_DONE.md` also passes.
+
+---
+
+## 22. Final rule
+
+Reconstruction 1:1 does not mean "one render looks similar".
+
+It means:
+- known dimensions are respected;
+- canonical views are simultaneously consistent;
+- silhouette and proportions are controlled;
+- features do not disappear;
+- uncertainty is explicit;
+- hidden geometry is not hallucinated;
+- detail is added only after the primary form is proven;
+- every accepted stage can be validated and regressed.
+
+The controller's permanent priority is:
+
+`CAMERA -> SCALE -> BOUNDING BOX -> SILHOUETTE -> PRIMARY MASSES -> PROPORTIONS -> SECONDARY MASSES -> DETAIL -> MATERIALS -> RUNTIME`.
 
 ---
 
@@ -8593,8 +9593,22 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## FILE: `CHANGELOG.md`
 
-
 # Changelog
+
+## Unreleased
+
+Integrated two reviewed production skills without creating redundant parallel modules:
+- expanded `03_modeling/40_TRIM_SHEETS.md` into a full semantic trim-sheet UV texturing skill;
+- integrated the reference-image proportion/silhouette workflow into `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` as the high-level reconstruction controller;
+- added explicit trim-sheet routing and controller-first reference routing to the Knowledge Router.
+
+Important integration corrections:
+- texel density is now unit-explicit (`px_per_m`) instead of a bare numeric value;
+- intentional trim-sheet UV reuse is distinguished from accidental overlap;
+- trim-sheet reuse is not treated as an automatic draw-call reduction;
+- persistent surface identity should not rely only on transient polygon indices;
+- reconstruction confidence vocabulary is aligned with the existing `LOCKED/HIGH/MEDIUM/LOW/UNKNOWN` ledger;
+- image-space quality thresholds are defined as overridable heuristics, not universal hard limits.
 
 ## 0.3.0
 
@@ -8643,163 +9657,44 @@ Architecture decision:
 
 ## FILE: `README.md`
 
-# Blender AI Agent Library v0.3.0
+# BlenderSkill
 
-Biblioteka wiedzy i procedur dla agenta AI sterującego Blenderem przez Python API / narzędzia automatyzacyjne.
+Canonical knowledge repository for the Blender AI Agent Library.
 
-## Canonical source vs single-file snapshot
+## Purpose
 
-**Źródłem kanonicznym jest katalog modułów MD.**
+The repository contains modular Markdown skills for an AI agent that plans, builds, reconstructs, validates and prepares Blender assets for game/VFX pipelines.
 
-`_FULL_LIBRARY.md` jest plikiem generowanym automatycznie z modułów:
-- służy do przeglądu całości,
-- może służyć do jednorazowego importu,
-- nie powinien być edytowany ręcznie.
+The canonical source is the modular library stored in the numbered directories. `_FULL_LIBRARY.md` is generated automatically from the modules listed in `MANIFEST.json` and should not be edited manually.
 
-Każda zmiana biblioteki:
-1. modyfikuje właściwy moduł,
-2. aktualizuje `MANIFEST.json`,
-3. regeneruje `_FULL_LIBRARY.md`.
+## Main areas
 
-## Warstwa 2 — production techniques
+- `00_governance` — agent rules, routing and state machines
+- `01_analysis` — briefs, references, features and measurements
+- `02_blender_api` — `bpy`, BMesh, context and automation strategy
+- `03_modeling` — hard-surface, topology, UV, trim sheets and authoring workflows
+- `04_game_ready` — runtime optimization, materials, LOD, export constraints
+- `05_execution` — execution, validation, QA, regression and repair
+- `06_prompts` — planner/reviewer/repair prompts
+- `07_examples` — examples and benchmarks
+- `08_scripts` — reusable audit/validation patterns
+- `09_engine` — engine profile and adapter contracts
+- `10_reconstruction` — evidence-driven 1:1 reconstruction system
+- `11_playbooks` — asset-class production playbooks
+- `99_sources` — technical sources
 
-Wersja 0.2 dodaje:
-- camera/reference matching,
-- Visual Feature Map,
-- high-poly / low-poly,
-- baking,
-- trim sheets,
-- decals,
-- curves,
-- Geometry Nodes,
-- procedural materials,
-- texture packing i mip safety,
-- warianty assetów,
-- automated visual diff,
-- fidelity protocol,
-- authoring-to-runtime handoff,
-- Engine Profile i Engine Adapter.
+## Repository rules
 
-## Warstwa 3 — Reconstruction Layer
+1. Prefer updating an existing canonical module over creating a parallel skill with duplicated responsibility.
+2. Add a new skill only when it introduces a distinct responsibility or reusable primitive.
+3. Keep semantic intent separate from temporary Blender indices, UI state and one-off operator sequences.
+4. Validate changes against existing modules before merging them into the library.
+5. `MANIFEST.json` defines the modules compiled into `_FULL_LIBRARY.md`.
+6. GitHub Actions regenerates `_FULL_LIBRARY.md` after canonical Markdown changes.
 
-Wersja 0.3 dodaje pełny system rekonstrukcji 1:1:
-- model dowodów i provenance,
-- segmentację concept sheet,
-- klasyfikację projekcji,
-- View Authority Matrix,
-- rozwiązywanie konfliktów między widokami,
-- uncertainty/confidence ledger,
-- dimension graph,
-- hard/derived/soft locks,
-- landmark system,
-- kalibrację rzutów,
-- perspective camera solving,
-- silhouette i negative-space constraints,
-- inference przekrojów, krzywizn, promieni i grubości,
-- hidden/occluded geometry policy,
-- material/lighting disentanglement,
-- branding/decal exactness,
-- object decomposition,
-- parametric master model,
-- precision hard-surface construction,
-- rear/bottom/underside workflow,
-- multi-view QA,
-- overlay, silhouette diff, landmark validation i ROI validation,
-- reconstruction-specific regression gates,
-- ambiguity escalation,
-- change control,
-- Definition of Done,
-- osobne playbooki klas assetów,
-- benchmark Lafar Street Bench.
+## Current target
 
-Reconstruction Layer jest rozwinięciem standardowego pipeline, nie jego zamiennikiem.
-
-## Cel
-
-Agent ma produkować assety:
-- zgodne z briefem i referencją,
-- planowane przed wykonaniem,
-- możliwie deterministycznie budowane,
-- łatwe do poprawiania,
-- poprawne technicznie w Blenderze,
-- gotowe do użycia w silniku gry,
-- kontrolowane wizualnie i technicznie po każdej istotnej fazie,
-- bez marnowania wywołań API i tokenów na chaotyczne próby.
-
-Biblioteka jest celowo podzielona na małe pliki. Agent powinien ładować tylko moduły potrzebne w danym etapie.
-
-## Wersja docelowa
-
-- Blender: 5.1.x
-- Python: zgodny z Pythonem dostarczanym z Blenderem 5.1
-- format runtime baseline: glTF 2.0 / GLB
-- profil główny: assety do gry, hard-surface, props, architektura modułowa
-- zasady są silnikowo neutralne; wymagania konkretnego silnika mają nadpisywać wartości domyślne
-
-## Hierarchia wiedzy
-
-1. jawne wymagania użytkownika,
-2. zatwierdzone referencje i concept art,
-3. kontrakt projektu / assetu,
-4. stan sceny Blendera,
-5. niniejsza biblioteka,
-6. oficjalna dokumentacja Blender 5.1 i specyfikacja formatu eksportowego,
-7. heurystyki agenta.
-
-Niższy poziom nie może nadpisywać wyższego.
-
-## Główna zasada
-
-**Nie modeluj, dopóki nie wiadomo, co dokładnie ma zostać zachowane.**
-
-Każdy asset przechodzi przez:
-
-`ANALYZE -> CONTRACT -> PLAN -> BUILD -> INSPECT -> REPAIR -> VALIDATE -> EXPORT`
-
-Przejście do następnego etapu jest dozwolone dopiero po spełnieniu kryteriów poprzedniego.
-
-## Struktura
-
-- `00_governance` — reguły nadrzędne i state machine.
-- `01_analysis` — analiza briefu, referencji i cech.
-- `02_blender_api` — sposób używania `bpy`, `bmesh`, operatorów i kontekstu.
-- `03_modeling` — praktyka modelowania 3D.
-- `04_game_ready` — ograniczenia runtime.
-- `05_execution` — wykonanie, checkpointy, QA i naprawy.
-- `06_prompts` — gotowe role i szablony promptów.
-- `07_examples` — przykłady planowania assetów.
-- `08_scripts` — bezpieczne fragmenty kodu audytowego.
-- `99_sources` — źródła techniczne.
-
-## Minimalny zestaw plików ładowanych przez agenta
-
-Dla większości zadań:
-1. `00_governance/00_AGENT_CHARTER.md`
-2. `00_governance/02_STATE_MACHINE.md`
-3. `01_analysis/12_FEATURE_CONTRACT.md`
-4. `02_blender_api/20_BLENDER_5_1_API_STRATEGY.md`
-5. `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
-6. `03_modeling/30_MODELING_DECISION_TREE.md`
-7. `04_game_ready/40_GAME_ASSET_CONTRACT.md`
-8. `05_execution/51_EXECUTION_PROTOCOL.md`
-9. `05_execution/52_CHECKPOINT_AND_VISUAL_QA.md`
-10. odpowiedni przykład z `07_examples`.
-
-## Nieprawidłowy workflow
-
-`reference -> bpy.ops -> dużo zmian -> render końcowy -> "prawie"`
-
-## Prawidłowy workflow
-
-`reference -> feature contract -> metryki -> plan brył -> checkpoint sylwetki -> detale pierwszego rzędu -> checkpoint -> materiały -> checkpoint -> optymalizacja -> walidacja`
-
-## Definicja sukcesu
-
-Asset jest skończony dopiero, gdy:
-- wszystkie cechy `MUST` z Feature Contract są obecne,
-- proporcje mieszczą się w tolerancji,
-- widoki kontrolne nie pokazują utraty istotnych detali,
-- geometria nie ma błędów technicznych blokujących runtime,
-- materiały i UV spełniają kontrakt projektu,
-- transformacje, pivot, nazewnictwo i eksport są poprawne,
-- plik źródłowy pozostaje edytowalny.
+- Blender 5.1.x
+- Python automation through Blender API/BMesh where practical
+- reconstruction-first and game-asset production workflows
+- glTF/GLB as a neutral runtime baseline unless an engine profile overrides it
