@@ -6,9 +6,9 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 **v0.11.0 — enforced reconstruction execution, conflict arbitration and detail closure.**
 
-v0.11 is driven by the Lafar Street Lamp v0.10 benchmark. v0.10 produced the strongest reconstruction so far, but the run exposed that the state machine was still advisory: `ready_nodes=[]` did not prevent a monolithic RDL0→RDL5 builder, `BUILT_UNVERIFIED` did not stop dependent geometry, and a local SIDE/detail conflict could be resolved too literally.
+v0.11 is driven by the Lafar Street Lamp v0.10 benchmark. v0.10 produced the strongest reconstruction so far, but exposed that the state machine was still advisory: `ready_nodes=[]` did not prevent a monolithic RDL0→RDL5 builder, `BUILT_UNVERIFIED` did not stop dependent geometry, and a local SIDE/detail conflict could be resolved too literally.
 
-The v0.11 invariant is executable:
+Canonical v0.11 execution:
 
 ```text
 eligible node
@@ -22,15 +22,7 @@ eligible node
 -> only ACCEPTED unlocks dependants
 ```
 
-Additional v0.11 closure:
-- persistent node/checkpoint state;
-- per-property `REFERENCE_CONFLICT_RESOLVER`;
-- per-view evidence contracts for ortho / hero / detail;
-- source provenance for significant derived parameters;
-- `APPEARANCE_OWNER_COVERAGE` with separate Shape/Appearance/Evidence namespaces;
-- RDL0 diagnostic geometry and neutral RDL0–RDL3 shading;
-- canonical BlenderSkill version/commit/source-root pinning;
-- benchmark 80 for the Lafar Street Lamp.
+v0.11 also adds persistent node/checkpoint state, per-property conflict arbitration, per-view evidence contracts, derived-parameter provenance, Appearance Owner Coverage, neutral diagnostic RDL geometry, canonical runtime pinning and benchmark 80 for the Lafar Street Lamp.
 
 Runtime remains downstream of `APPEARANCE_FIDELITY_GATE` and `RECON_FIDELITY_GATE`.
 
