@@ -820,16 +820,13 @@ A Blender agent must not load every relevant document for the whole asset lifecy
 
 A `Task Pack` is the smallest bounded set of knowledge required for the current state and task subtype.
 
-The goal is to reduce context growth, repeated document reads and cross-stage interference while preserving required constraints.
-
-## Core rule
-
 ```text
 current state + task subtype
 -> one Task Pack
 -> only required modules
 -> execute / validate
--> discard non-persistent context
+-> persist compact state
+-> unload non-required context
 -> advance state
 ```
 
@@ -849,38 +846,52 @@ task_pack:
   context_budget_tokens: 8000
 ```
 
-`context_budget_tokens` is a planning ceiling, not a guarantee from the runtime. If the pack approaches the ceiling, summarize persistent state and unload non-required material before loading more documents.
+`context_budget_tokens` is a planning ceiling. When approaching it, summarize persistent state and unload non-required material before loading more documents.
 
-## Canonical packs
+---
 
-### `SESSION_PREFLIGHT`
+# Canonical packs
 
-Use once before the first production scene mutation.
+## `SESSION_PREFLIGHT`
+
+Use once before first production scene mutation.
 
 Required:
-- `00_governance/00_AGENT_CHARTER.md`
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
-- `02_blender_api/19_TOOL_DISCOVERY_AND_REGISTRY.md`
-- `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
-- `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`
+- Agent Charter;
+- Semantic Skill Registry;
+- Tool Discovery and Registry;
+- Tool Call and Token Efficiency;
+- Agent Tool API Profile;
+- Blender 5.1 Runtime Compatibility Matrix.
+
+Preferred semantic skill:
+- `RUNTIME_COMPAT`.
 
 Persistent output:
 - Tool Registry;
 - capability bindings;
-- Blender/runtime version facts.
+- Blender version;
+- available render engines;
+- relevant version-sensitive API facts;
+- stable project-root source;
+- whether the blend is currently saved.
 
-### `RECON_TECHNICAL_SHEET_ANALYZE`
+Do not repeat compatibility discovery before every feature unless the runtime changes.
+
+---
+
+## `RECON_TECHNICAL_SHEET_ANALYZE`
 
 Required:
-- `00_governance/00_AGENT_CHARTER.md`
-- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
-- `10_reconstruction/102_EVIDENCE_MODEL.md`
-- `10_reconstruction/103_REFERENCE_INGESTION_PROTOCOL.md`
-- `10_reconstruction/106_VIEW_AUTHORITY_MATRIX.md`
-- `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`
-- `10_reconstruction/160_BLUEPRINT_AND_TECHNICAL_DRAWING_MODE.md`
-- `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`
-- `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`
+- Agent Charter;
+- Reconstruction Controller;
+- Evidence Model;
+- Reference Ingestion;
+- View Authority Matrix;
+- Reference Measurement Protocol;
+- Blueprint/Technical Drawing Mode;
+- Reference Analysis Cache;
+- Reference Measurement Executor Pattern.
 
 Persistent output:
 - Reference Registry;
@@ -890,19 +901,21 @@ Persistent output:
 - View Authority Matrix;
 - unresolved conflicts.
 
-Forbidden until later unless directly needed to resolve an ANALYZE blocker:
+Forbidden until later unless required to resolve an ANALYZE blocker:
 - UV authoring;
 - materials/shaders;
 - LOD generation;
 - collision;
 - export;
 - microdetail modeling;
-- decorative detailing skills.
+- decorative detailing.
 
-### `RECON_BLOCKOUT`
+---
+
+## `RECON_BLOCKOUT`
 
 Required:
-- reconstruction controller;
+- Reconstruction Controller;
 - Dimension Graph;
 - dimension locks/tolerances;
 - landmark system;
@@ -912,41 +925,129 @@ Required:
 - Build Plan;
 - Execution Protocol.
 
+For a rotational primary form, route to `AXISYMMETRIC_PROFILE` rather than writing a new revolve helper.
+
 Do not load material/UV/LOD modules.
 
-### `RECON_DETAIL`
+---
+
+## `RECON_DETAIL`
 
 Load only after camera/scale/silhouette/primary-form gates pass.
 
 Required:
 - current Feature Contract subset;
 - feature-to-modeling strategy map;
-- only semantic skills required by current feature IDs;
+- only semantic skills required by current Feature IDs;
 - checkpoint/visual QA.
 
-Example: load `HS_PANEL_LINE` only when the current accepted feature is actually a narrow seam/path.
+Examples:
+- narrow seam -> `HS_PANEL_LINE`;
+- curved SubD support flow -> `SUBD_TOPOLOGY_CONTROL`;
+- radial anchors -> `RADIAL_REPEAT`;
+- additive logo/graphic -> decal workflow.
 
-### `GAME_READY`
+---
 
-Load only after geometry/reconstruction acceptance.
+## `SURFACE_FINISH`
+
+Load after material segmentation is accepted.
+
+Required only as applicable:
+- Material Evidence Reconstruction;
+- Lighting vs Material Disentanglement;
+- Procedural Material Authoring;
+- Brushed Metal + Dark Composite playbook;
+- Integrated Light Strip playbook;
+- Emissive Runtime Handoff.
+
+Preferred skills:
+- `MATERIAL_FINISH_CIVIC` for maintained civic props;
+- `EMISSIVE_HANDOFF` for guidance/accent emitters.
+
+Persistent outputs:
+- material family decisions;
+- macro/meso/micro breakup contract;
+- wear/dirt masks or strategy;
+- emissive authoring status;
+- runtime disposition per procedural effect.
+
+Do not start generic grunge iteration before material identity is correct.
+
+---
+
+## `GAME_READY_FINISH`
+
+Load only after reconstruction/modeling acceptance.
 
 Required:
 - Game Asset Contract;
+- completion levels;
 - polycount/LOD/collision;
 - transforms/pivots/naming;
-- texture/material runtime;
+- Texture/Material Runtime;
+- Game-Ready Bake Gate;
+- Emissive Runtime Handoff if applicable;
 - active Engine Profile;
 - active Project Asset Pipeline Profile;
-- export/final validation as needed.
+- export module;
+- Final Validation;
+- Mesh Contract Validator;
+- Reference-to-Runtime Completeness Report.
 
-## Persistent-state rule
+Preferred skills:
+- `MESH_VALIDATE`;
+- `BAKE_RUNTIME_TEXTURES` when bake/runtime texture closure is required;
+- `EXPORT_VALIDATE`;
+- `ASSET_COMPLETION`.
 
-Task Pack changes must not discard facts that have already been validated.
+Persistent outputs:
+- LOD report;
+- collision report;
+- texture/bake report;
+- runtime material disposition;
+- export validation;
+- completion report.
 
-Persist compact structured records, not full conversational history:
+Level C cannot pass while required Blender-only material effects remain without a runtime strategy.
+
+---
+
+## `PIPELINE_INTEGRATION`
+
+Load only when target is `PIPELINE_INTEGRATED`.
+
+Required:
+- Completion Levels;
+- Project Asset Pipeline Profile;
+- Engine Adapter Protocol;
+- Asset Catalog Integration Protocol;
+- Authoring to Runtime Handoff;
+- Reference-to-Runtime Completeness Report.
+
+Preferred skill:
+- `ASSET_CATALOG_INTEGRATE`.
+
+Persistent outputs:
+- stable asset ID;
+- previous conflicting catalog entry if any;
+- registration/update result;
+- readback verification;
+- importer/instantiation smoke-test result.
+
+If catalog write capability is unavailable, emit a Level D blocker. Do not silently finish at Level C while calling the whole task complete.
+
+---
+
+# Persistent-state rule
+
+Task Pack changes must not discard validated facts.
+
+Persist compact structured records, not full conversation/tool history:
 
 ```text
 Tool Registry
+Compatibility Snapshot
 Reference Registry
 Reference Analysis Cache
 Evidence Ledger
@@ -954,31 +1055,40 @@ Dimension Graph
 View Authority Matrix
 Feature Contract
 Build Plan
+Code Artifact Registry
 Checkpoint results
+Material Runtime Disposition
+Completion Report
 ```
 
-## No duplicate loading
+---
+
+# No duplicate loading
 
 If a module was already loaded and its relevant rules are represented in persistent structured state, do not re-read it merely because the next step mentions the same concept.
 
 Re-read only when:
-- a conflict requires exact source wording;
-- the task enters a section not represented in persistent state;
-- the module changed during the session;
-- an explicit validator requests it.
+- conflict requires exact source wording;
+- entering a section not represented in persistent state;
+- module changed during the session;
+- validator explicitly requests it.
 
-## Pack expansion rule
+---
+
+# Pack expansion rule
 
 Do not load a new module because it might become useful.
 
-Expand the Task Pack only when:
-1. the current state requires it;
-2. a measured failure routes to it;
-3. a current feature maps to it in the Semantic Skill Registry.
+Expand only when:
+1. current state requires it;
+2. measured failure routes to it;
+3. current feature maps to it in Semantic Skill Registry.
 
-## Completion gate
+---
 
-Before advancing from ANALYZE to CONTRACT/PLAN, emit a compact `Evidence Summary` containing at minimum:
+# Analysis completion gate
+
+Before ANALYZE -> CONTRACT/PLAN emit:
 
 ```yaml
 analysis_complete:
@@ -991,7 +1101,17 @@ analysis_complete:
   status: PASS
 ```
 
-Once `ANALYZE: PASS`, do not continue broad reference exploration. Later investigation must be scoped to a specific unresolved item, feature ID or failed ROI validator.
+Once `ANALYZE: PASS`, do not continue broad reference exploration. Later investigation must target a specific unresolved item, feature ID or failed ROI validator.
+
+---
+
+# Final completion gate
+
+Before ending the task:
+1. evaluate `TARGET_COMPLETION_LEVEL`;
+2. run `ASSET_COMPLETION` contract;
+3. emit `05_execution/63_REFERENCE_TO_RUNTIME_COMPLETENESS_REPORT.md`;
+4. only use unconditional `DONE` if the requested target level passes.
 
 
 ---
