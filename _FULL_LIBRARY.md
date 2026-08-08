@@ -7381,6 +7381,18 @@ Asset jest gotowy, gdy:
 
 # Execution Protocol
 
+## 0. Runtime capability preflight
+
+Before the first production mutation in a session:
+- load `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`;
+- discover current connected tools;
+- build/reuse Tool Registry;
+- bind capabilities according to `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`;
+- require at least `scene_inspect=BOUND` and `python_execute=BOUND` for autonomous mesh mutation;
+- record any missing capability as a blocker instead of guessing an unavailable tool.
+
+Do not repeat capability discovery before every feature unless the binding becomes invalid.
+
 ## 1. Preflight
 
 - odczytaj Scene Snapshot,
@@ -7388,7 +7400,9 @@ Asset jest gotowy, gdy:
 - sprawdź jednostki,
 - sprawdź, czy asset już istnieje,
 - sprawdź Feature Contract,
-- sprawdź Build Plan.
+- sprawdź Build Plan,
+- wybierz `SELECTED SKILL ID` dla operacji, jeśli istnieje zarejestrowany semantic skill,
+- sprawdź wymagane capabilities wybranego skilla.
 
 ## 2. Create asset root
 
@@ -7425,6 +7439,11 @@ Po bevel:
 - segment count zgodny,
 - brak self-overlap.
 
+Po semantic skill operation:
+- skill-specific validation report exists,
+- feature ownership remains valid,
+- previously accepted MUST features have not regressed.
+
 ## 5. Checkpoint
 
 Nie kontynuuj, jeśli checkpoint FAIL.
@@ -7434,12 +7453,30 @@ Nie kontynuuj, jeśli checkpoint FAIL.
 Zapisuj:
 - przed ryzykownym Apply,
 - po zaakceptowanym dużym etapie,
-- przed exportem.
+- przed exportem,
+- przed strategy switch, jeżeli nowa strategia może istotnie zmienić topologię.
 
 ## 7. No silent repair
 
 Jeżeli wykonanie różni się od planu, zapisz to jako deviation.
 Nie zmieniaj strategii po cichu.
+
+## 8. Retry budget
+
+Obowiązuje `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md`.
+
+Ta sama operacja z tą samą strategią i tymi samymi preconditions może zostać wykonana maksymalnie dwa razy łącznie:
+- pierwsza próba,
+- jedna poprawiona próba po diagnostyce.
+
+Po drugiej porażce:
+- zatrzymaj ten call pattern,
+- wykonaj re-inspection,
+- sklasyfikuj failure,
+- przywróć checkpoint, jeśli scena została uszkodzona,
+- zmień strategię lub zgłoś blocker.
+
+Każdy retry musi wynikać z nowej informacji albo jawnej zmiany zwalidowanego precondition.
 
 
 ---
