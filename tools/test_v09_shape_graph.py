@@ -38,20 +38,30 @@ def main() -> None:
     graph["nodes"]["BODY"]["state"] = "ACCEPTED"
     assert sg.evaluate_stage_barrier(graph, "RDL1")["status"] == "PASS"
 
-    def proof(kind: str, pid: str) -> dict:
-        return {"status": "PASS", "evidence_kind": kind, "provenance_id": pid}
+    def proof(kind: str, pid: str, validator: str, *, source: str | None = None, reg: str | None = None) -> dict:
+        out = {
+            "status": "PASS",
+            "evidence_kind": kind,
+            "provenance_id": pid,
+            "validator_id": validator,
+        }
+        if source is not None:
+            out["source_reference_id"] = source
+        if reg is not None:
+            out["registration_id"] = reg
+        return out
 
     node_report = {
         "node_id": "BODY",
         "parent_status": "PASS",
         "strict_evidence": True,
         "required_views": ["FRONT", "SIDE"],
-        "isolation": proof("QA_SCENE_ISOLATION", "iso"),
-        "numeric_constraints": proof("NUMERIC_MEASUREMENT", "num"),
-        "regression": proof("REGRESSION_DIFF", "reg"),
+        "isolation": proof("QA_SCENE_ISOLATION", "iso", "QA_SCENE_ISOLATE"),
+        "numeric_constraints": proof("NUMERIC_MEASUREMENT", "num", "REFERENCE_MEASURE"),
+        "regression": proof("REGRESSION_DIFF", "reg", "REFERENCE_OVERLAY_VALIDATE"),
         "views": {
-            "FRONT": proof("REGISTERED_OVERLAY", "front"),
-            "SIDE": proof("REGISTERED_OVERLAY", "side"),
+            "FRONT": proof("REGISTERED_OVERLAY", "front", "REFERENCE_OVERLAY_VALIDATE", source="ref_front", reg="front_reg"),
+            "SIDE": proof("REGISTERED_OVERLAY", "side", "REFERENCE_OVERLAY_VALIDATE", source="ref_side", reg="side_reg"),
         },
     }
     assert ng.evaluate(node_report)["status"] == "ACCEPTED"
@@ -72,6 +82,7 @@ def main() -> None:
     assert loft_report["sample_count"] == 8
     assert loft_report["vertex_count"] == 24
 
+    completion_proof = {"status": "PASS", "evidence_kind": "RECON_FIDELITY_GATE", "provenance_id": "recon"}
     checks = {
         "shape_graph_validation": "PASS",
         "rdl_stage_barriers": "PASS",
@@ -79,7 +90,7 @@ def main() -> None:
         "canonical_silhouettes": "PASS",
         "must_features": "PASS",
         "multi_view_gate": "PASS",
-        "reconstruction_fidelity_gate": proof("RECON_FIDELITY_GATE", "recon"),
+        "reconstruction_fidelity_gate": completion_proof,
     }
     done = completion.evaluate_completion(checks, target_level="RECONSTRUCTION_COMPLETE")
     assert done["status"] == "PASS", done
