@@ -308,10 +308,11 @@ Load Task Pack `SESSION_PREFLIGHT`:
 - `02_blender_api/19_TOOL_DISCOVERY_AND_REGISTRY.md`
 - `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
 - `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`
+- `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md`
 - `02_blender_api/23_SCENE_INSPECTION.md`
 
-Before production mutation, bind the current connected tools to the semantic capabilities required by the selected skill.
-Do not assume that knowledge about Blender implies that the current integration can execute it.
+Route runtime/API discovery to `RUNTIME_COMPAT` before version-sensitive generated code.
+Before production mutation, bind connected tools to required semantic capabilities.
 
 ## Nowy asset hard-surface
 Load:
@@ -324,12 +325,14 @@ Load:
 - Modeling Decision Tree
 - Hard Surface Workflow
 - Game Asset Contract
+- `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`
 - Build Plan
 - Execution Protocol
 - Code Artifact and Patch Protocol when generating non-trivial Python
 - Retry Budget and Strategy Switching
 - Visual QA
 
+Set `TARGET_COMPLETION_LEVEL` during CONTRACT/PLAN.
 Do not preload UV/material/LOD/export modules before their state is reached.
 
 ## Axisymmetric / rotational hard-surface asset
@@ -341,14 +344,15 @@ Typical triggers:
 - stacked radial profile where most primary geometry shares one axis.
 
 Load:
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- Semantic Skill Registry
 - `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`
-- `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`
+- `11_playbooks/110_HARD_SURFACE_CIVIC_FURNITURE.md` for civic props
+- Code Artifact and Patch Protocol
 - Game Asset Contract
 - Feature Contract
 
 Route rotational master geometry to `AXISYMMETRIC_PROFILE` before writing another local `lathe()`/profile-revolve helper.
-
+For repeated radial fasteners/anchors route placement/annulus checks to `RADIAL_REPEAT`.
 Keep asymmetric service panels, decals, local emitters and similar features as separate feature owners.
 
 ## Poprawka istniejącego assetu
@@ -358,6 +362,7 @@ Load:
 - Feature Contract
 - Scene Inspection
 - API Strategy
+- Blender 5.1 Compatibility Matrix when runtime/API is involved
 - Idempotency/Recovery
 - Code Artifact and Patch Protocol if a build/QA script is being patched
 - Retry Budget and Strategy Switching
@@ -368,6 +373,7 @@ Load:
 ## Problem z Blender API
 Load:
 - API Strategy
+- Blender 5.1 Compatibility Matrix
 - Tool Discovery and Registry
 - Agent Tool API Profile
 - bpy.data vs bpy.ops vs BMesh
@@ -376,62 +382,100 @@ Load:
 - Tool Call Efficiency
 - Retry Budget and Strategy Switching
 
+Route capability enumeration, render-engine selection and stable root discovery to `RUNTIME_COMPAT` where possible.
+
 ## Procedural panel line / narrow groove
 Load:
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- Semantic Skill Registry
 - `blender-agent-procedural-hard-surface-panel-lines.md`
-- `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`
-- `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md`
+- Agent Tool API Profile
+- Retry Budget and Strategy Switching
 
-If the host surface is SubD-controlled or pinching/topology flow becomes relevant, additionally load:
-- `blender-agent-subdivision-topology-control.md`
-
+If the host is SubD-controlled or pinching/topology flow matters, additionally load `blender-agent-subdivision-topology-control.md`.
 Do not route wide/deep recesses or silhouette-changing features to `HS_PANEL_LINE`.
 
 ## Subdivision topology problem
 Load:
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- Semantic Skill Registry
 - `blender-agent-subdivision-topology-control.md`
-- `03_modeling/33_TOPOLOGY_NORMALS_SHADING.md`
-- `02_blender_api/21_BPY_DATA_OPS_BMESH.md`
-- `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md`
-
-Typical triggers:
-- support loops bunching around corners;
-- curved-surface pinching;
-- local density that should terminate;
-- cylindrical recess/protrusion on curved SubD surface;
-- branch junction cleanup;
-- pole-safe sphere requirement.
+- Topology/Normals/Shading
+- bpy.data/BMesh
+- Retry Budget
 
 ## Mesh / topology validation
-
-Route to semantic skill `MESH_VALIDATE`.
-
+Route to `MESH_VALIDATE`.
 Load:
 - `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`
-- `08_scripts/81_MESH_VALIDATION_SNIPPETS.md`
+- Mesh Validation Snippets
 - active Game Asset Contract
 
-Every mesh must declare topology intent before general PASS/FAIL:
+Every mesh declares topology intent before general PASS/FAIL:
 - CLOSED_SOLID;
 - OPEN_ASSEMBLY_PART;
 - SURFACE_DETAIL;
 - COLLISION.
 
-Do not treat boundary edges as harmless unless the object's contract explicitly allows them.
+## Civic material looks too clean / procedural
+Route to `MATERIAL_FINISH_CIVIC`.
+Load:
+- `11_playbooks/114_BRUSHED_METAL_AND_DARK_COMPOSITE.md`
+- Procedural Material Authoring
+- Lighting vs Material Disentanglement
+- Material Evidence Reconstruction when reference-driven
 
-## Optymalizacja do gry
-Load Task Pack `GAME_READY`:
+Do not add generic grunge. Build macro/meso/micro variation with manufacturing/exposure logic.
+
+## Integrated emissive / neon guidance feature
+Route to `EMISSIVE_HANDOFF`.
+Load:
+- `11_playbooks/115_INTEGRATED_LIGHT_STRIP.md`
+- `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md`
+- active Engine Profile if runtime glow must be verified
+
+Keep asset emitter correctness separate from bloom/exposure/tone-mapping behavior.
+
+## High -> low / procedural -> runtime bake
+Route runtime texture closure to `BAKE_RUNTIME_TEXTURES`.
+Load:
+- High-Poly / Low-Poly Workflow when geometric transfer is required
+- Baking Pipeline
+- `04_game_ready/50_GAME_READY_BAKE_GATE.md`
+- UV/Texel Density/Materials
+- Texture Packing and Mip Safety
+- active Engine Profile
+
+A separate high-poly source is not mandatory for every procedural-to-texture bake.
+
+## Game-ready finishing
+Use Task Pack `GAME_READY_FINISH` only after modeling/reconstruction acceptance.
+Load:
 - Game Asset Contract
 - Polycount/LOD/Collision
 - Pivots/Transforms
 - Texture/Material Runtime
+- Bake Gate
+- Emissive Runtime Handoff if applicable
 - active Engine Profile
 - active Project Asset Pipeline Profile
-- glTF Export
+- glTF/export module
 - Final Validation
 - `MESH_VALIDATE`
+- Completion Levels
+- Completeness Report
+
+Before claiming Level C route final status through `ASSET_COMPLETION`.
+
+## Project/asset catalog integration
+Use Task Pack `PIPELINE_INTEGRATION` only when target is Level D.
+Load:
+- Asset Catalog Integration Protocol
+- Engine Adapter Protocol
+- Project Asset Pipeline Profile
+- Authoring to Runtime Handoff
+- Completeness Report
+
+Route catalog work to `ASSET_CATALOG_INTEGRATE`.
+If catalog write capability is missing, Level D is BLOCKED rather than silently skipped.
 
 ## Asset modularny
 Dodatkowo:
@@ -447,49 +491,37 @@ Load:
 - Feature Contract
 - Visual QA
 - Final Validation
+- Completion Levels
+- Completeness Report
 - Reviewer Prompt
 
 ## Token budget rule
 
 Jeżeli agent potrzebuje jednej informacji, nie ładuj całego folderu.
-Najpierw użyj Task Pack, potem routera, potem najwęższego modułu.
+Najpierw Task Pack, potem router, potem najwęższy moduł.
 
-Zawsze stosuj `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`:
+Zawsze stosuj Tool Call and Token Efficiency:
 - obliczaj lokalnie;
 - agreguj;
-- nie wysyłaj raw arrays/profiles do LLM bez konkretnego diagnostic need;
+- nie wysyłaj raw arrays/profiles bez diagnostic need;
 - nie echoj pełnych wygenerowanych skryptów/patchy, jeśli kod jest już artefaktem na dysku.
 
-Dla kodu używaj `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`.
+Dla kodu używaj Code Artifact and Patch Protocol.
 
 ## Retry budget rule
 
 Po pierwszej porażce agent diagnozuje i może wykonać tylko jedną poprawioną próbę tej samej strategii.
-Po drugiej porażce tej samej strategii musi załadować `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md`, przeprowadzić re-inspection i zmienić strategię albo zatrzymać zadanie jako blocker.
-
-## High -> low + bake
-Load:
-- High-Poly / Low-Poly Workflow
-- Baking Pipeline
-- UV/Texel Density/Materials
-- Texture Packing and Mip Safety
-- Automated Visual Diff
-- Authoring to Runtime Handoff
+Po drugiej porażce: re-inspection + strategy switch/blocker.
 
 ## Trim-sheet UV texturing
 Load:
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
-- `03_modeling/40_TRIM_SHEETS.md`
-- `03_modeling/34_UV_TEXEL_DENSITY_MATERIALS.md`
-- `04_game_ready/43_TEXTURE_MATERIAL_RUNTIME.md`
-- `04_game_ready/47_TEXTURE_PACKING_AND_MIP_SAFETY.md`
+- Semantic Skill Registry
+- Trim Sheets
+- UV/Texel Density/Materials
+- Texture/Material Runtime
+- Texture Packing and Mip Safety
 
-If unique local graphics are present, additionally load:
-- `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md`
-
-If runtime material/draw-call cost is part of the task, additionally load:
-- `04_game_ready/46_DRAW_CALLS_INSTANCING_AND_BATCHING.md`
-- the active Engine Profile.
+If unique local graphics exist, additionally load Decals and Floating Details.
 
 ## Procedural / repeated asset
 Load:
@@ -501,61 +533,53 @@ Load:
 
 ## Reference reconstruction
 Load first:
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
-- `00_governance/06_TASK_PACK_PROTOCOL.md`
-- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
+- Semantic Skill Registry
+- Task Pack Protocol
+- Reconstruction Controller
 
-Then load only the modules required by the current/failing reconstruction stage.
-
-Do not load detail/modeling skills before the controller has passed camera, scale, silhouette and primary-form gates.
-
-When a validated detail feature is reached, route it through the Semantic Skill Registry rather than improvising a modeling technique.
+Then load only the modules required by current/failing stage.
+Do not load detail/modeling skills before camera, scale, silhouette and primary-form gates pass.
 
 ## Technical concept sheet / blueprint ANALYZE
-
 Use Task Pack `RECON_TECHNICAL_SHEET_ANALYZE`.
 
 Required core:
-- `10_reconstruction/102_EVIDENCE_MODEL.md`
-- `10_reconstruction/103_REFERENCE_INGESTION_PROTOCOL.md`
-- `10_reconstruction/106_VIEW_AUTHORITY_MATRIX.md`
-- `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`
-- `10_reconstruction/160_BLUEPRINT_AND_TECHNICAL_DRAWING_MODE.md`
-- `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`
-- `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`
-- `06_prompts/67_CONCEPT_SHEET_INGEST_PROMPT.md`
+- Evidence Model
+- Reference Ingestion
+- View Authority Matrix
+- Reference Measurement Protocol
+- Blueprint/Technical Drawing Mode
+- Reference Analysis Cache
+- Reference Measurement Executor Pattern
+- Concept Sheet Ingest Prompt
 
-Route technical image measurement to semantic skill `REFERENCE_MEASURE`.
-
-After segmentation and calibration are validated:
-- reuse cached ROI/view authority/dimensions;
-- do not rescan the full sheet;
-- re-enter analysis only for a specific failing ROI, metric, feature or source update.
-
-Do not read unrelated sibling build scripts for project conventions if an active `PROJECT_ASSET_PIPELINE_PROFILE.md` is available.
-If no profile exists, inspect the smallest relevant range and persist the discovered convention according to `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md`.
+Route measurement to `REFERENCE_MEASURE`.
+After segmentation/calibration pass, reuse cached ROI/authority/dimensions and do not rescan the full sheet.
 
 ## Runtime integration
 Load:
 - Agent Tool API Profile
+- Blender 5.1 Compatibility Matrix
 - Game Asset Contract
 - Engine Profile Schema
 - Engine Adapter Protocol
 - Project Asset Pipeline Profile Schema
+- Asset Catalog Integration Protocol when Level D is required
 - Authoring to Runtime Handoff
 - właściwy format eksportu
 
 ## Full 1:1 reconstruction
 
 Load core:
-- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
-- `00_governance/06_TASK_PACK_PROTOCOL.md`
-- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
-- `10_reconstruction/101_DEFINITION_OF_1_TO_1.md`
-- `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`
-- `10_reconstruction/155_RECONSTRUCTION_KNOWLEDGE_ROUTING.md`
+- Semantic Skill Registry
+- Task Pack Protocol
+- Reconstruction Controller
+- Definition of 1:1
+- Reconstruction State Machine
+- Reconstruction Knowledge Routing
+- Completion Levels
 
-Then load only the current Task Pack/stage pack.
+Then load only current Task Pack/stage pack.
 
 ### Concept sheet ingest
 - 102–109
@@ -568,8 +592,9 @@ Then load only the current Task Pack/stage pack.
 ### Geometry solve
 - 110–123
 - 128–134
-- appropriate `11_playbooks`
-- `AXISYMMETRIC_PROFILE` when the primary form is rotationally symmetric
+- appropriate playbooks
+- `AXISYMMETRIC_PROFILE` when primary form is rotationally symmetric
+- `RADIAL_REPEAT` for circular repeated details
 
 ### Rear/bottom
 - 119
@@ -579,16 +604,17 @@ Then load only the current Task Pack/stage pack.
 ### Surface
 - 124–127
 - 140
-- appropriate material playbook
+- material playbook 114 where applicable
+- integrated light playbook 115 where applicable
 
 ### Reconstruction QA
 - 141–148
 - scripts 81, 83, 86–90, 92
 - prompt 65
 
-### Lafar bench benchmark
-- example 73
-- playbooks 110, 111, 112, 113, 114, 115, 116, 117
+### Benchmarks
+- `07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md`
+- `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md`
 
 
 ---
