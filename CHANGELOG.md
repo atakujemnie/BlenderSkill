@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.1
+## Unreleased
 
 Integrated two reviewed production skills without creating redundant parallel modules:
 - expanded `03_modeling/40_TRIM_SHEETS.md` into a full semantic trim-sheet UV texturing skill;
