@@ -2,7 +2,87 @@
 
 ## Unreleased
 
-No canonical changes after the v0.5.0 release baseline yet.
+No canonical changes after the v0.6.0 release baseline yet.
+
+## 0.6.0
+
+v0.6.0 is the **deterministic bake/runtime closure** release. It is based on the continuing Lafar Civic Bollard v0.5 production run, where reconstruction/geometry quality was already strong but the game-ready continuation had consumed roughly 36k tokens at the captured point while still debugging bake/UV/export infrastructure.
+
+### Deterministic bake execution
+- added `04_game_ready/51_BAKE_EXECUTION_AND_CHANNEL_SEMANTICS.md`;
+- bake operator result must contain `FINISHED`; silent `CANCELLED` is a hard failure;
+- multi-material bake target nodes follow verified selection order: deselect all -> select target -> set active -> verify;
+- added explicit authored-channel semantics for BaseColor, Roughness, Metallic, AO, Normal and Emissive;
+- metallic BaseColor is no longer generically derived from DIFFUSE response;
+- Emissive accounts for color + strength, supports reference-strength normalization and forbids baked bloom;
+- AO/ray-dependent bake requires non-destructive scene isolation.
+
+### Stable UV/LOD contract
+- added `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`;
+- introduced semantic part IDs and `UV_CONTRACT_ID` as canonical atlas ownership;
+- Blender `.001/.002` suffixes are explicitly non-semantic;
+- missing atlas assignment is a hard FAIL instead of a silent skip;
+- bake source and every consuming runtime LOD must use the same declared UV contract;
+- external decal/dynamic-display UV owners remain separate from structural bake atlases;
+- min/max UV rect normalization is documented as a compatibility method, not universally correct cross-LOD correspondence.
+
+### Incremental execution and long-running work
+- added `05_execution/64_LONG_RUNNING_JOB_AND_POLL_PROTOCOL.md`;
+- tool/MCP timeout is distinguished from proven Blender job failure;
+- expensive jobs are inspected through job/artifact state before retry;
+- added Blender threading caution instead of moving arbitrary `bpy` mutation into background threads;
+- added `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`;
+- local fixes now dirty only dependent channels/artifacts when possible;
+- accepted BaseColor/Normal/AO/etc. should be reused rather than full rebake after an unrelated local repair.
+
+### Bake validation
+- added `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`;
+- bake output validation is semantic and region-aware rather than "PNG exists";
+- validates image degeneracy, ranges, expected material regions, AO plausibility, metal/dielectric regions, emissive containment and clipping;
+- final surface QA must use runtime LOD + baked runtime material, not only the original procedural material.
+
+### Import-safe script architecture
+- added `08_scripts/94_IMPORT_SAFE_PYTHON_MODULE_PATTERN.md`;
+- reusable build/bake/export modules may not execute production work merely when imported for helpers;
+- production entrypoints are explicitly guarded;
+- source, bake scratch, export scratch and QA scratch collection ownership are separated;
+- clearing/reset helpers must make destructive behavior explicit;
+- caller-owned source objects must not be removed or overwritten by nested helper calls.
+
+### Runtime packaging
+- added `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`;
+- project-specific LOD packaging, collision representation, node naming, handedness/mirror compensation, material binding and image URI policy are persisted in Engine/Project profiles;
+- asymmetric branding/service details are required for handedness verification when relevant;
+- exported glTF/module content is read back instead of trusting export console success;
+- verified project packaging facts should not be rediscovered from long sibling exporter scripts per asset.
+
+### Reusable v0.6 executors
+- added `executors/bake_runtime_textures.py` with deterministic target-node binding, checked bake operator results and direct Principled channel extraction;
+- added `executors/uv_atlas_contract.py` with semantic part IDs, atlas rect validation and explicit missing-assignment failures;
+- added `executors/bake_validate.py` for compact image/region statistics and emissive containment validation;
+- added `executors/gltf_package_validate.py` for pure-Python glTF node/material/image readback;
+- new v0.6 executors remain `CONTRACT_READY` until a later real Blender benchmark proves them end-to-end.
+
+### First executor maturity promotion
+- `MESH_VALIDATE` is promoted from `CONTRACT_READY` to `EXECUTOR_READY`;
+- runtime evidence comes from the Lafar Civic Bollard continuation under Blender 5.1;
+- the executor correctly rejected a non-canonical topology intent vocabulary and then validated nine asset parts with the canonical intent set;
+- future sessions still require runtime binding/import capability before calling it `RUNTIME_BOUND`.
+
+### Task packs and system prompt
+- `GAME_READY_FINISH` now has an internal order: UV contract -> dirty graph -> bake -> bake validation -> runtime material -> package export -> package readback -> baked-runtime QA -> completion gate;
+- the pack prefers the new bake/UV/validation/package executors;
+- System Prompt now treats bake target binding, `FINISHED` operator result, semantic UV identity, dirty-stage reuse, long-job timeout handling and exported readback as hard rules;
+- Knowledge Router includes measured failure routes for cancelled bake, black AO, metallic BaseColor failure, emissive contamination, UV mismatch and export-package mismatch.
+
+### Regression benchmark
+- added `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`;
+- captured user-reported ~36k-token v0.5 game-ready continuation before full bake closure;
+- transcript contained ~20 Blender Python execution calls and multiple full/repeated bake corrections;
+- records 14 concrete failure classes: target-node binding, silent cancellation, AO contamination, channel semantics, UV suffix/LOD mismatch, decal contamination, import side effects, collection ownership, packaging rediscovery, repeated full rebakes and timeout handling;
+- preferred v0.6 target for a standard accepted hard-surface prop GAME_READY_FINISH stage: <=15k operational tokens, <=10 Blender Python mutation calls, <=2 full multichannel bake runs, zero accepted silent-cancelled bakes.
+
+Canonical module count after manifest release: **190**.
 
 ## 0.5.0
 
