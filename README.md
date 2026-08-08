@@ -124,8 +124,6 @@ Przejście do następnego etapu jest dozwolone dopiero po spełnieniu kryteriów
 - `06_prompts` — gotowe role i szablony promptów.
 - `07_examples` — przykłady planowania assetów.
 - `08_scripts` — bezpieczne fragmenty kodu audytowego.
-- `10_reconstruction` — pełna warstwa rekonstrukcji 1:1.
-- `11_playbooks` — playbooki klas assetów i technik.
 - `99_sources` — źródła techniczne.
 
 ## Minimalny zestaw plików ładowanych przez agenta
