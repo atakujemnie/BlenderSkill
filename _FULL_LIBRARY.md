@@ -890,14 +890,25 @@ Jeżeli nie spełnia żadnego z powyższych, kandydat do usunięcia.
 
 ## Cel
 
-Zamienić obraz referencyjny na zestaw relacji liczbowych.
+Zamienić obraz referencyjny na zestaw relacji liczbowych bez przenoszenia surowych danych pomiarowych do kontekstu LLM.
+
+## Preferred execution
+
+Jeżeli runtime pozwala na analizę obrazu przez Python/NumPy lub równoważne narzędzie, użyj kontraktu:
+
+`08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`
+
+Model językowy powinien otrzymać agregaty, confidence i konflikty — nie setki wartości per-row/per-column.
 
 ## Known dimension anchor
 
 Jeżeli znany jest co najmniej jeden wymiar:
 1. wybierz wymiar dobrze widoczny w referencji,
 2. wyznacz skalę piksel -> jednostka,
-3. mierz tylko elementy w tej samej płaszczyźnie lub po korekcji perspektywy.
+3. mierz tylko elementy w tej samej płaszczyźnie lub po korekcji perspektywy,
+4. zapisz anchor w Reference Analysis Cache.
+
+Jeżeli wymiar jest jawnie podany liczbowo w zatwierdzonym prompt/rysunku, traktuj go jako silniejszy dowód niż wymiar wyprowadzony z perspektywicznego hero renderu.
 
 ## Brak wymiaru absolutnego
 
@@ -916,12 +927,17 @@ Nie wyprowadzaj bezpośrednich wymiarów z:
 - nieznanego focal length,
 - elementów leżących w różnych głębokościach.
 
+Perspective hero może służyć do oceny formy i widoczności detali, ale nie może nadpisać jawnego wymiaru lub zgodnych ortho views.
+
 ## Multi-view
 
 Jeżeli istnieją front/side/top:
 - każdy wymiar bierz z widoku, w którym jest najmniej zniekształcony,
-- wymiary wspólne muszą się zgadzać,
+- wymiary wspólne mierz niezależnie,
+- porównuj aggregate deviation,
 - sprzeczność zapisuj jako reference conflict.
+
+Po uzyskaniu zgodności nie utrzymuj w aktywnym kontekście pełnych profili pomiarowych.
 
 ## Measurement table
 
@@ -933,6 +949,31 @@ Jeżeli istnieją front/side/top:
 | gap | 0.012 m | detail | LOW |
 
 LOW confidence nie powinno sterować destrukcyjną geometrią bez checkpointu.
+
+## Measurement output budget
+
+Normalny pomiar zwraca tylko:
+- accepted value/ratio;
+- source view/ROI;
+- confidence;
+- aggregate variance/deviation;
+- conflict/warning;
+- feature/metric ID.
+
+Nie zwracaj domyślnie:
+- całych masek pikselowych;
+- setek punktów profilu;
+- każdej wartości wiersza/kolumny;
+- wszystkich prób threshold.
+
+Jeżeli występuje błąd, uruchom diagnostykę tylko na minimalnym ROI.
+
+## Cache rule
+
+Przed pomiarem sprawdź `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`.
+
+Jeżeli ROI, calibration anchor i wynik są już zwalidowane dla niezmienionego źródła, użyj cache.
+Nie mierz ponownie całego arkusza tylko dlatego, że agent rozpoczął kolejny etap.
 
 
 ---
@@ -13082,6 +13123,37 @@ Priorytet:
 - tolerances,
 - symbols.
 
+## Source Authority Order
+
+Dla plansz technicznych i technical concept sheets stosuj domyślnie:
+
+```text
+1. explicit numeric dimensions / explicit datum
+2. orthographic FRONT / SIDE / TOP / BOTTOM / REAR views
+3. real section/cross-section views
+4. detail close-ups
+5. perspective hero render
+6. approximate textual ranges / marketing prose
+7. visual inference
+```
+
+Wyższy authority wygrywa przy konflikcie.
+
+Przykład:
+- prompt mówi `Ø140 mm`;
+- FRONT i SIDE są z tym zgodne;
+- hero render wygląda na lekko zwężony przez perspektywę.
+
+Wynik: `Ø140 mm` pozostaje `LOCKED`. Nie wykonuj kolejnych iteracji próbujących dopasować cylinder do perspektywicznego zwężenia hero renderu.
+
+## Prompt vs drawing
+
+Jeżeli prompt podaje dokładny wymiar, a sama plansza ma tylko zakres przybliżony, exact value ma wyższy authority.
+
+Jeżeli prompt mówi `około 90–110 mm`, a ortograficzny widok i dimension line pozwalają wyprowadzić dokładniejszy wymiar, zapisz zakres jako constraint pomocniczy, nie jako blokadę dokładnej wartości.
+
+Nigdy nie zamieniaj słowa `około` na `LOCKED` bez dodatkowego dowodu.
+
 ## Nie interpretuj linii pomocniczych jako geometrii
 
 Rozróżnij:
@@ -13090,21 +13162,49 @@ Rozróżnij:
 - centerline,
 - dimension line,
 - leader,
-- hatch.
+- hatch,
+- page/layout separator.
+
+Przy automatycznym pomiarze dimension line lub leader blisko sylwetki jest potencjalną kontaminacją maski, nie częścią obiektu.
 
 ## Datum system
 
 Jeżeli drawing definiuje bazę:
 użyj jej jako origin/alignment.
 
+Jawny datum/origin ma pierwszeństwo przed wizualnym środkiem obiektu na hero renderze.
+
 ## Sections
 
 Przekrój ma wyższy authority dla lokalnej grubości niż hero render.
 
-## Marketing blueprint
+## Orthographic consistency
+
+Jeżeli FRONT i SIDE pokazują wspólny wymiar:
+- zmierz je niezależnie;
+- porównaj po kalibracji;
+- zapisz aggregate deviation;
+- nie przesyłaj do LLM pełnych profili wiersz po wierszu.
+
+Jeżeli wynik mieści się w aktywnej tolerancji, oznacz `CONSISTENT` i zakończ ten test.
+
+## Marketing blueprint / technical concept sheet
 
 Jeżeli plansza tylko naśladuje dokumentację techniczną:
-nie zakładaj standardów ISO/ASME bez dowodu.
+- nie zakładaj standardów ISO/ASME bez dowodu;
+- traktuj jawne liczby i ortograficzne widoki jako silny dowód projektowy;
+- traktuj marketingowe opisy funkcji jako semantykę, nie jako metrologię;
+- nie zakładaj, że ozdobne linie, ikony lub layout są częścią assetu.
+
+## Completion rule
+
+Po ustaleniu:
+- source authority,
+- zwalidowanych ROI,
+- locked dimensions,
+- cross-view consistency,
+
+zapisz je w `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md` i nie analizuj szeroko całej planszy ponownie bez konkretnego conflict/ROI failure.
 
 
 ---
