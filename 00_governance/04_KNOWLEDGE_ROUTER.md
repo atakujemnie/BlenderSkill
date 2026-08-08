@@ -65,7 +65,6 @@ Load:
 Jeżeli agent potrzebuje jednej informacji, nie ładuj całego folderu.
 Najpierw użyj routera, potem najwęższego modułu.
 
-
 ## High -> low + bake
 Load:
 - High-Poly / Low-Poly Workflow
@@ -74,6 +73,20 @@ Load:
 - Texture Packing and Mip Safety
 - Automated Visual Diff
 - Authoring to Runtime Handoff
+
+## Trim-sheet UV texturing
+Load:
+- `03_modeling/40_TRIM_SHEETS.md`
+- `03_modeling/34_UV_TEXEL_DENSITY_MATERIALS.md`
+- `04_game_ready/43_TEXTURE_MATERIAL_RUNTIME.md`
+- `04_game_ready/47_TEXTURE_PACKING_AND_MIP_SAFETY.md`
+
+If unique local graphics are present, additionally load:
+- `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md`
+
+If runtime material/draw-call cost is part of the task, additionally load:
+- `04_game_ready/46_DRAW_CALLS_INSTANCING_AND_BATCHING.md`
+- the active Engine Profile.
 
 ## Procedural / repeated asset
 Load:
@@ -84,13 +97,18 @@ Load:
 - Draw Calls/Instancing/Batching
 
 ## Reference reconstruction
-Load:
+Load first:
+- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
+
+Then load only the modules required by the failing or current reconstruction stage:
 - Reference Decomposition
 - Reference Measurement Protocol
 - Camera and Reference Matching
 - Visual Feature Map
 - Reference Fidelity Protocol
 - Automated Visual Diff
+
+Do not load detail/modeling skills before the controller has passed camera, scale, silhouette and primary-form gates.
 
 ## Runtime integration
 Load:
