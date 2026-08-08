@@ -18048,53 +18048,85 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## Unreleased
 
-Integrated two reviewed production skills without creating redundant parallel modules:
-- expanded `03_modeling/40_TRIM_SHEETS.md` into a full semantic trim-sheet UV texturing skill;
-- integrated the reference-image proportion/silhouette workflow into `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` as the high-level reconstruction controller;
-- added explicit trim-sheet routing and controller-first reference routing to the Knowledge Router.
+No canonical changes after the v0.5.0 release baseline yet.
 
-Important integration corrections:
-- texel density is now unit-explicit (`px_per_m`) instead of a bare numeric value;
-- intentional trim-sheet UV reuse is distinguished from accidental overlap;
-- trim-sheet reuse is not treated as an automatic draw-call reduction;
-- persistent surface identity should not rely only on transient polygon indices;
-- reconstruction confidence vocabulary is aligned with the existing `LOCKED/HIGH/MEDIUM/LOW/UNKNOWN` ledger;
-- image-space quality thresholds are defined as overridable heuristics, not universal hard limits.
+## 0.5.0
 
-Agent-runtime readiness pass:
-- added `00_governance/05_SEMANTIC_SKILL_REGISTRY.md` as the stable intent -> skill -> capability -> validation routing layer;
-- added `02_blender_api/28_AGENT_TOOL_API_PROFILE.md` with required runtime capabilities, discovery/binding states and preflight rules;
-- added `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md` to stop blind repeated API/tool attempts;
-- registered `HS_PANEL_LINE` and `SUBD_TOPOLOGY_CONTROL` as canonical skills;
-- added the existing panel-line and SubD skill files to `MANIFEST.json`, so they are now included in `_FULL_LIBRARY.md`;
-- expanded the Knowledge Router with session preflight, panel-line routing, SubD routing and retry-budget loading;
-- updated the system prompt to require capability binding, semantic skill selection and a strategy switch after repeated failure;
-- canonical module count increased from 163 to 168.
+v0.5.0 is the first benchmark-driven **agent execution + completion** release. It incorporates lessons from the real Lafar Civic Bollard run (~60k-token baseline, final human visual assessment 9/10) and converts them into routing, reusable executors, runtime gates and truthful completion states.
 
-Reference-analysis efficiency pass based on the first real technical-sheet reconstruction test:
-- added `00_governance/06_TASK_PACK_PROTOCOL.md` to bound active knowledge by state/task subtype and prevent loading later-stage modules too early;
-- expanded `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md` with a strict Tool Output Budget and `SUMMARY -> DIAGNOSTIC -> RAW` progressive disclosure policy;
-- added `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` and registered semantic skill `REFERENCE_MEASURE` for local pixel/NumPy measurement with compact aggregate outputs;
-- added candidate runnable implementation `executors/reference_measure.py`; it stays `CONTRACT_READY` until validated in a real Blender runtime;
-- added `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md` so validated view ROIs, dimensions, calibration and authority decisions are reused instead of repeatedly rediscovered;
-- added `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md` to separate project naming/material/decal/path conventions from sibling asset geometry scripts;
-- updated technical-sheet authority to `explicit numeric dimensions/datum > orthographic views > sections > details > perspective hero > approximate prose > visual inference`;
-- updated ingest and measurement protocols to reject raw pixel/profile dumps during normal operation and localize diagnostics to failing ROIs;
-- updated system prompt and Knowledge Router to require task packs, cache reuse and output aggregation;
-- canonical module count increased from 168 to 172.
+### Completion and runtime closure
+- added `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md` with explicit levels: `RECONSTRUCTION_COMPLETE`, `MODELING_COMPLETE`, `GAME_READY_COMPLETE`, `PIPELINE_INTEGRATED`;
+- added `05_execution/63_REFERENCE_TO_RUNTIME_COMPLETENESS_REPORT.md` so exported-but-unbaked/unintegrated assets cannot be reported as unconditionally DONE;
+- expanded Game Asset Contract and Final Validation with completion target, bake/runtime material state, emissive state and catalog integration;
+- clarified `10_reconstruction/159_RECONSTRUCTION_DEFINITION_OF_DONE.md` as reconstruction acceptance rather than full game-asset completion.
 
-Execution-efficiency and geometry-validation pass based on the continuing Lafar Civic Bollard test:
-- added `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md` so generated build/QA scripts stay as disk artifacts instead of being echoed back into model context after every create/patch;
-- hardened Tool Output Budget against full-source and oversized patch echo;
-- added semantic skill `AXISYMMETRIC_PROFILE` with canonical `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md` and candidate `executors/axisymmetric_profile.py`, so rotational civic props do not need to rewrite local `lathe()` infrastructure;
-- added semantic skill `MESH_VALIDATE`, `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md` and candidate `executors/mesh_validate.py`;
-- added mandatory per-object topology intent: `CLOSED_SOLID`, `OPEN_ASSEMBLY_PART`, `SURFACE_DETAIL`, `COLLISION`;
-- final validation may no longer claim generic mesh PASS while boundary/non-manifold edges exist without an explicit topology contract;
-- QA render pattern now isolates unrelated scene objects non-destructively and distinguishes viewport visibility from render visibility;
-- added visible-feature proof for floating panels/emitters to catch geometry hidden behind its host surface;
-- strengthened geometry-vs-material/light discipline so geometry is not enlarged merely to become more readable under one QA lighting setup;
-- Knowledge Router and system prompt now route axisymmetric geometry, code artifacts and contract-aware validation explicitly;
-- canonical module count increased from 172 to 175.
+### Blender 5.1 compatibility
+- added `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md` based on observed runtime traps;
+- added `executors/runtime_compat.py` for render-engine/property/path discovery;
+- captured unsaved `.blend` path risk, viewport-vs-render visibility, import-time builder side effects and mutable default capture;
+- updated API strategy and session preflight to discover version-sensitive behavior instead of guessing it.
+
+### Execution acceleration
+- retained/registered candidate executors for reference measurement, axisymmetric profile generation and mesh validation;
+- added `executors/radial_repeat.py` for radial fastener placement and annulus containment;
+- added `executors/qa_scene_isolation.py` for non-destructive render isolation;
+- added `executors/completion_gate.py` for machine-readable completion evaluation;
+- expanded Semantic Skill Registry with `RADIAL_REPEAT`, `RUNTIME_COMPAT`, `QA_SCENE_ISOLATE`, `MATERIAL_FINISH_CIVIC`, `EMISSIVE_HANDOFF`, `BAKE_RUNTIME_TEXTURES`, `ASSET_COMPLETION`, `ASSET_CATALOG_INTEGRATE`;
+- candidate executors remain `CONTRACT_READY` until individually benchmarked in the active runtime.
+
+### Surface and material finish
+- substantially expanded `11_playbooks/114_BRUSHED_METAL_AND_DARK_COMPOSITE.md` with macro/meso/micro breakup, channel separation, restrained civic wear and exposure/manufacturing logic;
+- material target is maintained/used/not-sterile, not generic global grunge;
+- expanded civic hard-surface playbook with structural subtype routing and dedicated axisymmetric fast path.
+
+### Emissive/runtime separation
+- added `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md`;
+- expanded Integrated Light Strip playbook;
+- separated emitter geometry/mask/color/export from engine bloom/exposure/tone mapping;
+- final runtime neon/glow may remain `UNVERIFIED` even when Blender emitter authoring passes.
+
+### Bake gate
+- added `04_game_ready/50_GAME_READY_BAKE_GATE.md`;
+- corrected the assumption that every bake requires a separate high-poly mesh;
+- procedural-to-texture bake can use authoring geometry, while high-to-low detail transfer requires an appropriate high-detail source;
+- Level C cannot pass while Blender-only procedural effects have no runtime disposition.
+
+### Floating detail and decal hardening
+- expanded `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md` with the explicit rule that floating geometry adds surfaces but cannot cut negative depth from the host;
+- visible floating panels/emitters require visibility/occlusion proof;
+- authoritative logo/branding sources must be used when supplied instead of guessed geometry/font approximations;
+- LOD/export rebuilds must not delete decal owners through import-time side effects.
+
+### Pipeline integration
+- added `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` for stable asset IDs, conflict classification, registration readback and importer smoke tests;
+- Level D is BLOCKED when project catalog write capability is missing rather than silently downgraded.
+
+### Task packs and routing
+- expanded Task Pack Protocol with `SURFACE_FINISH`, `GAME_READY_FINISH` and `PIPELINE_INTEGRATION`;
+- Knowledge Router now routes compatibility, radial repetition, civic material finish, emissive handoff, bake closure and final completion explicitly;
+- System Prompt now requires target completion level and truthful end-state reporting.
+
+### Benchmarking
+- added `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md` as the first real end-to-end B7 benchmark;
+- baseline: ~60k tokens, final geometry 210×210×1050 mm, LOD0/1/2/3 = 2716/1152/480/128 tris, collision = 88 tris;
+- records real detected failures: loose/duplicate geometry, dimension overshoot, fastener annulus overflow, hidden emitter, destructive builder import, material exposure issue;
+- target for equivalent v0.5 run: no quality regression and at least 35% token reduction, preferred <=35k total;
+- expanded Agent Evaluation Harness with B7 end-to-end completion and efficiency metrics.
+
+### Previous v0.5 development passes folded into release
+- production-grade Trim Sheet semantic skill integration;
+- reconstruction controller integration without duplicate parallel skills;
+- Semantic Skill Registry and Agent Tool API Profile;
+- Retry Budget and Strategy Switch;
+- Tool Output Budget and Task Packs;
+- Reference Analysis Cache and measurement executor pattern;
+- Project Asset Pipeline Profile schema;
+- Code Artifact and Patch Protocol;
+- `AXISYMMETRIC_PROFILE` semantic primitive;
+- `MESH_VALIDATE` topology-intent-aware validation;
+- canonical panel-line and SubD topology skills.
+
+Canonical module count: **182**.
 
 ## 0.3.0
 
