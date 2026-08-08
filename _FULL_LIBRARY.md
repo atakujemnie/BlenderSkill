@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.3.0 — Full compiled snapshot
+# Blender AI Agent Library v0.5.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -1112,6 +1112,204 @@ Before ending the task:
 2. run `ASSET_COMPLETION` contract;
 3. emit `05_execution/63_REFERENCE_TO_RUNTIME_COMPLETENESS_REPORT.md`;
 4. only use unconditional `DONE` if the requested target level passes.
+
+
+---
+
+## FILE: `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`
+
+# Asset Completion Levels and Stop Conditions
+
+## Purpose
+
+An AI Blender agent must never use the word `DONE` without declaring **what level is complete**.
+
+A visually convincing render is not equivalent to a complete game asset.
+A successful export is not equivalent to pipeline integration.
+
+The asset lifecycle has four explicit completion levels.
+
+```text
+A RECONSTRUCTION_COMPLETE
+-> B MODELING_COMPLETE
+-> C GAME_READY_COMPLETE
+-> D PIPELINE_INTEGRATED
+```
+
+A higher level requires all lower levels to pass.
+
+---
+
+# Level A — `RECONSTRUCTION_COMPLETE`
+
+The reference-driven object is geometrically and visually solved.
+
+Required:
+- hard dimensions pass;
+- canonical silhouettes pass;
+- primary proportions pass;
+- all reference-required MUST features have owners;
+- branding/signage placement is correct or explicitly deferred to surface authoring;
+- rear/bottom/hidden evidence has been handled according to authority policy;
+- unresolved geometry is listed;
+- multi-view regression gate passes.
+
+Not required yet:
+- final texture bake;
+- runtime LOD package;
+- collision;
+- engine integration.
+
+Output status example:
+
+```yaml
+completion:
+  reconstruction: PASS
+  modeling: NOT_EVALUATED
+  game_ready: NOT_EVALUATED
+  pipeline_integrated: NOT_EVALUATED
+  highest_level: RECONSTRUCTION_COMPLETE
+```
+
+---
+
+# Level B — `MODELING_COMPLETE`
+
+The editable Blender asset is production-clean as an authoring asset.
+
+Requires Level A plus:
+- final intended authoring geometry exists;
+- topology intent is declared for each mesh;
+- mesh validation passes;
+- UV strategy is complete;
+- material segmentation is complete;
+- decals/branding are represented by the intended pipeline;
+- transforms/pivot/naming pass;
+- authoring source is saved;
+- no temporary helper or QA object contaminates the production collection.
+
+A procedural Blender shader may still exist at this level.
+
+`MODELING_COMPLETE` does **not** mean the game-runtime texture/material package is complete.
+
+---
+
+# Level C — `GAME_READY_COMPLETE`
+
+The asset can be consumed by the target runtime without relying on undefined Blender-only state.
+
+Requires Level B plus:
+- active Game Asset Contract;
+- active Engine Profile or explicit neutral-baseline contract;
+- LODs validated;
+- collision validated;
+- material count/draw-call implications validated;
+- procedural material effects either baked, recreated in runtime, or explicitly removed;
+- required BaseColor/Normal/ORM/Emissive or engine-specific texture outputs exist;
+- emissive authoring/runtime handoff is documented;
+- exported files pass post-export validation;
+- protected reconstruction features survive optimization.
+
+If the Engine Profile is absent, runtime status remains `UNVERIFIED` and Level C cannot be claimed for an engine-specific task.
+
+---
+
+# Level D — `PIPELINE_INTEGRATED`
+
+The asset is not only exported; it is registered and usable inside the actual project pipeline.
+
+Requires Level C plus:
+- stable project asset ID;
+- destination path conforms to Project Asset Pipeline Profile;
+- LODs/collision/textures are associated with the correct asset entry;
+- no unintended overwrite of an existing asset;
+- asset catalog/registry/import database integration is complete where the project requires one;
+- engine/project import succeeds;
+- an instantiation/use test succeeds or is explicitly marked unavailable;
+- pipeline integration report is persisted.
+
+If the project has a catalog but the agent has no capability to register the asset, report:
+
+```text
+GAME_READY_COMPLETE
+PIPELINE_INTEGRATED: BLOCKED
+reason: ASSET_CATALOG_WRITE_CAPABILITY_MISSING
+```
+
+Do not call this fully complete.
+
+---
+
+# User-requested stop level
+
+The user may request only a specific level.
+
+Examples:
+- "make the Blender model" -> Level B may be sufficient;
+- "make it game ready" -> Level C is required;
+- "put it into the game/project asset catalog" -> Level D is required.
+
+The agent must determine `TARGET_COMPLETION_LEVEL` during CONTRACT/PLAN.
+
+If the user says only "build the asset" in a game-production project, default target is **Level C**, not Level A.
+
+---
+
+# Stop conditions
+
+The agent must stop and report a blocker when a required gate cannot be validated.
+
+Do not silently downgrade the target.
+
+Examples:
+- missing runtime material specification;
+- required bake not possible with available tools;
+- collision contract unknown;
+- export succeeded but textures are missing;
+- catalog registration capability unavailable.
+
+---
+
+# Mandatory completion report
+
+At every claimed finish emit:
+
+```yaml
+asset_completion:
+  target_level: GAME_READY_COMPLETE
+  highest_passed_level: MODELING_COMPLETE
+  levels:
+    reconstruction: PASS
+    modeling: PASS
+    game_ready: FAIL
+    pipeline_integrated: NOT_REQUIRED
+  blockers:
+    - PBR_BAKE_NOT_DONE
+    - RUNTIME_EMISSIVE_NOT_VERIFIED
+  deferred_items: []
+  deliverables_present:
+    blend: true
+    runtime_mesh: true
+    textures: false
+    validation_report: true
+```
+
+The first failing required level defines the real completion state.
+
+---
+
+# Anti-pattern
+
+Never report:
+
+> Asset finished and exported.
+
+when the same report also says:
+- textures were not baked;
+- runtime-only details were not produced;
+- catalog integration was not done.
+
+That state is `MODELING_COMPLETE` or partial Level C, not full completion.
 
 
 ---
@@ -2674,6 +2872,237 @@ PROFILE_BLOCKED
 Knowledge does not imply capability.
 
 A skill may explain exactly how to build a feature, but the agent must still prove that the current connected runtime exposes the tools required to execute and verify that feature.
+
+
+---
+
+## FILE: `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md`
+
+# Blender 5.1 Runtime Compatibility Matrix
+
+## Purpose
+
+The library targets Blender 5.1.x, but agents must still **discover actual runtime capabilities** instead of assuming an enum/property/operator name from memory.
+
+This module records compatibility lessons observed in real agent execution and converts them into guarded patterns.
+
+Each item is tagged:
+- `OBSERVED_RUNTIME` — encountered during a Blender 5.1 project run;
+- `GENERAL_GUARD` — safe automation rule independent of a specific build;
+- `FUTURE_DEPRECATION` — current API worked but runtime emitted a deprecation warning.
+
+---
+
+## Render engine enum
+
+### Observed
+`OBSERVED_RUNTIME`
+
+A run that assumed:
+
+```python
+scene.render.engine = "BLENDER_EEVEE_NEXT"
+```
+
+failed because that enum was not exposed by the connected Blender 5.1 build.
+
+### Rule
+
+Never hardcode one expected EEVEE identifier without discovery.
+
+```python
+engines = scene.render.bl_rna.properties["engine"].enum_items.keys()
+for wanted in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "CYCLES"):
+    if wanted in engines:
+        scene.render.engine = wanted
+        break
+```
+
+The actual selected engine must be included in QA metadata.
+
+---
+
+## Auto Smooth assumptions
+
+### Observed
+`OBSERVED_RUNTIME`
+
+Legacy scripts that expect a `use_auto_smooth` mesh flag are not a safe compatibility strategy for the target runtime.
+
+### Rule
+
+Do not use the existence of `use_auto_smooth` as a required precondition.
+
+Prefer explicit shading intent:
+- polygon smooth state;
+- sharp-edge marking where required;
+- normal/shading workflow appropriate to the target mesh;
+- runtime feature discovery when an API property is version-sensitive.
+
+If a script depends on a version-sensitive property, wrap it in `hasattr()` and provide a fallback.
+
+---
+
+## Material node activation
+
+### Observed
+`FUTURE_DEPRECATION`
+
+The target runtime accepted `Material.use_nodes`, but emitted a warning that the property is expected to be removed in Blender 6.0.
+
+### Rule
+
+Do not scatter direct `mat.use_nodes = True` assumptions throughout generated asset scripts.
+
+Centralize material-node initialization in a compatibility helper.
+
+Preferred behavior:
+1. inspect whether a usable node tree already exists;
+2. use the target-version mechanism only when required;
+3. keep future-version compatibility isolated to one helper;
+4. record deprecation warnings but do not treat a future warning as a current execution failure.
+
+---
+
+## Unsaved `.blend` path
+
+### Observed
+`OBSERVED_RUNTIME`
+
+In a fresh unsaved Blender session:
+
+```python
+bpy.data.filepath == ""
+```
+
+A generated decal script derived the project root from that empty value and wrote output to an unintended `C:\GameAssets` location.
+
+### Rule
+
+Never use `bpy.data.filepath` as the sole project-root anchor.
+
+Path precedence:
+
+```text
+active Project Asset Pipeline Profile
+> explicit task/project root
+> script __file__ anchor
+> saved blend path
+> cwd only as last controlled fallback
+```
+
+Before writing files outside the temporary QA directory, validate that the resolved root contains an expected project marker.
+
+---
+
+## Viewport visibility vs render visibility
+
+### Observed
+`OBSERVED_RUNTIME`
+
+A default Cube was hidden in the viewport but still rendered and completely obscured a QA render.
+
+### Rule
+
+`hide_viewport` and `hide_render` are separate states.
+
+QA isolation must:
+- preserve original render visibility;
+- hide non-QA/non-asset scene objects only for the render transaction;
+- restore every saved state in `finally`;
+- never delete unrelated user objects to clean a QA frame.
+
+Use the reusable QA isolation helper when available.
+
+---
+
+## Importing/executing builder scripts
+
+### Observed
+`OBSERVED_RUNTIME`
+
+A LOD/export script executed the build script only to access helper functions, but the build file contained an unconditional top-level:
+
+```python
+BUILD_REPORT = build()
+```
+
+This cleared the asset collection and deleted freshly created decal plates.
+
+### Rule
+
+Reusable build modules must not mutate the production scene on import.
+
+Use:
+
+```python
+if __name__ == "__main__":
+    BUILD_REPORT = build()
+```
+
+or expose an explicit callable entry point.
+
+Import/namespace loading must be side-effect free unless the semantic executor contract explicitly says otherwise.
+
+---
+
+## Function default capture
+
+### Observed
+`OBSERVED_RUNTIME`
+
+A parametric LOD generator changed a global segment count, but a function defined as:
+
+```python
+def lathe(..., segs=SEG):
+```
+
+had already captured the old value at definition time.
+
+### Rule
+
+Runtime-configurable defaults must not be captured from mutable global configuration.
+
+Use:
+
+```python
+def lathe(..., segs=None):
+    if segs is None:
+        segs = CURRENT_CONFIG.segments
+```
+
+or pass the value explicitly.
+
+---
+
+# Capability preflight
+
+Before generated code uses a version-sensitive API, inspect and persist:
+
+```yaml
+blender_compat:
+  version: [5, 1, x]
+  render_engines: []
+  material_node_api: DISCOVERED
+  shading_api: DISCOVERED
+  export_gltf_available: true
+  blend_saved: false
+  project_root_source: PROJECT_PROFILE
+```
+
+Do this once per session unless the runtime changes.
+
+---
+
+# Rule for future versions
+
+This is not a promise that Blender 5.2/6.x behaves identically.
+
+When the runtime version differs from the library target:
+- mark compatibility `UNVERIFIED`;
+- discover relevant RNA/enums;
+- test on a temporary object/scene;
+- record the new compatibility fact before production mutation.
 
 
 ---
@@ -8366,6 +8795,322 @@ Wariant nie może:
 
 ---
 
+## FILE: `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md`
+
+# Emissive Authoring and Runtime Handoff
+
+## Purpose
+
+An emissive strip has two separate responsibilities:
+
+```text
+ASSET AUTHORING
+geometry + mask + color + material segmentation
+
+RUNTIME PRESENTATION
+bloom + exposure + tone mapping + scene-light contribution
+```
+
+Do not confuse them.
+
+A Blender preview can prove the emissive feature exists and is correctly authored. It cannot prove the target game runtime will produce the same glow unless the Engine Profile and runtime post-process are known.
+
+---
+
+# Asset-side responsibilities
+
+The Blender/game asset must define:
+- exact emitting region;
+- diffuser/cover geometry if present in the reference;
+- emissive mask or material region;
+- intended emissive color in a documented color space;
+- relative strength class (`SUBTLE`, `GUIDANCE`, `SIGNAGE`, `HIGH_INTENSITY` or project-specific equivalent);
+- whether the material should visibly glow when unlit;
+- whether actual scene illumination is required or only self-emission.
+
+The emitting region must pass visibility QA.
+
+An emissive object hidden behind host geometry is a geometry failure, even if its material node reports a non-zero emission strength.
+
+---
+
+# Blender lookdev responsibility
+
+Blender preview is used to validate:
+- the band/marker is visible in the intended views;
+- its hue survives color management;
+- the feature is not clipped to featureless white under the QA rig;
+- surrounding material does not become artificially recolored in base color;
+- the emitter does not compensate for wrong geometry.
+
+The preview strength is a **lookdev parameter**, not automatically a runtime constant.
+
+Record it as:
+
+```yaml
+emissive_authoring:
+  feature_id: F007
+  color_rgb: [0.055, 0.517, 1.0]
+  blender_strength: 2.4
+  purpose: GUIDANCE
+  visibility: PASS
+  clipping: PASS
+```
+
+---
+
+# Runtime responsibility
+
+Final glow can depend on:
+- bloom/post-processing;
+- exposure;
+- tone mapping;
+- HDR range;
+- emissive shader implementation;
+- whether emissive contributes to indirect/direct scene lighting;
+- temporal AA/upscaling;
+- distance and screen size.
+
+Therefore:
+
+```text
+EMISSIVE_AUTHORING_PASS != RUNTIME_GLOW_PASS
+```
+
+If runtime behavior is unknown, mark:
+
+```yaml
+runtime_emissive:
+  status: UNVERIFIED
+  reason: ENGINE_PROFILE_OR_POSTPROCESS_UNKNOWN
+```
+
+---
+
+# Bloom policy
+
+Do not bake bloom halos into BaseColor or Emissive textures unless the art direction explicitly requires a stylized painted halo.
+
+Normally:
+- texture/mask describes the emitter;
+- runtime bloom generates the optical/post-process halo.
+
+This preserves correct response across distance, exposure and lighting conditions.
+
+---
+
+# Color preservation
+
+A blue/cyan guidance light that turns white in the QA render is not automatically acceptable.
+
+Diagnose in this order:
+1. emission strength;
+2. exposure/tone mapping;
+3. QA light rig;
+4. material color;
+5. runtime bloom only after authoring values are stable.
+
+Do not solve clipping by making the geometry larger unless the reference supports larger geometry.
+
+---
+
+# LOD behavior
+
+An emissive feature may be visually important at distances where its physical housing is sub-pixel.
+
+LOD policy may therefore separate:
+- `EMITTER_SIGNAL` — preserve color/visibility;
+- `EMITTER_HOUSING` — simplify/remove with distance.
+
+At low LOD, a simple emissive band can replace detailed diffuser geometry if the protected silhouette and visual identity remain correct.
+
+---
+
+# Game-ready gate
+
+Before `GAME_READY_COMPLETE`:
+- emissive texture/material export is verified;
+- exported asset actually references the emissive data;
+- Engine Profile states how emissive is interpreted, or runtime remains `UNVERIFIED`;
+- no Blender-only node behavior is silently assumed to survive export.
+
+If the project requires bloom/light contribution but these runtime settings are not under Blender control, the asset may still pass authoring while pipeline integration remains pending.
+
+
+---
+
+## FILE: `04_game_ready/50_GAME_READY_BAKE_GATE.md`
+
+# Game-Ready Texture Bake Gate
+
+## Purpose
+
+A Blender material that looks correct is not automatically a runtime material.
+
+Before claiming `GAME_READY_COMPLETE`, every Blender-only material effect must have an explicit runtime disposition:
+
+```text
+BAKE
+RECREATE_IN_ENGINE
+EXPORT_NATIVELY_VERIFIED
+REMOVE_BY_DESIGN
+```
+
+No effect may remain in an undefined state.
+
+---
+
+# Important correction
+
+A separate high-poly mesh is **not required for every bake**.
+
+Different bake purposes have different source requirements.
+
+### Procedural/material bake
+Can bake directly from the authoring material/mesh when the purpose is to convert Blender procedural information into textures, for example:
+- BaseColor variation;
+- roughness breakup;
+- emissive masks;
+- procedural dirt/wear;
+- tile/detail masks.
+
+### High-to-low geometry bake
+Requires an appropriate source surface when transferring geometric detail, for example:
+- high-poly normal detail;
+- curvature/AO dependent on high-resolution geometry;
+- sculpted wear;
+- recessed seams/fasteners moved from geometry to normal maps.
+
+Do not block all texture baking merely because a separate high-poly object does not exist.
+
+---
+
+# Bake decision matrix
+
+For every surface feature record:
+
+```yaml
+surface_feature:
+  id: MAT_DETAIL_03
+  description: fine powder-coat roughness variation
+  authoring_source: PROCEDURAL_SHADER
+  runtime_strategy: BAKE
+  target_channel: ORM.R
+  required_resolution: 1024
+```
+
+Common outputs:
+- BaseColor;
+- Normal;
+- ORM or project-specific packed channels;
+- Emissive;
+- Alpha/masks when required.
+
+The Engine Profile defines actual packing and color-space requirements.
+
+---
+
+# Bake preconditions
+
+Before bake:
+- final/approved low mesh exists;
+- UVs are final enough for runtime;
+- texel density is accepted;
+- intended overlaps are documented;
+- tangent/normal strategy is known;
+- material segmentation is stable;
+- output resolution/padding are defined;
+- high-to-low source/cage exists when the requested channel requires it.
+
+Do not bake before silhouette and primary geometry are accepted.
+
+---
+
+# Civic hard-surface finishing
+
+For dark civic/game props, the bake gate should explicitly consider whether the runtime needs:
+- broad low-frequency roughness variation;
+- subtle micro-normal breakup;
+- restrained dirt accumulation at protected joints/base interfaces;
+- sparse wear on contact/maintenance edges;
+- brushed directionality for metal;
+- decal/signage alpha or color;
+- emissive mask.
+
+A perfectly uniform roughness field is usually a deliberate material decision, not a default.
+
+Do not add random grunge everywhere. Variation must follow material/manufacturing/exposure logic.
+
+---
+
+# Geometry-to-normal transfer decision
+
+A small feature may leave LOD0 geometry and become texture detail at lower LOD or final runtime if:
+- it does not materially affect protected silhouette;
+- parallax is not required at expected viewing distance;
+- normal-map representation survives mip reduction;
+- the feature remains recognizable where required.
+
+Examples:
+- fine vertical seams;
+- tiny panel fasteners;
+- shallow service markings;
+- micro wear.
+
+Do not bake away a reference-critical deep recess or silhouette break merely to hit a triangle target.
+
+---
+
+# Validation
+
+Required checks depend on outputs, but normally include:
+- no missing islands;
+- no unintended projection bleed;
+- padding/mip safety;
+- normal orientation/tangent consistency;
+- correct color-space treatment;
+- channel packing matches Engine Profile;
+- emissive mask aligns with emitting geometry;
+- exported runtime material references the produced textures.
+
+A texture file existing on disk is not sufficient evidence.
+
+---
+
+# Gate result
+
+```yaml
+bake_gate:
+  required: true
+  basecolor: PASS
+  normal: PASS
+  orm: PASS
+  emissive: PASS
+  runtime_material_binding: PASS
+  status: PASS
+```
+
+If procedural materials are still Blender-only and no verified runtime replacement exists:
+
+```text
+GAME_READY_COMPLETE = FAIL
+reason = BLENDER_ONLY_MATERIAL_STATE
+```
+
+---
+
+# Skip conditions
+
+Bake may be skipped only if one of these is proven:
+- target engine natively recreates the intended material through a validated pipeline;
+- the material is intentionally constant/simple and needs no texture data;
+- the requested completion level stops before game-ready runtime material production.
+
+Record the reason. Never silently skip the bake because the Blender viewport already looks good.
+
+
+---
+
 ## FILE: `05_execution/50_BUILD_PLAN_TEMPLATE.md`
 
 # Build Plan Template
@@ -9742,6 +10487,188 @@ Code generation should consume tokens for design decisions, not for transporting
 
 ---
 
+## FILE: `05_execution/63_REFERENCE_TO_RUNTIME_COMPLETENESS_REPORT.md`
+
+# Reference-to-Runtime Completeness Report
+
+## Purpose
+
+At the end of an asset task the agent must produce a compact, machine-readable report that distinguishes:
+- reference fidelity;
+- authoring-model completeness;
+- game-ready completeness;
+- project integration.
+
+This report replaces vague endings such as "asset finished".
+
+It also records execution efficiency so benchmark runs can compare library versions.
+
+---
+
+# Required report
+
+```yaml
+asset_report:
+  asset_id: SM_EXAMPLE
+  target_completion_level: GAME_READY_COMPLETE
+  highest_passed_level: MODELING_COMPLETE
+
+  completion:
+    reconstruction: PASS
+    modeling: PASS
+    game_ready: FAIL
+    pipeline_integrated: NOT_REQUIRED
+
+  geometry:
+    dimensions_mm: [210, 210, 1050]
+    tris:
+      LOD0: 2716
+      LOD1: 1152
+      LOD2: 480
+      LOD3: 128
+    collision_tris: 88
+    mesh_validation: PASS
+
+  surface:
+    uv: PASS
+    material_segmentation: PASS
+    bake_gate: FAIL
+    runtime_textures: MISSING
+    emissive_authoring: PASS
+    emissive_runtime: UNVERIFIED
+
+  export:
+    files_exist: true
+    post_export_validation: PASS
+
+  integration:
+    asset_catalog: NOT_DONE
+
+  blockers:
+    - PBR_BAKE_NOT_DONE
+
+  known_deviations: []
+  deferred_features: []
+
+  efficiency:
+    approximate_tokens: 60000
+    tool_calls: null
+    failed_tool_calls: null
+    retries: null
+    broad_reference_rescans: null
+```
+
+Unknown metrics should be `null`, not invented.
+
+---
+
+# Fidelity section
+
+For reconstruction-driven work include:
+- locked dimensions and deviation;
+- silhouette/multi-view status;
+- known source conflicts;
+- intentionally inferred geometry;
+- human/reference-critical deviations.
+
+Do not restate the full Evidence Ledger. Summarize only accepted facts and unresolved issues.
+
+---
+
+# Surface completeness
+
+The report must distinguish:
+
+```text
+MATERIAL_LOOKDEV_PASS
+TEXTURE_BAKE_PASS
+RUNTIME_MATERIAL_BINDING_PASS
+```
+
+These are separate gates.
+
+A procedural material that looks good in Blender may pass lookdev and still fail runtime completion.
+
+---
+
+# Emissive completeness
+
+Report separately:
+
+```yaml
+emissive:
+  geometry_mask_authoring: PASS
+  blender_preview: PASS
+  exported_data: PASS
+  engine_bloom_tonemapping: UNVERIFIED
+```
+
+Do not claim final glow fidelity when only the Blender lookdev was tested.
+
+---
+
+# Pipeline integration
+
+If the asset is exported but not registered in the project's asset catalog/database:
+
+```text
+pipeline_integrated = FAIL or NOT_REQUIRED
+```
+
+depending on the requested target.
+
+Do not hide the distinction in prose.
+
+---
+
+# Efficiency metrics
+
+For benchmark-capable runs record when available:
+- total token usage;
+- tokens before first blockout;
+- tool calls;
+- failed calls;
+- repeated strategy attempts;
+- raw outputs above Tool Output Budget;
+- full-source echoes;
+- full-reference rescans;
+- number of localized repair cycles;
+- time-to-first-valid-blockout;
+- time-to-target-completion.
+
+The purpose is to detect a system that becomes more verbose without becoming more capable.
+
+---
+
+# Completion wording
+
+Allowed:
+
+> Modeling complete; game-ready completion is blocked by texture bake and runtime material binding.
+
+Not allowed:
+
+> Asset complete.
+
+when required downstream gates remain unfinished.
+
+---
+
+# Benchmark comparison
+
+When comparing agent/library versions, prioritize in order:
+1. no regression of MUST reference fidelity;
+2. no regression of runtime correctness;
+3. fewer unrecovered failures;
+4. fewer repeated operations;
+5. lower context/token cost;
+6. lower wall-clock/tool cost.
+
+Efficiency gains never justify losing protected features.
+
+
+---
+
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
 # System Prompt — Blender Asset Agent
@@ -10528,6 +11455,282 @@ LOD/collision/export bez utraty MUST.
 
 Nie przyjmuj wyniku "looks good".
 Benchmark kończy się dopiero po przejściu reconstruction Definition of Done.
+
+
+---
+
+## FILE: `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md`
+
+# Benchmark — Lafar Civic Bollard
+
+## Status
+
+Real end-to-end agent run used as a BlenderSkill v0.5 regression benchmark.
+
+Asset:
+- Lafar Civic Bollard;
+- Astera Civic Systems;
+- technical concept sheet with hero/front/side/top/rear/bottom/detail views;
+- game-ready hard-surface civic prop.
+
+This benchmark exists to measure **quality and efficiency**, not just whether an asset file can be produced.
+
+---
+
+# Baseline run
+
+Approximate language-model usage:
+
+```text
+~60k tokens total
+```
+
+Human visual evaluation of the final Blender result:
+
+```text
+9 / 10
+```
+
+Primary remaining visual weakness noted by the reviewer:
+- surface/material reads too clean and uniform compared with the reference;
+- final neon/bloom appearance still depends partly on runtime engine/post-processing.
+
+---
+
+# Final geometric/runtime outputs from baseline
+
+```yaml
+asset:
+  bounds_mm: [210, 210, 1050]
+  origin: BASE_CENTER
+  rotation: [0, 0, 0]
+  scale: [1, 1, 1]
+
+lods:
+  LOD0_tris: 2716
+  LOD1_tris: 1152
+  LOD2_tris: 480
+  LOD3_tris: 128
+  collision_tris: 88
+
+mesh_summary:
+  duplicate_vertices: 0
+  loose_vertices: 0
+  edges_over_2_faces: 0
+  uv_present: true
+```
+
+Major locked dimensions:
+- overall height = 1050 mm;
+- main body diameter = 140 mm;
+- base diameter = 210 mm;
+- measured service collar ≈ 178.9 mm diameter.
+
+---
+
+# Source-authority behavior
+
+The run correctly used:
+
+```text
+explicit numeric dimensions
+> orthographic technical views
+> detail views
+> perspective hero
+> approximate prose ranges
+```
+
+The technical sheet's front/side projections were measured separately by axis because the sheet showed approximately 13% vertical anisotropy relative to horizontal scale.
+
+This is a positive benchmark behavior.
+
+---
+
+# Real defects caught by QA
+
+The run found multiple problems that survived an initial visual "looks good" impression:
+
+1. loose vertices in the rear service panel;
+2. duplicated vertices in the light diffuser;
+3. assembly width of 211 mm instead of required 210 mm;
+4. anchor/bolt recess geometry extending outside the available flange annulus;
+5. base accent emitter present in data but hidden behind the host wall and therefore invisible;
+6. decal plates lost during LOD/export because importing the builder triggered destructive top-level `build()` side effects;
+7. graphite material rendered too bright under the initial QA lighting setup.
+
+Positive benchmark criterion:
+
+> The agent must diagnose these classes with measurable evidence rather than repeatedly adjusting values by eye.
+
+---
+
+# Questionable baseline decision to prevent in v0.5+
+
+The rear service panel was increased from 0.6 mm to 1.2 mm proud because it was difficult to read in flat lighting.
+
+That is not a safe general reconstruction rule.
+
+v0.5 requirement:
+- first separate lighting/material readability from geometric evidence;
+- use neutral/matcap/edge evidence;
+- change geometric depth only if reference evidence permits the change.
+
+A feature must not become physically larger merely to compensate for a poor QA light rig.
+
+---
+
+# Baseline incompleteness
+
+Despite successful modeling, LOD generation and export, the run explicitly did **not** finish:
+- BaseColor/Normal/ORM/Emissive runtime texture bake;
+- small details intended for normal-map representation;
+- full underside reconstruction from the bottom-view reference;
+- project AssetCatalog integration.
+
+Therefore the correct completion classification is not unconditional `DONE`.
+
+Expected v0.5 classification:
+
+```text
+RECONSTRUCTION_COMPLETE: PASS
+MODELING_COMPLETE: PASS
+GAME_READY_COMPLETE: PARTIAL/FAIL until bake/runtime binding is done
+PIPELINE_INTEGRATED: FAIL until catalog integration is done
+```
+
+---
+
+# Material benchmark
+
+The final asset should not rely on uniform procedural noise alone.
+
+Reference-compatible dark civic materials should preserve:
+- low-frequency roughness variation;
+- restrained microtexture;
+- manufacturing direction where applicable;
+- subtle protected-zone dirt;
+- sparse plausible wear;
+- material-specific variation rather than global random grunge.
+
+The quality target is:
+
+```text
+not sterile
+not visibly procedural
+not heavily damaged
+```
+
+The asset should still read as maintained civic infrastructure.
+
+---
+
+# Emissive benchmark
+
+The blue guidance ring and lower marker must be separated into:
+
+```text
+asset-side emitter correctness
+runtime-side glow/bloom correctness
+```
+
+Asset PASS requires:
+- correct geometry/mask;
+- visible emitter;
+- stable blue/cyan hue;
+- exported emissive data.
+
+Runtime glow remains `UNVERIFIED` until Engine Profile/post-processing are tested.
+
+---
+
+# Efficiency failures from baseline
+
+The run consumed excessive context partly because it:
+- echoed large generated Python files into model context;
+- built reusable lathe/profile/QA infrastructure ad hoc;
+- returned large diagnostic datasets during image/silhouette analysis;
+- performed several compatibility discoveries during production rather than preflight;
+- tuned LODs iteratively instead of using reusable cost models/executors from the start.
+
+v0.5 must use:
+- Code Artifact and Patch Protocol;
+- Tool Output Budget;
+- Task Packs;
+- Reference Analysis Cache;
+- `AXISYMMETRIC_PROFILE` for rotational components;
+- Mesh Contract Validator;
+- Blender 5.1 Compatibility Matrix;
+- explicit completion levels.
+
+---
+
+# v0.5 benchmark targets
+
+Quality is the hard gate. Efficiency targets apply only if quality does not regress.
+
+### Hard gates
+- no regression in locked dimensions;
+- all reference-critical silhouettes/features pass;
+- no hidden emitter feature;
+- no destructive builder import side effects;
+- all LOD budgets pass;
+- exported decal/material references survive;
+- completion level reported truthfully.
+
+### Efficiency targets
+
+Baseline total: ~60k tokens.
+
+Target:
+- at least 35% total-token reduction on an equivalent run;
+- preferred total <= 35k tokens;
+- stretch target <= 25k without quality regression;
+- no full-source echo for build scripts >120 lines;
+- no raw per-row/pixel profile dump unless localized DIAGNOSTIC escalation requires it;
+- no more than one corrected retry for the same strategy/preconditions.
+
+### Executor-use target
+
+The run should preferentially reuse:
+- `AXISYMMETRIC_PROFILE`;
+- `MESH_VALIDATE`;
+- runtime compatibility helper;
+- QA isolation helper;
+- reference measurement executor when validated in the active runtime.
+
+Agent-generated local implementations must be justified when an appropriate reusable executor already exists.
+
+---
+
+# Scorecard
+
+Recommended benchmark score:
+
+```text
+Reference fidelity        30%
+Runtime correctness       20%
+Mesh/LOD/export quality   15%
+Material/surface finish   10%
+Completion truthfulness   10%
+Tool/retry efficiency     10%
+Context/token efficiency   5%
+```
+
+A token-efficient but visually inferior model does not beat the baseline.
+
+---
+
+# Lessons promoted to canonical library
+
+This benchmark is the evidence source for v0.5 additions covering:
+- completion levels;
+- Blender 5.1 runtime compatibility traps;
+- floating-detail visibility/occlusion rules;
+- civic material breakup;
+- emissive authoring/runtime separation;
+- bake gate;
+- asset catalog integration;
+- executable artifact/context discipline.
 
 
 ---
@@ -11745,6 +12948,154 @@ until conventions required by the task are confirmed.
 ## Efficiency requirement
 
 Once conventions are extracted into a validated profile, cache and reuse them across assets in the same project/brand scope. Do not repeatedly re-read the original discovery scripts.
+
+
+---
+
+## FILE: `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md`
+
+# Asset Catalog Integration Protocol
+
+## Purpose
+
+Exporting a mesh file is not the same as integrating an asset into a production project.
+
+This protocol defines the final `PIPELINE_INTEGRATED` step for projects that maintain an asset catalog, importer registry, content database, manifest or equivalent system.
+
+The exact catalog format is project-specific and must come from the active Project Asset Pipeline Profile.
+
+---
+
+# Preconditions
+
+Before catalog integration:
+- `GAME_READY_COMPLETE` passes;
+- runtime files exist;
+- stable asset ID exists;
+- destination namespace/path is known;
+- active Project Asset Pipeline Profile describes the catalog/import mechanism;
+- agent has write capability for the catalog, or reports a blocker.
+
+Do not invent a catalog schema.
+
+---
+
+# Discovery
+
+Before writing:
+1. search for an existing asset with the same semantic role/name/ID;
+2. identify whether this is a replacement, version, variant or new asset;
+3. inspect the smallest relevant catalog entry/example;
+4. determine required files/fields;
+5. persist the resolved integration contract.
+
+Do not overwrite an existing production asset because a generated object happens to have a similar name.
+
+---
+
+# Minimal integration record
+
+Project-specific fields may differ, but the semantic record should cover:
+
+```yaml
+asset_catalog_entry:
+  asset_id: ACS-BOL-140
+  source_blend: path/to/source.blend
+  runtime_meshes:
+    LOD0: path/to/mesh0
+    LOD1: path/to/mesh1
+    LOD2: path/to/mesh2
+    LOD3: path/to/mesh3
+  collision: path/to/collision
+  textures:
+    basecolor: path/to/basecolor
+    normal: path/to/normal
+    orm: path/to/orm
+    emissive: path/to/emissive
+  material_profile: ACS_CIVIC_DARK_EMISSIVE
+  pivot_policy: BASE_CENTER
+  bounds_mm: [210, 210, 1050]
+  status: ACTIVE
+```
+
+Only fields actually supported by the project should be written.
+
+---
+
+# Existing asset conflict
+
+If an existing catalog item is found:
+
+Classify:
+- `SAME_ASSET_UPDATE`;
+- `NEW_VARIANT`;
+- `LEGACY_ASSET_REPLACEMENT`;
+- `NAME_COLLISION_UNRELATED`.
+
+A replacement requires explicit project policy or user instruction.
+
+If the current project already has a generic road bollard and the new reconstruction is a branded Astera bollard, do not silently overwrite the generic asset. Register as a distinct asset or follow the replacement policy.
+
+---
+
+# Validation after registration
+
+After writing the catalog/import record:
+- read it back;
+- verify all referenced paths exist;
+- verify expected LOD/collision associations;
+- verify material/texture references;
+- verify asset ID uniqueness;
+- run importer/instantiation smoke test if the current toolchain supports it.
+
+A successful file write without readback is not sufficient.
+
+---
+
+# Missing capability
+
+If the agent can create/export files but cannot modify the project's catalog:
+
+```yaml
+pipeline_integration:
+  status: BLOCKED
+  reason: CATALOG_WRITE_CAPABILITY_MISSING
+  prepared_files: true
+  proposed_asset_id: ACS-BOL-140
+```
+
+This can still satisfy `GAME_READY_COMPLETE`, but not `PIPELINE_INTEGRATED` when Level D is required.
+
+---
+
+# Idempotency
+
+Re-running integration must not create:
+- duplicate asset IDs;
+- duplicate manifest entries;
+- `.001`-style catalog variants;
+- multiple references to the same LOD file.
+
+Prefer update-by-stable-ID.
+
+---
+
+# Rollback
+
+Before changing an existing catalog entry:
+- capture the old record;
+- record affected asset ID;
+- write transactionally where possible;
+- restore the previous record if verification fails.
+
+---
+
+# Boundary with engine adapter
+
+This protocol describes **project registration**.
+`09_engine/91_ENGINE_ADAPTER_PROTOCOL.md` describes runtime format/import behavior.
+
+Both may be required for Level D.
 
 
 ---
