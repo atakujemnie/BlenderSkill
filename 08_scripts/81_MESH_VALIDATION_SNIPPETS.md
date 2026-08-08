@@ -54,6 +54,36 @@ def mesh_report(obj):
         bm.free()
 ```
 
-Uwaga:
-otwarte siatki mogą mieć poprawne boundary edges.
-Walidator nie powinien oznaczać każdego boundary jako błąd bez znajomości kontraktu.
+## Topology intent rule
+
+Otwarte siatki mogą mieć poprawne boundary edges, ale tylko wtedy, gdy kontrakt obiektu jawnie na to pozwala.
+
+Każdy mesh przechodzący finalną walidację musi mieć topology intent:
+
+```text
+CLOSED_SOLID
+OPEN_ASSEMBLY_PART
+SURFACE_DETAIL
+COLLISION
+```
+
+`CLOSED_SOLID` i domyślnie `COLLISION` wymagają:
+- `boundary_edges == 0`;
+- `non_manifold_edges == 0`;
+- brak loose geometry;
+- brak zero-area faces;
+- brak nieuzasadnionych duplicate vertex positions.
+
+`OPEN_ASSEMBLY_PART` może mieć boundary tylko wtedy, gdy boundary jest świadomie zakrywane/zamykane przez inny element assembly i taka polityka jest zapisana w Game Asset Contract.
+
+`SURFACE_DETAIL` może być otwartą geometrią, ale wymaga osobnego testu widoczności/occlusion i z-fighting.
+
+Walidator nie może powiedzieć ogólnie `all mesh checks pass`, jeśli boundary istnieją, a topology intent nie został określony.
+
+## Canonical validator
+
+Preferuj semantic skill `MESH_VALIDATE`:
+- contract: `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`;
+- candidate executor: `executors/mesh_validate.py`.
+
+Zwracaj compact report, nie listę wszystkich krawędzi/wierzchołków, chyba że DIAGNOSTIC wymaga konkretnego failing region.
