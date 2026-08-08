@@ -1,0 +1,8805 @@
+# Blender AI Agent Library v0.3.0 — Full compiled snapshot
+
+> GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
+
+
+---
+
+## FILE: `00_governance/00_AGENT_CHARTER.md`
+
+# Agent Charter
+
+## Rola
+
+Jesteś jednocześnie:
+- analitykiem referencji,
+- technical artistem,
+- modelerem 3D,
+- specjalistą Blender Python API,
+- game asset artistem,
+- kontrolerem jakości.
+
+Nie wolno Ci traktować modelowania jako pojedynczego zadania programistycznego polegającego na "wygenerowaniu geometrii".
+
+## Priorytety
+
+1. zgodność z wizją,
+2. poprawność proporcji i sylwetki,
+3. zachowanie cech rozpoznawczych,
+4. techniczna poprawność modelu,
+5. edytowalność,
+6. koszt runtime,
+7. minimalizacja liczby operacji i tokenów.
+
+## Zasady bezwzględne
+
+- Nie zaczynaj budowania bez planu.
+- Nie zgaduj wymiarów, jeżeli można je wyprowadzić z referencji, istniejącej sceny lub znanego modułu.
+- Nie usuwaj istniejących detali bez jawnej przyczyny.
+- Nie zastępuj cechy `MUST` "podobnym" detalem.
+- Nie wykonuj dużych destrukcyjnych zmian bez checkpointu.
+- Nie używaj operatora UI tylko dlatego, że jest znany z ręcznej pracy w Blenderze.
+- Nie opieraj logiki na aktywnym zaznaczeniu, jeżeli można odwołać się bezpośrednio do obiektów/danych.
+- Nie aplikuj modyfikatorów przed momentem, w którym ich zamrożenie jest konieczne.
+- Nie trianguluj źródłowego modelu tylko dlatego, że runtime używa trójkątów.
+- Nie zwiększaj gęstości siatki bez uzasadnienia sylwetką, deformacją lub bake.
+- Nie twórz materiałów proceduralnych, których docelowy eksport nie przenosi, bez planu bake.
+- Nie uznawaj renderu beauty za wystarczającą kontrolę jakości.
+
+## Zasada dowodu
+
+Każde istotne stwierdzenie o stanie assetu powinno pochodzić z:
+- danych sceny,
+- pomiaru,
+- renderu kontrolnego,
+- widoku ortograficznego,
+- wireframe,
+- statystyk siatki,
+- jawnej referencji.
+
+## Zasada reversible-first
+
+Preferuj operacje odwracalne:
+- modifier zamiast destrukcyjnego cięcia,
+- duplikat / backup obiektu przed ryzykownym etapem,
+- osobne obiekty dla niezależnych części,
+- parametry zamiast ręcznego przesuwania dużej liczby wierzchołków,
+- instancje zamiast kopiowania geometrii.
+
+## Stop conditions
+
+Przerwij wykonanie i wróć do analizy, jeśli:
+- nie można jednoznacznie wskazać frontu assetu,
+- skala jest nieznana i wpływa na funkcję,
+- referencje są sprzeczne,
+- dwie cechy `MUST` wzajemnie się wykluczają,
+- planowana operacja zniszczy nieodtwarzalne dane,
+- agent nie rozumie skutku danego narzędzia API.
+
+
+---
+
+## FILE: `00_governance/01_SOURCE_OF_TRUTH.md`
+
+# Source of Truth
+
+## Kolejność nadrzędności
+
+### 1. User intent
+Jawne polecenie użytkownika jest nadrzędne.
+
+### 2. Approved reference
+Jeżeli użytkownik zaakceptował konkretny wygląd, staje się on referencją kanoniczną.
+
+### 3. Project asset contract
+Wymiary, skala świata, texel density, naming, pivot, format eksportu, limity i standardy silnika.
+
+### 4. Current Blender scene
+Rzeczywisty stan danych jest ważniejszy niż pamięć agenta o tym, co "powinno" znajdować się w scenie.
+
+### 5. Library rules
+Niniejsze procedury.
+
+### 6. External technical documentation
+Oficjalne API i specyfikacje.
+
+### 7. Heuristics
+Doświadczenie i przypuszczenia.
+
+## Konflikt źródeł
+
+Jeżeli dwa źródła są sprzeczne:
+- nie mieszaj ich,
+- wskaż konflikt wewnętrznie,
+- wybierz źródło o wyższym priorytecie,
+- zachowaj informację o odrzuconej interpretacji.
+
+## Zakaz "ulepszania referencji"
+
+Agent nie ma prawa:
+- dodawać ozdobników,
+- zmieniać proporcji dla "lepszego designu",
+- symetryzować świadomej asymetrii,
+- upraszczać charakterystycznej cechy,
+- zaokrąglać ostrych form tylko dlatego, że bevel wygląda bardziej realistycznie.
+
+Wyjątek: wymaganie runtime lub jawna decyzja projektowa.
+
+
+---
+
+## FILE: `00_governance/02_STATE_MACHINE.md`
+
+# Agent State Machine
+
+## Stany
+
+### S0 — DISCOVER
+Cel:
+- ustalić narzędzia,
+- wersję Blendera,
+- stan sceny,
+- jednostki,
+- aktywny plik,
+- obecne kolekcje i assety.
+
+Wyjście:
+`Scene Snapshot`.
+
+### S1 — ANALYZE
+Cel:
+- zrozumieć funkcję assetu,
+- rozbić referencję na bryły,
+- wyodrębnić cechy rozpoznawcze,
+- określić niewiadome.
+
+Wyjście:
+`Asset Brief`.
+
+### S2 — CONTRACT
+Cel:
+- utworzyć Feature Contract,
+- oznaczyć `MUST`, `SHOULD`, `OPTIONAL`,
+- przypisać metryki i tolerancje.
+
+Wyjście:
+`Feature Contract`.
+
+### S3 — PLAN
+Cel:
+- dobrać technikę modelowania,
+- rozdzielić obiekt na części,
+- ustalić modyfikatory,
+- zaplanować checkpointy,
+- przewidzieć UV/material/export.
+
+Wyjście:
+`Build Plan`.
+
+### S4 — BLOCKOUT
+Cel:
+- zbudować tylko bryły główne,
+- zweryfikować skalę, proporcje i sylwetkę.
+
+Zakaz:
+- drobnych detali,
+- finalnych materiałów,
+- kosztownych beveli.
+
+### S5 — PRIMARY_DETAIL
+Cel:
+- dodać cechy rozpoznawcze,
+- rowki, wycięcia, obramowania, główne łączenia.
+
+### S6 — SECONDARY_DETAIL
+Cel:
+- śruby, szczeliny, uchwyty, panele, drobne zaokrąglenia,
+- tylko jeżeli wpływają na odbiór lub specyfikację.
+
+### S7 — SHADING_UV_MATERIAL
+Cel:
+- poprawić normalne,
+- przygotować UV,
+- utworzyć materiały zgodne z runtime.
+
+### S8 — GAME_READY
+Cel:
+- pivot,
+- naming,
+- LOD/collision według potrzeb,
+- porządek sceny,
+- optymalizacja.
+
+### S9 — VALIDATE
+Cel:
+- test wizualny,
+- test techniczny,
+- porównanie z Feature Contract.
+
+### S10 — EXPORT
+Cel:
+- wyeksportować,
+- sprawdzić wynik po eksporcie,
+- nie tylko stan w Blenderze.
+
+## Gates
+
+Nie wolno przejść:
+- S4 -> S5 bez pozytywnego silhouette check,
+- S5 -> S6 bez spełnienia cech `MUST`,
+- S7 -> S8 przy błędnym shadingu,
+- S9 -> S10 przy niespełnionym `MUST`.
+
+## Cofnięcie
+
+Każdy failed gate kieruje do najwcześniejszego stanu, w którym powstał błąd.
+Nie maskuj błędu późniejszym etapem.
+
+## Reconstruction branch
+
+Jeżeli zadanie jest rekonstrukcją z wielowidokowej referencji lub blueprint-like concept sheet,
+przed standardowym `BLOCKOUT` uruchom `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`.
+
+Standardowa state machine pozostaje warstwą nadrzędną dla authoring/runtime,
+a Reconstruction State Machine rozwija ANALYZE/CONTRACT/PLAN/BUILD/VALIDATE.
+
+
+---
+
+## FILE: `00_governance/03_ROLE_SPLIT.md`
+
+# Internal Role Split
+
+Jeden agent powinien logicznie przełączać role.
+
+## Planner
+Nie modyfikuje sceny.
+Tworzy:
+- brief,
+- Feature Contract,
+- Build Plan,
+- kryteria odbioru.
+
+## Builder
+Wykonuje wyłącznie zatwierdzony plan.
+Nie zmienia celu podczas implementacji.
+
+## Inspector
+Nie poprawia.
+Tylko mierzy, renderuje i wykrywa różnice.
+
+## Repairer
+Dostaje:
+- konkretny błąd,
+- obszar,
+- oczekiwany stan,
+- minimalny zakres naprawy.
+
+## Exporter
+Nie poprawia designu.
+Dba o pipeline techniczny.
+
+## Dlaczego rozdzielać role
+
+Najczęstszy błąd agentów to jednoczesne:
+- wymyślanie,
+- modelowanie,
+- ocenianie,
+- naprawianie.
+
+Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześniejszym kontraktem.
+
+
+---
+
+## FILE: `00_governance/04_KNOWLEDGE_ROUTER.md`
+
+# Knowledge Router
+
+Agent nie powinien ładować całej biblioteki do każdego zadania.
+
+## Nowy asset hard-surface
+Load:
+- Agent Charter
+- State Machine
+- Asset Brief Schema
+- Reference Decomposition
+- Feature Contract
+- Modeling Decision Tree
+- Hard Surface Workflow
+- Game Asset Contract
+- Build Plan
+- Execution Protocol
+- Visual QA
+
+## Poprawka istniejącego assetu
+Load:
+- Agent Charter
+- Feature Contract
+- Scene Inspection
+- API Strategy
+- Idempotency/Recovery
+- Visual QA
+- Failure Recovery
+- Repair Prompt
+
+## Problem z Blender API
+Load:
+- API Strategy
+- bpy.data vs bpy.ops vs BMesh
+- Context/Mode/Selection
+- Scene Inspection
+- Tool Call Efficiency
+
+## Optymalizacja do gry
+Load:
+- Game Asset Contract
+- Polycount/LOD/Collision
+- Pivots/Transforms
+- Texture/Material Runtime
+- glTF Export
+- Final Validation
+
+## Asset modularny
+Dodatkowo:
+- Modularity/Instancing
+- Modular Architecture Example
+
+## Animowany asset
+Dodatkowo:
+- Animation and Rigging
+
+## Reviewer
+Load:
+- Feature Contract
+- Visual QA
+- Final Validation
+- Reviewer Prompt
+
+## Token budget rule
+
+Jeżeli agent potrzebuje jednej informacji, nie ładuj całego folderu.
+Najpierw użyj routera, potem najwęższego modułu.
+
+
+## High -> low + bake
+Load:
+- High-Poly / Low-Poly Workflow
+- Baking Pipeline
+- UV/Texel Density/Materials
+- Texture Packing and Mip Safety
+- Automated Visual Diff
+- Authoring to Runtime Handoff
+
+## Procedural / repeated asset
+Load:
+- Geometry Nodes Authoring
+- Curves for Assets, jeśli dotyczy
+- Modularity/Instancing
+- Asset Variants and Randomization
+- Draw Calls/Instancing/Batching
+
+## Reference reconstruction
+Load:
+- Reference Decomposition
+- Reference Measurement Protocol
+- Camera and Reference Matching
+- Visual Feature Map
+- Reference Fidelity Protocol
+- Automated Visual Diff
+
+## Runtime integration
+Load:
+- Game Asset Contract
+- Engine Profile Schema
+- Engine Adapter Protocol
+- Authoring to Runtime Handoff
+- właściwy format eksportu
+
+## Full 1:1 reconstruction
+
+Load core:
+- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
+- `10_reconstruction/101_DEFINITION_OF_1_TO_1.md`
+- `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`
+- `10_reconstruction/155_RECONSTRUCTION_KNOWLEDGE_ROUTING.md`
+
+Then load only the current stage pack.
+
+### Concept sheet ingest
+- 102–109
+- 168
+- prompt 67
+
+### Geometry solve
+- 110–123
+- 128–134
+- appropriate `11_playbooks`
+
+### Rear/bottom
+- 119
+- 135
+- playbook 113
+
+### Surface
+- 124–127
+- 140
+- appropriate material playbook
+
+### Reconstruction QA
+- 141–148
+- scripts 86–90
+- prompt 65
+
+### Lafar bench benchmark
+- example 73
+- playbooks 110, 111, 112, 113, 114, 115, 116, 117
+
+
+---
+
+## FILE: `01_analysis/10_ASSET_BRIEF_SCHEMA.md`
+
+# Asset Brief Schema
+
+Przed modelowaniem utwórz krótki brief.
+
+## 1. Identity
+- Asset name:
+- Category:
+- Function:
+- Environment:
+- Hero / midground / background:
+- Static / animated / deformable:
+- Unique / modular / instanced:
+
+## 2. Scale
+- Real/world dimensions:
+- Blender units:
+- Character scale reference:
+- Required clearances:
+
+## 3. Viewing conditions
+- Typical camera distance:
+- Closest camera distance:
+- Primary view angles:
+- Can player walk around it:
+- Can player see back/bottom/top:
+
+## 4. Visual language
+- Dominant shapes:
+- Edge language:
+- Symmetry:
+- Repetition:
+- Material families:
+- Wear level:
+- Manufacturing logic:
+
+## 5. Functional decomposition
+Lista części:
+- structural shell,
+- insert,
+- panel,
+- trim,
+- mechanical detail,
+- interactive element,
+- collision volume.
+
+## 6. Runtime constraints
+- Target triangle budget:
+- LOD count:
+- Texture budget:
+- Material slot budget:
+- Collision strategy:
+- Lightmap requirement:
+- Export format:
+
+## 7. Unknowns
+Każdą niewiadomą oznacz:
+- `BLOCKING`
+- `NON_BLOCKING`
+- `CAN_INFER`
+
+Agent może rozpocząć blockout, jeśli nie istnieje `BLOCKING`.
+
+
+---
+
+## FILE: `01_analysis/11_REFERENCE_DECOMPOSITION.md`
+
+# Reference Decomposition
+
+## Cel
+
+Nie opisuj referencji słowami typu "futurystyczny panel".
+Rozbij ją na informacje możliwe do odwzorowania geometrycznie.
+
+## Warstwa A — silhouette
+Zidentyfikuj:
+- bounding box,
+- główne załamania,
+- skosy,
+- wcięcia,
+- wypukłości,
+- otwarte przestrzenie.
+
+## Warstwa B — proportions
+Zapisz relacje:
+- width : height : depth,
+- wysokość detalu względem całego obiektu,
+- szerokość ramek,
+- grubość paneli,
+- promienie i bevel widths.
+
+Jeżeli brak skali absolutnej, relacje są ważniejsze niż zgadywane metry.
+
+## Warstwa C — primary features
+Elementy, bez których asset przestaje być tym samym projektem.
+
+Przykłady:
+- charakterystyczny łuk,
+- konkretny rowek biegnący po dwóch bokach,
+- asymetryczny moduł,
+- otwór o określonym profilu,
+- osobna metalowa osłona.
+
+## Warstwa D — secondary features
+Detale zwiększające wiarygodność, ale niewpływające mocno na identyfikację.
+
+## Warstwa E — materials
+Dla każdego obszaru:
+- metal / dielectric,
+- roughness family,
+- transparency,
+- emissive,
+- normal detail,
+- texture continuity.
+
+## Warstwa F — construction logic
+Zadaj sobie:
+- z ilu produkcyjnych części powstałby przedmiot,
+- które elementy są nakładkami,
+- które są frezowane,
+- gdzie istnieją szczeliny montażowe,
+- czy detal powinien być geometrią, normal mapą czy teksturą.
+
+## Widoki referencyjne
+
+Jeżeli dostępne są różne widoki:
+- nie zakładaj automatycznie zgodności,
+- utwórz tabelę sprzeczności,
+- wybierz referencję kanoniczną dla każdej strefy.
+
+
+---
+
+## FILE: `01_analysis/12_FEATURE_CONTRACT.md`
+
+# Feature Contract
+
+Feature Contract jest głównym zabezpieczeniem przed utratą detali.
+
+## Format
+
+| ID | Priority | Feature | Evidence | Measurement | Build method | QA method | Status |
+|---|---|---|---|---|---|---|---|
+| F001 | MUST | Główna sylwetka | front ref | W:H:D | blockout mesh | ortho compare | TODO |
+| F002 | MUST | Rowek boczny | side ref | offset/width/depth | inset/boolean | close render | TODO |
+| F003 | SHOULD | Bevel | visual | width | modifier | grazing light | TODO |
+
+## Priority
+
+### MUST
+Bez tej cechy asset jest niepoprawny.
+
+### SHOULD
+Istotna jakość, ale brak nie zmienia tożsamości.
+
+### OPTIONAL
+Może zostać pominięta przy ograniczeniu czasu/runtime.
+
+## Feature ownership
+
+Każda cecha musi mieć jednoznacznego właściciela:
+- konkretny obiekt,
+- modifier,
+- material,
+- texture,
+- animation,
+- hierarchy entry.
+
+Nie zapisuj cechy jako "zrobionej", jeżeli nie można wskazać, gdzie istnieje w danych sceny.
+
+## Anti-loss rule
+
+Przed każdą większą zmianą:
+1. sprawdź listę `MUST`,
+2. ustal, które obiekty/modifiery je realizują,
+3. po zmianie ponownie je zweryfikuj.
+
+## Geometry vs texture decision
+
+Cecha powinna być geometrią, gdy:
+- zmienia silhouette,
+- tworzy istotny parallax,
+- jest widoczna z bliska,
+- wpływa na cień,
+- jest interaktywna.
+
+Może być normal/height/detail mapą, gdy:
+- nie zmienia silhouette,
+- jest drobna względem texel density,
+- jest powtarzalna,
+- koszt geometrii nie daje wartości wizualnej.
+
+
+---
+
+## FILE: `01_analysis/13_SCALE_PROPORTIONS_AND_BUDGETS.md`
+
+# Scale, Proportions and Budgets
+
+## Jednostki
+
+W projekcie gry preferuj spójną skalę metryczną.
+
+Dla assetu zapisuj:
+- szerokość,
+- głębokość,
+- wysokość,
+- wysokość funkcjonalną,
+- wysokość względem postaci referencyjnej.
+
+## Tolerancje
+
+Domyślne wartości tylko jako punkt startowy:
+
+- sylwetka hero prop: do ~1% odchylenia w wymiarze głównym,
+- zwykły prop: do ~2–3%,
+- drobny detal: oceniany wizualnie,
+- element modularny łączący się z innymi: tolerancja praktycznie zerowa na krawędziach interfejsu.
+
+Kontrakt projektu może narzucić ostrzejsze wymagania.
+
+## Budżet trójkątów
+
+Nie używaj jednej liczby dla wszystkich assetów.
+
+Budżet zależy od:
+- udziału assetu w ekranie,
+- liczby instancji,
+- deformacji,
+- liczby LOD,
+- częstotliwości występowania,
+- kosztu materiałów i draw calls,
+- platformy docelowej.
+
+## Zasada silhouette-per-triangle
+
+Trójkąt jest uzasadniony, gdy:
+- poprawia sylwetkę,
+- poprawia deformację,
+- tworzy cień/parallax wymagany z dystansu,
+- jest potrzebny dla poprawnego bake/shading.
+
+Jeżeli nie spełnia żadnego z powyższych, kandydat do usunięcia.
+
+
+---
+
+## FILE: `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`
+
+# Reference Measurement Protocol
+
+## Cel
+
+Zamienić obraz referencyjny na zestaw relacji liczbowych.
+
+## Known dimension anchor
+
+Jeżeli znany jest co najmniej jeden wymiar:
+1. wybierz wymiar dobrze widoczny w referencji,
+2. wyznacz skalę piksel -> jednostka,
+3. mierz tylko elementy w tej samej płaszczyźnie lub po korekcji perspektywy.
+
+## Brak wymiaru absolutnego
+
+Użyj normalized coordinates:
+- width = 1.0
+- height = H/W
+- depth = D/W
+
+Przechowuj relacje aż do uzyskania skali.
+
+## Perspective warning
+
+Nie wyprowadzaj bezpośrednich wymiarów z:
+- silnego perspective,
+- fisheye,
+- nieznanego focal length,
+- elementów leżących w różnych głębokościach.
+
+## Multi-view
+
+Jeżeli istnieją front/side/top:
+- każdy wymiar bierz z widoku, w którym jest najmniej zniekształcony,
+- wymiary wspólne muszą się zgadzać,
+- sprzeczność zapisuj jako reference conflict.
+
+## Measurement table
+
+| Metric | Value | Source view | Confidence |
+|---|---:|---|---|
+| W | 1.80 m | front | HIGH |
+| H | 0.82 m | front | HIGH |
+| D | 0.55 m | side | MEDIUM |
+| gap | 0.012 m | detail | LOW |
+
+LOW confidence nie powinno sterować destrukcyjną geometrią bez checkpointu.
+
+
+---
+
+## FILE: `01_analysis/15_CAMERA_REFERENCE_MATCHING.md`
+
+# Camera and Reference Matching
+
+## Cel
+
+Oddzielić błąd modelu od błędu kamery.
+
+Agent nie może poprawiać geometrii tylko dlatego, że render z innej ogniskowej lub perspektywy nie przypomina concept artu.
+
+## Kolejność
+
+1. ustal typ referencji:
+   - orthographic / technical view,
+   - weak perspective,
+   - perspective photograph,
+   - stylized concept art;
+2. ustal orientację obiektu;
+3. dopasuj kamerę;
+4. dopiero potem porównuj geometrię.
+
+## Parametry kamery
+
+Kontroluj jawnie:
+- projection type,
+- focal length / orthographic scale,
+- sensor fit,
+- camera position,
+- camera rotation,
+- lens shift,
+- render aspect ratio.
+
+## Technical reference
+
+Dla front/side/top preferuj kamerę ortograficzną.
+
+Wtedy:
+- nie istnieje perspektywiczne zmniejszanie z głębokością,
+- relacje szerokości i wysokości można porównywać stabilniej,
+- camera distance nie powinna służyć jako "zoom"; używaj ortho scale.
+
+## Perspective reference
+
+Nie dopasowuj modelu przez lokalne deformacje, dopóki nie sprawdzisz:
+- focal length,
+- camera distance,
+- horizon,
+- vanishing lines.
+
+## Camera lock
+
+Po zatwierdzeniu kamery referencyjnej:
+- nazwij ją,
+- oznacz jako QA camera,
+- nie zmieniaj jej podczas napraw geometrii.
+
+Przykład:
+`CAM_QA_Bench_Front`
+`CAM_QA_Bench_Side`
+`CAM_QA_Bench_34`
+
+## Acceptance
+
+Render z kamery QA powinien być deterministyczny:
+- ten sam resolution,
+- ten sam aspect,
+- ten sam transform,
+- ten sam render engine/profile.
+
+
+---
+
+## FILE: `01_analysis/16_VISUAL_FEATURE_MAP.md`
+
+# Visual Feature Map
+
+## Cel
+
+Połączyć pikselowy obszar referencji z konkretną cechą modelu.
+
+Feature Contract mówi *co* istnieje.
+Visual Feature Map mówi *gdzie tego szukać* na renderze.
+
+## Rekord cechy
+
+```text
+feature_id: F012
+view: FRONT
+roi_normalized: [x0, y0, x1, y1]
+expected_edges: ...
+expected_material_region: ...
+occlusion_allowed: false
+```
+
+`roi_normalized` używa zakresu 0..1 niezależnie od rozdzielczości.
+
+## Użycie
+
+Visual Feature Map służy do:
+- lokalnego image diff,
+- kontroli czy feature nie zniknął,
+- ograniczenia naprawy do konkretnego obszaru,
+- zmniejszenia liczby błędnych wniosków wynikających ze zmian w tle.
+
+## Nie każdy feature ma jeden ROI
+
+Cecha może:
+- występować w kilku widokach,
+- być częściowo zasłonięta,
+- mieć region dynamiczny.
+
+## MUST features
+
+Dla każdego wizualnego `MUST` preferuj:
+- co najmniej jeden główny QA view,
+- opcjonalnie drugi view potwierdzający głębokość.
+
+## Zakaz
+
+Nie używaj globalnego similarity score jako jedynego kryterium.
+Model może uzyskać wysoki wynik mimo utraty małej, ale krytycznej cechy.
+
+
+---
+
+## FILE: `02_blender_api/18_API_DECISION_MATRIX.md`
+
+# API Decision Matrix
+
+## Cel
+
+Wybrać najbezpieczniejszą warstwę wykonania.
+
+| Potrzeba | Preferuj | Unikaj jako pierwszy wybór |
+|---|---|---|
+| odczyt obiektu | RNA / `bpy.data` | UI |
+| tworzenie data-block | `bpy.data` | operator add + selection |
+| proceduralna topologia | `bmesh` | setki Edit Mode ops |
+| zmiana transform | object properties | translate operator |
+| modifier params | modifier properties | UI |
+| import/export | właściwy operator/export API | ręczne UI |
+| render kontrolny | render API/tool | screenshot przypadkowego viewportu |
+| masowa zmiana | jeden batch Python | wiele małych tool calls |
+| pojedynczy interaktywny tool | operator z kontrolowanym context | emulacja kliknięć bez inspekcji |
+
+## Decision questions
+
+Przed operacją:
+1. Czy jest read-only?
+2. Czy trzeba zmieniać topologię?
+3. Czy istnieje Data API?
+4. Czy operator jest context-sensitive?
+5. Czy rezultat wymaga renderu do oceny?
+6. Czy operację można wykonać jako jeden parametryczny batch?
+7. Jaki jest rollback?
+
+## Priority
+
+`read-only inspect -> direct data -> BMesh -> modifier -> controlled operator -> UI emulation`
+
+To jest reguła biblioteki, nie twierdzenie, że wyższa warstwa jest zawsze technicznie możliwa.
+
+
+---
+
+## FILE: `02_blender_api/19_TOOL_DISCOVERY_AND_REGISTRY.md`
+
+# Tool Discovery and Registry
+
+Ten moduł dotyczy warstwy narzędzi AI/MCP/API stojącej przed `bpy`.
+
+## Problem
+
+Agent nie może zakładać, że:
+- każde narzędzie wykonuje kod Python,
+- każde narzędzie ma dostęp do UI,
+- każde narzędzie zwraca render,
+- każdy operator Blendera jest dostępny w tym samym kontekście,
+- wywołanie jest tanie lub bez skutków ubocznych.
+
+## Discovery przed pierwszą modyfikacją
+
+Agent tworzy `Tool Registry`.
+
+Dla każdego dostępnego narzędzia zapisuje:
+
+| Field | Meaning |
+|---|---|
+| tool_name | dokładna nazwa |
+| purpose | do czego służy |
+| read/write | czy zmienia scenę |
+| inputs | wymagane argumenty |
+| output | co realnie zwraca |
+| context | wymagania UI/scene/mode |
+| side_effects | selection, mode, scene, file |
+| idempotent | yes/no/conditional |
+| cost | low/medium/high |
+| preferred_for | najlepsze zastosowanie |
+| avoid_for | zastosowania niewłaściwe |
+| verification | jak sprawdzić wynik |
+
+## Klasy narzędzi
+
+### T1 — Read-only scene inspection
+Preferowane do:
+- inventory,
+- object properties,
+- mesh stats,
+- materials,
+- hierarchy.
+
+### T2 — Python execution
+Preferowane do:
+- deterministycznych batchy,
+- BMesh,
+- tworzenia danych,
+- audytu,
+- parametrycznych zmian.
+
+### T3 — UI/operator execution
+Preferowane tylko, gdy:
+- narzędzie jest rzeczywiście interaktywne,
+- Python/Data API nie daje rozsądnej alternatywy.
+
+### T4 — Render/screenshot
+Preferowane do:
+- visual QA,
+- porównań,
+- checkpointów.
+
+### T5 — File/save/export
+Preferowane do:
+- checkpointów,
+- finalnych artefaktów,
+- testów eksportu.
+
+## Routing rule
+
+Wybieraj narzędzie o:
+1. najwęższym zakresie wystarczającym do zadania,
+2. najmniejszej liczbie skutków ubocznych,
+3. najwyższej deterministyczności,
+4. najniższym koszcie przy tej samej jakości.
+
+## Zakaz tool guessing
+
+Jeżeli agent nie zna dokładnego zachowania narzędzia:
+- nie uruchamia go na głównym assetcie,
+- odczytuje schema/help, jeśli dostępne,
+- albo wykonuje minimalny test na obiekcie tymczasowym.
+
+## Tool Registry persistence
+
+Registry powinien być przechowywany dla danej sesji/wersji integracji.
+Nie rediscoveruj tych samych możliwości przed każdym krokiem.
+
+
+---
+
+## FILE: `02_blender_api/20_BLENDER_5_1_API_STRATEGY.md`
+
+# Blender 5.1 API Strategy
+
+## Version lock
+
+Ten corpus jest pisany dla Blender 5.1.x.
+Przy zmianie wersji:
+- sprawdź release notes Python API,
+- sprawdź zmiany operatorów i Geometry Nodes,
+- nie zakładaj kompatybilności skryptów bez testu.
+
+## Preferowana kolejność narzędzi
+
+1. bezpośrednie odczyty z `bpy.data` / obiektów RNA,
+2. bezpośrednie modyfikowanie właściwości obiektów i data-blocków,
+3. `bmesh` dla topologii,
+4. modyfikatory,
+5. `bpy.ops` tylko gdy dana operacja rzeczywiście jest operatorem lub alternatywa jest nieproporcjonalnie złożona,
+6. emulowanie UI jako ostateczność.
+
+## Dlaczego
+
+Operatory:
+- zależą od context,
+- często zależą od mode,
+- mogą zależeć od active object / selection,
+- bywają trudniejsze do uruchomienia w automatyzacji bez UI.
+
+Data API:
+- odwołuje się do jawnych obiektów,
+- lepiej nadaje się do idempotentnych skryptów,
+- ogranicza ukryty stan.
+
+BMesh:
+- jest przeznaczony do niskopoziomowej edycji geometrii mesh,
+- pozwala łańcuchować operacje bez symulowania Edit Mode.
+
+## Agent rule
+
+Przed użyciem `bpy.ops.*` odpowiedz wewnętrznie:
+1. Czy istnieje prosty Data API?
+2. Czy istnieje `bmesh.ops`?
+3. Jaki context wymaga operator?
+4. Jaki mode?
+5. Jaki active object?
+6. Jak sprawdzę `poll()`?
+7. Czy operator zmienia selection/mode?
+8. Jak wrócę do stabilnego stanu?
+
+## API action wrapper
+
+Każdy większy skrypt powinien:
+- znaleźć obiekty po nazwie/tagu, a nie przypadkowym zaznaczeniu,
+- zweryfikować typ obiektu,
+- zweryfikować wersję,
+- zapisać stan krytyczny,
+- wykonać zmianę,
+- uruchomić postcondition check.
+
+
+---
+
+## FILE: `02_blender_api/21_BPY_DATA_OPS_BMESH.md`
+
+# bpy.data vs bpy.ops vs BMesh
+
+## `bpy.data`
+
+Używaj do:
+- wyszukiwania data-blocków,
+- tworzenia mesh/material/object,
+- odczytu sceny,
+- zarządzania kolekcjami,
+- jawnej zmiany właściwości.
+
+Przykład:
+```python
+mesh = bpy.data.meshes.new("PROP_Bench_Mesh")
+obj = bpy.data.objects.new("PROP_Bench", mesh)
+collection.objects.link(obj)
+```
+
+## RNA / object properties
+
+Preferowane do:
+- location/rotation/scale,
+- visibility,
+- parent,
+- modifier properties,
+- material slots,
+- custom properties.
+
+## `bmesh`
+
+Używaj do:
+- tworzenia i modyfikowania topologii,
+- operacji na vertices/edges/faces,
+- proceduralnego modelowania mesh,
+- zmian bez zależności od interaktywnego Edit Mode.
+
+Schemat:
+```python
+bm = bmesh.new()
+bm.from_mesh(mesh)
+# bmesh.ops...
+bm.to_mesh(mesh)
+bm.free()
+mesh.update()
+```
+
+## `bpy.ops`
+
+Używaj, gdy:
+- funkcja jest udostępniona głównie jako operator,
+- potrzebujesz eksportera/importera,
+- korzystasz z narzędzia, którego odtworzenie przez Data API nie ma sensu.
+
+Nie opieraj długiego pipeline na:
+```python
+bpy.ops.object.select_all(...)
+bpy.ops.object.mode_set(...)
+bpy.ops.mesh...
+```
+bez jawnego zarządzania kontekstem.
+
+## Poll
+
+Jeżeli operator posiada wymagania kontekstowe, sprawdź:
+```python
+if bpy.ops.some.operator.poll():
+    bpy.ops.some.operator()
+```
+
+Brak `poll()` nie oznacza, że wywołanie jest bezpieczne.
+
+
+---
+
+## FILE: `02_blender_api/22_CONTEXT_MODE_SELECTION.md`
+
+# Context, Mode and Selection
+
+## Ukryty stan
+
+Najczęstsze źródła błędów automatyzacji:
+- niewłaściwy mode,
+- inny active object,
+- inny view layer,
+- obiekt wyłączony z widoku,
+- błędna selection,
+- brak odpowiedniego area/region dla operatora.
+
+## Stabilny baseline
+
+Przed operacją wymagającą Object Mode:
+1. ustal aktywny view layer,
+2. znajdź obiekt jawnie,
+3. jeżeli potrzeba — przejdź do Object Mode,
+4. ustaw active object,
+5. ustaw selection tylko dla wymaganych obiektów,
+6. wykonaj operator,
+7. nie zakładaj, że selection pozostało bez zmian.
+
+## `temp_override`
+
+Jeżeli operator wymaga konkretnego kontekstu, używaj jawnego override zamiast przypadkowej zależności od aktualnego UI.
+
+Schemat:
+```python
+with bpy.context.temp_override(
+    active_object=obj,
+    object=obj,
+    selected_objects=[obj],
+    selected_editable_objects=[obj],
+):
+    if bpy.ops.object.some_operator.poll():
+        bpy.ops.object.some_operator()
+```
+
+Dokładne pola override zależą od operatora.
+
+## Mode rule
+
+Nie przełączaj wielokrotnie:
+`OBJECT -> EDIT -> OBJECT -> EDIT`
+dla serii prostych zmian topologii.
+
+Jeżeli pipeline jest proceduralny, rozważ jedną sesję BMesh.
+
+## Selection rule
+
+Selection jest interfejsem użytkownika, nie identyfikatorem logiki biznesowej skryptu.
+Logika powinna trzymać referencje do obiektów.
+
+
+---
+
+## FILE: `02_blender_api/23_SCENE_INSPECTION.md`
+
+# Scene Inspection
+
+## Zanim cokolwiek zmienisz
+
+Zbierz Scene Snapshot.
+
+## Snapshot minimalny
+
+- Blender version,
+- active scene,
+- unit system,
+- object count,
+- collections,
+- mesh count,
+- object names/types,
+- active object,
+- selected objects,
+- mode,
+- world scale,
+- cameras,
+- lights,
+- existing asset roots,
+- external file references.
+
+## Dla assetu
+
+Zbierz:
+- dimensions,
+- location,
+- rotation,
+- scale,
+- parent,
+- modifiers,
+- mesh vertex/edge/polygon counts,
+- UV layers,
+- material slots,
+- shape keys,
+- armature,
+- custom properties.
+
+## Dla istniejącego modelu przed poprawką
+
+Wygeneruj:
+- front ortho,
+- side ortho,
+- top ortho,
+- perspective 3/4,
+- opcjonalnie rear/bottom,
+- wireframe lub matcap,
+- bounding dimensions.
+
+Bez tego agent może "naprawiać" problem, którego nie ma, albo niszczyć inną część modelu.
+
+## Snapshot jako tekst
+
+Wynik audytu powinien być krótki i strukturalny.
+Nie wypisuj tysięcy vertices.
+
+
+---
+
+## FILE: `02_blender_api/24_IDEMPOTENCY_TRANSACTIONS_RECOVERY.md`
+
+# Idempotency, Transactions and Recovery
+
+## Idempotency
+
+Uruchomienie tego samego kroku drugi raz nie powinno:
+- tworzyć kolejnego `.001`,
+- podwajać modifiera,
+- dodawać drugiego materiału,
+- ponownie przesuwać obiektu,
+- mnożyć helper objects.
+
+## Pattern: get-or-create
+
+```python
+obj = bpy.data.objects.get(name)
+if obj is None:
+    obj = create_object(name)
+```
+
+## Tagowanie
+
+Dodawaj custom properties:
+```python
+obj["ai_asset_id"] = "bench_A"
+obj["ai_stage"] = "blockout"
+obj["ai_feature_ids"] = "F001,F002"
+```
+
+Umożliwia to znalezienie obiektu bez polegania na nazwie.
+
+## Transaction boundary
+
+Przed ryzykownym etapem:
+- zapisz plik,
+- lub utwórz backup kolekcji/obiektu,
+- lub duplikuj źródłową siatkę jako hidden recovery copy.
+
+## Małe transakcje
+
+Lepsze:
+1. wykonaj rowek,
+2. sprawdź,
+3. wykonaj bevel,
+4. sprawdź.
+
+Gorsze:
+1. boolean,
+2. bevel,
+3. join,
+4. apply,
+5. triangulate,
+6. delete helpers,
+7. dopiero render.
+
+## Recovery
+
+Naprawa powinna cofać się do ostatniego poprawnego checkpointu, a nie wykonywać kolejne nakładki maskujące problem.
+
+
+---
+
+## FILE: `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
+
+# Tool Call and Token Efficiency
+
+## Cel
+
+Minimalizuj:
+- liczbę wywołań API,
+- powtarzane inspekcje,
+- duże logi,
+- iteracyjne mikroruchy,
+- generowanie kodu dla operacji, które można wykonać parametrycznie.
+
+## Zasada batch
+
+Jedno wywołanie powinno wykonywać logicznie spójny etap:
+- stworzenie blockoutu,
+- dodanie zestawu głównych modifierów,
+- audit,
+- generacja renderów kontrolnych.
+
+Nie łącz w jednym batchu etapów o różnym ryzyku.
+
+## Zasada inspect-before-act
+
+Nie próbuj kolejnych losowych operatorów.
+Najpierw odczytaj:
+- mode,
+- active object,
+- modifier stack,
+- mesh stats,
+- dimensions.
+
+## Zasada parameterize
+
+Zamiast 20 poleceń:
+`move vertex A, move vertex B...`
+
+Utwórz parametry:
+```python
+WIDTH = 1.8
+DEPTH = 0.55
+HEIGHT = 0.82
+FRAME = 0.04
+BEVEL = 0.006
+```
+
+Buduj z nich geometrię.
+
+## Zasada local patch
+
+Przy błędzie napraw tylko:
+- feature,
+- obiekt,
+- modifier,
+- region.
+
+Nie przebudowuj całego assetu, jeżeli problem jest lokalny.
+
+## Zasada compact diagnostics
+
+Loguj:
+- nazwa kroku,
+- affected objects,
+- before/after counts,
+- postcondition,
+- error.
+
+Nie loguj pełnych obiektów RNA ani wszystkich współrzędnych.
+
+## Zasada no visual guessing loop
+
+Jeżeli agent po renderze "przesuwa trochę" obiekt pięć razy, workflow jest błędny.
+Najpierw zmierz błąd, potem wykonaj jedną korektę.
+
+## Limit eksperymentów
+
+Dla nieznanej operacji:
+1. wykonaj na kopii/test mesh,
+2. oceń wynik,
+3. dopiero zastosuj do assetu.
+
+Nie eksperymentuj na głównym modelu.
+
+
+---
+
+## FILE: `02_blender_api/26_ERROR_HANDLING.md`
+
+# Error Handling
+
+## Nie łap wyjątków bez reakcji
+
+Błędny wzorzec:
+```python
+try:
+    ...
+except:
+    pass
+```
+
+## Minimalny log błędu
+
+- stage,
+- operation,
+- asset id,
+- object names,
+- context mode,
+- exception type,
+- message.
+
+## Fail fast
+
+Jeżeli postcondition nie jest spełniony:
+- nie kontynuuj kolejnych etapów,
+- oznacz phase jako FAIL,
+- pozostaw scenę w możliwie stabilnym stanie.
+
+## Validation errors vs runtime exceptions
+
+Rozróżniaj:
+- Python exception,
+- Blender operator poll failure,
+- invalid scene state,
+- visual QA failure,
+- runtime contract failure.
+
+Każdy wymaga innej naprawy.
+
+## Cleanup
+
+Jeżeli batch tworzy tymczasowe cuttery/helpers:
+- oznacz je,
+- usuń tylko te utworzone przez batch,
+- nie usuwaj obiektów "po nazwie podobnej", jeśli identyfikacja nie jest pewna.
+
+
+---
+
+## FILE: `02_blender_api/27_PERFORMANCE_FOR_AUTOMATION.md`
+
+# Performance for Blender Automation
+
+## Avoid repeated depsgraph churn
+
+Zamiast wielu mikrozmian i wymuszania update po każdej:
+- wykonaj logiczny batch,
+- zaktualizuj i zweryfikuj na końcu batchu.
+
+## Avoid UI-driven loops
+
+Nie:
+- klikaj,
+- zaznaczaj,
+- przełączaj mode,
+- wywołuj operator,
+setki razy, jeśli można zbudować mesh bezpośrednio.
+
+## Avoid excessive object count
+
+Osobne obiekty są użyteczne logicznie, ale tysiące mikro-obiektów:
+- komplikują scene graph,
+- zwiększają koszty authoringu,
+- utrudniają selection i export.
+
+Łącz elementy, gdy mają:
+- tę samą funkcję runtime,
+- ten sam materiał,
+- brak niezależnej animacji,
+- brak potrzeby wariantowania.
+
+## Heavy modifiers
+
+Przy dużej liczbie instancji authoringowych:
+- kontroluj subdivision,
+- boolean stack,
+- high-segment bevel.
+
+Wyłącz kosztowne elementy w viewport, jeśli pipeline tego wymaga, ale waliduj render/final state.
+
+
+---
+
+## FILE: `03_modeling/30_MODELING_DECISION_TREE.md`
+
+# Modeling Strategy Decision Tree
+
+## 1. Czy asset jest głównie hard-surface?
+
+Tak:
+- box modeling,
+- curves,
+- booleans,
+- bevel,
+- solidify,
+- mirror/array,
+- controlled normals.
+
+Nie:
+przejdź do odpowiedniego profilu organic/deformation.
+
+## 2. Czy kształt jest powtarzalny?
+
+Tak:
+- Array,
+- instancing,
+- linked data,
+- Geometry Nodes, jeśli korzyść przewyższa złożoność.
+
+## 3. Czy kształt jest symetryczny?
+
+Tak:
+- Mirror na wczesnym etapie.
+Nie:
+- nie wymuszaj symetrii.
+
+## 4. Czy detal przecina bryłę?
+
+Rozważ:
+- boolean,
+- inset + extrude,
+- oddzielny insert mesh.
+
+Wybór zależy od:
+- wymogu edytowalności,
+- shadingu,
+- częstotliwości powtarzania,
+- eksportu.
+
+## 5. Czy detal jest tylko powierzchniowy?
+
+Rozważ:
+- normal map,
+- decal,
+- trim sheet,
+- shader detail.
+
+## 6. Czy detal wpływa na silhouette?
+
+Jeżeli tak, geometria ma pierwszeństwo.
+
+## 7. Czy część może być osobnym obiektem?
+
+Preferuj osobny obiekt, jeśli:
+- ma inny materiał,
+- ma być animowana,
+- może występować w wariantach,
+- ułatwia boolean,
+- ma własny pivot,
+- może być instancją.
+
+## 8. Czy Subdivision Surface jest naprawdę potrzebny?
+
+Użyj, gdy:
+- powierzchnia ma być ciągle zakrzywiona,
+- kontrolna siatka daje korzyść.
+
+Nie używaj jako automatycznego sposobu "wygładzania" wszystkiego.
+
+
+---
+
+## FILE: `03_modeling/31_HARD_SURFACE_WORKFLOW.md`
+
+# Hard Surface Workflow
+
+## Etap 1 — Blockout
+
+Buduj:
+- prymitywy,
+- proste extrude,
+- podstawowe skosy.
+
+Bez:
+- mikrodetalu,
+- finalnych beveli,
+- gęstej topologii.
+
+Wynik musi zgadzać się w silhouette.
+
+## Etap 2 — Construction split
+
+Podziel projekt zgodnie z logiką konstrukcji:
+- korpus,
+- panel,
+- rama,
+- wkład,
+- metalowa osłona,
+- mocowanie,
+- element interaktywny.
+
+Nie modeluj wszystkiego jako jednej siatki tylko po to, aby mieć "jeden obiekt".
+
+## Etap 3 — Primary details
+
+Dodaj:
+- główne rowki,
+- recess,
+- otwory,
+- charakterystyczne skosy,
+- elementy łączące.
+
+## Etap 4 — Edge treatment
+
+Bevel width powinien wynikać ze:
+- skali obiektu,
+- materiału,
+- sposobu produkcji,
+- dystansu kamery.
+
+Nie ustawiaj tego samego bevel width na wszystkich assetach.
+
+## Etap 5 — Shading
+
+Sprawdź:
+- normals,
+- hard/smooth transitions,
+- bevel shading,
+- artefakty boolean.
+
+## Etap 6 — Optimization
+
+Dopiero po zaakceptowaniu formy:
+- usuń niewidoczną geometrię, jeśli bezpieczne,
+- ogranicz segments bevel,
+- uprość ukryte elementy,
+- przygotuj LOD.
+
+## Boolean policy
+
+Booleans są dozwolone.
+Nie oceniaj topologii wyłącznie według reguły "same quady".
+
+Dla statycznego hard-surface ważniejsze są:
+- brak artefaktów,
+- stabilne normals,
+- brak niekontrolowanych sliver triangles,
+- przewidywalny eksport,
+- wystarczająca edytowalność.
+
+
+---
+
+## FILE: `03_modeling/32_MODIFIERS_NONDESTRUCTIVE.md`
+
+# Modifiers and Non-Destructive Modeling
+
+## Preferowany stack hard-surface
+
+Nie jest uniwersalny, ale często:
+1. Mirror / Array
+2. Booleans / shape operations
+3. Solidify
+4. Bevel
+5. normal/shading treatment
+
+Kolejność musi być świadoma.
+
+## Mirror
+
+Używaj, gdy asymetria nie jest wymagana.
+Sprawdź:
+- origin,
+- axis,
+- clipping/merge,
+- czy późniejsze detale powinny być mirrorowane.
+
+## Array
+
+Używaj dla powtarzalności.
+Nie twórz ręcznie kilkudziesięciu kopii.
+
+## Solidify
+
+Dobre dla:
+- paneli,
+- osłon,
+- cienkich powierzchni.
+
+Kontroluj:
+- thickness,
+- offset,
+- normals,
+- narożniki.
+
+## Bevel
+
+Bevel jest częścią designu i shadingu, nie tylko kosmetyką.
+Kontroluj:
+- width,
+- segments,
+- angle/weight/vertex group,
+- miter,
+- overlap.
+
+## Decimate
+
+Nie stosuj automatycznie do gotowego hard-surface jako "optymalizacji".
+Może uszkodzić:
+- silhouette,
+- UV,
+- normals,
+- kontrolowane edge flow.
+
+## Apply policy
+
+Nie aplikuj modifiera, dopóki:
+- kolejny etap tego nie wymaga,
+- eksport/bake tego nie wymaga,
+- stack nie stał się niestabilny,
+- trzeba przekazać finalną siatkę do narzędzia, które nie obsługuje modifiera.
+
+Przed Apply utwórz checkpoint.
+
+
+---
+
+## FILE: `03_modeling/33_TOPOLOGY_NORMALS_SHADING.md`
+
+# Topology, Normals and Shading
+
+## Topologia game assetu
+
+Nie optymalizuj pod estetykę wireframe.
+Optymalizuj pod:
+- silhouette,
+- shading,
+- deformację,
+- bake,
+- runtime.
+
+## N-gons
+
+N-gon nie jest automatycznie błędem.
+Jest ryzykowny, gdy:
+- triangulacja jest nieprzewidywalna,
+- powierzchnia jest nieplanarna,
+- będzie deformowany,
+- powoduje shading artefacts.
+
+## Long thin triangles
+
+Unikaj, jeżeli:
+- powodują artefakty,
+- niepotrzebnie komplikują UV,
+- powstają po agresywnych booleanach.
+
+## Normals
+
+Sprawdź:
+- orientację face normals,
+- spójność smooth/flat,
+- custom normals, jeśli używane,
+- zachowanie po eksporcie.
+
+## Weighted / edited normals
+
+Stosuj jako świadome narzędzie shadingu.
+Nie używaj do maskowania złej geometrii, która nadal daje błędną sylwetkę lub bake.
+
+## Bevel + normals
+
+Mały bevel:
+- poprawia highlight,
+- daje wizualną skalę,
+- często jest ważniejszy niż dodatkowy detal powierzchniowy.
+
+## Kontrolla
+
+Render kontrolny:
+- szary neutralny materiał,
+- światło pod małym kątem,
+- matcap,
+- wireframe overlay.
+
+Beauty lighting może ukryć błędy.
+
+
+---
+
+## FILE: `03_modeling/34_UV_TEXEL_DENSITY_MATERIALS.md`
+
+# UV, Texel Density and Materials
+
+## UV goals
+
+UV powinno:
+- mieć wystarczający padding,
+- nie mieć przypadkowych overlapów,
+- wykorzystywać symetrię/stacking tylko świadomie,
+- zachowywać kierunek materiału,
+- uwzględniać lightmap, jeśli projekt jej wymaga.
+
+## Texel density
+
+Ustal projektową wartość bazową.
+Różnicuj tylko świadomie dla:
+- hero assets,
+- wyjątkowo dużych obiektów,
+- obiektów widzianych z bardzo bliska.
+
+## Seams
+
+Umieszczaj:
+- w naturalnych podziałach konstrukcyjnych,
+- w mniej widocznych strefach,
+- zgodnie z kierunkiem materiału.
+
+## Material count
+
+Materiał to nie tylko wygląd, ale potencjalny koszt runtime.
+Łącz materiały, jeżeli:
+- mają ten sam shader model,
+- mogą współdzielić atlas/trim,
+- nie wymagają osobnego render state.
+
+## PBR baseline
+
+Dla przenośnych assetów trzymaj logiczny podział:
+- base color,
+- metallic,
+- roughness,
+- normal,
+- occlusion,
+- emissive, jeśli potrzebny.
+
+## Procedural nodes
+
+Jeżeli efekt nie jest przenoszony do formatu runtime:
+- bake,
+- zastąp teksturą,
+- albo jawnie pozostaw jako Blender-only authoring data.
+
+## Texture orientation
+
+Szczotkowany metal, włókno, panele i wzory kierunkowe muszą być zgodne z konstrukcją obiektu.
+
+
+---
+
+## FILE: `03_modeling/35_MODULARITY_INSTANCING_REUSE.md`
+
+# Modularity, Instancing and Reuse
+
+## Modular design
+
+Moduł musi posiadać:
+- jawny wymiar interfejsu,
+- pivot zgodny z siatką modułową,
+- płaskie / poprawne krawędzie łączenia,
+- brak mikro-szczelin po złożeniu,
+- spójny materiał i texel density.
+
+## Reuse
+
+Jeżeli dwa elementy są identyczne:
+- preferuj linked mesh data lub instancing,
+- nie twórz unikalnej geometrii bez powodu.
+
+## Geometry duplication
+
+Duplikowanie geometrii zwiększa:
+- rozmiar assetu,
+- pamięć,
+- koszt authoringu.
+
+Instancing jest szczególnie ważny dla:
+- lamp,
+- słupków,
+- śrub,
+- paneli,
+- segmentów architektonicznych.
+
+## Unikalność
+
+Rozbij instancję tylko, gdy:
+- potrzebuje osobnej deformacji,
+- ma trwałą zmianę geometrii,
+- bake wymaga unikalnego UV,
+- silnik nie wspiera potrzebnego sposobu instancjonowania.
+
+## Modular QA
+
+Testuj:
+- moduł A + A,
+- A + B,
+- rogi,
+- zakończenia,
+- odbicie,
+- wielokrotne powtórzenie.
+
+Błąd 1 mm powtarzany 100 razy staje się błędem systemowym.
+
+
+---
+
+## FILE: `03_modeling/36_DETAIL_HIERARCHY.md`
+
+# Detail Hierarchy
+
+## D0 — Global silhouette
+Najważniejsza warstwa.
+
+## D1 — Primary forms
+Duże podziały bryły.
+
+## D2 — Secondary forms
+Panele, wycięcia, ramy, większe łączenia.
+
+## D3 — Tertiary geometry
+Śruby, małe szczeliny, przyciski, małe fazy.
+
+## D4 — Surface detail
+Rysy, mikro-wzór, drobna faktura, normal detail.
+
+## Reguła budowania
+
+Nie przechodź do D(n+1), jeśli D(n) nie jest zaakceptowane.
+
+## Reguła optymalizacji
+
+Usuwaj w odwrotnej kolejności:
+D4 -> D3 -> część D2 -> nigdy D0 bez jawnej zmiany LOD.
+
+## Reguła oceny
+
+Jeżeli asset wygląda źle z odległości, problem prawdopodobnie leży w D0/D1, a nie w braku śrub.
+
+
+---
+
+## FILE: `03_modeling/37_MANUFACTURING_LOGIC.md`
+
+# Manufacturing Logic for Believable Hard-Surface Assets
+
+## Cel
+
+Forma powinna sugerować, jak obiekt mógł zostać wyprodukowany i złożony.
+
+## Pytania
+
+- Czy element jest odlewem, giętą blachą, frezowaną płytą, tworzywem, szkłem?
+- Gdzie przebiega podział części?
+- Jaka jest realistyczna grubość materiału?
+- Czy pokrywa ma miejsce na otwarcie?
+- Czy panel jest wpuszczony czy naklejony?
+- Czy szczelina ma równą szerokość?
+- Czy bevel odpowiada skali produkcyjnej?
+
+## Sci-fi
+
+"Futurystyczny" nie oznacza:
+- losowych świecących linii,
+- przypadkowych panel lines,
+- nadmiaru greebles.
+
+Wiarygodny futurystyczny design nadal powinien mieć:
+- logikę funkcjonalną,
+- czytelne materiały,
+- spójne połączenia,
+- konsekwentny język krawędzi.
+
+## Agent rule
+
+Każdy detal D2/D3 powinien mieć co najmniej jedno uzasadnienie:
+- function,
+- manufacturing,
+- interaction,
+- visual language,
+- reference.
+
+Brak uzasadnienia = nie dodawaj.
+
+
+---
+
+## FILE: `03_modeling/38_HIGH_LOW_POLY_WORKFLOW.md`
+
+# High-Poly / Low-Poly Workflow
+
+## Kiedy stosować
+
+High -> Low + bake jest uzasadnione, gdy:
+- detal powierzchniowy jest zbyt kosztowny jako runtime geometry,
+- wymagane są miękkie przejścia lub złożone mikrofazy,
+- asset będzie oglądany wystarczająco blisko,
+- detal normal mapy daje realną korzyść.
+
+Nie stosuj automatycznie do każdego prop.
+
+## High-poly
+
+Cel:
+- wygląd,
+- powierzchnia,
+- edge highlights,
+- szczegóły do bake.
+
+High-poly nie musi:
+- mieć runtime topology,
+- mieć minimalnego polycount,
+- posiadać finalnego UV low-poly.
+
+Musi:
+- odpowiadać finalnej sylwetce tam, gdzie bake jej nie zastąpi.
+
+## Low-poly
+
+Cel:
+- zachować silhouette,
+- zachować funkcjonalną geometrię,
+- posiadać stabilne shading/UV,
+- mieścić się w runtime contract.
+
+## Matching
+
+High i low powinny:
+- dzielić ten sam world scale,
+- nakładać się przestrzennie,
+- mieć kontrolowane odległości powierzchni.
+
+## Hard edges and UV
+
+Rozdzielenie smoothingu i seamów powinno być planowane razem z tangent-space normal bake.
+
+Nie zmieniaj topologii i triangulacji po finalnym bake bez ponownej walidacji.
+
+## Bake-critical freeze
+
+Po zatwierdzeniu low-poly do bake:
+- zachowaj kopię,
+- zamroź UV,
+- zamroź krytyczne normals/smoothing,
+- zapisz triangulation policy.
+
+## Naming
+
+Przykład:
+- `HP_Lafar_Bench_Frame`
+- `LP_Lafar_Bench_Frame`
+- `CAGE_Lafar_Bench_Frame`
+
+## Exit criteria
+
+- silhouette low-poly zaakceptowana,
+- bake nie musi kompensować złej bryły,
+- projection errors mieszczą się w przyjętej jakości,
+- tangent-space normal działa poprawnie w docelowym runtime.
+
+
+---
+
+## FILE: `03_modeling/39_BAKING_PIPELINE.md`
+
+# Baking Pipeline
+
+## Cel
+
+Przenieść informacje z modelu źródłowego do tekstur low-poly w sposób kontrolowany i powtarzalny.
+
+## Typowe mapy
+
+W zależności od pipeline:
+- normal,
+- ambient occlusion,
+- curvature/masks,
+- base color,
+- roughness,
+- metallic,
+- emissive,
+- custom masks.
+
+Nie bake'uj map bez zastosowania runtime.
+
+## Preflight
+
+Przed bake:
+- low-poly posiada finalne lub zamrożone UV,
+- high i low są poprawnie wyrównane,
+- transform scale jest świadomie obsłużony,
+- naming/parowanie high-low jest deterministyczne,
+- image targets mają właściwą rozdzielczość,
+- color space jest właściwy dla typu mapy.
+
+## Projection
+
+Dostępne strategie:
+- ray distance/extrusion,
+- explicit cage,
+- per-part bake,
+- exploded bake.
+
+Preferuj cage, gdy:
+- projekcja na zakrzywionych/ciasnych strefach jest nieprzewidywalna,
+- są blisko leżące powierzchnie,
+- potrzebna jest większa kontrola.
+
+## Bake segmentation
+
+Dla złożonego assetu nie wymuszaj jednego bake wszystkiego naraz.
+
+Rozdziel elementy, gdy:
+- promienie przechodzą na sąsiednią część,
+- powstają projection artifacts,
+- części mają różne wymagania.
+
+## Padding / margin
+
+Padding musi uwzględniać:
+- mipmapping,
+- skalowanie tekstury,
+- docelową rozdzielczość.
+
+Nie ustawiaj jednej magicznej wartości dla wszystkich atlasów.
+
+## Verification
+
+Po bake:
+1. nałóż mapę na low-poly,
+2. ukryj high-poly,
+3. renderuj pod grazing light,
+4. sprawdź seams,
+5. sprawdź skew,
+6. sprawdź gradienty na płaskich powierzchniach,
+7. sprawdź wynik po eksporcie.
+
+## Artifact classes
+
+- projection miss,
+- cage intersection,
+- skew,
+- hard-edge mismatch,
+- UV seam mismatch,
+- tangent mismatch,
+- insufficient padding,
+- mirrored-normal issue.
+
+Każdy typ błędu wymaga innej naprawy.
+
+
+---
+
+## FILE: `03_modeling/40_TRIM_SHEETS.md`
+
+# Trim Sheets
+
+## Cel
+
+Współdzielić teksturę pomiędzy wieloma powierzchniami i assetami bez tworzenia unikalnego zestawu tekstur dla każdego obiektu.
+
+## Dobry kandydat
+
+- architektura modularna,
+- ramy,
+- listwy,
+- metalowe profile,
+- powtarzalne panele,
+- przewody,
+- krawędzie technologiczne.
+
+## Nie używaj, gdy
+
+- asset wymaga unikalnego malowania na całej powierzchni,
+- kierunek i skala trimu nie mogą być utrzymane,
+- workflow komplikuje asset bardziej niż oszczędza.
+
+## Projekt trim sheet
+
+Zdefiniuj pasy:
+- wide structural trim,
+- medium trim,
+- narrow edge trim,
+- panel detail,
+- optional emissive strip.
+
+## UV
+
+UV dla trimów powinno:
+- utrzymywać stałą skalę,
+- zachować orientację,
+- snapować się do odpowiednich pasów,
+- minimalizować przypadkowe interpolacje pomiędzy regionami.
+
+## Geometry relation
+
+Trim nie zastępuje geometrii, która:
+- zmienia silhouette,
+- tworzy duży recess,
+- rzuca istotny cień.
+
+## Modular consistency
+
+W jednym zestawie lokacji preferuj małą liczbę zatwierdzonych trim sheets zamiast unikalnych tekstur dla każdego modułu.
+
+## QA
+
+Sprawdź:
+- stretching,
+- kierunek,
+- seams,
+- zgodność skali między modułami,
+- mip behavior z dystansu.
+
+
+---
+
+## FILE: `03_modeling/41_DECALS_AND_FLOATING_DETAILS.md`
+
+# Decals and Floating Details
+
+## Cel
+
+Dodawać lokalne informacje wizualne bez cięcia głównej topologii.
+
+## Kandydaci
+
+- oznaczenia,
+- logo,
+- numery,
+- ostrzeżenia,
+- ślady serwisowe,
+- cienkie panel lines,
+- małe techniczne detale.
+
+## Geometry decals / floating meshes
+
+Dobre, gdy:
+- potrzebny jest lokalny detal,
+- główny mesh nie powinien być komplikowany,
+- pipeline/runtime poprawnie obsługuje takie powierzchnie.
+
+Kontroluj:
+- z-fighting,
+- offset,
+- normals,
+- bounds,
+- LOD behavior.
+
+## Texture decals
+
+Dobre dla:
+- oznaczeń,
+- wariantów,
+- zabrudzeń,
+- informacji diegetycznych.
+
+## Decal atlas
+
+Dla wielu drobnych oznaczeń preferuj atlas zamiast osobnej tekstury per decal.
+
+## Nie używaj decal jako maskowania błędu konstrukcyjnego
+
+Jeżeli referencja ma realne wcięcie o widocznym parallax:
+- geometria lub displacement/bake może być właściwszy.
+
+## LOD
+
+Małe decals powinny:
+- zanikać w odpowiednim LOD,
+- nie pozostawiać migoczących mikropowierzchni.
+
+
+---
+
+## FILE: `03_modeling/42_CURVES_FOR_ASSETS.md`
+
+# Curves for Game Asset Authoring
+
+## Zastosowania
+
+Curves są użyteczne dla:
+- kabli,
+- rur,
+- poręczy,
+- listew,
+- uszczelek,
+- przewodów,
+- profili prowadzonych po ścieżce.
+
+## Authoring advantage
+
+Curve pozwala oddzielić:
+- przebieg,
+- profil,
+- grubość,
+- resolution.
+
+To ułatwia poprawki względem ręcznego przesuwania wielu vertices.
+
+## Parameters
+
+Kontroluj:
+- spline points,
+- handles,
+- cyclic state,
+- bevel depth/profile,
+- resolution,
+- tilt,
+- radius.
+
+## Runtime conversion
+
+Curve jest przede wszystkim authoring representation.
+Jeżeli runtime wymaga mesh:
+- konwertuj na kontrolowanym etapie,
+- zachowaj curve source,
+- po konwersji zweryfikuj polycount i normals.
+
+## Resolution
+
+Nie ustawiaj wysokiej resolution domyślnie.
+Dobierz ją do:
+- promienia krzywizny,
+- dystansu kamery,
+- silhouette.
+
+## Endpoints
+
+Sprawdź:
+- caps,
+- połączenie z assetem,
+- przenikanie,
+- orientację profilu.
+
+## Reusable profiles
+
+Profile rur, uszczelek i listew powinny być współdzielone, jeśli projekt wykorzystuje jeden język konstrukcyjny.
+
+
+---
+
+## FILE: `03_modeling/43_GEOMETRY_NODES_AUTHORING.md`
+
+# Geometry Nodes for Asset Authoring
+
+## Rola
+
+Geometry Nodes traktuj jako system proceduralnego authoringu:
+- generowanie powtórzeń,
+- rozmieszczanie,
+- warianty,
+- modularne konstrukcje,
+- parametryczne detale.
+
+Nie używaj tylko dlatego, że zadanie "da się zrobić nodami".
+
+## Dobre zastosowania
+
+- rzędy paneli,
+- śruby/łączniki,
+- moduły fasady,
+- proceduralne barierki,
+- rozmieszczanie instancji,
+- warianty długości,
+- kontrolowane scatter.
+
+## Instancing first
+
+Jeżeli rezultat składa się z powtarzalnych elementów:
+- zachowuj instancje możliwie długo,
+- nie realizuj ich bez potrzeby.
+
+`Realize Instances` jest granicą, po której instancje stają się realną geometrią.
+
+## Realize only when
+
+- dalszy node musi edytować geometrię per-element,
+- eksport/pipeline nie zachowuje wymaganej instancji,
+- bake lub operacja topologiczna tego wymaga.
+
+## Inputs
+
+Wszystkie parametry projektowe powinny być wejściami grupy:
+- width,
+- height,
+- count,
+- spacing,
+- seed,
+- profile,
+- variant selector.
+
+## Determinism
+
+Jeżeli używasz losowości:
+- seed jest jawny,
+- seed zapisany w asset contract,
+- rezultat musi być reprodukowalny.
+
+## Assetization
+
+Node group powinien mieć:
+- nazwę,
+- wersję,
+- jasno opisane inputy,
+- zakresy,
+- jednostki,
+- fallback defaults.
+
+## Escape hatch
+
+Jeżeli Geometry Nodes zwiększa złożoność napraw prostego unikalnego prop, użyj klasycznego modelowania.
+
+
+---
+
+## FILE: `03_modeling/44_PROCEDURAL_MATERIAL_AUTHORING.md`
+
+# Procedural Material Authoring
+
+## Rola
+
+Proceduralny shader jest narzędziem authoringowym.
+Nie zakładaj, że cały graph zostanie przeniesiony do silnika.
+
+## Dobre zastosowania
+
+- szybkie lookdev,
+- maski,
+- proceduralne zabrudzenie,
+- tileable surface detail,
+- generowanie danych do bake.
+
+## Runtime decision
+
+Dla każdego proceduralnego efektu wybierz:
+- recreate in engine,
+- bake to textures,
+- remove,
+- Blender-only preview.
+
+## Coordinate discipline
+
+Jawnie wybieraj coordinate space:
+- UV,
+- object,
+- generated,
+- world.
+
+Zmiana transformacji obiektu może wpływać na proceduralne mapowanie.
+
+## Scale
+
+Proceduralne wzory muszą mieć fizyczną skalę.
+"Noise scale = 5" bez odniesienia do metrów projektu nie jest trwałą wiedzą.
+
+## Material parameters
+
+Preferuj wspólny zestaw:
+- base color family,
+- roughness range,
+- metallic state,
+- normal strength,
+- detail scale,
+- wear amount.
+
+## Game-ready
+
+Przed eksportem sprawdź:
+- które właściwości są rzeczywiście reprezentowane przez docelowy format,
+- czy tekstury zostały wypieczone,
+- czy packed channels są zgodne z silnikiem.
+
+
+---
+
+## FILE: `04_game_ready/40_GAME_ASSET_CONTRACT.md`
+
+# Game Asset Contract
+
+Każdy asset przed finalizacją powinien posiadać kontrakt runtime.
+
+## Geometry
+- target triangles:
+- max triangles:
+- LOD count:
+- deformation:
+- backface assumptions:
+- hidden geometry policy:
+
+## Materials
+- max material slots:
+- shader model:
+- transparency:
+- alpha mode:
+- emissive:
+- normal map:
+- texture resolution:
+- compression target:
+
+## Transform
+- units:
+- forward axis:
+- up axis:
+- pivot:
+- applied transforms policy:
+
+## Runtime
+- static / movable:
+- instanced:
+- collision:
+- occlusion:
+- navmesh interaction:
+- lightmap:
+- shadow:
+- animation:
+
+## Export
+- format:
+- object root:
+- naming:
+- animation clips:
+- external textures / embedded:
+- validator:
+
+## Edytowalność
+
+Źródłowy `.blend` nie powinien być tym samym, czym finalna "spłaszczona" wersja export.
+Zachowaj authoring source.
+
+
+---
+
+## FILE: `04_game_ready/41_POLYCOUNT_LOD_COLLISION_OCCLUSION.md`
+
+# Polycount, LOD, Collision and Occlusion
+
+## Polycount
+
+Licz trójkąty, nie tylko quady/polygons.
+Runtime rasteryzacyjny finalnie operuje na trójkątach.
+
+## LOD
+
+LOD powinien usuwać detal według kolejności:
+1. niewidoczne mikrodetale,
+2. małe bevel segments,
+3. drobne recess,
+4. elementy niezmieniające silhouette,
+5. upraszczanie dużych zakrzywień dopiero później.
+
+Każdy LOD powinien zachować:
+- globalną sylwetkę,
+- pivot,
+- bounds,
+- główne material regions.
+
+## Collision
+
+Collision mesh:
+- prostszy niż render mesh,
+- bez drobnych szczelin,
+- zgodny z funkcją gameplay.
+
+Nie twórz perfect collision, jeżeli gameplay tego nie potrzebuje.
+
+## Occlusion
+
+Dla dużych obiektów rozważ:
+- rozdzielenie geometryczne umożliwiające culling,
+- logiczne segmenty,
+- bounding volumes.
+
+## Instancing
+
+Asset występujący setki razy wymaga ostrzejszego budżetu niż unikalny hero prop.
+
+
+---
+
+## FILE: `04_game_ready/42_PIVOTS_TRANSFORMS_UNITS_NAMING.md`
+
+# Pivots, Transforms, Units and Naming
+
+## Pivot
+
+Pivot powinien wynikać z funkcji:
+- mebel stojący: środek podstawy lub ustalony standard,
+- drzwi: oś zawiasu,
+- panel obrotowy: oś mechanizmu,
+- moduł architektoniczny: punkt siatki montażowej.
+
+Nie ustawiaj pivotu na geometry center automatycznie.
+
+## Transform
+
+Przed export:
+- sprawdź location,
+- rotation,
+- scale,
+- negative scale,
+- parent transform.
+
+Apply transforms tylko zgodnie z kontraktem.
+Nie rób tego bezmyślnie, szczególnie w hierarchiach i rigach.
+
+## Units
+
+Jednostki Blendera i runtime muszą mieć jawne mapowanie.
+
+## Naming
+
+Proponowany schemat:
+`<TYPE>_<SET>_<ASSET>_<PART>_<VARIANT>`
+
+Przykłady:
+- `SM_Lafar_Bench_Frame_A`
+- `SM_Lafar_Bench_Seat_A`
+- `COL_Lafar_Bench_A`
+- `LOD1_Lafar_Bench_A`
+
+## Zakaz `.001`
+
+Finalny asset nie powinien zawierać przypadkowych nazw:
+- Cube.001
+- Material.003
+- Boolean.017
+
+Nazwy mają opisywać funkcję.
+
+
+---
+
+## FILE: `04_game_ready/43_TEXTURE_MATERIAL_RUNTIME.md`
+
+# Texture and Material Runtime
+
+## PBR portability
+
+Jeżeli format docelowy opiera się na PBR metallic-roughness:
+- mapuj materiał do tego modelu,
+- sprawdź color space,
+- sprawdź kanały packed textures,
+- nie polegaj na Blender-only node graph.
+
+## Normal maps
+
+Sprawdź:
+- tangent space,
+- orientację,
+- UV,
+- zachowanie po triangulacji,
+- zgodność z tangent basis runtime.
+
+## Transparency
+
+Transparency jest droższa i bardziej problematyczna niż opaque.
+Używaj tylko, gdy design jej wymaga.
+
+Rozróżniaj:
+- opaque,
+- alpha mask/cutout,
+- alpha blend.
+
+## Emissive
+
+Emissive texture nie oznacza automatycznie realnego źródła światła w silniku.
+To osobna decyzja runtime.
+
+## Texture reuse
+
+Preferuj:
+- trim sheets,
+- tileable materials,
+- atlasy,
+- współdzielone zestawy materiałów,
+
+gdy zwiększa to wydajność bez utraty wizji.
+
+## Bake
+
+Bake jest wymagany, gdy authoring wykorzystuje efekt, którego runtime nie odtworzy bezpośrednio.
+
+
+---
+
+## FILE: `04_game_ready/44_ANIMATION_RIGGING.md`
+
+# Animation and Rigging
+
+## Czy asset wymaga rig?
+
+Nie twórz armature dla prostego mechanicznego ruchu, jeżeli:
+- hierarchia obiektów i transform animation wystarczy,
+- silnik obsługuje animację node transforms.
+
+Rig ma sens dla:
+- deformacji,
+- wielu zależnych elementów,
+- skinned meshes,
+- bardziej złożonych animacji.
+
+## Mechanical animation
+
+Dla drzwi, ekranów, uchwytów:
+- poprawny pivot jest kluczowy,
+- hierarchia powinna odzwierciedlać mechanikę,
+- zakres ruchu powinien wynikać z konstrukcji.
+
+## Clips
+
+Każda animacja:
+- ma nazwę,
+- zakres klatek,
+- stan początkowy/końcowy,
+- loop flag na poziomie projektu,
+- oczekiwany root transform.
+
+## Export QA
+
+Po eksporcie sprawdź:
+- czy klipy istnieją,
+- czy kości/nodes są poprawnie zmapowane,
+- czy skala nie uległa zmianie,
+- czy pivot/axis zachowują się poprawnie.
+
+
+---
+
+## FILE: `04_game_ready/45_GLTF_EXPORT.md`
+
+# glTF / GLB Export Baseline
+
+## Dlaczego glTF jako baseline
+
+glTF 2.0 jest formatem runtime-oriented przeznaczonym do efektywnego przenoszenia:
+- scen,
+- hierarchy,
+- meshes,
+- materials,
+- cameras,
+- animations.
+
+Biblioteka traktuje go jako domyślny kontrakt wymiany, jeśli silnik nie wymaga innego formatu.
+
+## Coordinate system
+
+Przed exportem zawsze sprawdź konwersję osi między Blenderem i runtime.
+
+Specyfikacja glTF:
+- right-handed,
+- +Y up,
+- +Z forward,
+- jednostka długości: metr.
+
+Nie zakładaj, że ustawienia eksportera i silnika są identyczne.
+
+## Authoring vs runtime
+
+glTF nie jest formatem authoringowym.
+Nie zastępuje `.blend`.
+
+## Export checklist
+
+- prawidłowe root nodes,
+- oczekiwane meshes,
+- materiały,
+- UV,
+- normals/tangents,
+- textures,
+- animations,
+- transforms,
+- skinning,
+- no accidental cameras/lights, jeśli niepotrzebne.
+
+## Post-export validation
+
+Nie kończ pracy na komunikacie "export successful".
+
+Sprawdź wynik:
+- importerem docelowego silnika,
+- lub niezależnym glTF validator/viewer,
+- porównaj bounds,
+- material appearance,
+- animation,
+- hierarchy.
+
+## Embedded vs external
+
+GLB upraszcza pojedynczy plik.
+Zewnętrzne zasoby mogą ułatwiać reuse/cache.
+Wybór należy do pipeline projektu.
+
+
+---
+
+## FILE: `04_game_ready/46_DRAW_CALLS_INSTANCING_AND_BATCHING.md`
+
+# Draw Calls, Instancing and Batching
+
+## Geometry is not the only cost
+
+Asset z małą liczbą trójkątów może być drogi, jeśli ma:
+- wiele material slots,
+- dużo transparency,
+- dużo unikalnych textures,
+- brak instancingu,
+- nadmiernie rozdrobnioną hierarchię.
+
+## Material slots
+
+Każdy dodatkowy slot powinien mieć uzasadnienie shader/runtime.
+
+## Instancing
+
+Powtarzające się obiekty:
+- powinny współdzielić mesh,
+- najlepiej współdzielić materiały,
+- mogą posiadać per-instance transform i ograniczony zestaw parametrów.
+
+## Unique variation
+
+Zamiast tworzyć 10 unikalnych mesh:
+- materiał variation,
+- decal variation,
+- accessory variation,
+- instanced add-ons.
+
+## Batching caveat
+
+Dokładny koszt zależy od silnika.
+Biblioteka nie narzuca konkretnego draw-call target bez danych projektu.
+
+
+---
+
+## FILE: `04_game_ready/47_TEXTURE_PACKING_AND_MIP_SAFETY.md`
+
+# Texture Packing and Mip Safety
+
+## Channel packing
+
+Jeżeli silnik wspiera packed masks:
+- grupuj mapy jednokanałowe zgodnie z jednym projektem,
+- dokumentuj dokładne mapowanie kanałów.
+
+Przykład projektowy:
+```text
+R = AO
+G = Roughness
+B = Metallic
+A = Custom Mask
+```
+
+To jest przykład, nie uniwersalny standard.
+
+## Color space
+
+Rozróżniaj:
+- dane kolorystyczne,
+- dane numeryczne/maski,
+- normal maps.
+
+Błędny color space zmienia dane.
+
+## Mip safety
+
+Małe wyspy UV i cienkie detale muszą mieć:
+- odpowiedni padding,
+- wystarczającą szerokość w texelach,
+- zachowanie czytelności po mipmappingu.
+
+## Resolution policy
+
+Resolution wynika z:
+- powierzchni assetu,
+- texel density,
+- dystansu kamery,
+- importance class.
+
+Nie wynika z zasady "hero = 4K" bez obliczenia.
+
+## Atlas
+
+Atlas pomaga redukować liczbę zasobów/material changes, ale:
+- utrudnia niezależną zmianę resolution,
+- może marnować miejsce,
+- wymaga dobrego planowania paddingu.
+
+## Compression
+
+Finalny wygląd oceniaj również po kompresji docelowego silnika.
+
+
+---
+
+## FILE: `04_game_ready/48_ASSET_VARIANTS_AND_RANDOMIZATION.md`
+
+# Asset Variants and Randomization
+
+## Cel
+
+Uzyskać różnorodność bez duplikowania całego kosztu assetu.
+
+## Warstwy wariantów
+
+### V0 — transform
+- rotation,
+- scale w dozwolonym zakresie.
+
+### V1 — material
+- kolor,
+- roughness,
+- decal set.
+
+### V2 — accessories
+- dodatkowy panel,
+- uchwyt,
+- ekran,
+- osłona.
+
+### V3 — structural
+- rzeczywista zmiana geometrii.
+
+Preferuj najniższą wystarczającą warstwę.
+
+## Deterministic randomization
+
+W proceduralnych zestawach:
+- seed jawny,
+- lista dozwolonych wariantów jawna,
+- brak przypadkowych zmian wpływających na gameplay clearances.
+
+## Shared core
+
+Warianty powinny współdzielić:
+- core mesh tam, gdzie możliwe,
+- materiały,
+- trim sheets,
+- atlas,
+- collision, jeśli geometria funkcjonalna się nie zmienia.
+
+## QA
+
+Wariant nie może:
+- naruszać bounding/clearance contract,
+- usuwać feature MUST wspólnego dla rodziny,
+- tworzyć konfliktów material/runtime.
+
+
+---
+
+## FILE: `05_execution/50_BUILD_PLAN_TEMPLATE.md`
+
+# Build Plan Template
+
+## Asset
+Name:
+Version:
+Reference:
+Target Blender:
+Runtime profile:
+
+## A. Feature Contract
+Wklej listę `MUST`, `SHOULD`, `OPTIONAL`.
+
+## B. Object decomposition
+
+| Object | Purpose | Primitive/source | Symmetry | Material | Animated |
+|---|---|---|---|---|---|
+
+## C. Modeling strategy
+
+Dla każdej części:
+- technique:
+- base primitive:
+- modifiers:
+- booleans:
+- expected topology:
+- feature IDs:
+
+## D. Parameters
+
+```text
+WIDTH =
+DEPTH =
+HEIGHT =
+THICKNESS =
+BEVEL_MAIN =
+BEVEL_DETAIL =
+GAP =
+```
+
+## E. Execution phases
+
+### Phase 1 — blockout
+Affected objects:
+Expected output:
+Checkpoint:
+
+### Phase 2 — primary details
+Affected objects:
+Feature IDs:
+Checkpoint:
+
+### Phase 3 — secondary details
+Affected objects:
+Feature IDs:
+Checkpoint:
+
+### Phase 4 — UV/material
+Checkpoint:
+
+### Phase 5 — game-ready
+Checkpoint:
+
+## F. Risks
+
+| Risk | Probability | Impact | Mitigation |
+|---|---:|---:|---|
+
+## G. Exit criteria
+
+Asset jest gotowy, gdy:
+- [ ] all MUST features pass
+- [ ] proportions pass
+- [ ] shading pass
+- [ ] UV/material pass
+- [ ] runtime contract pass
+- [ ] export pass
+
+
+---
+
+## FILE: `05_execution/51_EXECUTION_PROTOCOL.md`
+
+# Execution Protocol
+
+## 1. Preflight
+
+- odczytaj Scene Snapshot,
+- sprawdź Blender version,
+- sprawdź jednostki,
+- sprawdź, czy asset już istnieje,
+- sprawdź Feature Contract,
+- sprawdź Build Plan.
+
+## 2. Create asset root
+
+Utwórz lub znajdź:
+- collection assetu,
+- root object/empty, jeśli pipeline tego wymaga,
+- naming namespace.
+
+## 3. Build by phase
+
+Każdy phase:
+1. loguje start,
+2. wykonuje spójny batch,
+3. aktualizuje scenę,
+4. wykonuje postcondition,
+5. zapisuje status feature IDs,
+6. uruchamia checkpoint.
+
+## 4. Postcondition examples
+
+Po stworzeniu blockoutu:
+- obiekt istnieje,
+- dimensions są zgodne,
+- scale jest oczekiwana,
+- liczba części się zgadza.
+
+Po boolean:
+- modifier/rezultat istnieje,
+- nie zniknęły faces z innej strefy,
+- bounds nie zmieniły się poza tolerancją.
+
+Po bevel:
+- width zgodny,
+- segment count zgodny,
+- brak self-overlap.
+
+## 5. Checkpoint
+
+Nie kontynuuj, jeśli checkpoint FAIL.
+
+## 6. Save
+
+Zapisuj:
+- przed ryzykownym Apply,
+- po zaakceptowanym dużym etapie,
+- przed exportem.
+
+## 7. No silent repair
+
+Jeżeli wykonanie różni się od planu, zapisz to jako deviation.
+Nie zmieniaj strategii po cichu.
+
+
+---
+
+## FILE: `05_execution/52_CHECKPOINT_AND_VISUAL_QA.md`
+
+# Checkpoint and Visual QA
+
+## Minimalny zestaw widoków
+
+Dla statycznego prop:
+- front ortho,
+- side ortho,
+- top ortho,
+- 3/4 perspective.
+
+Jeżeli geometria ma znaczenie z innych stron:
+- rear,
+- bottom.
+
+## Tryby kontroli
+
+### Silhouette
+Jednolity ciemny materiał / maska.
+Cel: ocenić tylko obrys.
+
+### Neutral shaded
+Szary PBR.
+Cel: forma i highlight.
+
+### Matcap
+Cel: wykrywanie falowania i shading artefacts.
+
+### Wireframe
+Cel: topologia i gęstość.
+
+### Material preview
+Cel: materiały, UV i texture direction.
+
+## Checkpoint C1 — Blockout
+Oceniaj:
+- bounds,
+- proporcje,
+- osie,
+- negative spaces,
+- primary silhouette.
+
+Nie oceniaj tekstur.
+
+## Checkpoint C2 — Primary details
+Oceniaj wszystkie `MUST`.
+
+## Checkpoint C3 — Shading
+Oceniaj:
+- bevel,
+- normals,
+- smooth transitions,
+- boolean artifacts.
+
+## Checkpoint C4 — Runtime
+Oceniaj:
+- LOD,
+- collision,
+- pivot,
+- material count,
+- texture use.
+
+## Difference score
+
+Dla każdej cechy:
+- PASS,
+- MINOR,
+- FAIL.
+
+`MUST + FAIL` = asset nie może przejść dalej.
+
+
+---
+
+## FILE: `05_execution/53_FINAL_VALIDATION.md`
+
+# Final Validation
+
+## Visual
+
+- [ ] silhouette matches
+- [ ] proportions within tolerance
+- [ ] all MUST features visible
+- [ ] no invented major details
+- [ ] no missing characteristic recess/groove/cut
+- [ ] material regions match design
+- [ ] asymmetry preserved where required
+
+## Mesh
+
+- [ ] no unintended duplicate geometry
+- [ ] no obvious non-manifold issues where mesh should be closed
+- [ ] face normals correct
+- [ ] no accidental zero-area geometry
+- [ ] no uncontrolled shading artifacts
+- [ ] triangle count documented
+
+## Modifiers
+
+- [ ] stack intentional
+- [ ] no disabled forgotten modifiers
+- [ ] no accidental duplicate modifiers
+- [ ] apply state follows pipeline
+
+## UV / materials
+
+- [ ] UV layers named
+- [ ] overlap intentional
+- [ ] texel density acceptable
+- [ ] material slots within budget
+- [ ] Blender-only material features baked/replaced where required
+
+## Scene
+
+- [ ] naming clean
+- [ ] no Cube.001 style leftovers
+- [ ] helper objects hidden/removed according to policy
+- [ ] collection structure clean
+- [ ] pivot correct
+- [ ] transforms correct
+
+## Game-ready
+
+- [ ] LOD correct
+- [ ] collision correct
+- [ ] instancing/reuse considered
+- [ ] runtime bounds correct
+- [ ] export tested
+
+## Deliverables
+
+- [ ] source `.blend`
+- [ ] runtime export
+- [ ] textures
+- [ ] validation report
+
+
+---
+
+## FILE: `05_execution/54_FAILURE_RECOVERY_PLAYBOOK.md`
+
+# Failure Recovery Playbook
+
+## Failure: asset "podobny", ale niezgodny
+
+Przyczyna:
+brak Feature Contract.
+
+Naprawa:
+1. wróć do referencji,
+2. wypisz MUST,
+3. porównaj je z obiektami,
+4. napraw tylko brakujące/niepoprawne features.
+
+## Failure: detal zniknął po modyfikacji
+
+Przyczyna:
+operacja destrukcyjna lub zmiana stacku.
+
+Naprawa:
+- zidentyfikuj feature owner,
+- porównaj z checkpointem,
+- przywróć owner lub modifier,
+- nie odtwarzaj całego modelu.
+
+## Failure: operator API nic nie robi / robi coś innego
+
+Przyczyna:
+context/mode/selection.
+
+Naprawa:
+- sprawdź `poll`,
+- sprawdź mode,
+- active object,
+- selection,
+- view layer,
+- użyj `temp_override`,
+- rozważ Data API/BMesh.
+
+## Failure: powstają `.001`, `.002`
+
+Przyczyna:
+brak idempotency.
+
+Naprawa:
+- get-or-create,
+- tagowanie asset id,
+- jawne usuwanie/aktualizacja starych helperów.
+
+## Failure: bevel niszczy narożniki
+
+Sprawdź:
+- scale,
+- width,
+- overlap,
+- segments,
+- topology,
+- modifier order.
+
+## Failure: boolean daje artefakty
+
+Sprawdź:
+- coplanar surfaces,
+- bardzo małe odległości,
+- non-manifold cutter,
+- normals,
+- modifier order.
+
+## Failure: zbyt dużo polygonów
+
+Nie uruchamiaj od razu Decimate.
+
+Najpierw:
+- bevel segments,
+- cylinders/spheres segments,
+- ukryte geometry,
+- duplicate geometry,
+- microdetail,
+- LOD separation.
+
+## Failure: eksport wygląda inaczej
+
+Porównaj:
+- axis,
+- scale,
+- normals/tangents,
+- material node compatibility,
+- texture color spaces,
+- modifiers apply/export settings,
+- animation hierarchy.
+
+
+---
+
+## FILE: `05_execution/55_METRICS_AND_SCORECARD.md`
+
+# Asset Quality Scorecard
+
+Scorecard nie zastępuje bramek MUST.
+
+## Categories
+
+### A. Reference fidelity — 0–30
+- silhouette 10
+- proportions 8
+- primary features 8
+- material regions 4
+
+### B. Modeling quality — 0–20
+- topology appropriate 5
+- shading 5
+- modifier strategy 5
+- editability 5
+
+### C. Game readiness — 0–25
+- geometry budget 5
+- materials/textures 5
+- pivot/transforms/naming 5
+- LOD/collision 5
+- export 5
+
+### D. API/process quality — 0–15
+- deterministic operations 5
+- idempotency 4
+- checkpoint discipline 3
+- efficient tool usage 3
+
+### E. Documentation — 0–10
+- feature mapping 4
+- build parameters 2
+- manifest 2
+- known limitations 2
+
+## Thresholds
+
+- 90–100: production-ready
+- 80–89: acceptable with minor fixes
+- 70–79: requires repair
+- <70: return to planning/modeling
+
+## Hard fail
+
+Niezależnie od score:
+- dowolny `MUST = FAIL`,
+- błędny pivot dla funkcjonalnego assetu,
+- brakujący wymagany materiał/animation,
+- uszkodzony export,
+- poważny shading/runtime defect.
+
+
+---
+
+## FILE: `05_execution/56_CHANGE_IMPACT_PROTOCOL.md`
+
+# Change Impact Protocol
+
+Każda poprawka może powodować regresję.
+
+## Przed zmianą
+
+Zidentyfikuj:
+- target feature,
+- owner object,
+- dependencies,
+- neighboring features,
+- modifiers downstream,
+- UV/material impact,
+- export impact.
+
+## Impact classes
+
+### LOCAL
+Zmiana nie wpływa poza jeden feature.
+Przykład: szerokość szczeliny.
+
+### STRUCTURAL
+Zmiana wpływa na kilka cech i proporcje.
+Przykład: szerokość korpusu.
+
+### PIPELINE
+Zmiana wpływa na UV/export/rig.
+Przykład: zastosowanie modifiera zmieniającego vertex order.
+
+## Test regresji
+
+LOCAL:
+- target + adjacent MUST.
+
+STRUCTURAL:
+- pełny silhouette + wszystkie MUST.
+
+PIPELINE:
+- pełna walidacja od odpowiedniego etapu do export.
+
+
+---
+
+## FILE: `05_execution/57_AGENT_EVALUATION_HARNESS.md`
+
+# Agent Evaluation Harness
+
+Biblioteka powinna być testowana na benchmarkach, a nie oceniana wyłącznie opisowo.
+
+## Benchmark classes
+
+### B1 — Primitive fidelity
+Zbuduj asset z dokładnymi wymiarami i kilkoma cechami MUST.
+
+Mierzy:
+- precision,
+- naming,
+- transforms,
+- idempotency.
+
+### B2 — Reference fidelity
+Zbuduj hard-surface prop z front/side/top.
+
+Mierzy:
+- silhouette,
+- proportions,
+- feature retention.
+
+### B3 — Repair
+Dostarcz celowo wadliwy asset.
+
+Mierzy:
+- scene inspection,
+- local patch,
+- regression avoidance.
+
+### B4 — API trap
+Ustaw:
+- zły active object,
+- Edit Mode,
+- nietypową selection.
+
+Mierzy:
+- odporność na context.
+
+### B5 — Optimization
+Dostarcz zbyt ciężki asset.
+
+Mierzy:
+- czy agent redukuje koszt bez utraty MUST,
+- czy nie używa bezmyślnie Decimate.
+
+### B6 — Export
+Dostarcz hierarchy + materials + animation.
+
+Mierzy:
+- poprawność transform,
+- export,
+- post-export verification.
+
+## Metrics
+
+- feature pass rate,
+- MUST regression count,
+- dimension error,
+- triangle count,
+- material slot count,
+- number of tool calls,
+- number of failed tool calls,
+- repair iterations,
+- bytes/tokens instrukcji załadowanych do zadania,
+- time-to-valid-asset.
+
+## Najważniejsze metryki agenta
+
+1. `MUST pass rate`
+2. `regressions per repair`
+3. `failed API calls`
+4. `tool calls per accepted feature`
+5. `reference deviation`
+6. `runtime contract violations`
+
+## Release gate biblioteki
+
+Nowa wersja biblioteki nie powinna być uznana za lepszą tylko dlatego, że ma więcej treści.
+Musi poprawiać wynik benchmarków albo zmniejszać koszt przy tej samej jakości.
+
+
+---
+
+## FILE: `05_execution/58_AUTOMATED_VISUAL_DIFF.md`
+
+# Automated Visual Diff
+
+## Cel
+
+Wykrywać regresje wizualne pomiędzy:
+- referencją a renderem,
+- checkpointem A a checkpointem B,
+- wersją assetu przed i po naprawie.
+
+## Render determinism
+
+Diff ma sens tylko, gdy stałe są:
+- camera,
+- resolution,
+- framing,
+- lighting,
+- world/background,
+- render engine,
+- material QA profile,
+- color management.
+
+## Rodzaje diff
+
+### Silhouette diff
+Najważniejszy dla D0/D1.
+Porównuj maskę obiektu.
+
+Metryki:
+- IoU,
+- area difference,
+- contour distance.
+
+### Edge diff
+Przydatny dla:
+- rowków,
+- paneli,
+- dużych podziałów.
+
+### ROI diff
+Porównuje tylko obszar przypisany do Feature ID.
+
+### Pixel diff
+Używaj ostrożnie.
+Materiały i anti-aliasing mogą generować różnice nieistotne geometrycznie.
+
+## Thresholds
+
+Nie istnieje jeden globalny próg.
+Ustal osobno dla:
+- silhouette,
+- primary feature,
+- material,
+- shading.
+
+## Regression mode
+
+Najbardziej wartościowe zastosowanie:
+`last accepted checkpoint -> current build`
+
+Wtedy zmiana poza expected ROI jest sygnałem możliwej regresji.
+
+## Human/reference ambiguity
+
+Automatyczny diff nie rozstrzyga sam:
+- stylizowanej perspektywy,
+- różnego oświetlenia concept artu,
+- ukrytej geometrii.
+
+Jest narzędziem dowodowym, nie arbitrem designu.
+
+
+---
+
+## FILE: `05_execution/59_REFERENCE_FIDELITY_PROTOCOL.md`
+
+# Reference Fidelity Protocol
+
+## Poziomy zgodności
+
+### L0 — category
+Asset jest tego samego rodzaju.
+
+Za mało.
+
+### L1 — silhouette
+Główna bryła zgadza się.
+
+### L2 — primary features
+Wszystkie cechy rozpoznawcze istnieją.
+
+### L3 — proportions
+Relacje wielkości cech są zgodne.
+
+### L4 — material segmentation
+Obszary materiałowe są zgodne.
+
+### L5 — production fidelity
+Detale, edge treatment, shading i materiały tworzą tę samą intencję projektową.
+
+Docelowy asset powinien osiągać poziom wymagany przez klasę importance.
+
+## Hero prop
+
+Zwykle wymaga L4/L5.
+
+## Background prop
+
+Może być zaakceptowany przy L2/L3, jeśli runtime i dystans to uzasadniają.
+
+## No compensation rule
+
+Nie kompensuj błędu:
+- materiałem za złą geometrię,
+- światłem za zły shading,
+- detalem D3 za złą sylwetkę,
+- normal mapą za brakującą primary form.
+
+## Fidelity report
+
+Raportuj osobno:
+- form,
+- proportions,
+- features,
+- materials,
+- surface.
+
+
+---
+
+## FILE: `05_execution/60_AUTHORING_TO_RUNTIME_HANDOFF.md`
+
+# Authoring to Runtime Handoff
+
+## Artefakty
+
+Minimalny pakiet może zawierać:
+- source `.blend`,
+- export mesh/scene,
+- textures,
+- material mapping,
+- collision,
+- animation,
+- asset manifest,
+- validation report.
+
+## Manifest
+
+```text
+asset_id
+version
+source_blender_version
+export_format
+units
+bounds
+pivot_policy
+objects
+materials
+textures
+triangle_counts
+lods
+collision
+animations
+dependencies
+known_limitations
+```
+
+## Source retention
+
+Nie nadpisuj źródła edytowalnego finalnym flattened mesh.
+
+## Re-import test
+
+Jeśli pipeline pozwala:
+1. export,
+2. import do czystej sceny/test runtime,
+3. porównanie manifestu,
+4. visual smoke test.
+
+## Version
+
+Każdy istotny export powinien być możliwy do powiązania z:
+- wersją source asset,
+- wersją biblioteki agenta,
+- wersją Blendera,
+- profilem eksportu.
+
+## Handoff failure
+
+Brak błędu eksportera nie oznacza poprawnego handoff.
+Poprawność ocenia wynik po stronie konsumenta.
+
+
+---
+
+## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
+
+# System Prompt — Blender Asset Agent
+
+Jesteś technical artistem i modelerem 3D specjalizującym się w Blender 5.1 oraz assetach runtime do gier.
+
+Twoim zadaniem nie jest "wygenerować model", lecz przeprowadzić kontrolowany pipeline od analizy referencji do zwalidowanego assetu.
+
+Obowiązuje state machine:
+DISCOVER -> ANALYZE -> CONTRACT -> PLAN -> BLOCKOUT -> PRIMARY_DETAIL -> SECONDARY_DETAIL -> SHADING_UV_MATERIAL -> GAME_READY -> VALIDATE -> EXPORT.
+
+Reguły:
+1. Nie modyfikuj sceny przed analizą stanu.
+2. Utwórz Feature Contract dla wszystkich charakterystycznych cech.
+3. Każda cecha MUST musi mieć właściciela w scenie i test QA.
+4. Preferuj jawny Blender Data API i BMesh. `bpy.ops` używaj tylko ze świadomym context/mode/selection.
+5. Skrypty mają być idempotentne.
+6. Buduj parametrycznie tam, gdzie to możliwe.
+7. Po każdej fazie wykonuj checkpoint.
+8. Nie kontynuuj przy FAIL cechy MUST.
+9. Nie dodawaj elementów, których nie ma w briefie/referencji, chyba że są technicznie konieczne.
+10. Nie usuwaj detali przy optymalizacji bez sprawdzenia Feature Contract.
+11. Zawsze utrzymuj edytowalne źródło.
+12. Export jest osobnym etapem i wymaga walidacji wyniku poza stanem authoringowym.
+
+W odpowiedzi operacyjnej utrzymuj format:
+- STATE
+- INPUT FACTS
+- UNKNOWN / ASSUMPTIONS
+- FEATURE IDS
+- ACTION
+- POSTCONDITIONS
+- CHECKPOINT RESULT
+- NEXT STATE
+
+Nie generuj długich opisów, jeżeli agent może zamiast tego wykonać pomiar.
+Nie wykonuj serii prób "na oko". Najpierw zdiagnozuj różnicę.
+
+## Reconstruction mode
+
+Jeżeli użytkownik wymaga odtworzenia 1:1 z referencji:
+- uruchom Reconstruction State Machine,
+- nie używaj "looks similar" jako kryterium,
+- twórz Evidence Ledger, Dimension Graph i View Authority Matrix,
+- nie inventuj unknown geometry,
+- nie pozwalaj hero view nadpisać explicit dimensions/orthographic authority,
+- przeprowadź multi-view QA przed runtime optimization.
+
+
+---
+
+## FILE: `06_prompts/61_TASK_PROMPT_TEMPLATE.md`
+
+# Task Prompt Template
+
+## Goal
+Zbuduj / popraw:
+`<asset>`
+
+## Reference
+`<reference description / file IDs>`
+
+## Must preserve
+- ...
+- ...
+- ...
+
+## Scale
+- width:
+- depth:
+- height:
+
+## Runtime
+- engine:
+- format:
+- triangles:
+- LOD:
+- collision:
+- materials:
+- textures:
+
+## Scene constraints
+- do not modify:
+- reuse:
+- collection:
+- naming:
+
+## Required checkpoints
+- blockout ortho
+- primary detail
+- shading
+- game-ready
+- export
+
+## Acceptance
+- all MUST features pass
+- dimensions within tolerance
+- no shading errors
+- runtime contract pass
+
+
+---
+
+## FILE: `06_prompts/62_REVIEWER_PROMPT.md`
+
+# Reviewer Prompt
+
+Jesteś niezależnym reviewerem assetu 3D.
+
+Nie poprawiaj modelu.
+
+Dane:
+- Feature Contract,
+- referencja,
+- rendery kontrolne,
+- Scene Snapshot,
+- mesh/material/runtime stats.
+
+Dla każdego Feature ID zwróć:
+- PASS / MINOR / FAIL,
+- dowód,
+- rodzaj błędu: silhouette / proportion / geometry / shading / material / runtime,
+- minimalną korektę,
+- etap, do którego należy wrócić.
+
+Dodatkowo sprawdź:
+- czy agent nie dodał niezatwierdzonych elementów,
+- czy optymalizacja nie usunęła cechy,
+- czy model nie jest przesadnie gęsty,
+- czy stack modifierów pozostaje sensowny,
+- czy pivot/transform/export są poprawne.
+
+Nie używaj oceny "wygląda dobrze".
+Każda ocena musi wskazywać kryterium.
+
+
+---
+
+## FILE: `06_prompts/63_REPAIR_PROMPT.md`
+
+# Repair Prompt
+
+Napraw tylko wskazane błędy.
+
+Input:
+- asset id,
+- failed Feature IDs,
+- expected state,
+- current state,
+- affected objects,
+- last valid checkpoint.
+
+Reguły:
+1. Nie przebudowuj całego assetu.
+2. Nie zmieniaj features oznaczonych PASS.
+3. Nie zmieniaj naming/pivot/material bez związku z błędem.
+4. Przed naprawą utwórz recovery point.
+5. Po naprawie uruchom tylko testy związane z affected features oraz test regresji dla sąsiednich MUST.
+6. Jeśli naprawa wymaga zmiany strategii, wróć do PLAN zamiast improwizować.
+
+
+---
+
+## FILE: `06_prompts/64_RECONSTRUCTION_PLANNER_PROMPT.md`
+
+# Reconstruction Planner Prompt
+
+Jesteś plannerem rekonstrukcji 3D.
+
+Nie modyfikuj sceny.
+
+Masz:
+- source references,
+- concept sheet,
+- project/engine contract.
+
+Wykonaj:
+1. segmentację źródeł,
+2. classification widoków,
+3. evidence ledger,
+4. View Authority Matrix,
+5. conflicts,
+6. dimension graph,
+7. feature contract,
+8. landmarks,
+9. object decomposition,
+10. feature-to-strategy map,
+11. QA plan,
+12. ambiguity list.
+
+Nie wypełniaj braków detalami z wyobraźni.
+Każda inferowana wartość musi mieć confidence.
+
+
+---
+
+## FILE: `06_prompts/65_RECONSTRUCTION_INSPECTOR_PROMPT.md`
+
+# Reconstruction Inspector Prompt
+
+Nie poprawiaj modelu.
+
+Porównaj model z:
+- dimension graph,
+- canonical views,
+- landmarks,
+- Feature Contract.
+
+Kolejność:
+1. hard dimensions,
+2. silhouette,
+3. negative spaces,
+4. primary landmarks,
+5. MUST D2,
+6. rear/bottom,
+7. material segmentation,
+8. surface,
+9. runtime regressions.
+
+Zwróć dla FAIL:
+- evidence id,
+- feature id,
+- view,
+- measured error,
+- likely root cause,
+- earliest stage to return to.
+
+
+---
+
+## FILE: `06_prompts/66_RECONSTRUCTION_REPAIR_PROMPT.md`
+
+# Reconstruction Repair Prompt
+
+Masz naprawić wyłącznie wskazany reconstruction failure.
+
+Przed zmianą:
+- znajdź feature owner,
+- constraints,
+- dependencies,
+- accepted checkpoint.
+
+Wykonaj:
+- minimalną zmianę parametryczną,
+- nie ruszaj QA cameras,
+- nie zmieniaj locked dimensions bez jawnego powodu.
+
+Po zmianie:
+- target validation,
+- adjacent MUST regression,
+- jeśli zmiana D0/D1: pełny multi-view gate.
+
+
+---
+
+## FILE: `06_prompts/67_CONCEPT_SHEET_INGEST_PROMPT.md`
+
+# Concept Sheet Ingest Prompt
+
+Przeanalizuj planszę referencyjną bez modelowania.
+
+Zidentyfikuj:
+- wszystkie subviews,
+- dimensions,
+- material samples,
+- real asset branding,
+- annotations that are not part of asset,
+- detail crops,
+- inconsistencies.
+
+Wynik:
+- segment manifest,
+- evidence ledger,
+- view authority proposal,
+- unresolved ambiguity.
+
+Nie interpretuj marketingowych podpisów jako geometrii.
+
+
+---
+
+## FILE: `07_examples/70_HARD_SURFACE_PROP_EXAMPLE.md`
+
+# Example — Hard-Surface Street Prop
+
+## Brief
+
+Statyczny miejski prop sci-fi:
+- czytelny z 2–8 m,
+- gracz może obejść go dookoła,
+- kilka materiałów,
+- produkowany masowo,
+- powinien nadawać się do instancjonowania.
+
+## Feature Contract
+
+| ID | Priority | Feature | Build |
+|---|---|---|---|
+| F001 | MUST | charakterystyczna sylwetka korpusu | blockout mesh |
+| F002 | MUST | wcięty panel frontowy | inset/boolean |
+| F003 | MUST | metalowa rama | separate mesh |
+| F004 | SHOULD | szczelina montażowa | geometry/normal |
+| F005 | SHOULD | logo | decal/texture |
+
+## Strategy
+
+1. Korpus z prymitywu.
+2. Panel jako osobna część lub boolean recess.
+3. Rama jako oddzielny mesh, aby niezależnie kontrolować materiał.
+4. Bevel dopiero po zaakceptowaniu proportions.
+5. Neutral shading checkpoint.
+6. UV/material.
+7. LOD1: uproszczone bevels i usunięte drobne szczeliny.
+8. Collision: prosty hull/box decomposition.
+
+## Błąd, którego należy unikać
+
+Nie generuj mikrodetali przed sprawdzeniem bryły. Poprawianie szerokości całego korpusu po detalach powoduje regresje i kolejne kosztowne operacje.
+
+
+---
+
+## FILE: `07_examples/71_MODULAR_ARCHITECTURE_EXAMPLE.md`
+
+# Example — Modular Architecture Element
+
+## Goal
+
+Moduł fasady używany wielokrotnie.
+
+## Critical contract
+
+- dokładna szerokość modułu,
+- dokładna wysokość modułu,
+- krawędzie łączenia bez wystających beveli,
+- pivot na dolnym rogu siatki,
+- powtarzalny trim/material,
+- tylna część uproszczona, jeśli nigdy nie jest widoczna.
+
+## Build
+
+1. Ustal grid.
+2. Utwórz bounding box modułu.
+3. Zablokuj interface edges.
+4. Dodaj design tylko wewnątrz bezpiecznej strefy.
+5. Nie modyfikuj interface edges przez późniejsze booleans/bevels.
+6. Zbuduj end-cap jako osobny wariant.
+7. Zbuduj corner module osobno.
+
+## QA
+
+Test:
+- A+A,
+- A+B,
+- A+A+A+A,
+- widok pod ostrym kątem,
+- brak szczelin,
+- brak z-fightingu,
+- spójna tekstura.
+
+## Runtime
+
+Moduły powinny wspierać instancing.
+Jeżeli unikalne elementy dekoracyjne są potrzebne, dodaj je jako osobne instancje zamiast duplikować cały moduł.
+
+
+---
+
+## FILE: `07_examples/72_COMPLEX_PROP_WITH_MATERIALS_EXAMPLE.md`
+
+# Example — Complex Prop with Multiple Materials
+
+## Decomposition
+
+- structural body,
+- soft/contact surface,
+- metallic shell,
+- glass/display,
+- emissive insert,
+- fasteners.
+
+## Material logic
+
+Każda część ma oddzielny materiał tylko jeśli wymaga innego shader behavior.
+W przeciwnym razie rozważ wspólny atlas/material.
+
+## Build order
+
+1. body,
+2. major cutouts,
+3. separate shells,
+4. contact/soft regions,
+5. screen/glass,
+6. fasteners,
+7. bevel/shading,
+8. UV/material,
+9. optimization.
+
+## Glass
+
+Nie zakładaj, że przezroczysty Principled material zachowa się identycznie w runtime.
+Sprawdź docelowy alpha/transmission model.
+
+## Emissive
+
+Emissive insert:
+- może być płaską powierzchnią,
+- może wymagać bloom/light w runtime osobno,
+- nie musi potrzebować dużej ilości geometrii.
+
+## LOD
+
+W dalszych LOD:
+- śruby -> normal/decal/remove,
+- małe gaps -> texture,
+- glass frame -> uproszczony,
+- podstawowa silhouette bez zmian.
+
+
+---
+
+## FILE: `07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md`
+
+# Benchmark — Lafar Street Bench / ACS-BCH-200
+
+## Purpose
+
+Pierwszy benchmark pełnej warstwy rekonstrukcji 1:1.
+
+Źródło:
+concept sheet `LAFAR STREET BENCH — CIVIC SEATING MODULE`.
+
+## Explicit dimensions visible on sheet
+
+- total width: 2000 mm,
+- total depth: 550 mm,
+- total height: 820 mm,
+- side/seat-height dimension shown: 460 mm.
+
+Te wartości są `HARD LOCK`, o ile nowsza zatwierdzona referencja ich nie zmieni.
+
+## Canonical views available
+
+- hero,
+- front,
+- side,
+- top,
+- rear,
+- bottom/underside,
+- detail close-up.
+
+## Material evidence
+
+Plansza pokazuje rodziny:
+- matte graphite powder coat,
+- brushed aluminum,
+- dark titanium composite,
+- microbead texture,
+- cool-blue accent lighting.
+
+Nazwy materiałów są evidence projektowym; fizyczna interpretacja shaderów musi zostać zwalidowana wizualnie.
+
+## High-level MUST features
+
+### F001
+Global width/depth/height.
+
+### F002
+Masywne boczne housings pełniące rolę nóg/podłokietników.
+
+### F003
+Siedzisko pomiędzy bocznymi housings.
+
+### F004
+Pochylone oparcie o niskim, szerokim profilu.
+
+### F005
+Metaliczne/aluminiowe zewnętrzne trimy biegnące po bocznych częściach.
+
+### F006
+Wąski info strip przy górnej części frontu oparcia.
+
+### F007
+Prawostronny integrated utility panel.
+
+### F008
+Cool-blue underglow przy podstawie.
+
+### F009
+Rear panel + logo ASTERA CIVIC SYSTEMS.
+
+### F010
+Underside/service-panel layout obecny na bottom view.
+
+### F011
+Charakterystyczna otwarta negative space pod siedziskiem.
+
+### F012
+Rounded/chamfered product edge language.
+
+## Initial object decomposition proposal
+
+- `SM_Lafar_Bench_SeatCore`
+- `SM_Lafar_Bench_BackrestCore`
+- `SM_Lafar_Bench_SideHousing_L`
+- `SM_Lafar_Bench_SideHousing_R`
+- `SM_Lafar_Bench_Trim_L`
+- `SM_Lafar_Bench_Trim_R`
+- `SM_Lafar_Bench_InfoStrip`
+- `SM_Lafar_Bench_UtilityPanel`
+- `SM_Lafar_Bench_Underglow`
+- `SM_Lafar_Bench_RearPanel`
+- `SM_Lafar_Bench_Underside`
+- `DEC_Lafar_Bench_AsteraRear`
+- optional shared fastener instances.
+
+To jest plan startowy, nie wymóg jednego konkretnego podziału runtime.
+
+## View authority proposal
+
+### Width
+FRONT/TOP/REAR + numeric 2000 mm.
+
+### Depth
+SIDE/TOP + numeric 550 mm.
+
+### Height
+FRONT/SIDE/REAR + numeric 820 mm.
+
+### 460 mm dimension
+SIDE/FRONT evidence; należy precyzyjnie ustalić, do której powierzchni odnosi się marker przed użyciem jako constraint lokalny.
+
+### Backrest angle
+SIDE.
+
+### Rear logo
+REAR.
+
+### Underside
+BOTTOM.
+
+### Edge/material character
+HERO + DETAIL + palette.
+
+## Important ambiguity list
+
+Arkusz nie podaje bezpośrednio:
+- dokładnego kąta oparcia,
+- szerokości side housing,
+- grubości oparcia,
+- promieni wszystkich narożników,
+- szerokości trimu,
+- dokładnych wymiarów utility panel,
+- dokładnej geometrii portów,
+- dokładnej głębokości panel gaps,
+- dokładnej geometrii wewnętrznej underside.
+
+Te parametry należy mierzyć z kalibrowanych widoków i oznaczać `DERIVED`, a nie udawać jawnych wartości.
+
+## Required reconstruction checkpoints
+
+### B0 — Registered references
+Wszystkie ortho cropy skalibrowane.
+
+### B1 — D0
+Tylko total bounds + silhouette + negative space.
+
+### B2 — D1
+Seat/back/side profiles.
+
+### B3 — D2
+Trim, info strip, utility, rear/bottom panels.
+
+### B4 — D3
+Branding, ports, fasteners.
+
+### B5 — Surface
+Material segmentation i lookdev.
+
+### B6 — Runtime
+LOD/collision/export bez utraty MUST.
+
+## Failure traps deliberately tested
+
+- model dopasowany tylko do hero view,
+- pominięcie underside,
+- mirror utility panel na obie strony,
+- niewłaściwa szerokość po bevel,
+- dodanie losowych sci-fi panel lines,
+- logo jako błędny tekst,
+- underglow użyty do maskowania złej podstawy,
+- zbyt duży bevel zmieniający side silhouette.
+
+## Benchmark metrics
+
+- 4 explicit dimension errors,
+- canonical view silhouette errors,
+- MUST feature pass rate,
+- landmark reprojection error,
+- number of unauthorized features,
+- tool calls,
+- failed API calls,
+- repair count,
+- runtime triangle/material stats.
+
+## Benchmark target
+
+Nie przyjmuj wyniku "looks good".
+Benchmark kończy się dopiero po przejściu reconstruction Definition of Done.
+
+
+---
+
+## FILE: `08_scripts/80_SCENE_AUDIT_SNIPPETS.md`
+
+# Scene Audit Snippets
+
+Poniższe fragmenty są wzorcami, nie gotowym frameworkiem.
+
+## Version and context
+
+```python
+import bpy
+
+print("Blender:", bpy.app.version_string)
+print("Scene:", bpy.context.scene.name)
+print("Mode:", bpy.context.mode)
+print("Active:", bpy.context.view_layer.objects.active.name if bpy.context.view_layer.objects.active else None)
+print("Selected:", [o.name for o in bpy.context.selected_objects])
+```
+
+## Object inventory
+
+```python
+for obj in bpy.context.scene.objects:
+    print(
+        obj.name,
+        obj.type,
+        tuple(round(v, 4) for v in obj.dimensions),
+        tuple(round(v, 4) for v in obj.scale),
+    )
+```
+
+## Mesh stats
+
+```python
+for obj in bpy.context.scene.objects:
+    if obj.type == "MESH":
+        me = obj.data
+        print(
+            obj.name,
+            "verts", len(me.vertices),
+            "edges", len(me.edges),
+            "polys", len(me.polygons),
+            "uv", [uv.name for uv in me.uv_layers],
+            "mats", len(obj.material_slots),
+        )
+```
+
+## Modifier audit
+
+```python
+for obj in bpy.context.scene.objects:
+    if obj.modifiers:
+        print(obj.name)
+        for m in obj.modifiers:
+            print(" ", m.name, m.type, m.show_viewport, m.show_render)
+```
+
+## Asset tag
+
+```python
+def find_asset(asset_id):
+    return [
+        o for o in bpy.data.objects
+        if o.get("ai_asset_id") == asset_id
+    ]
+```
+
+
+---
+
+## FILE: `08_scripts/81_MESH_VALIDATION_SNIPPETS.md`
+
+# Mesh Validation Snippets
+
+## Negative scale
+
+```python
+bad = []
+for obj in bpy.context.scene.objects:
+    if obj.type == "MESH":
+        if any(s < 0 for s in obj.scale):
+            bad.append(obj.name)
+print("Negative scale:", bad)
+```
+
+## Zero scale
+
+```python
+bad = []
+for obj in bpy.context.scene.objects:
+    if any(abs(s) < 1e-8 for s in obj.scale):
+        bad.append(obj.name)
+print("Zero scale:", bad)
+```
+
+## Duplicate final names heuristic
+
+```python
+import re
+suspicious = [
+    o.name for o in bpy.data.objects
+    if re.search(r"\.\d{3}$", o.name)
+]
+print("Suffix names:", suspicious)
+```
+
+## BMesh manifold audit
+
+```python
+import bpy, bmesh
+
+def mesh_report(obj):
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    try:
+        non_manifold_edges = [e for e in bm.edges if not e.is_manifold]
+        boundary_edges = [e for e in bm.edges if e.is_boundary]
+        return {
+            "verts": len(bm.verts),
+            "edges": len(bm.edges),
+            "faces": len(bm.faces),
+            "non_manifold_edges": len(non_manifold_edges),
+            "boundary_edges": len(boundary_edges),
+        }
+    finally:
+        bm.free()
+```
+
+Uwaga:
+otwarte siatki mogą mieć poprawne boundary edges.
+Walidator nie powinien oznaczać każdego boundary jako błąd bez znajomości kontraktu.
+
+
+---
+
+## FILE: `08_scripts/82_EXPORT_VALIDATION_SNIPPETS.md`
+
+# Export Validation Snippets
+
+## Pre-export manifest
+
+Przed exportem utwórz manifest:
+- object names,
+- types,
+- bounds,
+- material slots,
+- animation data,
+- parent hierarchy.
+
+```python
+import bpy
+
+def manifest(objects):
+    out = []
+    for obj in objects:
+        out.append({
+            "name": obj.name,
+            "type": obj.type,
+            "parent": obj.parent.name if obj.parent else None,
+            "dimensions": [float(v) for v in obj.dimensions],
+            "materials": [slot.material.name if slot.material else None for slot in obj.material_slots],
+            "has_animation": bool(obj.animation_data),
+        })
+    return out
+```
+
+## Post-export principle
+
+Po eksporcie nie zakładaj poprawności na podstawie braku exception.
+
+Porównaj:
+- liczbę expected nodes,
+- bounds,
+- materiały,
+- texture references,
+- animation clips,
+- root hierarchy.
+
+Jeżeli pipeline posiada importer round-trip:
+1. export do pliku tymczasowego,
+2. import do czystej sceny,
+3. wykonaj ten sam manifest,
+4. porównaj z tolerancją.
+
+Nie wykonuj round-trip na głównej scenie.
+
+
+---
+
+## FILE: `08_scripts/83_QA_RENDER_SCRIPT_PATTERN.md`
+
+# QA Render Script Pattern
+
+## Cel
+
+Generować identyczne rendery kontrolne między iteracjami.
+
+## Profile
+
+Przykładowe profile:
+- `SILHOUETTE`
+- `NEUTRAL`
+- `MATCAP_EQUIVALENT`
+- `MATERIAL`
+- `WIREFRAME_CAPTURE`
+
+## Camera registry
+
+Kamery:
+- front,
+- side,
+- top,
+- rear,
+- 3/4.
+
+Nie twórz przypadkowej kamery przy każdym run.
+
+## File naming
+
+```text
+<asset_id>__<version>__<checkpoint>__<view>__<profile>.png
+```
+
+## Metadata
+
+Obok renderu zachowaj JSON:
+- camera transform,
+- lens/ortho scale,
+- resolution,
+- engine,
+- color management,
+- asset bounds,
+- feature set.
+
+## Pseudocode
+
+```python
+def render_checkpoint(asset_id, checkpoint, cameras, profiles):
+    for camera in cameras:
+        set_camera(camera)
+        for profile in profiles:
+            apply_qa_profile(profile)
+            path = build_output_path(...)
+            render(path)
+            write_metadata(path)
+```
+
+## Rule
+
+QA render pipeline nie powinien permanentnie niszczyć materiałów assetu.
+Użyj override/profile i po zakończeniu przywróć scenę.
+
+
+---
+
+## FILE: `08_scripts/84_VISUAL_DIFF_SCRIPT_PATTERN.md`
+
+# Visual Diff Script Pattern
+
+## Input
+
+- accepted image,
+- candidate image,
+- optional ROI,
+- optional silhouette masks.
+
+## Recommended outputs
+
+- absolute difference image,
+- thresholded mask,
+- changed pixel ratio,
+- bounding box of differences,
+- silhouette IoU if masks exist.
+
+## Important
+
+Nie porównuj dwóch obrazów, jeśli:
+- resolution jest inne,
+- camera jest inna,
+- framing jest inne,
+- QA profile jest inny.
+
+## Feature-local diff
+
+```text
+feature_id -> ROI -> diff metrics -> PASS/MINOR/FAIL
+```
+
+## Regression detection
+
+Jeżeli naprawa dotyczy F012:
+- duża zmiana wewnątrz ROI F012 jest oczekiwana,
+- zmiana w ROI innych MUST wymaga regresji check,
+- duża zmiana poza wszystkimi expected ROI jest podejrzana.
+
+## Storage
+
+Przechowuj metryki, nie tylko obraz.
+Pozwala to porównywać jakość kolejnych wersji agenta.
+
+
+---
+
+## FILE: `08_scripts/85_REFERENCE_IMAGE_REGISTRY_PATTERN.md`
+
+# Reference Image Registry Pattern
+
+```python
+REFERENCE_REGISTRY = {
+    "SEG_FRONT": {
+        "path": "...",
+        "projection": "ORTHO",
+        "physical_width_m": 2.0,
+        "axis": "FRONT",
+        "approved": True,
+    },
+}
+```
+
+## Blender image empties
+
+Reference images mogą być trzymane jako image empties.
+Agent powinien:
+- nadać stabilne nazwy,
+- umieścić je w osobnej kolekcji,
+- ustawić display opacity,
+- lock transforms po kalibracji.
+
+## Naming
+
+`REF_<ASSET>_<VIEW>`
+
+## Rule
+
+Nie polegaj na active image w UI.
+Trzymaj jawne referencje do objects/data-blocks.
+
+
+---
+
+## FILE: `08_scripts/86_QA_ORTHO_CAMERA_GENERATOR.md`
+
+# QA Orthographic Camera Generator Pattern
+
+## Cel
+
+Tworzyć kamery z identycznym framingiem.
+
+Pseudo-pattern:
+
+```python
+def ensure_ortho_camera(name, axis, target_bounds, margin=0.05):
+    cam_obj = get_or_create_camera(name)
+    cam_obj.data.type = "ORTHO"
+    set_axis_rotation(cam_obj, axis)
+    set_camera_position_outside_bounds(cam_obj, axis)
+    cam_obj.data.ortho_scale = compute_required_scale(target_bounds, axis, margin)
+    lock_camera_metadata(cam_obj)
+    return cam_obj
+```
+
+## Important
+
+`ortho_scale` zależy od widoku i aspect ratio.
+Nie ustawiaj jednej wartości dla front i side bez obliczenia.
+
+## Metadata
+
+Zapisz custom properties:
+- qa_view,
+- reference_segment,
+- calibrated,
+- calibration_revision.
+
+
+---
+
+## FILE: `08_scripts/87_DIMENSION_GRAPH_VALIDATOR_PATTERN.md`
+
+# Dimension Graph Validator Pattern
+
+```python
+constraints = [
+    {
+        "id": "C_WIDTH",
+        "target": 2.0,
+        "tolerance": 0.001,
+        "measure": lambda scene: asset_bounds(scene)["width"],
+    },
+]
+```
+
+## Result
+
+```text
+constraint
+target
+actual
+error
+tolerance
+PASS/FAIL
+```
+
+## Derived constraint
+
+Niektóre constrainty nie mierzą tylko bounds:
+- distance between landmarks,
+- angle between vectors,
+- panel offset,
+- gap.
+
+## Rule
+
+Validator jest read-only.
+Nie poprawia geometrii.
+
+
+---
+
+## FILE: `08_scripts/88_LANDMARK_PROJECTION_PATTERN.md`
+
+# Landmark Projection Pattern
+
+## Cel
+
+Rzutować punkt świata na współrzędne kamery QA.
+
+Blender udostępnia macierze obiektów i kamery; implementacja może używać odpowiednich utilities/API dla projekcji.
+
+## Record
+
+```python
+LANDMARKS = {
+    "LM_SEAT_FRONT_LEFT": {
+        "object": "Bench_Seat",
+        "local_point": (...),
+        "reference": {
+            "FRONT": (u, v),
+            "SIDE": (u, v),
+        },
+    },
+}
+```
+
+## Output
+
+- projected UV/image coordinate,
+- target,
+- delta,
+- tolerance.
+
+## Rule
+
+Po zmianie topology local vertex index nie jest stabilnym landmark ID.
+Preferuj:
+- named helper empty,
+- parametric coordinate,
+- semantic feature point.
+
+
+---
+
+## FILE: `08_scripts/89_RECONSTRUCTION_CHECKPOINT_MANIFEST.md`
+
+# Reconstruction Checkpoint Manifest Pattern
+
+## Manifest contains
+
+```text
+asset_id
+stage
+timestamp/version
+hard_dimensions
+object_bounds
+feature_status
+modifier_stacks
+materials
+qa_camera_revision
+reference_revision
+render_paths
+```
+
+## Use
+
+Porównuj checkpointy:
+- D0 accepted,
+- D1 accepted,
+- D2 accepted,
+- surface accepted,
+- runtime.
+
+## Rule
+
+Nie przechowuj tylko pliku `.blend`.
+Bez manifestu agent nie wie, co było zaakceptowane.
+
+
+---
+
+## FILE: `08_scripts/90_REFERENCE_OVERLAY_DIFF_PATTERN.md`
+
+# Reference Overlay Diff Pattern
+
+## External/image-tool pattern
+
+Input:
+- reference crop,
+- QA render,
+- calibration metadata.
+
+Output:
+- alpha overlay,
+- silhouette mask,
+- diff heatmap,
+- metrics JSON.
+
+## Geometry-safe approach
+
+Dla geometry QA używaj flat object mask.
+To ogranicza wpływ:
+- lighting,
+- material,
+- tone mapping.
+
+## ROI
+
+Dla feature-specific diff:
+crop/weight według Visual Feature Map.
+
+## Rule
+
+Image diff nie modyfikuje sceny.
+Jego wyniki są dowodem dla Inspector/Repairer.
+
+
+---
+
+## FILE: `09_engine/90_ENGINE_PROFILE_SCHEMA.md`
+
+# Engine Profile Schema
+
+Biblioteka Blendera nie może zgadywać zasad własnego silnika gry.
+
+Dlatego projekt powinien posiadać osobny `ENGINE_PROFILE.md`.
+
+## Coordinate system
+
+- handedness:
+- up axis:
+- forward axis:
+- world unit:
+- transform convention:
+
+## Mesh
+
+- supported vertex attributes:
+- index size:
+- tangent generation:
+- max bones per vertex:
+- morph targets:
+- instancing:
+- mesh compression:
+
+## Materials
+
+- shader model:
+- metallic/roughness convention:
+- packed channels:
+- normal convention:
+- transparency modes:
+- emissive:
+- texture formats:
+- maximum material slots / recommendations:
+
+## Textures
+
+- supported formats:
+- compression:
+- mip generation:
+- max resolution:
+- streaming:
+- color space convention:
+
+## Animation
+
+- skeletal:
+- node transform:
+- frame/time representation:
+- interpolation:
+- root motion:
+- clip naming:
+
+## Scene
+
+- hierarchy:
+- static batching:
+- instancing:
+- LOD representation:
+- collision representation:
+- occluders:
+- navmesh hooks:
+
+## Import format
+
+- glTF/GLB/custom:
+- supported extensions:
+- unsupported features:
+- preprocessing:
+
+## Validation
+
+Agent nie może uznać assetu za game-ready, jeśli ENGINE_PROFILE nie został zastosowany.
+W razie braku profilu stosuje tylko neutralne zasady i oznacza runtime status jako `UNVERIFIED`.
+
+
+---
+
+## FILE: `09_engine/91_ENGINE_ADAPTER_PROTOCOL.md`
+
+# Engine Adapter Protocol
+
+## Cel
+
+Oddzielić wiedzę o tworzeniu assetu od wiedzy o importerze konkretnego silnika.
+
+## Adapter responsibilities
+
+Adapter definiuje:
+- mapowanie osi,
+- mapowanie materiałów,
+- nazwy collision,
+- nazwy LOD,
+- hierarchy rules,
+- animation mapping,
+- texture packing,
+- export flags.
+
+## Neutral asset
+
+Główna biblioteka opisuje:
+- poprawny model,
+- dane authoringowe,
+- standardowy manifest.
+
+Adapter:
+- przekształca to do wymagań silnika.
+
+## Zakaz przecieku
+
+Nie zapisuj przypadkowych ograniczeń jednego silnika jako uniwersalnej zasady Blendera.
+
+Przykład:
+jeżeli silnik wymaga konkretnego prefiksu collision, reguła trafia do adaptera, nie do globalnego `GAME_ASSET_CONTRACT`.
+
+## Round-trip / smoke test
+
+Adapter powinien definiować minimalny test:
+- import success,
+- bounds,
+- scale,
+- materials,
+- normals,
+- animation,
+- collision.
+
+## Custom engine
+
+Dla własnego silnika C++ należy utworzyć osobny plik:
+`ENGINE_PROFILE_<NAME>.md`
+oraz test importera.
+
+
+---
+
+## FILE: `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
+
+# Reconstruction Layer Index
+
+Warstwa `10_reconstruction` służy do ścisłego odtwarzania obiektu 3D na podstawie:
+- concept sheet,
+- blueprintów,
+- rzutów ortograficznych,
+- zdjęć,
+- renderów,
+- detail close-upów,
+- wymiarów,
+- opisów funkcjonalnych i materiałowych.
+
+Nie jest to warstwa "inspiracji".
+Celem jest maksymalnie wierna rekonstrukcja przy jawnej obsłudze niepewności.
+
+## Pipeline
+
+`INGEST -> SEGMENT -> CLASSIFY -> AUTHORITY -> REGISTER -> CONSTRAIN -> DECOMPOSE -> PLAN -> BLOCKOUT -> MATCH -> DETAIL -> SHADE -> MULTIVIEW_QA -> RUNTIME`
+
+## Pakiety wiedzy
+
+### Evidence
+100–109
+
+### Geometry constraints
+110–123
+
+### Surface/material evidence
+124–127
+
+### Construction planning
+128–140
+
+### Validation
+141–148
+
+### Governance
+149–159
+
+### Specialized reconstruction
+160–169
+
+## Fundamental rule
+
+Rekonstrukcja 1:1 nie oznacza "model wygląda podobnie".
+Oznacza:
+- wszystkie znane wymiary są respektowane,
+- wszystkie kanoniczne widoki są równocześnie zgodne,
+- cechy rozpoznawcze nie giną,
+- niepewne obszary są oznaczone jako niepewne,
+- agent nie inventuje szczegółów, których nie da się obronić dowodem.
+
+
+---
+
+## FILE: `10_reconstruction/101_DEFINITION_OF_1_TO_1.md`
+
+# Definition of 1:1 Reconstruction
+
+## 1:1 nie oznacza fotograficznej identyczności pojedynczego renderu
+
+Model 3D jest uznawany za rekonstrukcję 1:1, jeśli maksymalizuje zgodność z całym zestawem dowodów jednocześnie.
+
+## Pięć warstw zgodności
+
+### R1 — Metric fidelity
+Znane wymiary, kąty, offsety i pozycje mieszczą się w tolerancji.
+
+### R2 — Multi-view shape fidelity
+Front, side, top, rear i inne widoki zgadzają się równocześnie.
+
+### R3 — Feature fidelity
+Każda cecha `MUST` istnieje, znajduje się w poprawnej strefie i ma właściwe proporcje.
+
+### R4 — Surface fidelity
+Materiały, edge treatment, roughness, metaliczność, emisja i tekstury odpowiadają dowodom.
+
+### R5 — Construction fidelity
+Podział elementów, warstwy materiałowe, szczeliny i grubości są zgodne z logiką obiektu i referencją.
+
+## Nieprawidłowa definicja
+
+"Render 3/4 wygląda prawie tak samo."
+
+To może ukryć:
+- błędną głębokość,
+- złe pochylenie,
+- złą szerokość boków,
+- brak detalu z tyłu,
+- błędny spód,
+- niepoprawne wymiary.
+
+## Hard gate
+
+Jeśli znany wymiar jest przekroczony ponad tolerancję, asset nie jest 1:1 nawet jeśli wygląda dobrze.
+
+## Niepewność
+
+Gdy referencja nie definiuje parametru, wynik nie może być opisany jako "dokładnie 1:1" w tym parametrze.
+Status:
+- `EXACT`
+- `DERIVED`
+- `INFERRED`
+- `UNKNOWN`
+
+
+---
+
+## FILE: `10_reconstruction/102_EVIDENCE_MODEL.md`
+
+# Reconstruction Evidence Model
+
+Każde twierdzenie o modelu powinno mieć źródło dowodowe.
+
+## Typy dowodów
+
+### E0 — Explicit numeric
+Wymiar, kąt, promień lub opis podany liczbowo.
+Najwyższy priorytet geometryczny.
+
+### E1 — Orthographic view
+Front/side/top/rear/bottom bez istotnej perspektywy.
+
+### E2 — Technical detail view
+Zbliżenie lub przekrój pokazujący lokalny kształt.
+
+### E3 — Perspective hero view
+Dobre źródło:
+- materiałów,
+- edge language,
+- relacji przestrzennych.
+Słabsze źródło wymiarów.
+
+### E4 — Text annotation
+Opis funkcji, materiału, technologii.
+
+### E5 — Manufacturing inference
+Wniosek z konstrukcji.
+
+### E6 — Artistic inference
+Najniższy priorytet.
+Dozwolone tylko przy braku mocniejszych dowodów.
+
+## Evidence record
+
+```text
+evidence_id
+type
+source
+view
+region
+claim
+confidence
+conflicts_with
+notes
+```
+
+## Rule
+
+Agent nie może nadpisać E0/E1 na podstawie E3/E6 bez zapisania konfliktu.
+
+
+---
+
+## FILE: `10_reconstruction/103_REFERENCE_INGESTION_PROTOCOL.md`
+
+# Reference Ingestion Protocol
+
+## Przed analizą geometrii
+
+Dla każdego wejścia zapisz:
+- file id / path,
+- resolution,
+- aspect ratio,
+- orientation,
+- whether cropped,
+- whether perspective/orthographic,
+- known dimensions visible,
+- labels visible,
+- source status: approved / draft / auxiliary.
+
+## Concept sheet
+
+Arkusz należy rozłożyć na osobne regiony:
+- hero,
+- front,
+- side,
+- top,
+- rear,
+- bottom,
+- detail,
+- material palette,
+- notes,
+- dimensions.
+
+## Nie modeluj bez segmentacji
+
+Cały arkusz jako jedna referencja utrudnia:
+- dokładne skalowanie,
+- kamerę QA,
+- ROI,
+- pomiar.
+
+## Original preservation
+
+Nigdy nie nadpisuj oryginalnej referencji.
+Przetworzone cropy muszą mieć provenance do oryginału.
+
+## Rotation/crop policy
+
+Zmiana:
+- orientacji,
+- cropu,
+- kontrastu
+
+jest dozwolona jako warstwa pomocnicza, ale musi być odwracalna i udokumentowana.
+
+
+---
+
+## FILE: `10_reconstruction/104_CONCEPT_SHEET_SEGMENTATION.md`
+
+# Concept Sheet Segmentation
+
+## Cel
+
+Zamienić planszę prezentacyjną na zestaw technicznych źródeł.
+
+## Segment classes
+
+- `HERO`
+- `ORTHO_FRONT`
+- `ORTHO_SIDE`
+- `ORTHO_TOP`
+- `ORTHO_REAR`
+- `ORTHO_BOTTOM`
+- `DETAIL`
+- `MATERIAL_SAMPLE`
+- `TEXT_NOTE`
+- `DIMENSION`
+- `BRANDING`
+- `NON_ASSET_GRAPHICS`
+
+## Non-asset graphics
+
+Nie są częścią modelu:
+- tytuły planszy,
+- strzałki opisowe,
+- ramki,
+- legendy,
+- ikonografia funkcji,
+- stopki dokumentu.
+
+## Asset graphics
+
+Mogą być częścią assetu:
+- nadruk na ekranie,
+- logo na obudowie,
+- oznaczenie portu,
+- rzeczywista dioda,
+- napis na elemencie.
+
+## Segmentation output
+
+Tabela:
+| Segment | Bounding region | Class | Canonical | Purpose |
+
+## Ambiguous graphic
+
+Jeżeli nie wiadomo, czy element jest nadrukiem na obiekcie czy adnotacją planszy:
+status `AMBIGUOUS_GRAPHIC`.
+Nie modeluj go przed rozstrzygnięciem.
+
+
+---
+
+## FILE: `10_reconstruction/105_VIEW_CLASSIFICATION.md`
+
+# View Classification
+
+## Klasy projekcji
+
+### ORTHOGRAPHIC
+Brak zbieżności równoległych osi.
+Nadaje się do bezpośredniego porównywania proporcji w płaszczyźnie.
+
+### NEAR_ORTHOGRAPHIC
+Mała perspektywa.
+Może wymagać korekcji.
+
+### PERSPECTIVE
+Wymaga dopasowania kamery.
+
+### STYLIZED
+Nie musi być geometrycznie spójny.
+
+## View axis
+
+Określ:
+- front axis,
+- side direction,
+- top direction,
+- rear direction,
+- bottom direction.
+
+## Mirroring trap
+
+Rear view nie powinien być automatycznie traktowany jako poziome odbicie front view.
+Może pokazywać rzeczywistą asymetrię.
+
+## Confidence
+
+Każdy view otrzymuje:
+- projection confidence,
+- orientation confidence,
+- geometry confidence.
+
+## Rule
+
+Nie twórz constraintu 3D z widoku, którego orientacja nie została ustalona.
+
+
+---
+
+## FILE: `10_reconstruction/106_VIEW_AUTHORITY_MATRIX.md`
+
+# View Authority Matrix
+
+## Cel
+
+Ustalić, który widok rozstrzyga konkretną cechę.
+
+## Przykładowa macierz
+
+| Property | Primary authority | Secondary |
+|---|---|---|
+| total width | FRONT/TOP + numeric | REAR |
+| total height | FRONT/SIDE + numeric | HERO |
+| total depth | SIDE/TOP + numeric | HERO |
+| backrest angle | SIDE | HERO |
+| rear panel layout | REAR | HERO if visible |
+| underside | BOTTOM | SIDE |
+| material edge highlight | HERO/DETAIL | ORTHO |
+| logo placement rear | REAR | DETAIL |
+
+## Property-level authority
+
+Nie istnieje jeden "najważniejszy widok" dla całego assetu.
+Autorytet jest przypisany do właściwości.
+
+## Conflict handling
+
+Jeżeli dwa widoki o podobnym autorytecie są sprzeczne:
+- oznacz konflikt,
+- nie uśredniaj automatycznie,
+- nie wybieraj bardziej atrakcyjnego renderu.
+
+
+---
+
+## FILE: `10_reconstruction/107_MULTI_VIEW_CONFLICT_RESOLUTION.md`
+
+# Multi-View Conflict Resolution
+
+## Typy konfliktów
+
+- wymiarowy,
+- topologiczny,
+- materiałowy,
+- feature presence,
+- asymmetry,
+- profile shape,
+- perspective artifact.
+
+## Procedura
+
+1. zidentyfikuj konflikt,
+2. określ właściwość,
+3. przypisz evidence IDs,
+4. porównaj authority,
+5. sprawdź, czy konflikt wynika z projekcji,
+6. wybierz rozwiązanie,
+7. zapisz odrzuconą alternatywę.
+
+## Resolution classes
+
+### RESOLVED_EXPLICIT
+Rozstrzygnięte liczbą lub opisem.
+
+### RESOLVED_AUTHORITY
+Rozstrzygnięte macierzą autorytetu.
+
+### RESOLVED_PROJECTION
+Różnica wynika z kamery.
+
+### UNRESOLVED
+Nie ma wystarczających dowodów.
+
+## Zakaz średniej
+
+Nie stosuj:
+`(front_value + side_value)/2`
+bez uzasadnienia.
+
+Sprzeczne źródła nie stają się prawdziwe przez uśrednienie.
+
+
+---
+
+## FILE: `10_reconstruction/108_UNCERTAINTY_AND_CONFIDENCE_LEDGER.md`
+
+# Uncertainty and Confidence Ledger
+
+## Każdy istotny parametr otrzymuje confidence
+
+- `LOCKED`: jawny wymiar/pewny dowód.
+- `HIGH`: zgodny w kilku niezależnych widokach.
+- `MEDIUM`: wyprowadzony z jednego dobrego widoku.
+- `LOW`: inference.
+- `UNKNOWN`: brak podstaw.
+
+## Ledger
+
+| Parameter | Value | Status | Confidence | Evidence | Affects |
+|---|---:|---|---|---|---|
+
+## High-impact uncertainty
+
+Niski confidence jest krytyczny, jeśli wpływa na:
+- silhouette,
+- interface,
+- feature MUST,
+- animation clearance,
+- modular fit.
+
+## Uncertainty budget
+
+Asset może zostać ukończony z niepewnością, ale raport musi wskazać:
+- które parametry są inferowane,
+- jak duży zakres alternatyw jest możliwy.
+
+## No fake precision
+
+Nie zapisuj:
+`radius = 23.417 mm`
+jeżeli referencja pozwala jedynie ocenić około 20–30 mm.
+
+
+---
+
+## FILE: `10_reconstruction/109_REFERENCE_PROVENANCE.md`
+
+# Reference Provenance
+
+## Cel
+
+Każdy parametr i feature ma być możliwy do prześledzenia do źródła.
+
+## Provenance chain
+
+`Reference -> Segment -> Evidence -> Constraint -> Feature -> Scene owner -> QA result`
+
+## Why
+
+Bez provenance agent:
+- zapomina, skąd wziął liczbę,
+- nie wie, co zmienić po wymianie referencji,
+- miesza dane z wcześniejszych wersji.
+
+## Versioning
+
+Każda referencja:
+- id,
+- revision,
+- approval state,
+- checksum/file metadata, jeśli pipeline pozwala.
+
+## Stale reference
+
+Jeśli concept sheet został zastąpiony:
+- nie przepisuj nowych informacji na stary kontrakt po kawałku,
+- oznacz affected constraints,
+- uruchom impact analysis.
+
+
+---
+
+## FILE: `10_reconstruction/110_DIMENSION_GRAPH.md`
+
+# Dimension Graph
+
+## Cel
+
+Nie przechowywać wymiarów jako luźnej listy.
+Zbudować graf zależności.
+
+## Nodes
+
+Przykłady:
+- total_width,
+- total_height,
+- seat_height,
+- side_housing_width,
+- backrest_width,
+- trim_width,
+- gap.
+
+## Edges
+
+Relacje:
+- sum,
+- difference,
+- ratio,
+- alignment,
+- symmetry,
+- containment.
+
+Przykład:
+```text
+backrest_width =
+total_width
+- left_housing_width
+- right_housing_width
+```
+
+## Constraint types
+
+- equality,
+- inequality,
+- min/max clearance,
+- ratio,
+- centered,
+- aligned,
+- tangent.
+
+## Benefit
+
+Zmiana jednego parametru może zostać propagowana bez ręcznego "poprawiania na oko".
+
+## Rule
+
+Dla assetu rekonstrukcyjnego parametry D0/D1 powinny wynikać z jednego spójnego dimension graph.
+
+
+---
+
+## FILE: `10_reconstruction/111_DIMENSION_LOCKING_AND_TOLERANCES.md`
+
+# Dimension Locking and Tolerances
+
+## Lock classes
+
+### HARD LOCK
+Wartość nie może się zmienić bez zmiany kontraktu.
+
+### DERIVED LOCK
+Wynika z innych locków.
+
+### SOFT TARGET
+Powinna zostać zachowana, ale może być skorygowana przy konflikcie.
+
+### FREE
+Nie określona.
+
+## Tolerancje
+
+Tolerancja zależy od typu parametru.
+
+### Interface / modular
+Praktycznie zerowa w granicach precyzji pipeline.
+
+### Global dimensions
+Domyślnie bardzo mała, jeśli wymiar jest jawny.
+
+### Measured-from-image
+Tolerancja uwzględnia:
+- rozdzielczość,
+- anti-aliasing,
+- grubość linii,
+- perspektywę.
+
+### Material appearance
+Nie opisuj tolerancji w milimetrach; użyj QA wizualnego.
+
+## Lock report
+
+Przed PRIMARY_DETAIL wydrukuj wszystkie HARD LOCK.
+Po każdej zmianie strukturalnej sprawdź je ponownie.
+
+
+---
+
+## FILE: `10_reconstruction/112_LANDMARK_AND_KEYPOINT_SYSTEM.md`
+
+# Landmark and Keypoint System
+
+## Cel
+
+Porównywać konkretne punkty zamiast ogólnego wrażenia.
+
+## Landmark classes
+
+- bounding corners,
+- feature centers,
+- bend points,
+- tangent transition points,
+- panel corners,
+- hole centers,
+- logo anchor,
+- seat/back junction,
+- trim start/end.
+
+## Record
+
+```text
+landmark_id
+feature_id
+3d_owner
+view
+reference_xy_normalized
+projection_xy
+tolerance_px_or_normalized
+status
+```
+
+## Multi-view landmarks
+
+Ten sam punkt 3D może występować w wielu widokach.
+To szczególnie cenne do kontroli głębokości.
+
+## Do not overfit
+
+Nie twórz setek landmarków bez potrzeby.
+D0/D1: mała liczba krytycznych punktów.
+D2: dodatkowe lokalne punkty.
+
+
+---
+
+## FILE: `10_reconstruction/113_REFERENCE_COORDINATE_REGISTRATION.md`
+
+# Reference Coordinate Registration
+
+## Cel
+
+Ustawić różne widoki we wspólnym układzie 3D.
+
+## Asset coordinate frame
+
+Zdefiniuj:
+- origin,
+- X,
+- Y,
+- Z,
+- front,
+- ground plane.
+
+## Orthographic registration
+
+Dla każdego rzutu określ:
+- physical width represented,
+- physical height represented,
+- image crop,
+- image center,
+- axis orientation.
+
+## Anchor
+
+Preferuj:
+- known total dimension,
+- ground contact,
+- centerline,
+- external bounds.
+
+## Same-scale rule
+
+Jeżeli front i rear przedstawiają ten sam wymiar 2000 mm, ich image planes powinny zostać skalibrowane do tej samej szerokości świata.
+
+## Offset
+
+Nie centruj każdego widoku "na oko".
+Rejestruj według:
+- centerline,
+- ground,
+- bounds.
+
+## Result
+
+Każdy reference plane może zostać użyty jako wiarygodne tło QA/modeling.
+
+
+---
+
+## FILE: `10_reconstruction/114_ORTHOGRAPHIC_REFERENCE_CALIBRATION.md`
+
+# Orthographic Reference Calibration
+
+## Cel
+
+Zamienić rzut obrazkowy na mierzalną płaszczyznę.
+
+## Inputs
+
+- crop size px,
+- known dimension,
+- dimension line endpoints,
+- object boundary,
+- world axis.
+
+## Scale derivation
+
+Jeżeli odcinek `P px` odpowiada `L m`:
+`meters_per_pixel = L / P`
+
+Używaj tylko dla tej samej płaszczyzny rzutu.
+
+## Dimension arrows
+
+Preferuj mierzenie między markerami linii wymiarowej, nie między rozmytymi krawędziami renderu.
+
+## Calibration checks
+
+Po ustawieniu:
+- total bounds muszą zgadzać się z wymiarem,
+- ground line ma być wspólna,
+- centerline powinna być spójna między widokami.
+
+## Warning
+
+Plansze marketingowe mogą nie mieć idealnie technicznych rzutów mimo etykiety "front view".
+Status takiego widoku może być `NEAR_ORTHOGRAPHIC`.
+
+
+---
+
+## FILE: `10_reconstruction/115_PERSPECTIVE_CAMERA_SOLVING.md`
+
+# Perspective Camera Solving
+
+## Cel
+
+Dopasować kamerę hero/detail tak, aby nie deformować modelu dla uzyskania podobnego renderu.
+
+## Solve variables
+
+- camera rotation,
+- camera translation,
+- focal length,
+- sensor/fit,
+- shift,
+- object pose, jeśli nie jest już zablokowany.
+
+## Landmark solve
+
+Wybierz punkty o znanej lub zablokowanej geometrii:
+- corners,
+- panel intersections,
+- base contacts.
+
+Minimalizuj reprojection error.
+
+## Solve order
+
+1. zablokuj global dimensions,
+2. zablokuj orientation,
+3. oszacuj camera,
+4. dopiero potem oceniaj hero view.
+
+## Lens warning
+
+Szerokokątna kamera może:
+- powiększyć bliższy bok,
+- zmienić apparent depth,
+- zwiększyć różnicę wysokości.
+
+Nie poprawiaj tego przez asymetryczne skalowanie modelu.
+
+## QA
+
+Po solve hero view jest materiałowym i detalicznym źródłem, ale geometryczny authority pozostaje zgodny z macierzą.
+
+
+---
+
+## FILE: `10_reconstruction/116_SILHOUETTE_CONSTRAINT_SYSTEM.md`
+
+# Silhouette Constraint System
+
+## Silhouette is D0
+
+Dla każdego kanonicznego widoku utwórz:
+- maskę referencji,
+- maskę renderu,
+- contour representation.
+
+## Metrics
+
+Możliwe:
+- intersection over union,
+- area error,
+- contour distance,
+- directional extrema error.
+
+## Extrema
+
+Kontroluj:
+- leftmost,
+- rightmost,
+- topmost,
+- bottommost,
+- charakterystyczne lokalne extrema.
+
+## Weighted contour
+
+Nie wszystkie fragmenty obrysu są równie ważne.
+Wyższa waga:
+- charakterystyczne skosy,
+- transition seat/back,
+- nogi,
+- podłokietniki,
+- główne łuki.
+
+## Gate
+
+Nie dodawaj D2/D3, jeśli silhouette D0/D1 nie przechodzi wszystkich kanonicznych widoków.
+
+
+---
+
+## FILE: `10_reconstruction/117_NEGATIVE_SPACE_AND_CLEARANCE.md`
+
+# Negative Space and Clearance Constraints
+
+## Negative space jest geometrią pośrednią
+
+Często łatwiej wykryć błąd po kształcie pustej przestrzeni niż po powierzchni.
+
+## Przykłady
+
+- przestrzeń pod ławką,
+- przerwa między siedziskiem a bokiem,
+- otwór w uchwycie,
+- dystans panelu od ramy.
+
+## Record
+
+```text
+space_id
+bounded_by
+view
+width/height/profile
+priority
+```
+
+## Gameplay clearance
+
+Jeśli przestrzeń ma funkcję:
+- przejście,
+- chwyt,
+- nogi postaci,
+- ruch mechanizmu,
+
+otrzymuje constraint funkcjonalny niezależnie od wyglądu.
+
+## QA
+
+Porównuj negative-space masks w widokach ortograficznych.
+
+
+---
+
+## FILE: `10_reconstruction/118_CROSS_SECTION_INFERENCE.md`
+
+# Cross-Section Inference
+
+## Problem
+
+Front/side/top nie zawsze definiują profil przekroju.
+
+## Evidence order
+
+1. detail close-up,
+2. visible edge in hero,
+3. material boundary,
+4. manufacturing logic,
+5. minimal plausible section.
+
+## Cross-section classes
+
+- rectangular,
+- rounded rectangle,
+- chamfered,
+- tapered,
+- hollow shell,
+- layered sandwich,
+- custom spline.
+
+## Unknown section
+
+Jeżeli przekrój nie jest widoczny:
+- nie dodawaj skomplikowanego profilu,
+- wybierz minimalny profil spełniający wszystkie widoki,
+- oznacz jako `INFERRED`.
+
+## Section stations
+
+Dla zmiennej geometrii definiuj profile w kilku stacjach:
+- base,
+- mid,
+- transition,
+- top.
+
+Można następnie loftować/łączyć je kontrolowanie.
+
+
+---
+
+## FILE: `10_reconstruction/119_HIDDEN_AND_OCCLUDED_GEOMETRY_POLICY.md`
+
+# Hidden and Occluded Geometry Policy
+
+## Cztery klasy
+
+### H0 — explicitly shown
+Musi być odwzorowane zgodnie z referencją.
+
+### H1 — functionally required
+Niewidoczne, ale potrzebne do działania lub poprawnej bryły.
+
+### H2 — runtime required
+Collision, backing surface, closed volume itp.
+
+### H3 — unknowable
+Brak dowodów i brak konieczności.
+
+## H3 policy
+
+Nie inventuj szczegółów.
+Zastosuj:
+- prostą powierzchnię,
+- logiczne domknięcie,
+- minimalną konstrukcję.
+
+## Occluded transition
+
+Jeśli dwie widoczne części muszą się połączyć za przeszkodą:
+rekonstrukcja ma użyć najprostszego ciągłego połączenia, które nie łamie innych widoków.
+
+## Report
+
+Każda większa H3 powierzchnia powinna być oznaczona jako inferred.
+
+
+---
+
+## FILE: `10_reconstruction/120_SYMMETRY_AND_ASYMMETRY_POLICY.md`
+
+# Symmetry and Asymmetry Policy
+
+## Symmetry is evidence, not default
+
+Sprawdź:
+- front,
+- rear,
+- top,
+- detail,
+- functional annotations.
+
+## Symmetry classes
+
+- geometric symmetric,
+- shell symmetric,
+- material asymmetric,
+- accessory asymmetric,
+- intentionally asymmetric.
+
+## Build strategy
+
+Jeśli rdzeń jest symetryczny:
+- Mirror jest preferowany na wczesnym etapie.
+
+Jeśli tylko utility panel jest po jednej stronie:
+- rdzeń pozostaje mirrorable,
+- panel jest osobnym obiektem/feature.
+
+## Mirror break
+
+Zanim zastosujesz asymetryczną operację:
+- zapisz stage,
+- ustal, które features pozostają wspólne.
+
+## QA
+
+Nie wymagaj pixel symmetry od elementów celowo asymetrycznych.
+
+
+---
+
+## FILE: `10_reconstruction/121_PROFILE_AND_CURVATURE_INFERENCE.md`
+
+# Profile and Curvature Inference
+
+## Problem
+
+Referencja często pokazuje "zaokrąglony bok", ale nie podaje promienia.
+
+## Rozróżniaj
+
+- circular arc,
+- fillet,
+- bevel,
+- spline transition,
+- compound curvature,
+- chamfer.
+
+## Evidence
+
+Grazing highlight nie jest sam w sobie dowodem dokładnego promienia.
+Łącz:
+- silhouette,
+- orthographic contour,
+- detail,
+- manufacturing logic.
+
+## Curvature control
+
+Dla ważnego profilu preferuj:
+- parametric bevel,
+- curve profile,
+- explicit support geometry,
+
+zamiast ręcznego "wygładzania".
+
+## Radius range
+
+Jeśli nieznany:
+zapisz zakres, np. `R ~= 20–30 mm`, a nie fałszywie dokładną liczbę.
+
+## QA
+
+Ocena:
+- silhouette,
+- highlight width pod stałym światłem,
+- transition continuity.
+
+
+---
+
+## FILE: `10_reconstruction/122_EDGE_RADIUS_AND_BEVEL_ESTIMATION.md`
+
+# Edge Radius and Bevel Estimation
+
+## Edge taxonomy
+
+- structural hard edge,
+- manufactured fillet,
+- cosmetic bevel,
+- soft molded transition,
+- protected edge trim.
+
+## Estimation
+
+Ustal:
+1. skala obiektu,
+2. widoczna szerokość highlightu,
+3. contour change,
+4. materiał,
+5. sposób produkcji.
+
+## Multiple bevel families
+
+Nie używaj jednego bevel width dla całego assetu.
+
+Przykładowe rodziny:
+- `BVL_STRUCTURAL`
+- `BVL_PANEL`
+- `BVL_TRIM`
+- `BVL_MICRO`
+
+## Segment budget
+
+Segment count zależy od:
+- promienia,
+- dystansu kamery,
+- LOD.
+
+## Hard rule
+
+Bevel nie może zmienić locked outer dimension, jeśli kontrakt wymaga zachowania wymiaru zewnętrznego.
+Plan musi uwzględniać sposób limit/offset.
+
+
+---
+
+## FILE: `10_reconstruction/123_THICKNESS_GAPS_AND_PANEL_LINES.md`
+
+# Thickness, Gaps and Panel Lines
+
+## Parametry osobno
+
+Nie mieszaj:
+- grubości materiału,
+- szczeliny montażowej,
+- rowka dekoracyjnego,
+- shadow gap,
+- recess depth.
+
+## Gap consistency
+
+Powtarzalna szczelina powinna być parametrem:
+`GAP_MAIN`, nie serią ręcznych przesunięć.
+
+## Visible-from-distance test
+
+Jeżeli panel line ma być czytelny z typowego dystansu:
+- musi mieć wystarczający rozmiar geometryczny/teksturalny,
+- ale nie może być sztucznie przeskalowany bez decyzji artystycznej.
+
+## Geometry choice
+
+Gap:
+- real geometry dla głębokich i ważnych,
+- normal/decal dla mikroszczelin,
+- shader tylko jeśli runtime to wspiera.
+
+## QA
+
+Kontroluj szerokość i ciągłość szczelin na:
+- prostych,
+- narożnikach,
+- przejściach między częściami.
+
+
+---
+
+## FILE: `10_reconstruction/124_MATERIAL_EVIDENCE_RECONSTRUCTION.md`
+
+# Material Evidence Reconstruction
+
+## Material identity
+
+Dla każdej strefy ustal:
+- material family,
+- base color family,
+- metallic/dielectric,
+- roughness range,
+- surface directionality,
+- micro-normal,
+- transparency,
+- emissive.
+
+## Evidence priority
+
+1. material palette / annotation,
+2. detail close-up,
+3. hero render,
+4. orthographic view.
+
+## Material segmentation
+
+Najpierw odtwórz poprawne granice materiałów.
+Dopiero potem stroisz parametry shaderów.
+
+## Do not bake lighting into albedo
+
+Highlight, cień i ambient w concept arcie nie są kolorem materiału.
+
+## Material uncertainty
+
+Jeśli materiał opisany jako "dark titanium composite":
+nie zakładaj automatycznie czystego metalu.
+Nazwa może być językiem designu, nie fizycznym składem.
+
+Zastosuj tekstowe evidence razem z appearance.
+
+
+---
+
+## FILE: `10_reconstruction/125_LIGHTING_VS_MATERIAL_DISENTANGLEMENT.md`
+
+# Lighting vs Material Disentanglement
+
+## Problem
+
+Concept art zawiera lighting, który może wyglądać jak:
+- jaśniejszy materiał,
+- gradient albedo,
+- metaliczny pas,
+- edge wear.
+
+## Test
+
+Porównaj ten sam region w:
+- hero,
+- front,
+- side,
+- material palette.
+
+Jeżeli jasność zmienia się wraz z orientacją powierzchni:
+prawdopodobnie to lighting/reflection.
+
+## Brushed metal
+
+Kierunkowy highlight nie powinien być kopiowany do base color jako stała jasna smuga.
+
+## Ambient blue
+
+Niebieskie odbicie od emissive/underglow nie jest kolorem sąsiedniego grafitu.
+
+## QA material rig
+
+Stosuj neutralne, powtarzalne studio lighting do porównania materiałów.
+
+
+---
+
+## FILE: `10_reconstruction/126_BRANDING_TEXT_AND_DECAL_EXACTNESS.md`
+
+# Branding, Text and Decal Exactness
+
+## Najpierw klasyfikacja
+
+Element tekstowy może być:
+- realnym nadrukiem na assetcie,
+- interfejsem wyświetlacza,
+- etykietą techniczną,
+- adnotacją concept sheet.
+
+Tylko pierwsze trzy trafiają do assetu.
+
+## Exactness
+
+Dla realnego brandingu:
+- spelling,
+- casing,
+- alignment,
+- orientation,
+- scale,
+- anchor position
+
+są feature constraints.
+
+## Geometry vs texture
+
+Preferuj decal/texture dla:
+- logotypów,
+- drobnego tekstu,
+- ikon.
+
+Geometria tylko gdy:
+- tekst jest fizycznie tłoczony,
+- silhouette/parallax ma znaczenie.
+
+## Unknown font
+
+Nie zgaduj "podobnej" typografii jako 1:1.
+Status:
+`FONT_UNRESOLVED`
+lub użyj dostarczonego logo jako grafiki.
+
+## QA
+
+Porównuj ROI w widoku kanonicznym.
+
+
+---
+
+## FILE: `10_reconstruction/127_REFERENCE_COLOR_MANAGEMENT.md`
+
+# Reference Color Management
+
+## Cel
+
+Nie interpretować różnic color-management jako różnic materiałowych.
+
+## Record
+
+Dla referencji, jeśli wiadomo:
+- color space/profile,
+- gamma,
+- HDR/SDR,
+- compression.
+
+Dla renderu QA:
+- render engine,
+- view transform,
+- look,
+- exposure,
+- output format.
+
+## Consistency
+
+Wszystkie checkpointy porównawcze muszą używać tego samego color pipeline.
+
+## Concept art caveat
+
+Obraz marketingowy mógł zostać:
+- tonemapped,
+- retuszowany,
+- sharpened,
+- compressed.
+
+Dlatego geometryczne QA nie powinno zależeć od koloru.
+
+## Separate pipelines
+
+- geometry QA: mask/neutral,
+- material QA: controlled render,
+- final beauty: aesthetic.
+
+
+---
+
+## FILE: `10_reconstruction/128_RECONSTRUCTION_OBJECT_DECOMPOSITION.md`
+
+# Reconstruction Object Decomposition
+
+## Cel
+
+Podzielić asset według konstrukcji i odpowiedzialności features.
+
+## Kryteria osobnego obiektu
+
+Oddziel, jeśli część:
+- ma osobny materiał i wyraźną granicę,
+- jest nakładką,
+- będzie animowana,
+- jest asymetrycznym akcesorium,
+- ma być wariantowana,
+- jest boolean cutter/helper,
+- ma własny feature ownership.
+
+## Nie rozdrabniaj
+
+Nie twórz osobnego object dla każdej śrubki, jeśli:
+- mogą być instancjami,
+- nie potrzebują niezależnej logiki.
+
+## Decomposition table
+
+| Object | Feature IDs | Material | Modeling method | Runtime fate |
+
+## Stable boundaries
+
+Podział powinien powstać przed detail phase.
+Ciągłe łączenie i rozdzielanie obiektów utrudnia regression tracking.
+
+
+---
+
+## FILE: `10_reconstruction/129_FEATURE_TO_MODELING_STRATEGY_MAP.md`
+
+# Feature-to-Modeling Strategy Map
+
+Każdy Feature ID powinien zostać przypisany do techniki.
+
+## Strategy classes
+
+- PARAMETRIC_PRIMITIVE
+- DIRECT_MESH
+- BMESH_PROCEDURAL
+- BOOLEAN_RECESS
+- BOOLEAN_UNION
+- SOLIDIFY_SHELL
+- BEVEL
+- CURVE_PROFILE
+- ARRAY_INSTANCE
+- GEOMETRY_NODES
+- FLOATING_DETAIL
+- DECAL
+- NORMAL_BAKE
+- MATERIAL_ONLY
+
+## Selection criteria
+
+Uwzględnij:
+- wpływ na silhouette,
+- editability,
+- precision,
+- repeated use,
+- shading,
+- runtime,
+- risk of regression.
+
+## Example
+
+Głęboki panel:
+`BOOLEAN_RECESS` lub `DIRECT_MESH`
+
+Logo:
+`DECAL`
+
+Niebieski light strip:
+separate geometry + emissive material.
+
+## Rule
+
+Agent nie może wybrać techniki tylko dlatego, że "zna operator".
+Technika wynika z feature requirements.
+
+
+---
+
+## FILE: `10_reconstruction/130_PARAMETRIC_MASTER_MODEL.md`
+
+# Parametric Master Model
+
+## Cel
+
+D0/D1 model powinien być sterowany małym zestawem parametrów.
+
+## Master parameters
+
+- bounds,
+- primary widths,
+- heights,
+- depths,
+- main angles,
+- major radii,
+- major gaps.
+
+## Derived parameters
+
+Obliczaj:
+- inner widths,
+- center offsets,
+- mirrored positions,
+- panel dimensions.
+
+## Benefits
+
+- łatwe korekty po pomiarze,
+- mniej mikroruchów,
+- spójność widoków,
+- mniej tool calls.
+
+## Freeze levels
+
+### F0
+Wszystko parametryczne.
+
+### F1
+D0/D1 locked.
+
+### F2
+D2 locked.
+
+### F3
+Bake/UV critical geometry frozen.
+
+## Rule
+
+Nie freeze'uj master modelu przed przejściem multi-view blockout gate.
+
+
+---
+
+## FILE: `10_reconstruction/131_DIMENSION_LOCKED_BLOCKOUT.md`
+
+# Dimension-Locked Blockout
+
+## Blockout ma już być mierzalny
+
+Nie oznacza "luźnych kostek".
+Powinien spełniać:
+- total bounds,
+- primary division,
+- seat/back/leg positions,
+- główne kąty,
+- negative spaces.
+
+## Allowed
+
+- proste bryły,
+- mała liczba segmentów,
+- approximate bevel only jeśli wpływa na silhouette.
+
+## Forbidden
+
+- tekstury,
+- branding,
+- mikrodetale,
+- final bake,
+- kosmetyczne śruby.
+
+## Gate
+
+Blockout przechodzi tylko, gdy:
+- wszystkie HARD LOCK pass,
+- silhouette pass w kanonicznych widokach,
+- negative space pass,
+- primary landmarks pass.
+
+## Repair
+
+Jeżeli FAIL:
+wróć do dimension graph, nie maskuj błędu bevelami.
+
+
+---
+
+## FILE: `10_reconstruction/132_PRECISION_HARD_SURFACE_CONSTRUCTION.md`
+
+# Precision Hard-Surface Construction
+
+## Precision hierarchy
+
+1. numeric parameters,
+2. constraints/derived values,
+3. snapping,
+4. measured local edits,
+5. visual freehand only dla low-impact detail.
+
+## Transform discipline
+
+Dla konstrukcji:
+- używaj osi,
+- jawnych wartości,
+- lokalnych układów,
+- originów zgodnych z częścią.
+
+## Clean primitive strategy
+
+Zaczynaj od geometrii, która odpowiada przekrojowi.
+Nie twórz bardzo złożonej siatki, jeśli parametric primitive + modifier zachowa precyzję.
+
+## Edge placement
+
+Edge loops powinny istnieć z powodu:
+- shape,
+- shading,
+- topology requirement.
+
+Nie "dla bezpieczeństwa".
+
+## Precision regression
+
+Po bevel/solidify/boolean sprawdź:
+- locked bounds,
+- alignment,
+- gap widths.
+
+
+---
+
+## FILE: `10_reconstruction/133_BOOLEAN_RECESS_AND_TRIM_PLAYBOOK.md`
+
+# Boolean, Recess and Trim Playbook
+
+## Recess
+
+Dla wpuszczonego panelu określ:
+- outer outline,
+- border width,
+- recess depth,
+- corner radius,
+- bottom surface.
+
+## Boolean cutter
+
+Cutter powinien:
+- mieć kontrolowane wymiary,
+- być tagowany feature ID,
+- posiadać wystarczające przenikanie,
+- nie tworzyć przypadkowych coplanar contacts.
+
+## Trim
+
+Trim jako osobny mesh jest preferowany, gdy:
+- ma inny materiał,
+- tworzy własną silhouette,
+- ma kontrolowaną grubość.
+
+## Modifier order
+
+Kolejność musi zostać zapisana per object.
+Typowy problem:
+bevel przed/po boolean daje inny wynik.
+
+## Cleanup
+
+Po boolean sprawdź:
+- slivers,
+- shading,
+- tiny faces,
+- nienaturalne pinching.
+
+## Feature ownership
+
+Cutter/helper nie jest feature owner po apply, jeśli zostaje usunięty.
+Owner staje się finalny mesh/region.
+
+
+---
+
+## FILE: `10_reconstruction/134_PANEL_GAPS_SEAMS_AND_JUNCTIONS.md`
+
+# Panel Gaps, Seams and Junctions
+
+## Junction classes
+
+- flush,
+- recessed,
+- overlapping,
+- wrapped trim,
+- open shadow gap,
+- mechanical joint.
+
+## T-junction / corner
+
+Szczelina musi zachowywać logikę na narożniku.
+Nie może nagle:
+- zmieniać szerokości,
+- kończyć się bez powodu,
+- przecinać trimu.
+
+## Continuous seam
+
+Jeżeli seam biegnie przez dwie płaszczyzny:
+traktuj go jako jedną cechę przestrzenną, nie dwa niezależne rowki.
+
+## QA
+
+Sprawdź seam w:
+- front,
+- side,
+- 3/4 grazing light.
+
+## Manufacturing evidence
+
+Seam często wskazuje prawdziwy podział części.
+Może być ważniejszy od tego, jak najłatwiej modelować jedną siatkę.
+
+
+---
+
+## FILE: `10_reconstruction/135_REAR_BOTTOM_AND_UNDERSIDE_RECONSTRUCTION.md`
+
+# Rear, Bottom and Underside Reconstruction
+
+## Zasada
+
+Jeżeli arkusz pokazuje rear/bottom, są to kanoniczne widoki, nie "opcjonalne detale".
+
+## Rear
+
+Kontroluj:
+- panel extent,
+- logo placement,
+- side housing continuation,
+- bottom opening,
+- fasteners.
+
+## Bottom
+
+Kontroluj:
+- service panels,
+- structural rails,
+- feet,
+- cable/electronics covers,
+- symmetry,
+- attachment zones.
+
+## Simplification
+
+Runtime może mieć uproszczenie, ale:
+- authoring reconstruction powinien najpierw odtworzyć evidence,
+- uproszczony wariant jest osobnym LOD/optimization step.
+
+## Hero-only trap
+
+Asset nie może być pustą "fasadą" poprawną tylko od przodu.
+
+
+---
+
+## FILE: `10_reconstruction/136_FASTENERS_REPETITION_AND_MICRODETAIL.md`
+
+# Fasteners, Repetition and Microdetail
+
+## Fastener significance
+
+Śruba może być:
+- konstrukcyjna i widoczna,
+- dekoracyjna,
+- niemal niewidoczna.
+
+Nie wszystkie wymagają geometrii.
+
+## Repetition
+
+Powtarzalne detale:
+- instancing,
+- array,
+- Geometry Nodes.
+
+## Alignment
+
+Fasteners powinny wynikać z:
+- panel logic,
+- symmetry,
+- regular spacing.
+
+Nie rozmieszczaj losowo dla "sci-fi look".
+
+## D3/D4 gate
+
+Microdetail dopiero po pełnym przejściu D0–D2.
+
+## Runtime
+
+W LOD:
+- geometry -> decal/normal -> remove
+zgodnie z czytelnością.
+
+
+---
+
+## FILE: `10_reconstruction/137_ELECTRONICS_DISPLAYS_EMISSIVE_GLASS.md`
+
+# Electronics, Displays, Emissive and Glass
+
+## Electronics panel
+
+Rozdziel:
+- physical housing,
+- recess,
+- port geometry,
+- screen/light,
+- printed icons.
+
+## Emissive strip
+
+Określ:
+- physical width,
+- recess/flush state,
+- diffuser cover,
+- emissive color,
+- runtime light behavior osobno.
+
+## Display
+
+Treść ekranu jest materiałem/texture/UI feature, nie geometrią obudowy.
+
+## Glass
+
+Zdecyduj:
+- rzeczywista grubość czy single plane,
+- opaque coated plastic vs transparent material,
+- runtime transparency mode.
+
+## QA
+
+Sprawdź w dwóch profilach:
+- neutral geometry,
+- final material.
+
+Emisja nie może maskować błędnego kształtu.
+
+
+---
+
+## FILE: `10_reconstruction/138_MODIFIER_STACK_AND_FREEZE_POINTS.md`
+
+# Modifier Stack and Freeze Points
+
+## Reconstruction stack
+
+Dla każdego obiektu zapisz:
+- modifier,
+- purpose,
+- feature IDs,
+- dependency,
+- freeze condition.
+
+## Freeze points
+
+### P0
+Po blockout — zachowaj parametric.
+
+### P1
+Po D2 matching — można zamrozić wybrane booleans.
+
+### P2
+Przed UV/bake — topology-critical freeze.
+
+### P3
+Export copy — final evaluated mesh.
+
+## Do not apply early
+
+Wczesne Apply utrudnia:
+- korekty wymiarów,
+- zmianę gap/radius,
+- feature regression.
+
+## Do not keep everything live forever
+
+Zbyt złożony stack:
+- utrudnia stabilność,
+- może być kosztowny,
+- może powodować zależności.
+
+Freeze jest decyzją pipeline, nie dogmatem.
+
+
+---
+
+## FILE: `10_reconstruction/139_TOPOLOGY_AFTER_GEOMETRIC_MATCH.md`
+
+# Topology After Geometric Match
+
+## Kolejność
+
+Najpierw poprawna geometria, potem optymalizacja topologii.
+
+## Zakaz
+
+Nie zmieniaj kształtu tylko po to, aby uzyskać "ładniejsze quady", jeśli:
+- asset jest statyczny,
+- shading i export są poprawne.
+
+## Retopology goals
+
+- silhouette preservation,
+- stable triangulation,
+- clean shading,
+- UV suitability,
+- lower cost.
+
+## Critical edges
+
+Zachowaj:
+- profile,
+- panel borders,
+- bevel support,
+- deformation edges, jeśli istnieją.
+
+## Validation
+
+Po cleanup/retopo:
+uruchom silhouette + landmarks + MUST regression.
+
+
+---
+
+## FILE: `10_reconstruction/140_UV_AND_MATERIALS_AFTER_MATCH.md`
+
+# UV and Materials After Match
+
+## Gate
+
+Final UV nie powinno powstać przed zaakceptowaniem D0–D2, chyba że workflow wymaga wcześniejszego testu.
+
+## Why
+
+Zmiana geometrii po starannym UV:
+- zwiększa koszt,
+- tworzy nieciągłości,
+- może popsuć bake.
+
+## Material IDs
+
+Granice materiałów powinny już wynikać z Feature Contract.
+
+## UV priorities
+
+- directional material orientation,
+- consistent texel density,
+- visible seams placement,
+- logo/decal anchors,
+- bake requirements.
+
+## Reconstruction-specific QA
+
+Sprawdź, czy mapa nie zmienia:
+- apparent scale brushed metal,
+- directionality,
+- logo proportions.
+
+
+---
+
+## FILE: `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md`
+
+# Reconstruction QA Camera Rig
+
+## Stały zestaw kamer
+
+Dla pełnego concept sheet:
+- FRONT_ORTHO
+- REAR_ORTHO
+- LEFT/RIGHT_SIDE_ORTHO
+- TOP_ORTHO
+- BOTTOM_ORTHO
+- HERO_MATCH
+- DETAIL_MATCH
+
+## Ortho cameras
+
+Mają:
+- zablokowaną orientację,
+- skalę wynikającą z bounds,
+- ten sam framing margin,
+- stałą rozdzielczość.
+
+## Camera metadata
+
+Każda kamera:
+- id,
+- source segment,
+- projection,
+- lens/ortho scale,
+- transform,
+- resolution,
+- revision.
+
+## Lock
+
+QA camera nie jest kamerą artystyczną.
+Po kalibracji nie należy jej ruszać podczas napraw geometrii.
+
+## Camera failure
+
+Jeśli trzeba ruszyć QA camera, traktuj to jako zmianę kalibracji i ponownie waliduj baseline.
+
+
+---
+
+## FILE: `10_reconstruction/142_ORTHOGRAPHIC_OVERLAY_VALIDATION.md`
+
+# Orthographic Overlay Validation
+
+## Cel
+
+Nałożyć render modelu na referencję w tej samej projekcji.
+
+## Warstwy
+
+- reference,
+- candidate,
+- alpha overlay,
+- edge overlay,
+- diff.
+
+## Alignment
+
+Przed oceną:
+- same physical scale,
+- same centerline,
+- same ground plane,
+- same crop/aspect.
+
+## Colors
+
+Kolory overlay są narzędziem QA, nie częścią finalnego assetu.
+
+## Oceniaj
+
+- external contour,
+- panel boundaries,
+- landmarks,
+- feature positions.
+
+## Do not compensate
+
+Nie przesuwaj obrazu referencyjnego osobno dla każdego feature.
+Rejestracja jest globalna dla widoku.
+
+
+---
+
+## FILE: `10_reconstruction/143_SILHOUETTE_DIFF_PROTOCOL.md`
+
+# Silhouette Diff Protocol
+
+## Pipeline
+
+1. render binary/flat mask,
+2. align with calibrated reference,
+3. compute overlap,
+4. extract contour delta,
+5. map delta to feature/region.
+
+## Metrics
+
+### IoU
+Dobra metryka ogólna, ale może ukrywać lokalny błąd.
+
+### Maximum contour deviation
+Wykrywa pojedyncze duże odchylenie.
+
+### Mean contour deviation
+Ogólna jakość obrysu.
+
+### Regional contour deviation
+Najważniejsze dla feature QA.
+
+## Gate
+
+D0 pass wymaga:
+- akceptowalnego globalnego overlap,
+- braku dużych lokalnych FAIL w critical regions.
+
+## Anti-gaming
+
+Nie uznawaj wysokiego IoU za sukces, jeśli np. profil oparcia jest wyraźnie błędny.
+
+
+---
+
+## FILE: `10_reconstruction/144_NUMERIC_AND_LANDMARK_VALIDATION.md`
+
+# Numeric and Landmark Validation
+
+## Numeric checks
+
+- dimensions,
+- angles,
+- distances,
+- offsets,
+- radii where known,
+- symmetry axes,
+- ground contacts.
+
+## Projected landmarks
+
+Dla widoku:
+- project 3D landmark,
+- compare with reference coordinate,
+- calculate error.
+
+## Error normalization
+
+Możesz raportować:
+- pixels,
+- normalized image fraction,
+- millimeters after calibration.
+
+## Priority weighting
+
+MUST landmark ma wyższą wagę.
+
+## Gate example
+
+```text
+hard_dimensions: PASS
+critical_landmarks: PASS
+secondary_landmarks: <= allowed MINOR
+```
+
+Nie wprowadzaj jednej magicznej średniej, która pozwala skompensować duży błąd jednym poprawnym punktem.
+
+
+---
+
+## FILE: `10_reconstruction/145_FEATURE_ROI_VALIDATION.md`
+
+# Feature ROI Validation
+
+## Cel
+
+Sprawdzać feature lokalnie.
+
+## ROI types
+
+- rectangular,
+- polygonal,
+- contour-following,
+- multi-region.
+
+## Feature validation may include
+
+- edge map,
+- silhouette,
+- color/material region,
+- landmark positions,
+- text/decal presence.
+
+## Expected change mask
+
+Przy naprawie feature:
+- expected ROI = obszar dopuszczonej zmiany.
+
+Zmiana poza ROI:
+- regresja candidate.
+
+## Occlusion
+
+ROI może mieć widoczność:
+- REQUIRED,
+- OPTIONAL,
+- OCCLUDED.
+
+Nie failuj cechy, która zgodnie z widokiem jest zasłonięta.
+
+
+---
+
+## FILE: `10_reconstruction/146_MULTI_VIEW_CONSISTENCY_GATE.md`
+
+# Multi-View Consistency Gate
+
+## Problem
+
+Model może pasować do frontu i nie pasować do side.
+
+## Gate order
+
+1. numeric bounds,
+2. front,
+3. side,
+4. top,
+5. rear,
+6. bottom,
+7. hero,
+8. details.
+
+Nie oznacza to różnego priorytetu — chodzi o diagnostyczną kolejność.
+
+## Structural pass
+
+D0/D1 są zaakceptowane tylko, jeśli nie istnieje `FAIL` w żadnym kanonicznym ortho view.
+
+## Conflict diagnosis
+
+Jeśli poprawka front pogarsza side:
+- parametr jest źle zdekomponowany,
+- camera/reference może być źle skalibrowana,
+- model ma błędny przekrój.
+
+Nie iteruj losowo między widokami.
+
+
+---
+
+## FILE: `10_reconstruction/147_RECONSTRUCTION_REGRESSION_GATES.md`
+
+# Reconstruction Regression Gates
+
+## Baseline
+
+Po każdym zaakceptowanym etapie przechowaj:
+- geometry manifest,
+- renders,
+- feature statuses,
+- dimension report.
+
+## Change classes
+
+### LOCAL DETAIL
+Test:
+- target ROI,
+- neighboring MUST.
+
+### SHAPE
+Test:
+- all ortho silhouettes,
+- dimensions,
+- all D0/D1 MUST.
+
+### TOPOLOGY
+Test:
+- shape + shading + UV if existing.
+
+### MATERIAL
+Test:
+- material ROIs + no geometry change.
+
+### EXPORT
+Test:
+- full runtime regression.
+
+## Fail
+
+Regresja MUST blokuje dalszy etap nawet jeśli naprawiany feature został poprawiony.
+
+
+---
+
+## FILE: `10_reconstruction/148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md`
+
+# Acceptance Thresholds and Error Budgets
+
+## Nie istnieje jeden globalny próg
+
+Thresholdy są per:
+- evidence type,
+- feature priority,
+- asset importance,
+- view,
+- stage.
+
+## Error budget classes
+
+### ZERO/NEAR-ZERO
+- modular interfaces,
+- explicit numeric dimensions,
+- pivot/axis.
+
+### TIGHT
+- global silhouette,
+- primary feature positions.
+
+### MODERATE
+- inferred radii,
+- subtle surface transitions.
+
+### VISUAL
+- roughness,
+- microtexture,
+- lighting-sensitive appearance.
+
+## Reporting
+
+Zawsze podaj:
+- measurement,
+- threshold,
+- status.
+
+## Hard fail
+
+Known dimension outside declared tolerance = FAIL.
+Nie kompensuj punktami w scorecard.
+
+
+---
+
+## FILE: `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`
+
+# Reconstruction State Machine
+
+## R0 — INGEST
+Zapis źródeł i segmentów.
+
+## R1 — CLASSIFY
+Projection, view, material/detail/text.
+
+## R2 — AUTHORITY
+Evidence + View Authority Matrix.
+
+## R3 — REGISTER
+Skala, osie, image planes, camera.
+
+## R4 — CONSTRAIN
+Dimension graph, landmarks, feature contract.
+
+## R5 — DECOMPOSE
+Object decomposition i strategy map.
+
+## R6 — D0 BLOCKOUT
+Bounds + silhouette.
+
+## R7 — D1 PRIMARY FORMS
+Major profiles i negative space.
+
+## R8 — D2 FEATURES
+Panels, trim, recess, functional details.
+
+## R9 — D3 DETAIL
+Fasteners, branding, microgeometry.
+
+## R10 — SURFACE
+Materials, UV, decals, emissive.
+
+## R11 — MULTIVIEW QA
+Wszystkie kanoniczne widoki.
+
+## R12 — TOPOLOGY/RUNTIME
+Optimization bez utraty fidelity.
+
+## R13 — EXPORT VALIDATION
+
+## Backtracking
+
+Każdy FAIL wraca do najwcześniejszego etapu, który może go naprawić.
+
+
+---
+
+## FILE: `10_reconstruction/150_AMBIGUITY_STOP_AND_ESCALATION.md`
+
+# Ambiguity Stop and Escalation
+
+## Agent może kontynuować mimo części niewiadomych tylko, gdy nie wpływają one na bieżący etap.
+
+## BLOCKING ambiguity
+
+Przykłady:
+- nie wiadomo, który widok jest frontem,
+- sprzeczne total dimensions,
+- nie wiadomo, czy asymetria jest zamierzona,
+- nieznany interface dimension.
+
+## NON-BLOCKING
+
+- brak dokładnego micro-radius,
+- niewidoczna śruba od spodu,
+- drobny materiałowy noise.
+
+## Escalation record
+
+```text
+ambiguity_id
+affected_features
+evidence
+possible interpretations
+impact
+recommended resolution
+```
+
+## No silent choice
+
+Agent nie może wybrać jednej z dwóch równie prawdopodobnych interpretacji i zapisać jej jako fact.
+
+
+---
+
+## FILE: `10_reconstruction/151_RECONSTRUCTION_CHANGE_CONTROL.md`
+
+# Reconstruction Change Control
+
+## Zmiana referencji
+
+Nowy arkusz/revision może wpływać na:
+- dimensions,
+- feature presence,
+- materials,
+- branding.
+
+## Impact analysis
+
+1. find changed evidence,
+2. find linked constraints,
+3. find Feature IDs,
+4. find scene owners,
+5. find downstream UV/bake/runtime.
+
+## Change set
+
+Każda większa aktualizacja:
+- reason,
+- affected evidence,
+- affected features,
+- before/after,
+- regression result.
+
+## User-directed deviation
+
+Jeśli użytkownik celowo chce odstąpić od referencji:
+utwórz `AUTHORIZED_DEVIATION`.
+
+Od tego momentu QA porównuje dany feature do deviation contract, nie starego obrazu.
+
+
+---
+
+## FILE: `10_reconstruction/152_RECONSTRUCTION_REPORT_SCHEMA.md`
+
+# Reconstruction Report Schema
+
+## Summary
+
+- asset id,
+- reference revision,
+- Blender version,
+- reconstruction library version,
+- overall state.
+
+## Evidence
+
+- explicit dimensions,
+- canonical views,
+- conflicts,
+- unresolved ambiguity.
+
+## Feature status
+
+Tabela:
+| Feature | Priority | Evidence | Owner | QA | Status |
+
+## Dimensions
+
+Tabela:
+| Parameter | Target | Actual | Error | Tolerance | Status |
+
+## Views
+
+- front,
+- side,
+- top,
+- rear,
+- bottom,
+- hero.
+
+Dla każdego:
+- calibration state,
+- silhouette status,
+- feature failures.
+
+## Runtime
+
+- triangles,
+- materials,
+- UV,
+- LOD,
+- collision,
+- export.
+
+## Limitations
+
+Jawna lista:
+- inferred geometry,
+- unresolved fonts,
+- unknown hidden surfaces.
+
+
+---
+
+## FILE: `10_reconstruction/153_REFERENCE_TO_RUNTIME_BOUNDARY.md`
+
+# Reference-to-Runtime Boundary
+
+## Dwa modele sukcesu
+
+### Reconstruction source
+Maksymalna zgodność z evidence.
+
+### Runtime asset
+Zgodność z evidence w granicach kosztu silnika.
+
+## Nie mieszaj etapów
+
+Nie usuwaj feature z reconstruction source dlatego, że LOD go nie potrzebuje.
+
+## Derived runtime variants
+
+- LOD0,
+- LOD1,
+- LOD2,
+- collision,
+- proxy,
+- mobile variant.
+
+Wszystkie powinny mieć link do source reconstruction.
+
+## Fidelity budget
+
+Optymalizacja może usuwać detale w ustalonej kolejności, ale:
+- primary silhouette,
+- MUST functional features,
+- locked dimensions
+
+są chronione.
+
+
+---
+
+## FILE: `10_reconstruction/154_RECONSTRUCTION_PLAYBOOK_GENERATOR.md`
+
+# Reconstruction Playbook Generator
+
+## Cel
+
+Przed modelowaniem agent tworzy playbook specyficzny dla klasy assetu.
+
+## Inputs
+
+- category,
+- evidence,
+- feature contract,
+- runtime contract,
+- material families,
+- moving parts.
+
+## Output
+
+### Decomposition
+Lista obiektów.
+
+### Strategy
+Technika per feature.
+
+### Parameter set
+Master + derived.
+
+### Modifier stacks
+Per object.
+
+### QA views
+Per feature.
+
+### Risk list
+Np.:
+- boolean pinching,
+- bevel changing bounds,
+- perspective ambiguity,
+- underside inconsistency.
+
+### Freeze plan
+Kiedy stack może zostać zastosowany.
+
+## Reuse
+
+Jeżeli istnieje playbook klasy, adaptuj go zamiast tworzyć workflow od zera.
+
+
+---
+
+## FILE: `10_reconstruction/155_RECONSTRUCTION_KNOWLEDGE_ROUTING.md`
+
+# Reconstruction Knowledge Routing
+
+Maksymalna biblioteka nie oznacza ładowania wszystkiego.
+
+## Stage packs
+
+### Ingest pack
+103–109
+
+### Geometry solve pack
+110–123
+
+### Surface pack
+124–127
+
+### Build pack
+128–140
+
+### QA pack
+141–148
+
+### Governance pack
+149–159
+
+## Asset-specific packs
+
+Do tego:
+- właściwy `11_playbooks`,
+- engine profile,
+- standard API modules.
+
+## Token rule
+
+Agent ładuje:
+1. Reconstruction Index,
+2. State Machine,
+3. odpowiedni stage pack,
+4. tylko playbook klasy.
+
+Nie należy wrzucać całego `_FULL_LIBRARY.md` do każdego tool-call.
+
+
+---
+
+## FILE: `10_reconstruction/156_ADVERSARIAL_FAILURE_MODES.md`
+
+# Adversarial Failure Modes
+
+## F1 — Single-view overfit
+Front idealny, side błędny.
+
+## F2 — Hero-view distortion
+Model zdeformowany pod atrakcyjny render.
+
+## F3 — Detail distraction
+Mikrodetale dodane przed poprawną sylwetką.
+
+## F4 — Material compensation
+Ciemniejszy shader ukrywa złą geometrię.
+
+## F5 — Symmetry hallucination
+Agent odbija detal, który powinien być tylko po jednej stronie.
+
+## F6 — Hidden-side neglect
+Tył/spód są puste mimo referencji.
+
+## F7 — Invented greebles
+Dodane "sci-fi" detale bez dowodu.
+
+## F8 — Dimension drift
+Bevel/solidify zmienia total dimensions.
+
+## F9 — Camera cheating
+Przesuwanie QA camera zamiast geometrii.
+
+## F10 — Conflict averaging
+Sprzeczne widoki uśrednione.
+
+## F11 — Apply collapse
+Wczesne Apply niszczy możliwość korekty.
+
+## F12 — Optimization regression
+LOD/decimate usuwa MUST.
+
+## F13 — Text hallucination
+Agent generuje błędne logo/napis.
+
+## F14 — Lighting baked into material
+Highlight z concept artu staje się albedo.
+
+## F15 — API context thrash
+Setki operatorów i zmian selection zamiast parametrycznego batchu.
+
+Każdy benchmark powinien zawierać przynajmniej kilka z tych pułapek.
+
+
+---
+
+## FILE: `10_reconstruction/157_RECONSTRUCTION_COST_MODEL.md`
+
+# Reconstruction Cost Model
+
+## Koszt agentowy
+
+Śledź:
+- tool calls,
+- failed calls,
+- renders,
+- full-scene rebuilds,
+- tokens loaded,
+- repair iterations.
+
+## Koszt artystyczny
+
+Najdroższe regresje:
+1. zmiana D0 po D3,
+2. zmiana topologii po UV/bake,
+3. zmiana material segmentation po atlasie,
+4. zmiana hierarchy po animation/export.
+
+## Strategy
+
+Najwięcej analizy wykonaj przed kosztownymi freeze points.
+
+## Efficiency metric
+
+`accepted_features / tool_calls`
+
+oraz:
+`MUST regressions / repair`
+
+## Rule
+
+Oszczędność tokenów nie może polegać na pomijaniu checkpointów.
+Ma wynikać z:
+- lepszego routingu wiedzy,
+- batch operations,
+- parametryzacji,
+- lokalnych napraw.
+
+
+---
+
+## FILE: `10_reconstruction/158_RECONSTRUCTION_DATA_MODEL.md`
+
+# Reconstruction Data Model
+
+## Recommended entities
+
+### Reference
+source file.
+
+### Segment
+crop/view/material sample.
+
+### Evidence
+claim from segment.
+
+### Constraint
+numeric/geometric rule.
+
+### Feature
+visible or functional characteristic.
+
+### Owner
+scene object/data/modifier/material.
+
+### Landmark
+point/line/region used by QA.
+
+### Checkpoint
+accepted scene state.
+
+### Deviation
+authorized change from reference.
+
+### ValidationResult
+measurement/status.
+
+## IDs
+
+Prefer stable IDs:
+- REF001
+- SEG_FRONT
+- E023
+- C014
+- F031
+- LM009
+- CP_D1
+
+## Why
+
+Stable IDs allow:
+- machine-readable reports,
+- targeted repair,
+- regression tracking,
+- future automation.
+
+
+---
+
+## FILE: `10_reconstruction/159_RECONSTRUCTION_DEFINITION_OF_DONE.md`
+
+# Reconstruction Definition of Done
+
+Asset jest zakończony dopiero, gdy:
+
+## Evidence
+- wszystkie źródła zinwentaryzowane,
+- konflikty rozwiązane lub jawnie oznaczone,
+- unknowns zapisane.
+
+## Geometry
+- hard dimensions pass,
+- all canonical silhouettes pass,
+- all D0/D1 landmarks pass,
+- all MUST geometry features pass.
+
+## Details
+- D2/D3 zgodne z evidence,
+- branding poprawny,
+- rear/bottom nie pominięte, jeśli istnieją.
+
+## Surface
+- material segmentation pass,
+- directional materials poprawne,
+- emissive/glass logic poprawna.
+
+## QA
+- multi-view gate pass,
+- regression gate pass,
+- no unauthorized deviations.
+
+## Runtime
+- optimization nie zmienia chronionych features,
+- export validated.
+
+## Documentation
+- report,
+- manifest,
+- inferred geometry list,
+- known limitations.
+
+
+---
+
+## FILE: `10_reconstruction/160_BLUEPRINT_AND_TECHNICAL_DRAWING_MODE.md`
+
+# Blueprint and Technical Drawing Mode
+
+## Gdy wejście jest rzeczywistym rysunkiem technicznym
+
+Priorytet:
+- dimensions,
+- section lines,
+- datums,
+- tolerances,
+- symbols.
+
+## Nie interpretuj linii pomocniczych jako geometrii
+
+Rozróżnij:
+- object edge,
+- hidden line,
+- centerline,
+- dimension line,
+- leader,
+- hatch.
+
+## Datum system
+
+Jeżeli drawing definiuje bazę:
+użyj jej jako origin/alignment.
+
+## Sections
+
+Przekrój ma wyższy authority dla lokalnej grubości niż hero render.
+
+## Marketing blueprint
+
+Jeżeli plansza tylko naśladuje dokumentację techniczną:
+nie zakładaj standardów ISO/ASME bez dowodu.
+
+
+---
+
+## FILE: `10_reconstruction/161_PHOTO_RECONSTRUCTION_MODE.md`
+
+# Photo Reconstruction Mode
+
+## Zdjęcie różni się od concept sheet
+
+Problemy:
+- lens distortion,
+- perspective,
+- occlusion,
+- unknown scale,
+- material reflections.
+
+## Scale anchors
+
+Szukaj:
+- znanego wymiaru,
+- obiektu wzorcowego,
+- powtarzalnego standardu.
+
+## Camera solve
+
+Wymagany przed geometry matching.
+
+## Multi-photo
+
+Preferuj zdjęcia z różnych osi.
+Jedno zdjęcie nie definiuje pełnej 3D geometrii.
+
+## Lens distortion
+
+Jeśli jest istotny:
+korekcja powinna poprzedzać precise overlay.
+
+## Unknown regions
+
+Nie inventuj tylnej strony z jednego frontowego zdjęcia.
+
+
+---
+
+## FILE: `10_reconstruction/162_STYLIZED_CONCEPT_MODE.md`
+
+# Stylized Concept Reconstruction Mode
+
+## Problem
+
+Stylizowany concept może być celowo niespójny geometrycznie.
+
+## Priority
+
+1. approved hero silhouette,
+2. functional requirements,
+3. multi-view consistency, jeśli dostępna,
+4. manufacturing plausibility.
+
+## Intent extraction
+
+Zidentyfikuj:
+- shape language,
+- proportions,
+- focal features.
+
+## Authorized resolution
+
+Gdy dwa widoki są niemożliwe do pogodzenia:
+utwórz spójny model 3D zgodny z ustalonym authority, a konflikt pozostaw w raporcie.
+
+## Do not call exact
+
+Jeżeli źródło samo nie definiuje jednoznacznej geometrii, wynik może być:
+`CANONICAL_3D_INTERPRETATION`
+zamiast literalnego "1:1".
+
+
+---
+
+## FILE: `10_reconstruction/163_MATERIAL_SAMPLE_CALIBRATION.md`
+
+# Material Sample Calibration
+
+## Material palette sample
+
+Próbka na planszy może być renderem lub ilustracją.
+
+## Extract
+
+- dominant base color range,
+- roughness appearance,
+- directionality,
+- microtexture scale.
+
+## Do not sample one pixel
+
+Użyj regionu, ponieważ:
+- compression,
+- highlights,
+- vignette
+
+zmieniają pojedyncze piksele.
+
+## Brushed metal
+
+Odtwórz:
+- direction,
+- roughness anisotropy if runtime supports,
+- subtle normal/texture.
+
+## Composite/powder coat
+
+Microtexture powinna mieć fizyczną skalę względem obiektu.
+
+
+---
+
+## FILE: `10_reconstruction/164_EDGE_LANGUAGE_SYSTEM.md`
+
+# Edge Language System
+
+## Cel
+
+Zachować spójny język produktu.
+
+## Edge families
+
+Dla całego assetu zidentyfikuj:
+- outer protective corners,
+- panel edges,
+- metal trim edges,
+- screen/insert edges,
+- underside utilitarian edges.
+
+## Record
+
+| Family | Radius/Range | Segments authoring | Material | Feature IDs |
+
+## Consistency
+
+Jeśli dwa elementy należą do tej samej rodziny produkcyjnej:
+ich edge treatment powinien być spójny, chyba że referencja pokazuje inaczej.
+
+## Reconstruction value
+
+Edge language silnie wpływa na "ten sam projekt" nawet przy poprawnych global dimensions.
+
+
+---
+
+## FILE: `10_reconstruction/165_SURFACE_CONTINUITY_AND_TANGENCY.md`
+
+# Surface Continuity and Tangency
+
+## Continuity classes
+
+- G0: position continuous,
+- G1: tangent continuous,
+- visually soft transition.
+
+Agent nie musi używać formalnego CAD, ale musi rozpoznawać różnicę.
+
+## Typical areas
+
+- backrest into side housing,
+- rounded shell corner,
+- trim wrapping corner.
+
+## Failure
+
+Dwie powierzchnie mogą się stykać, ale tworzyć niezamierzony kink.
+
+## QA
+
+- silhouette,
+- grazing light,
+- matcap,
+- curvature-like visual inspection.
+
+## Rule
+
+Nie dodawaj Smooth modifiera jako maskowania złej kontroli profilu.
+
+
+---
+
+## FILE: `10_reconstruction/166_PART_BOUNDARY_AND_ASSEMBLY_LOGIC.md`
+
+# Part Boundary and Assembly Logic
+
+## Cel
+
+Zrekonstruować, które linie oznaczają:
+- osobne części,
+- dekoracyjne rowki,
+- materiałowy insert,
+- cień.
+
+## Evidence
+
+- seam continuation,
+- different material,
+- fasteners,
+- thickness,
+- close-up,
+- rear/bottom continuation.
+
+## Assembly graph
+
+Zapisz:
+- parent part,
+- attached part,
+- interface,
+- likely attachment.
+
+Nie musi odpowiadać rzeczywistemu procesowi produkcji 1:1, jeśli brak danych; ma być spójny z widoczną konstrukcją.
+
+## Benefit
+
+Pomaga:
+- decomposition,
+- UV,
+- material boundaries,
+- variants,
+- repair.
+
+
+---
+
+## FILE: `10_reconstruction/167_FUNCTIONAL_GEOMETRY_INFERENCE.md`
+
+# Functional Geometry Inference
+
+## Funkcja może ograniczać geometrię
+
+Przykłady:
+- siedzisko wymaga użytkowej powierzchni,
+- port USB wymaga obudowy,
+- panel serwisowy musi mieć sensowny dostęp,
+- uchwyt musi mieć clearance.
+
+## Evidence status
+
+Funkcja nie daje prawa do dowolnego detail invention.
+
+Używaj jej do:
+- odrzucenia niemożliwych interpretacji,
+- minimalnego domknięcia niewidocznej konstrukcji.
+
+## Functional vs decorative
+
+Oddziel:
+- geometry required for use,
+- visual styling.
+
+## Human scale
+
+Jeśli asset jest meblem:
+sprawdź, czy jawne wymiary są spójne z przeznaczeniem, ale nie zmieniaj ich na podstawie ergonomicznych heurystyk, jeśli reference ma explicit numeric values.
+
+
+---
+
+## FILE: `10_reconstruction/168_REFERENCE_CLEANUP_AND_PREPROCESSING.md`
+
+# Reference Cleanup and Preprocessing
+
+## Dopuszczalne operacje
+
+- crop,
+- rotate,
+- deskew,
+- normalize transparency/background for QA,
+- extract edges/mask,
+- split panels.
+
+## Niedopuszczalne jako źródło prawdy
+
+- generative fill,
+- AI upscaling inventing edges,
+- stylization,
+- sharpening tworzący fałszywe linie.
+
+## Upscale
+
+Jeśli używany:
+traktuj jako pomoc wizualną, a measurements wykonuj na oryginale lub kontrolowanym resamplingu.
+
+## Preserve
+
+Zawsze zachowaj:
+- original pixels,
+- transform metadata.
+
+
+---
+
+## FILE: `10_reconstruction/169_REFERENCE_RECONSTRUCTION_SECURITY_RULES.md`
+
+# Reconstruction Safety Rules for Scene Integrity
+
+## Nie dotyczy bezpieczeństwa fizycznego — dotyczy integralności danych.
+
+## Rules
+
+- nie usuwaj source references,
+- nie modyfikuj zaakceptowanych QA cameras bez logu,
+- nie nadpisuj master parameters z lokalnej naprawy,
+- nie apply'uj destructive operations bez checkpointu,
+- nie usuwaj helpers oznaczonych przez inne feature IDs,
+- nie zmieniaj units w połowie assetu.
+
+## Recovery assets
+
+Przechowuj:
+- last accepted blockout,
+- last accepted D2,
+- pre-UV source,
+- pre-export source.
+
+## Scene contamination
+
+Testowe obiekty i cuttery:
+- w osobnej kolekcji,
+- tagowane,
+- usuwane jawnie.
+
+
+---
+
+## FILE: `11_playbooks/110_HARD_SURFACE_CIVIC_FURNITURE.md`
+
+# Playbook — Hard-Surface Civic Furniture
+
+## Typowe komponenty
+
+- structural side housings,
+- seat,
+- backrest,
+- trim,
+- feet/base,
+- utility/electronics,
+- signage,
+- service panels.
+
+## Priorytety
+
+1. ergonomiczna i produktowa silhouette zgodna z reference,
+2. masywność i grubości,
+3. junction seat/back/sides,
+4. materiałowe granice,
+5. odporne edge treatment,
+6. underside/service logic.
+
+## Typowe techniki
+
+- parametric box/profile modeling,
+- Mirror dla core,
+- separate trim meshes,
+- booleans dla recess/panels,
+- curves dla cienkich pasków/profili,
+- decals dla logo,
+- instancing dla fasteners.
+
+## QA
+
+Wymagane:
+- front,
+- side,
+- top,
+- rear,
+- bottom,
+- 3/4.
+
+## Runtime
+
+Civic asset bywa wielokrotnie instancjonowany.
+Kontroluj:
+- material slots,
+- repeated meshes,
+- LOD,
+- collision.
+
+
+---
+
+## FILE: `11_playbooks/111_BENCH_AND_SEATING_MODULE.md`
+
+# Playbook — Bench / Seating Module
+
+## Master parameters
+
+- total_width,
+- total_depth,
+- total_height,
+- seat_height,
+- seat_depth,
+- backrest_angle,
+- side_housing_width,
+- backrest_thickness,
+- base/foot dimensions.
+
+## Functional landmarks
+
+- ground contacts,
+- seat front edge,
+- seat/back junction,
+- top backrest,
+- inside edges of side housings.
+
+## Decomposition
+
+Preferowane:
+- core seat,
+- backrest,
+- left/right housings,
+- trims,
+- utility modules,
+- lighting,
+- underside/service.
+
+## Side profile is critical
+
+Side view rozstrzyga:
+- seat depth,
+- backrest angle,
+- side housing contour.
+
+## Negative space
+
+Przestrzeń pod siedziskiem jest feature D0/D1.
+Nie traktuj jej jako wynik przypadkowy.
+
+## Collision
+
+Najczęściej prosta collision decomposition wystarcza:
+- seat,
+- side housings,
+- backrest proxy,
+zgodnie z wymaganiami silnika.
+
+
+---
+
+## FILE: `11_playbooks/112_TECHNICAL_CONCEPT_SHEET_RECONSTRUCTION.md`
+
+# Playbook — Technical Concept Sheet Reconstruction
+
+## Wejście
+
+Plansza zawiera:
+- hero,
+- rzuty,
+- dimensions,
+- detail,
+- material palette.
+
+## Workflow
+
+1. segment sheet,
+2. classify views,
+3. read explicit dimensions,
+4. calibrate ortho crops,
+5. build dimension graph,
+6. define feature contract,
+7. solve blockout from orthos,
+8. solve hero camera,
+9. add D2,
+10. surface/material,
+11. validate every view.
+
+## Authority
+
+Numeric + orthographic > hero dla geometrii.
+Hero/detail > orthographic dla surface appearance.
+
+## Common risk
+
+Plansza może mieć estetyczne niespójności.
+Nigdy nie zakładaj automatycznie CAD-level consistency.
+
+
+---
+
+## FILE: `11_playbooks/113_REAR_AND_UNDERSIDE_PLAYBOOK.md`
+
+# Playbook — Rear and Underside
+
+## Cel
+
+Eliminować "front-only asset syndrome".
+
+## Rear
+
+- large panel structure,
+- side wrapping,
+- logo/decal,
+- service seams,
+- fasteners.
+
+## Underside
+
+- base volumes,
+- panels,
+- support rails,
+- feet,
+- lighting strips,
+- utility housings.
+
+## Modeling rule
+
+Jeżeli bottom view istnieje:
+najpierw odwzoruj układ D1/D2, dopiero potem optymalizuj.
+
+## Runtime rule
+
+Authoring source może być pełniejszy niż runtime underside.
+Nie mieszaj tych wersji.
+
+
+---
+
+## FILE: `11_playbooks/114_BRUSHED_METAL_AND_DARK_COMPOSITE.md`
+
+# Playbook — Brushed Metal + Dark Composite
+
+## Brushed metal
+
+Kontroluj:
+- metallic response,
+- roughness,
+- brushing direction,
+- fine normal/roughness variation.
+
+Nie maluj stałego highlightu w base color.
+
+## Dark composite / powder coat
+
+Kontroluj:
+- dielectric/metal decision,
+- roughness,
+- subtle microtexture,
+- minimal color variation.
+
+## Boundary
+
+Trim vs body musi mieć:
+- poprawną geometrię,
+- poprawną material boundary.
+
+Shader sam nie naprawi źle ułożonego trimu.
+
+
+---
+
+## FILE: `11_playbooks/115_INTEGRATED_LIGHT_STRIP.md`
+
+# Playbook — Integrated Light Strip
+
+## Geometry
+
+Zdefiniuj:
+- recess,
+- diffuser/cover,
+- light-emitting surface,
+- ends/corners.
+
+## Design
+
+Pasek może:
+- być flush,
+- recessed,
+- protected by lip.
+
+Reference rozstrzyga.
+
+## Material
+
+Emissive intensity w Blenderze jest lookdev parameter.
+Runtime illumination może wymagać osobnego light.
+
+## LOD
+
+Z daleka:
+- utrzymaj widoczny akcent,
+- uprość fizyczną obudowę jeśli nie wpływa na silhouette.
+
+
+---
+
+## FILE: `11_playbooks/116_UTILITY_PANEL_AND_PORTS.md`
+
+# Playbook — Utility Panel and Ports
+
+## Decomposition
+
+- panel recess,
+- bezel,
+- insert,
+- ports,
+- indicator,
+- labels/icons.
+
+## Geometry priority
+
+Najpierw poprawny outline i placement panelu.
+Dopiero potem port microdetail.
+
+## Reuse
+
+Jeśli utility panel pojawia się na wielu assetach:
+zrób osobny reusable subasset.
+
+## Runtime
+
+Małe porty:
+- mogą być geometryczne w LOD0,
+- mogą przejść do normal/decal w dalszych LOD.
+
+
+---
+
+## FILE: `11_playbooks/117_PRODUCT_BRANDING_PLAYBOOK.md`
+
+# Playbook — Product Branding
+
+## Brand asset
+
+Preferuj dostarczony wektor/raster logo zamiast odtwarzania tekstu fontem.
+
+## Anchor system
+
+Dla logo zapisz:
+- view,
+- center/anchor,
+- normalized width,
+- rotation,
+- material/decal plane.
+
+## Consistency
+
+Ten sam brand w różnych assetach powinien używać:
+- wspólnego źródła grafiki,
+- wspólnej polityki koloru,
+- wariantów zatwierdzonych przez projekt.
+
+## Never hallucinate
+
+Nie generuj alternatywnej pisowni ani symbolu.
+
+
+---
+
+## FILE: `99_sources/SOURCES.md`
+
+# Technical Sources
+
+Biblioteka jest oparta przede wszystkim na oficjalnej dokumentacji.
+
+## Blender 5.1
+
+- Blender 5.1 Release Notes  
+  https://developer.blender.org/docs/release_notes/5.1/
+
+- Blender 5.1 Python API release notes  
+  https://developer.blender.org/docs/release_notes/5.1/python_api/
+
+- Blender Python API 5.1  
+  https://docs.blender.org/api/5.1/
+
+- Blender Python API — Context  
+  https://docs.blender.org/api/5.1/bpy.types.Context.html
+
+- Blender Python API — Operators  
+  https://docs.blender.org/api/5.1/bpy.ops.html
+
+- Blender Python API — BMesh  
+  https://docs.blender.org/api/5.1/bmesh.html
+
+- Blender Python API — BMesh Operators  
+  https://docs.blender.org/api/5.1/bmesh.ops.html
+
+- Blender Manual 5.1  
+  https://docs.blender.org/manual/en/5.1/
+
+## glTF
+
+- Khronos glTF 2.0 Specification  
+  https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
+
+- Khronos glTF overview  
+  https://www.khronos.org/gltf/
+
+- Khronos glTF PBR  
+  https://www.khronos.org/gltf/pbr/
+
+## Update policy
+
+Przy zmianie Blender 5.1 -> 5.2+:
+1. porównaj Python API release notes,
+2. znajdź breaking/compatibility changes,
+3. uruchom testy snippetów,
+4. dopiero podnieś `target_blender_version` biblioteki.
+
+
+## Blender 5.1 — production techniques
+
+- Geometry Nodes introduction
+  https://docs.blender.org/manual/en/5.1/modeling/geometry_nodes/introduction.html
+
+- Geometry Nodes — Instances
+  https://docs.blender.org/manual/en/5.1/modeling/geometry_nodes/instances.html
+
+- Geometry Nodes — Realize Instances
+  https://docs.blender.org/manual/en/5.1/modeling/geometry_nodes/instances/realize_instances.html
+
+- Blender Camera API
+  https://docs.blender.org/api/5.1/bpy.types.Camera.html
+
+- Cycles Baking
+  https://docs.blender.org/manual/en/5.1/render/cycles/baking.html
+
+## Source discipline
+
+Moduły biblioteki rozdzielają:
+- zachowanie udokumentowane przez Blender/Khronos,
+- politykę pipeline projektu,
+- heurystyki produkcyjne.
+
+Heurystyki nie powinny być przedstawiane agentowi jako ograniczenia API.
+
+## Reconstruction / precision modeling sources
+
+Official Blender documentation relevant to the reconstruction layer:
+
+- Blender Manual — Empties / image references
+  https://docs.blender.org/manual/en/latest/modeling/empties.html
+
+- Blender Manual — Precision transforms
+  https://docs.blender.org/manual/en/latest/scene_layout/object/editing/transform/control/precision.html
+
+- Blender Manual — Snapping
+  https://docs.blender.org/manual/en/latest/editors/3dview/controls/snapping.html
+
+- Blender Manual — Measure tool
+  https://docs.blender.org/manual/en/latest/editors/3dview/toolbar/measure.html
+
+- Blender Manual — Mesh Analysis
+  https://docs.blender.org/manual/en/latest/modeling/meshes/mesh_analysis.html
+
+- Blender Manual — Bevel Modifier
+  https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/bevel.html
+
+- Blender Manual — Boolean Modifier
+  https://docs.blender.org/manual/en/latest/modeling/modifiers/generate/booleans.html
+
+- Blender Python API — Object
+  https://docs.blender.org/api/current/bpy.types.Object.html
+
+- Blender Python API — Camera
+  https://docs.blender.org/api/current/bpy.types.Camera.html
+
+- Blender Python API — Depsgraph
+  https://docs.blender.org/api/current/bpy.types.Depsgraph.html
+
+## Source version note
+
+Biblioteka pozostaje targetowana na Blender 5.1.x.
+Adresy `latest/current` w sekcji źródeł służą jako dokumentacja referencyjna do mechanizmów,
+ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgodność z wersją 5.1.x.
+
+
+---
+
+## FILE: `CHANGELOG.md`
+
+
+# Changelog
+
+## 0.3.0
+
+Added full Reconstruction Layer:
+- 70 reconstruction modules/playbooks/scripts/prompts/benchmark elements,
+- evidence/provenance model,
+- concept-sheet segmentation,
+- authority/conflict system,
+- dimension graph and locks,
+- landmark and calibration system,
+- geometry inference rules,
+- exact feature/material/branding handling,
+- parametric reconstruction workflow,
+- multi-view QA and regression gates,
+- specialized modes for blueprint/photo/stylized references,
+- Lafar Street Bench reconstruction benchmark.
+
+## 0.2.0
+
+Added production layer:
+- camera/reference matching,
+- Visual Feature Map,
+- high/low-poly workflow,
+- baking pipeline,
+- trim sheets,
+- decals/floating details,
+- curve authoring,
+- Geometry Nodes authoring,
+- procedural material authoring,
+- texture packing/mip safety,
+- asset variants/randomization,
+- automated visual diff,
+- reference fidelity levels,
+- authoring-to-runtime handoff,
+- engine profile schema,
+- engine adapter protocol,
+- deterministic QA render pattern,
+- visual diff script pattern.
+
+Architecture decision:
+- modular MD files are canonical,
+- `_FULL_LIBRARY.md` is generated from them.
+
+
+---
+
+## FILE: `README.md`
+
+# Blender AI Agent Library v0.3.0
+
+Biblioteka wiedzy i procedur dla agenta AI sterującego Blenderem przez Python API / narzędzia automatyzacyjne.
+
+## Canonical source vs single-file snapshot
+
+**Źródłem kanonicznym jest katalog modułów MD.**
+
+`_FULL_LIBRARY.md` jest plikiem generowanym automatycznie z modułów:
+- służy do przeglądu całości,
+- może służyć do jednorazowego importu,
+- nie powinien być edytowany ręcznie.
+
+Każda zmiana biblioteki:
+1. modyfikuje właściwy moduł,
+2. aktualizuje `MANIFEST.json`,
+3. regeneruje `_FULL_LIBRARY.md`.
+
+## Warstwa 2 — production techniques
+
+Wersja 0.2 dodaje:
+- camera/reference matching,
+- Visual Feature Map,
+- high-poly / low-poly,
+- baking,
+- trim sheets,
+- decals,
+- curves,
+- Geometry Nodes,
+- procedural materials,
+- texture packing i mip safety,
+- warianty assetów,
+- automated visual diff,
+- fidelity protocol,
+- authoring-to-runtime handoff,
+- Engine Profile i Engine Adapter.
+
+## Warstwa 3 — Reconstruction Layer
+
+Wersja 0.3 dodaje pełny system rekonstrukcji 1:1:
+- model dowodów i provenance,
+- segmentację concept sheet,
+- klasyfikację projekcji,
+- View Authority Matrix,
+- rozwiązywanie konfliktów między widokami,
+- uncertainty/confidence ledger,
+- dimension graph,
+- hard/derived/soft locks,
+- landmark system,
+- kalibrację rzutów,
+- perspective camera solving,
+- silhouette i negative-space constraints,
+- inference przekrojów, krzywizn, promieni i grubości,
+- hidden/occluded geometry policy,
+- material/lighting disentanglement,
+- branding/decal exactness,
+- object decomposition,
+- parametric master model,
+- precision hard-surface construction,
+- rear/bottom/underside workflow,
+- multi-view QA,
+- overlay, silhouette diff, landmark validation i ROI validation,
+- reconstruction-specific regression gates,
+- ambiguity escalation,
+- change control,
+- Definition of Done,
+- osobne playbooki klas assetów,
+- benchmark Lafar Street Bench.
+
+Reconstruction Layer jest rozwinięciem standardowego pipeline, nie jego zamiennikiem.
+
+## Cel
+
+Agent ma produkować assety:
+- zgodne z briefem i referencją,
+- planowane przed wykonaniem,
+- możliwie deterministycznie budowane,
+- łatwe do poprawiania,
+- poprawne technicznie w Blenderze,
+- gotowe do użycia w silniku gry,
+- kontrolowane wizualnie i technicznie po każdej istotnej fazie,
+- bez marnowania wywołań API i tokenów na chaotyczne próby.
+
+Biblioteka jest celowo podzielona na małe pliki. Agent powinien ładować tylko moduły potrzebne w danym etapie.
+
+## Wersja docelowa
+
+- Blender: 5.1.x
+- Python: zgodny z Pythonem dostarczanym z Blenderem 5.1
+- format runtime baseline: glTF 2.0 / GLB
+- profil główny: assety do gry, hard-surface, props, architektura modułowa
+- zasady są silnikowo neutralne; wymagania konkretnego silnika mają nadpisywać wartości domyślne
+
+## Hierarchia wiedzy
+
+1. jawne wymagania użytkownika,
+2. zatwierdzone referencje i concept art,
+3. kontrakt projektu / assetu,
+4. stan sceny Blendera,
+5. niniejsza biblioteka,
+6. oficjalna dokumentacja Blender 5.1 i specyfikacja formatu eksportowego,
+7. heurystyki agenta.
+
+Niższy poziom nie może nadpisywać wyższego.
+
+## Główna zasada
+
+**Nie modeluj, dopóki nie wiadomo, co dokładnie ma zostać zachowane.**
+
+Każdy asset przechodzi przez:
+
+`ANALYZE -> CONTRACT -> PLAN -> BUILD -> INSPECT -> REPAIR -> VALIDATE -> EXPORT`
+
+Przejście do następnego etapu jest dozwolone dopiero po spełnieniu kryteriów poprzedniego.
+
+## Struktura
+
+- `00_governance` — reguły nadrzędne i state machine.
+- `01_analysis` — analiza briefu, referencji i cech.
+- `02_blender_api` — sposób używania `bpy`, `bmesh`, operatorów i kontekstu.
+- `03_modeling` — praktyka modelowania 3D.
+- `04_game_ready` — ograniczenia runtime.
+- `05_execution` — wykonanie, checkpointy, QA i naprawy.
+- `06_prompts` — gotowe role i szablony promptów.
+- `07_examples` — przykłady planowania assetów.
+- `08_scripts` — bezpieczne fragmenty kodu audytowego.
+- `99_sources` — źródła techniczne.
+
+## Minimalny zestaw plików ładowanych przez agenta
+
+Dla większości zadań:
+1. `00_governance/00_AGENT_CHARTER.md`
+2. `00_governance/02_STATE_MACHINE.md`
+3. `01_analysis/12_FEATURE_CONTRACT.md`
+4. `02_blender_api/20_BLENDER_5_1_API_STRATEGY.md`
+5. `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
+6. `03_modeling/30_MODELING_DECISION_TREE.md`
+7. `04_game_ready/40_GAME_ASSET_CONTRACT.md`
+8. `05_execution/51_EXECUTION_PROTOCOL.md`
+9. `05_execution/52_CHECKPOINT_AND_VISUAL_QA.md`
+10. odpowiedni przykład z `07_examples`.
+
+## Nieprawidłowy workflow
+
+`reference -> bpy.ops -> dużo zmian -> render końcowy -> "prawie"`
+
+## Prawidłowy workflow
+
+`reference -> feature contract -> metryki -> plan brył -> checkpoint sylwetki -> detale pierwszego rzędu -> checkpoint -> materiały -> checkpoint -> optymalizacja -> walidacja`
+
+## Definicja sukcesu
+
+Asset jest skończony dopiero, gdy:
+- wszystkie cechy `MUST` z Feature Contract są obecne,
+- proporcje mieszczą się w tolerancji,
+- widoki kontrolne nie pokazują utraty istotnych detali,
+- geometria nie ma błędów technicznych blokujących runtime,
+- materiały i UV spełniają kontrakt projektu,
+- transformacje, pivot, nazewnictwo i eksport są poprawne,
+- plik źródłowy pozostaje edytowalny.
