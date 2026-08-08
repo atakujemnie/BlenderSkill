@@ -88,6 +88,7 @@ def override_principled_channel(
     Scalar inputs are automatically converted to grayscale by Blender.
     For emissive color, ``scale_socket='Emission Strength'`` preserves the
     authored color while normalizing strength by ``scale_reference``.
+    All temporary helper nodes are removed on exit.
     """
     if scale_reference <= 0:
         raise ValueError("scale_reference must be > 0")
@@ -100,6 +101,7 @@ def override_principled_channel(
             bsdf = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None)
             emit = nt.nodes.new("ShaderNodeEmission")
             emit.label = f"__BS_CHANNEL_{socket_name}__"
+            helpers = []
 
             if bsdf is None or socket_name not in bsdf.inputs:
                 emit.inputs["Color"].default_value = (0.0, 0.0, 0.0, 1.0)
@@ -129,6 +131,7 @@ def override_principled_channel(
                         div.inputs[1].default_value = scale_reference
                         nt.links.new(strength.links[0].from_socket, div.inputs[0])
                         nt.links.new(div.outputs["Value"], emit.inputs["Strength"])
+                        helpers.append(div)
                     else:
                         emit.inputs["Strength"].default_value = (
                             float(strength.default_value) / scale_reference
@@ -137,12 +140,15 @@ def override_principled_channel(
                     emit.inputs["Strength"].default_value = 1.0
 
             nt.links.new(emit.outputs["Emission"], out.inputs["Surface"])
-            saved.append((nt, out, previous, emit))
+            saved.append((nt, out, previous, emit, helpers))
         yield
     finally:
-        for nt, out, previous, emit in saved:
+        for nt, out, previous, emit, helpers in saved:
             if emit.id_data is nt:
                 nt.nodes.remove(emit)
+            for helper in helpers:
+                if helper.id_data is nt:
+                    nt.nodes.remove(helper)
             if previous is not None:
                 nt.links.new(previous, out.inputs["Surface"])
 
