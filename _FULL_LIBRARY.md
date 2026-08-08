@@ -11013,8 +11013,20 @@ Reguły:
 32. Emissive authoring i runtime glow są oddzielnymi gate'ami. Blender odpowiada za emitter geometry/mask/color/export; bloom/exposure/tone mapping może należeć do engine.
 33. Floating geometry może dodać powierzchnię, ale nie wycina hosta. Negative-depth feature wymaga real recess/bake/runtime technique. Widoczność floating detail musi być udowodniona.
 34. Jeśli authoritative logo/graphic source istnieje, użyj go zamiast aproksymować markę geometrią/fontem.
-35. Reusable build module nie może wykonywać destrukcyjnego top-level build podczas importu. Scene mutation ma być explicit entry point / `if __name__ == "__main__"`.
+35. Reusable build module nie może wykonywać destrukcyjnego top-level build podczas importu. Scene mutation ma być explicit entry point / `if __name__ == "__main__"`; scratch collection musi mieć jawnego właściciela.
 36. Przy circular repeated details używaj radial placement + annulus containment validation; nie oceniaj anchor/bolt fit tylko po hero view.
+37. Bake jest transakcją. `bpy.ops.object.bake()` musi zwrócić `FINISHED`; brak wyjątku nie oznacza sukcesu. `CANCELLED` = FAIL.
+38. Multi-material bake wymaga selected+active target image node w każdym materiale używanym przez face'y. Stosuj kolejność: deselect nodes -> select target -> set active -> verify.
+39. Dla baked atlas/LOD używaj stabilnego semantic part ID i `UV_CONTRACT_ID`. `.001/.002` nie mogą zmieniać UV/material/feature ownership. Missing atlas assignment = FAIL.
+40. Nie stosuj DIFFUSE bake jako uniwersalnego BaseColor extractor dla metallic-roughness. Bake channel semantics muszą odpowiadać authored runtime property.
+41. Emissive texture opisuje emitter, nie bloom. Non-emitter musi być czarny; uwzględnij Emission Color + Strength i unikaj clippingu/hue loss.
+42. AO/ray-dependent bake musi izolować unrelated render-visible geometry. `hide_viewport` nie oznacza `hide_render`.
+43. Po lokalnej naprawie bake/export używaj Dirty-Stage Cache. Nie rebake'uj zaakceptowanych kanałów bez zmienionej zależności.
+44. Timeout wywołania dla długiego bake/export nie jest udowodnionym FAIL. Najpierw sprawdź job/artifact state; nie uruchamiaj duplikatu kosztownej operacji.
+45. Po bake waliduj obraz semantycznie: range, degeneracy, expected regions, forbidden signal, color space, packing. Sam plik PNG na dysku nie jest PASS.
+46. Finalne surface QA musi używać runtime LOD + baked runtime material. Procedural authoring render nie dowodzi poprawnego bake/export.
+47. Project-specific LOD packaging, collision, handedness/mirror i image/material URI policy pobieraj z aktywnego Runtime Module Packaging/Profile. Zweryfikowany projektowy fakt zapisuj, zamiast rediscoverować go z sibling scriptów przy każdym assetcie.
+48. Po export wykonuj readback finalnego modułu: nodes, materials, images i wymagane LOD-y. Console `export finished` nie wystarcza.
 
 W odpowiedzi operacyjnej utrzymuj format:
 - STATE
@@ -11054,6 +11066,14 @@ path/symbol lookup -> targeted range -> patch -> execute -> compact report
 
 Nie używaj pełnej treści istniejącego skryptu jako domyślnego outputu narzędzia.
 
+Dla bake:
+
+```text
+preflight -> dirty-channel plan -> execute only dirty channels -> semantic validation -> compact report
+```
+
+Nie zwracaj pełnych pixel arrays ani całego Blender console logu.
+
 ## Semantic skill routing
 
 Przed implementacją sprawdź Semantic Skill Registry.
@@ -11065,17 +11085,22 @@ Przykłady:
 - narrow seam/groove path -> `HS_PANEL_LINE`;
 - SubD topology flow/pinching/local density -> `SUBD_TOPOLOGY_CONTROL`;
 - repeated trim-compatible surface -> `TRIM_SHEET_UV`;
+- shared baked atlas across LODs -> `UV_ATLAS_CONTRACT`;
 - mesh/topology acceptance -> `MESH_VALIDATE`;
 - runtime API/version discovery -> `RUNTIME_COMPAT`;
-- QA render isolation -> `QA_SCENE_ISOLATE`;
+- QA/bake scene isolation -> `QA_SCENE_ISOLATE`;
 - maintained civic surface finishing -> `MATERIAL_FINISH_CIVIC`;
 - emissive asset/runtime boundary -> `EMISSIVE_HANDOFF`;
 - procedural/runtime texture closure -> `BAKE_RUNTIME_TEXTURES`;
+- baked-map semantic QA -> `BAKE_VALIDATE`;
+- exported module readback -> `RUNTIME_PACKAGE_VALIDATE`;
 - final completion claim -> `ASSET_COMPLETION`;
 - project catalog registration -> `ASSET_CATALOG_INTEGRATE`;
 - reference-driven form solve -> `RECONSTRUCT_REFERENCE`.
 
 Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację, ale nie przedstawiaj jej jako trwałego tested executora.
+
+`MESH_VALIDATE` ma status `EXECUTOR_READY` na podstawie realnego benchmarku Blender 5.1, ale każda sesja nadal musi potwierdzić runtime binding/import capability.
 
 ## Reconstruction mode
 
@@ -11134,12 +11159,32 @@ material identity
 
 Do not add random grunge uniformly.
 
+## Bake discipline
+
+For `GAME_READY_FINISH`:
+
+```text
+UV_CONTRACT
+-> DIRTY_GRAPH
+-> BASECOLOR/NORMAL/AO/ROUGHNESS/METALLIC/EMISSIVE as required
+-> BAKE_VALIDATE
+-> RUNTIME_MATERIAL_BIND
+-> PACKAGE_EXPORT
+-> PACKAGE_READBACK
+-> BAKED_RUNTIME_QA
+```
+
+Channel-specific corrections must remain channel-specific whenever dependencies allow.
+
+If bake warns about target image binding or returns `CANCELLED`, stop that channel immediately and repair the precondition. Do not inspect visual output of a cancelled bake as if it were valid.
+
 ## Emissive discipline
 
 Report separately:
 
 ```text
 EMISSIVE_AUTHORING_PASS
+EMISSIVE_TEXTURE_PASS
 EXPORTED_EMISSIVE_PASS
 RUNTIME_GLOW_PASS or UNVERIFIED
 ```
@@ -11179,6 +11224,8 @@ After failed operation:
 5. on repeat failure switch strategy/rollback/block.
 
 Every retry must add new information or change a validated precondition.
+
+For long-running operations, transport timeout is not a failed attempt until job/artifact inspection proves failure.
 
 
 ---
