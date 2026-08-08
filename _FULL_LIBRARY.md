@@ -679,6 +679,192 @@ The registry, Knowledge Router and Manifest must never disagree about the existe
 
 ---
 
+## FILE: `00_governance/06_TASK_PACK_PROTOCOL.md`
+
+# Task Pack Protocol
+
+## Purpose
+
+A Blender agent must not load every relevant document for the whole asset lifecycle at once.
+
+A `Task Pack` is the smallest bounded set of knowledge required for the current state and task subtype.
+
+The goal is to reduce context growth, repeated document reads and cross-stage interference while preserving required constraints.
+
+## Core rule
+
+```text
+current state + task subtype
+-> one Task Pack
+-> only required modules
+-> execute / validate
+-> discard non-persistent context
+-> advance state
+```
+
+The Knowledge Router selects the pack. The pack does not replace the State Machine or Semantic Skill Registry.
+
+## Required fields
+
+```yaml
+task_pack:
+  id: RECON_TECHNICAL_SHEET_ANALYZE
+  state: ANALYZE
+  purpose: segment and measure a technical concept sheet
+  required_modules: []
+  optional_modules: []
+  forbidden_until_later: []
+  persistent_outputs: []
+  context_budget_tokens: 8000
+```
+
+`context_budget_tokens` is a planning ceiling, not a guarantee from the runtime. If the pack approaches the ceiling, summarize persistent state and unload non-required material before loading more documents.
+
+## Canonical packs
+
+### `SESSION_PREFLIGHT`
+
+Use once before the first production scene mutation.
+
+Required:
+- `00_governance/00_AGENT_CHARTER.md`
+- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- `02_blender_api/19_TOOL_DISCOVERY_AND_REGISTRY.md`
+- `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
+- `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`
+
+Persistent output:
+- Tool Registry;
+- capability bindings;
+- Blender/runtime version facts.
+
+### `RECON_TECHNICAL_SHEET_ANALYZE`
+
+Required:
+- `00_governance/00_AGENT_CHARTER.md`
+- `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
+- `10_reconstruction/102_EVIDENCE_MODEL.md`
+- `10_reconstruction/103_REFERENCE_INGESTION_PROTOCOL.md`
+- `10_reconstruction/106_VIEW_AUTHORITY_MATRIX.md`
+- `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`
+- `10_reconstruction/160_BLUEPRINT_AND_TECHNICAL_DRAWING_MODE.md`
+- `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`
+- `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`
+
+Persistent output:
+- Reference Registry;
+- Analysis Cache;
+- Evidence Summary;
+- locked dimensions;
+- View Authority Matrix;
+- unresolved conflicts.
+
+Forbidden until later unless directly needed to resolve an ANALYZE blocker:
+- UV authoring;
+- materials/shaders;
+- LOD generation;
+- collision;
+- export;
+- microdetail modeling;
+- decorative detailing skills.
+
+### `RECON_BLOCKOUT`
+
+Required:
+- reconstruction controller;
+- Dimension Graph;
+- dimension locks/tolerances;
+- landmark system;
+- silhouette constraints;
+- object decomposition;
+- dimension-locked blockout;
+- Build Plan;
+- Execution Protocol.
+
+Do not load material/UV/LOD modules.
+
+### `RECON_DETAIL`
+
+Load only after camera/scale/silhouette/primary-form gates pass.
+
+Required:
+- current Feature Contract subset;
+- feature-to-modeling strategy map;
+- only semantic skills required by current feature IDs;
+- checkpoint/visual QA.
+
+Example: load `HS_PANEL_LINE` only when the current accepted feature is actually a narrow seam/path.
+
+### `GAME_READY`
+
+Load only after geometry/reconstruction acceptance.
+
+Required:
+- Game Asset Contract;
+- polycount/LOD/collision;
+- transforms/pivots/naming;
+- texture/material runtime;
+- active Engine Profile;
+- active Project Asset Pipeline Profile;
+- export/final validation as needed.
+
+## Persistent-state rule
+
+Task Pack changes must not discard facts that have already been validated.
+
+Persist compact structured records, not full conversational history:
+
+```text
+Tool Registry
+Reference Registry
+Reference Analysis Cache
+Evidence Ledger
+Dimension Graph
+View Authority Matrix
+Feature Contract
+Build Plan
+Checkpoint results
+```
+
+## No duplicate loading
+
+If a module was already loaded and its relevant rules are represented in persistent structured state, do not re-read it merely because the next step mentions the same concept.
+
+Re-read only when:
+- a conflict requires exact source wording;
+- the task enters a section not represented in persistent state;
+- the module changed during the session;
+- an explicit validator requests it.
+
+## Pack expansion rule
+
+Do not load a new module because it might become useful.
+
+Expand the Task Pack only when:
+1. the current state requires it;
+2. a measured failure routes to it;
+3. a current feature maps to it in the Semantic Skill Registry.
+
+## Completion gate
+
+Before advancing from ANALYZE to CONTRACT/PLAN, emit a compact `Evidence Summary` containing at minimum:
+
+```yaml
+analysis_complete:
+  locked_dimensions: {}
+  high_confidence_relations: {}
+  view_authority: {}
+  feature_ids: []
+  unresolved: []
+  analysis_cache_valid: true
+  status: PASS
+```
+
+Once `ANALYZE: PASS`, do not continue broad reference exploration. Later investigation must be scoped to a specific unresolved item, feature ID or failed ROI validator.
+
+
+---
+
 ## FILE: `01_analysis/10_ASSET_BRIEF_SCHEMA.md`
 
 # Asset Brief Schema
@@ -9764,6 +9950,225 @@ Jego wyniki są dowodem dla Inspector/Repairer.
 
 ---
 
+## FILE: `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`
+
+# Reference Measurement Executor Pattern
+
+## Purpose
+
+This module defines a semantic executor contract for technical-sheet and concept-art measurement without flooding the language model with raw pixel arrays.
+
+Skill ID:
+
+```text
+REFERENCE_MEASURE
+```
+
+Maturity:
+
+```text
+CONTRACT_READY
+```
+
+It becomes `EXECUTOR_READY` only after a concrete implementation has been tested in the current Blender/runtime integration.
+
+## Design goal
+
+The executor may perform thousands of pixel-level operations internally.
+
+It must return only compact measurements, confidence, conflicts and requested diagnostics.
+
+The language model must not inspect one record per image row/column unless a failing local ROI explicitly requires it.
+
+## Inputs
+
+```yaml
+reference_measure:
+  source_image: concept_art.png
+  known_dimensions:
+    height_mm: 1050
+    main_body_diameter_mm: 140
+    base_diameter_mm: 210
+  requested_views:
+    - FRONT
+    - SIDE
+    - TOP
+    - REAR
+    - BOTTOM
+  expected_sheet_type: TECHNICAL_CONCEPT_SHEET
+  output_detail: SUMMARY
+```
+
+Optional:
+- pre-existing Reference Registry;
+- explicit ROI list;
+- expected view labels;
+- known axis/datum;
+- requested feature IDs.
+
+## Executor stages
+
+```text
+LOAD IMAGE
+-> DETECT / USE REGISTERED ROI
+-> CLASSIFY VIEW
+-> MASK ANNOTATION NOISE
+-> CALIBRATE KNOWN DIMENSION
+-> MEASURE SILHOUETTE / TRANSITIONS
+-> CROSS-VIEW COMPARE
+-> AGGREGATE
+-> RETURN COMPACT RESULT
+```
+
+## Annotation exclusion
+
+Technical sheets often contain dimension lines, arrows, labels and leaders near the asset silhouette.
+
+The executor must not blindly threshold the whole crop and treat every dark pixel as geometry.
+
+Use one or more of:
+- registered object ROI narrower than annotation area;
+- connected-component filtering;
+- centerline/silhouette continuity;
+- expected object-axis constraints;
+- dimension-line morphology detection;
+- explicit exclusion masks.
+
+If annotation contamination remains ambiguous, return a localized warning rather than silently shifting the measured silhouette.
+
+## Threshold strategy
+
+Do not expose a long threshold-search trace to the language model.
+
+Internally the implementation may test multiple thresholds, but it must select them using a deterministic score such as:
+- silhouette continuity;
+- expected axis symmetry;
+- cross-row width stability;
+- agreement with known dimensions;
+- cross-view consistency.
+
+If threshold confidence is low:
+
+```yaml
+status: NEEDS_LOCAL_REVIEW
+roi: [x0, y0, x1, y1]
+reason: ANNOTATION_OR_LOW_CONTRAST
+```
+
+## Compact output contract
+
+Preferred output:
+
+```yaml
+reference_measurement:
+  status: PASS
+  source: concept_art.png
+  views:
+    FRONT:
+      roi: [735, 165, 860, 640]
+      projection: ORTHOGRAPHIC
+      authority: HIGH
+      silhouette:
+        body_width_px: 70
+        body_width_variance_px: 1.1
+      transitions:
+        top_module_y_px: [207, 220]
+        base_y_px: [604, 634]
+    SIDE:
+      projection: ORTHOGRAPHIC
+      authority: HIGH
+      silhouette:
+        body_width_px: 68
+        body_width_variance_px: 0.8
+  calibration:
+    height_mm:
+      value: 1050
+      source: EXPLICIT_DIMENSION
+      confidence: LOCKED
+  cross_view:
+    front_side_width_difference_pct: 2.9
+    status: CONSISTENT
+  anomalies: []
+```
+
+Do not return:
+- per-pixel arrays;
+- all rows of a width profile;
+- full masks;
+- all threshold candidates;
+- full image buffers;
+- hundreds of unchanged samples.
+
+## Drill-down mode
+
+Detailed data is allowed only after a specific failure or ambiguity.
+
+Example:
+
+```yaml
+reference_measure:
+  mode: ROI_DIAGNOSTIC
+  view: FRONT
+  roi: [750, 202, 835, 226]
+  reason: TOP_RING_BOUNDARY_AMBIGUOUS
+```
+
+Even in diagnostic mode, return a summarized result plus only the minimal samples required to explain the failure.
+
+## Cross-view validation
+
+For dimensions visible in multiple orthographic views:
+
+```text
+measure independently
+-> normalize using trusted anchors
+-> compare
+-> report deviation
+```
+
+Do not ask the language model to visually compare hundreds of rows when a numeric aggregate can answer the question.
+
+## Cache integration
+
+Every successful result updates `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md` state.
+
+The executor must use existing validated ROI/calibration from the cache when available instead of rediscovering them.
+
+## Failure codes
+
+```text
+REF_NO_VIEW
+REF_LOW_CONTRAST
+REF_ANNOTATION_CONTAMINATION
+REF_NO_SCALE_ANCHOR
+REF_PERSPECTIVE_UNSAFE
+REF_CROSS_VIEW_CONFLICT
+REF_ROI_INVALID
+REF_MEASUREMENT_LOW_CONFIDENCE
+```
+
+## Repair policy
+
+After failure:
+1. localize the failing ROI;
+2. change one justified measurement strategy;
+3. rerun only that ROI;
+4. do not rescan the full sheet unless segmentation itself is invalid.
+
+## Success gate
+
+`PASS` requires:
+- source and ROI provenance;
+- projection classification;
+- explicit or normalized calibration strategy;
+- compact measurement table;
+- confidence per measurement;
+- cross-view conflicts reported;
+- no raw diagnostic dump in normal output.
+
+
+---
+
 ## FILE: `09_engine/90_ENGINE_PROFILE_SCHEMA.md`
 
 # Engine Profile Schema
@@ -9897,6 +10302,154 @@ Adapter powinien definiować minimalny test:
 Dla własnego silnika C++ należy utworzyć osobny plik:
 `ENGINE_PROFILE_<NAME>.md`
 oraz test importera.
+
+
+---
+
+## FILE: `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md`
+
+# Project Asset Pipeline Profile Schema
+
+## Purpose
+
+An agent often needs project conventions such as naming, asset roots, decal atlases, material libraries and export destinations.
+
+It must not discover these by reading entire sibling asset build scripts unless no profile exists.
+
+This module defines a compact project-level profile separate from the runtime `ENGINE_PROFILE.md`.
+
+The Engine Profile answers: **what the engine accepts**.
+
+The Project Asset Pipeline Profile answers: **how this project authors and organizes assets**.
+
+## Suggested file
+
+```text
+PROJECT_ASSET_PIPELINE_PROFILE.md
+```
+
+A project may have narrower child profiles, for example:
+
+```text
+LAFAR_ASSET_PIPELINE.md
+ASTERA_ASSET_PIPELINE.md
+```
+
+Child profiles may add brand/family conventions but must not silently override engine constraints.
+
+## Schema
+
+```yaml
+project_asset_pipeline:
+  profile_id: PROJECT_NAME_V1
+
+  units:
+    blender_unit: meter
+    unit_scale: 1.0
+    up_axis: Z
+
+  naming:
+    static_mesh: "SM_{brand}_{asset}_{variant}_LOD{n}"
+    collision: "COL_{brand}_{asset}_{variant}"
+    material: "M_{brand}_{name}"
+    decal: "D_{brand}_{name}"
+
+  paths:
+    source_root: ...
+    textures_root: ...
+    decal_root: ...
+    export_root: ...
+    checkpoints_root: ...
+
+  material_library:
+    canonical_materials: []
+    reusable_pbr_sets: []
+    forbidden_brand_reuse: []
+
+  decal_pipeline:
+    atlas_path: ...
+    atlas_layout_source: ...
+    uv_convention: ...
+    logo_policy: TEXTURE_OR_DECAL
+
+  authoring:
+    preferred_sides_for_cylinders: [24, 32]
+    default_bevel_segments_game_ready: 2
+    apply_scale_before_export: true
+
+  export:
+    format: GLB
+    preset: ...
+    destination: ...
+
+  provenance:
+    sources: []
+    last_verified: ...
+```
+
+Only include conventions that are actually evidenced by project files or explicit user instruction.
+
+## Discovery order
+
+When project conventions are needed:
+
+```text
+1. active Project Asset Pipeline Profile
+2. explicit task prompt / user instruction
+3. current asset manifest/config
+4. narrowly targeted project file lookup
+5. sibling build script as last-resort evidence
+```
+
+Do not read a large unrelated build script merely to infer one naming rule or decal path when a compact profile can provide it.
+
+## Sibling-script rule
+
+If no profile exists and a sibling script must be inspected:
+- search for exact relevant identifiers first;
+- read the smallest relevant range;
+- extract only verified conventions;
+- write/update the Project Asset Pipeline Profile;
+- do not copy sibling geometry dimensions or feature logic into the current asset.
+
+A sibling asset is evidence for pipeline convention, not evidence for current geometry.
+
+## Conflict precedence
+
+```text
+Engine Profile constraints
+> explicit current task requirements
+> approved Project Asset Pipeline Profile
+> current asset configuration
+> sibling asset convention
+```
+
+If the current task explicitly names an object/material/export rule, do not silently replace it with an older project convention.
+
+## Brand/family scope
+
+A child brand profile may define:
+- manufacturer prefix;
+- shared material names;
+- decal atlas;
+- typography/logo handling;
+- common construction language.
+
+It must not define dimensions for new products unless those dimensions are a real family standard documented as such.
+
+## Runtime status
+
+Missing Project Asset Pipeline Profile does not make geometry invalid, but project-integration status is:
+
+```text
+PROJECT_PIPELINE_UNVERIFIED
+```
+
+until conventions required by the task are confirmed.
+
+## Efficiency requirement
+
+Once conventions are extracted into a validated profile, cache and reuse them across assets in the same project/brand scope. Do not repeatedly re-read the original discovery scripts.
 
 
 ---
@@ -13643,6 +14196,173 @@ Testowe obiekty i cuttery:
 
 ---
 
+## FILE: `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`
+
+# Reference Analysis Cache
+
+## Purpose
+
+Reference analysis is expensive. Once a view, ROI, dimension anchor or authority decision has been validated, the agent must persist it and reuse it instead of repeatedly rediscovering the same information.
+
+This cache is an asset-scoped analytical state, not a conversational summary.
+
+## Core rule
+
+```text
+analyze once
+-> validate
+-> cache
+-> reuse
+```
+
+Do not re-run broad image analysis unless the cached fact has been invalidated.
+
+## Cache schema
+
+```yaml
+reference_analysis_cache:
+  asset_id: SM_EXAMPLE
+  source:
+    file: concept_art.png
+    width_px: 1122
+    height_px: 1402
+    fingerprint: OPTIONAL_HASH_OR_MTIME
+
+  views:
+    FRONT:
+      roi: [735, 165, 860, 640]
+      projection: ORTHOGRAPHIC
+      authority: HIGH
+      validated: true
+      crop_artifact: c_front_ortho.png
+    SIDE:
+      roi: [930, 165, 1030, 640]
+      projection: ORTHOGRAPHIC
+      authority: HIGH
+      validated: true
+
+  dimension_anchors:
+    overall_height_mm:
+      value: 1050
+      source: EXPLICIT_DIMENSION
+      confidence: LOCKED
+
+  measurements: {}
+  feature_rois: {}
+  exclusions: {}
+  conflicts: []
+  unresolved: []
+```
+
+## What must be cached
+
+Persist when validated:
+- original source metadata;
+- segmented view ROI coordinates;
+- view classification;
+- View Authority Matrix decisions;
+- explicit dimensions and datum/origin information;
+- pixel-to-world calibration anchors;
+- feature-specific ROI;
+- annotation exclusion masks/regions where needed;
+- cross-view consistency results;
+- unresolved conflicts;
+- crop artifact paths if crops are generated.
+
+## What must NOT be cached as truth
+
+Do not promote to cache truth:
+- temporary threshold guesses;
+- failed measurement candidates;
+- speculative hidden geometry;
+- unvalidated perspective-derived dimensions;
+- visual impressions such as "looks about right".
+
+These may be logged as diagnostics but must not become authoritative measurements.
+
+## Cache reuse
+
+Before any reference-analysis call:
+
+```text
+1. check source identity
+2. check requested view/feature
+3. check cached validity
+4. reuse valid facts
+5. analyze only missing or invalid fields
+```
+
+If FRONT, SIDE, TOP and their calibration are already valid, a later seam investigation must request only the seam ROI, not segment and measure the entire sheet again.
+
+## Invalidation
+
+Invalidate only affected records when:
+- the source image changes;
+- a crop was found incorrect;
+- a higher-authority source supersedes a measurement;
+- a dimension conflict is resolved differently;
+- an explicit user correction changes interpretation;
+- the source fingerprint no longer matches.
+
+Do not invalidate unrelated views or measurements.
+
+## Scope
+
+Cache scope is normally one asset/reference set.
+
+A cache from another product may provide project conventions but must never supply geometry measurements for the current asset.
+
+## Analysis completion snapshot
+
+At the end of ANALYZE write a compact immutable snapshot:
+
+```yaml
+analysis_snapshot:
+  status: PASS
+  source_revision: ...
+  locked_dimensions: {}
+  view_authority: {}
+  accepted_measurements: {}
+  feature_rois: {}
+  unresolved: []
+```
+
+Later states consume this snapshot.
+
+## Re-entry rule
+
+After `ANALYZE: PASS`, broad exploratory analysis is prohibited.
+
+Return to reference analysis only through one of:
+- `FEATURE_ROI_FAILURE(feature_id)`;
+- `DIMENSION_CONFLICT(metric_id)`;
+- `VIEW_CONFLICT(view_id)`;
+- `USER_SOURCE_UPDATE`;
+- `CACHE_INVALIDATED(record_id)`.
+
+The re-entry request must identify the affected record/ROI.
+
+## Token-efficiency requirement
+
+The cache must contain compact structured values. It must not embed:
+- full image pixels;
+- per-row profiles;
+- giant tool logs;
+- duplicate crop images encoded as text;
+- full source documents.
+
+## Relationship to other modules
+
+- `103_REFERENCE_INGESTION_PROTOCOL.md` creates the initial source/view entries.
+- `104_CONCEPT_SHEET_SEGMENTATION.md` provides segmented ROIs.
+- `106_VIEW_AUTHORITY_MATRIX.md` provides authority.
+- `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` writes compact measurements.
+- `110_DIMENSION_GRAPH.md` consumes accepted dimensional relations.
+- `145_FEATURE_ROI_VALIDATION.md` may request narrow re-analysis.
+
+
+---
+
 ## FILE: `11_playbooks/110_HARD_SURFACE_CIVIC_FURNITURE.md`
 
 # Playbook — Hard-Surface Civic Furniture
@@ -14115,6 +14835,17 @@ Agent-runtime readiness pass:
 - expanded the Knowledge Router with session preflight, panel-line routing, SubD routing and retry-budget loading;
 - updated the system prompt to require capability binding, semantic skill selection and a strategy switch after repeated failure;
 - canonical module count increased from 163 to 168.
+
+Reference-analysis efficiency pass based on the first real technical-sheet reconstruction test:
+- added `00_governance/06_TASK_PACK_PROTOCOL.md` to bound active knowledge by state/task subtype and prevent loading later-stage modules too early;
+- expanded `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md` with a strict Tool Output Budget and `SUMMARY -> DIAGNOSTIC -> RAW` progressive disclosure policy;
+- added `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` and registered semantic skill `REFERENCE_MEASURE` for local pixel/NumPy measurement with compact aggregate outputs;
+- added `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md` so validated view ROIs, dimensions, calibration and authority decisions are reused instead of repeatedly rediscovered;
+- added `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md` to separate project naming/material/decal/path conventions from sibling asset geometry scripts;
+- updated technical-sheet authority to `explicit numeric dimensions/datum > orthographic views > sections > details > perspective hero > approximate prose > visual inference`;
+- updated ingest and measurement protocols to reject raw pixel/profile dumps during normal operation and localize diagnostics to failing ROIs;
+- updated system prompt and Knowledge Router to require task packs, cache reuse and output aggregation;
+- canonical module count increased from 168 to 172.
 
 ## 0.3.0
 
