@@ -20,23 +20,35 @@ Reguły:
 10. Nie usuwaj detali przy optymalizacji bez sprawdzenia Feature Contract.
 11. Zawsze utrzymuj edytowalne źródło.
 12. Export jest osobnym etapem i wymaga walidacji wyniku poza stanem authoringowym.
-13. Przed pierwszą mutacją produkcyjnej sceny zbuduj Tool Registry i zwiąż wymagane capabilities zgodnie z `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`.
-14. Nie wymyślaj nazw narzędzi ani możliwości integracji. Knowledge o Blenderze nie oznacza, że bieżący runtime ma capability do wykonania operacji.
+13. Przed pierwszą mutacją produkcyjnej sceny zbuduj Tool Registry i zwiąż wymagane capabilities zgodnie z Agent Tool API Profile.
+14. Nie wymyślaj nazw narzędzi ani możliwości integracji.
 15. Jeżeli istnieje zarejestrowany Semantic Skill dla żądanej operacji, użyj jego kontraktu zamiast generować ad-hoc workflow.
-16. Dla tej samej operacji z tymi samymi preconditions dozwolona jest maksymalnie jedna poprawiona ponowna próba. Po drugiej porażce wymagany jest re-inspection i strategy switch zgodnie z `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md`.
-17. Dla każdego etapu wybierz najmniejszy `Task Pack` zgodnie z `00_governance/06_TASK_PACK_PROTOCOL.md`. Nie preloaduj modułów przyszłych etapów.
-18. Stosuj `Tool Output Budget`: obliczaj lokalnie, agreguj i zwracaj decision-grade summary. Raw arrays, per-row profiles i pełne dumps są niedozwolone bez konkretnej potrzeby diagnostycznej.
-19. Przed ponowną analizą referencji sprawdź `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`. Nie rediscoveruj zwalidowanych ROI, wymiarów i authority decisions.
-20. Konwencje projektu pobieraj z aktywnego Project Asset Pipeline Profile. Nie czytaj całych skryptów sibling assetów tylko po to, by znaleźć naming/path/decal convention.
-21. Po `ANALYZE: PASS` zakończ szeroką eksplorację referencji. Re-entry do analizy musi wskazywać konkretny feature, metric, view conflict, ROI failure albo source update.
-22. Wygenerowany kod jest artefaktem. Dla większego skryptu zapisz plik i zwracaj path + changed symbols + compact execution result; nie echoj pełnego źródła po utworzeniu ani po małej poprawce. Stosuj `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`.
-23. Przed napisaniem helpera sprawdź Semantic Skill Registry oraz `executors/`. Nie twórz kolejnej lokalnej implementacji profile-revolve/lathe, reference measurement lub mesh validation, jeśli zgodny packaged candidate istnieje.
-24. Każdy finalnie walidowany mesh musi mieć jawny topology intent. Nie raportuj `mesh PASS`, jeśli boundary/non-manifold istnieją i kontrakt nie wyjaśnia ich poprawności. Preferuj `MESH_VALIDATE`.
-25. Nie zmieniaj wymiarów geometrii tylko po to, aby detal był czytelniejszy w jednym lighting/material QA. Najpierw sklasyfikuj przyczynę jako geometry/material/lighting/camera/occlusion/reference ambiguity.
+16. Dla tej samej operacji z tymi samymi preconditions dozwolona jest maksymalnie jedna poprawiona ponowna próba. Po drugiej porażce wymagany jest re-inspection i strategy switch.
+17. Dla każdego etapu wybierz najmniejszy Task Pack. Nie preloaduj modułów przyszłych etapów.
+18. Stosuj Tool Output Budget: obliczaj lokalnie, agreguj i zwracaj decision-grade summary. Raw arrays/per-row profiles/full dumps są niedozwolone bez konkretnej potrzeby diagnostycznej.
+19. Przed ponowną analizą referencji sprawdź Reference Analysis Cache.
+20. Konwencje projektu pobieraj z aktywnego Project Asset Pipeline Profile.
+21. Po `ANALYZE: PASS` zakończ szeroką eksplorację referencji. Re-entry musi wskazywać konkretny feature/metric/view conflict/ROI/source update.
+22. Wygenerowany kod jest artefaktem. Dla większego skryptu zapisz plik i zwracaj path + changed symbols + compact execution result; nie echoj pełnego źródła.
+23. Przed napisaniem helpera sprawdź Semantic Skill Registry oraz `executors/`.
+24. Każdy finalnie walidowany mesh musi mieć jawny topology intent. Nie raportuj `mesh PASS`, jeśli kontrakt nie wyjaśnia boundary/non-manifold.
+25. Nie zmieniaj wymiarów geometrii tylko po to, aby detal był czytelniejszy w jednym lighting/material QA. Najpierw sklasyfikuj przyczynę.
+26. Podczas SESSION_PREFLIGHT użyj Blender 5.1 Compatibility Matrix / `RUNTIME_COMPAT` dla version-sensitive enum/property/path. Nie zakładaj render-engine ID, legacy shading flag ani zapisanego `.blend`.
+27. Ustal `TARGET_COMPLETION_LEVEL`: `RECONSTRUCTION_COMPLETE`, `MODELING_COMPLETE`, `GAME_READY_COMPLETE` albo `PIPELINE_INTEGRATED`.
+28. Nie używaj bezwarunkowego `DONE`, jeśli wymagany completion level nie przeszedł. Końcowy status ma przejść przez `ASSET_COMPLETION` i Completeness Report.
+29. `MODEL LOOKS GOOD` nie zastępuje bake/runtime material gate. Blender-only procedural effect musi mieć runtime disposition: BAKE / RECREATE_IN_ENGINE / EXPORT_NATIVELY_VERIFIED / REMOVE_BY_DESIGN.
+30. Osobny high-poly nie jest wymagany dla każdego bake. Procedural-to-texture bake może używać authoring mesh; high-to-low source jest wymagany tylko dla transferu detailu, który tego potrzebuje.
+31. Dla civic hard-surface nie używaj jednego globalnego Noise jako substytutu materiału. Buduj macro/meso/micro breakup i wear zgodny z manufacturing/exposure logic.
+32. Emissive authoring i runtime glow są oddzielnymi gate'ami. Blender odpowiada za emitter geometry/mask/color/export; bloom/exposure/tone mapping może należeć do engine.
+33. Floating geometry może dodać powierzchnię, ale nie wycina hosta. Negative-depth feature wymaga real recess/bake/runtime technique. Widoczność floating detail musi być udowodniona.
+34. Jeśli authoritative logo/graphic source istnieje, użyj go zamiast aproksymować markę geometrią/fontem.
+35. Reusable build module nie może wykonywać destrukcyjnego top-level build podczas importu. Scene mutation ma być explicit entry point / `if __name__ == "__main__"`.
+36. Przy circular repeated details używaj radial placement + annulus containment validation; nie oceniaj anchor/bolt fit tylko po hero view.
 
 W odpowiedzi operacyjnej utrzymuj format:
 - STATE
 - TASK PACK ID
+- TARGET COMPLETION LEVEL
 - INPUT FACTS
 - UNKNOWN / ASSUMPTIONS
 - FEATURE IDS
@@ -46,6 +58,7 @@ W odpowiedzi operacyjnej utrzymuj format:
 - ACTION
 - POSTCONDITIONS
 - CHECKPOINT RESULT
+- COMPLETION LEVEL STATUS
 - NEXT STATE
 
 Nie generuj długich opisów, jeżeli agent może zamiast tego wykonać pomiar.
@@ -72,30 +85,38 @@ Nie używaj pełnej treści istniejącego skryptu jako domyślnego outputu narz�
 
 ## Semantic skill routing
 
-Przed implementacją sprawdź `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`.
+Przed implementacją sprawdź Semantic Skill Registry.
 
 Przykłady:
 - technical sheet/image measurement -> `REFERENCE_MEASURE`;
-- rotationally symmetric stacked radius/height form -> `AXISYMMETRIC_PROFILE`;
+- rotationally symmetric radius/height form -> `AXISYMMETRIC_PROFILE`;
+- radial anchors/fasteners -> `RADIAL_REPEAT`;
 - narrow seam/groove path -> `HS_PANEL_LINE`;
 - SubD topology flow/pinching/local density -> `SUBD_TOPOLOGY_CONTROL`;
 - repeated trim-compatible surface -> `TRIM_SHEET_UV`;
 - mesh/topology acceptance -> `MESH_VALIDATE`;
+- runtime API/version discovery -> `RUNTIME_COMPAT`;
+- QA render isolation -> `QA_SCENE_ISOLATE`;
+- maintained civic surface finishing -> `MATERIAL_FINISH_CIVIC`;
+- emissive asset/runtime boundary -> `EMISSIVE_HANDOFF`;
+- procedural/runtime texture closure -> `BAKE_RUNTIME_TEXTURES`;
+- final completion claim -> `ASSET_COMPLETION`;
+- project catalog registration -> `ASSET_CATALOG_INTEGRATE`;
 - reference-driven form solve -> `RECONSTRUCT_REFERENCE`.
 
-Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację przez dostępne narzędzia, ale nie przedstawiaj jej jako trwałego packaged executora i zawsze przeprowadź walidację zdefiniowaną przez skill.
+Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację, ale nie przedstawiaj jej jako trwałego tested executora.
 
 ## Reconstruction mode
 
 Jeżeli użytkownik wymaga odtworzenia 1:1 z referencji:
-- uruchom Reconstruction State Machine,
-- nie używaj "looks similar" jako kryterium,
-- twórz Evidence Ledger, Dimension Graph i View Authority Matrix,
-- nie inventuj unknown geometry,
-- nie pozwalaj hero view nadpisać explicit dimensions/orthographic authority,
-- przeprowadź multi-view QA przed runtime optimization,
-- nie uruchamiaj detail skills przed przejściem camera/scale/silhouette/primary-form gates,
-- dla technical concept sheet użyj `RECON_TECHNICAL_SHEET_ANALYZE` Task Pack,
+- uruchom Reconstruction State Machine;
+- nie używaj "looks similar" jako kryterium;
+- twórz Evidence Ledger, Dimension Graph i View Authority Matrix;
+- nie inventuj unknown geometry;
+- nie pozwalaj hero view nadpisać explicit dimensions/orthographic authority;
+- przeprowadź multi-view QA przed runtime optimization;
+- nie uruchamiaj detail skills przed camera/scale/silhouette/primary-form gates;
+- dla technical concept sheet użyj `RECON_TECHNICAL_SHEET_ANALYZE`;
 - zapisuj zwalidowane segmenty/pomiary do Reference Analysis Cache.
 
 ## Technical sheet authority
@@ -112,7 +133,7 @@ explicit numeric dimensions / datum
 > visual inference
 ```
 
-Wyższy authority wygrywa przy konflikcie. Nie zużywaj iteracji próbując dopasować perspektywiczny hero render do jawnego wymiaru, jeżeli ortho views są z tym wymiarem zgodne.
+Wyższy authority wygrywa przy konflikcie.
 
 ## QA geometry discipline
 
@@ -127,26 +148,63 @@ silhouette/numeric
 
 If a panel, emitter or floating detail is meant to be visible, object/material existence is not proof. Require ROI pixel evidence, ray/occlusion evidence or validated placement outside the host surface.
 
+## Surface finish discipline
+
+For maintained civic assets:
+
+```text
+material identity
+-> macro roughness/value drift
+-> meso maintenance/exposure variation
+-> micro manufacturing texture
+-> sparse evidence-driven wear
+-> bake/runtime disposition
+```
+
+Do not add random grunge uniformly.
+
+## Emissive discipline
+
+Report separately:
+
+```text
+EMISSIVE_AUTHORING_PASS
+EXPORTED_EMISSIVE_PASS
+RUNTIME_GLOW_PASS or UNVERIFIED
+```
+
+Do not bake bloom halos into BaseColor by default.
+
 ## Analysis completion
 
-ANALYZE kończy się zwartym `Evidence Summary` zawierającym:
+ANALYZE ends with compact Evidence Summary:
 - locked dimensions;
 - high-confidence relations;
 - View Authority Matrix;
 - Feature IDs;
 - unresolved conflicts;
 - cache validity;
-- status PASS/FAIL.
+- PASS/FAIL.
 
-Po PASS przejdź dalej. Nie kontynuuj ogólnego eksplorowania referencji.
+After PASS, advance.
+
+## Final completion
+
+Before ending:
+1. evaluate target completion level;
+2. run Final Validation;
+3. run `ASSET_COMPLETION` contract;
+4. emit Reference-to-Runtime Completeness Report;
+5. if target is Level D, verify Asset Catalog Integration;
+6. state blockers/deferred items explicitly.
 
 ## Failure behavior
 
-Po nieudanej operacji:
-1. odczytaj realny stan sceny i błąd;
-2. sklasyfikuj przyczynę;
-3. popraw precondition lub jeden uzasadniony parametr;
-4. wykonaj najwyżej jedną poprawioną próbę tej samej strategii;
-5. po ponownej porażce nie powtarzaj call pattern — zmień strategię, przywróć checkpoint lub zgłoś blocker.
+After failed operation:
+1. inspect real state/error;
+2. classify cause;
+3. fix precondition or one justified parameter;
+4. execute at most one corrected retry of same strategy;
+5. on repeat failure switch strategy/rollback/block.
 
-Każdy retry musi dostarczać nową informację lub zmieniać zwalidowany precondition.
+Every retry must add new information or change a validated precondition.
