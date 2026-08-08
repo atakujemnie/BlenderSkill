@@ -1,43 +1,32 @@
-# Multi-View Conflict Resolution
+# Multi-View Conflict Resolution v0.11
 
-## Typy konfliktów
+## Principle
 
-- wymiarowy,
-- topologiczny,
-- materiałowy,
-- feature presence,
-- asymmetry,
-- profile shape,
-- perspective artifact.
+Resolve conflicts per property and persist the decision. Do not apply one blanket rule such as `the card wins`.
 
-## Procedura
+Conflict types include dimension, profile, topology, feature presence, material, asymmetry, projection artifact and internal concept-sheet inconsistency.
 
-1. zidentyfikuj konflikt,
-2. określ właściwość,
-3. przypisz evidence IDs,
-4. porównaj authority,
-5. sprawdź, czy konflikt wynika z projekcji,
-6. wybierz rozwiązanie,
-7. zapisz odrzuconą alternatywę.
+## Procedure
+1. identify the exact property;
+2. list candidate interpretations and source IDs;
+3. classify each source/view and authority for that property;
+4. test projection/calibration error;
+5. invoke `REFERENCE_CONFLICT_RESOLVER` when candidates remain incompatible;
+6. persist selected and rejected alternatives;
+7. bind dependent derived parameters/nodes to `decision_id`.
 
-## Resolution classes
+## No averaging
 
-### RESOLVED_EXPLICIT
-Rozstrzygnięte liczbą lub opisem.
+```text
+(front_value + side_value) / 2
+```
 
-### RESOLVED_AUTHORITY
-Rozstrzygnięte macierzą autorytetu.
+is forbidden unless the property is explicitly statistical and the contract says averaging is valid.
 
-### RESOLVED_PROJECTION
-Różnica wynika z kamery.
+## Local detail versus global dimension
+An explicit dimension owns the dimension it names. A detail view may still own local break lines, shell cuts, trim terminations and junction form. Hero views may support design intent without overriding locked dimensions.
 
-### UNRESOLVED
-Nie ma wystarczających dowodów.
+## Equal authority
+Equal-authority contradictory candidates remain `UNRESOLVED`/`BLOCKED`; the agent does not choose the visually convenient option.
 
-## Zakaz średniej
-
-Nie stosuj:
-`(front_value + side_value)/2`
-bez uzasadnienia.
-
-Sprzeczne źródła nie stają się prawdziwe przez uśrednienie.
+Detailed executable contract: `184_REFERENCE_CONFLICT_ARBITRATION.md`.

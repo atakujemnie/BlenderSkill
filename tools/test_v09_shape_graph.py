@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-
 def load(name: str, rel: str):
     spec = importlib.util.spec_from_file_location(name, ROOT / rel)
     if spec is None or spec.loader is None:
@@ -14,7 +13,6 @@ def load(name: str, rel: str):
     spec.loader.exec_module(module)
     return module
 
-
 def main() -> None:
     sg = load("shape_graph", "executors/shape_graph.py")
     ng = load("node_gate", "executors/reconstruction_node_gate.py")
@@ -22,9 +20,7 @@ def main() -> None:
     completion = load("completion_gate", "executors/completion_gate.py")
 
     graph = {
-        "root": "ASSET",
-        "graph_revision": "sg_test",
-        "nodes": {
+        "root": "ASSET", "graph_revision": "sg_test", "nodes": {
             "ASSET": {"level": "G0", "rdl": "RDL0", "state": "ACCEPTED", "importance": "MUST", "validation": {"bounds": True}},
             "BODY": {"level": "G1", "rdl": "RDL1", "state": "CONSTRAINED", "parent": "ASSET", "shape_class": "EXTRUDED_PROFILE", "importance": "MUST", "validation": {"FRONT": True}},
             "DETAIL": {"level": "G2", "rdl": "RDL2", "state": "CONSTRAINED", "parent": "BODY", "shape_class": "BOOLEAN_RECESS", "importance": "MUST", "validation": {"FRONT": True}},
@@ -32,29 +28,21 @@ def main() -> None:
     }
     result = sg.validate(graph)
     assert result["status"] == "PASS", result
-    assert result["ready_nodes"] == ["BODY"], result
+    assert result["eligible_nodes"] == ["BODY"], result
+    assert result["ready_nodes"] == [], result
     assert result["blocked_nodes"][0]["node"] == "DETAIL", result
     assert sg.evaluate_stage_barrier(graph, "RDL1")["status"] == "FAIL"
     graph["nodes"]["BODY"]["state"] = "ACCEPTED"
     assert sg.evaluate_stage_barrier(graph, "RDL1")["status"] == "PASS"
 
     def proof(kind: str, pid: str, validator: str, *, source: str | None = None, reg: str | None = None) -> dict:
-        out = {
-            "status": "PASS",
-            "evidence_kind": kind,
-            "provenance_id": pid,
-            "validator_id": validator,
-        }
-        if source is not None:
-            out["source_reference_id"] = source
-        if reg is not None:
-            out["registration_id"] = reg
+        out = {"status": "PASS", "evidence_kind": kind, "provenance_id": pid, "validator_id": validator}
+        if source is not None: out["source_reference_id"] = source
+        if reg is not None: out["registration_id"] = reg
         return out
 
     node_report = {
-        "node_id": "BODY",
-        "parent_status": "PASS",
-        "strict_evidence": True,
+        "node_id": "BODY", "parent_status": "PASS", "strict_evidence": True,
         "required_views": ["FRONT", "SIDE"],
         "isolation": proof("QA_SCENE_ISOLATION", "iso", "QA_SCENE_ISOLATE"),
         "numeric_constraints": proof("NUMERIC_MEASUREMENT", "num", "REFERENCE_MEASURE"),
@@ -68,39 +56,20 @@ def main() -> None:
     node_report["views"]["SIDE"] = {"status": "PASS"}
     assert ng.evaluate(node_report)["status"] == "UNVERIFIED"
 
-    loft_spec = {
-        "axis": "Z",
-        "sections": [
-            {"id": "BOTTOM", "axis_pos": 0.0, "profile_mode": "CHAMFERED_RECTANGLE", "width": 0.60, "depth": 0.30, "chamfer": 0.02},
-            {"id": "MID", "axis_pos": 0.10, "profile_mode": "CHAMFERED_RECTANGLE", "width": 0.56, "depth": 0.27, "chamfer": 0.02},
-            {"id": "TOP", "axis_pos": 0.18, "profile_mode": "CHAMFERED_RECTANGLE", "width": 0.50, "depth": 0.23, "chamfer": 0.02},
-        ],
-    }
+    loft_spec = {"axis": "Z", "sections": [
+        {"id": "BOTTOM", "axis_pos": 0.0, "profile_mode": "CHAMFERED_RECTANGLE", "width": 0.60, "depth": 0.30, "chamfer": 0.02},
+        {"id": "MID", "axis_pos": 0.10, "profile_mode": "CHAMFERED_RECTANGLE", "width": 0.56, "depth": 0.27, "chamfer": 0.02},
+        {"id": "TOP", "axis_pos": 0.18, "profile_mode": "CHAMFERED_RECTANGLE", "width": 0.50, "depth": 0.23, "chamfer": 0.02},
+    ]}
     loft_report = loft.compact_report(loft_spec)
-    assert loft_report["status"] == "PASS"
-    assert loft_report["section_count"] == 3
-    assert loft_report["sample_count"] == 8
-    assert loft_report["vertex_count"] == 24
+    assert loft_report["status"] == "PASS" and loft_report["section_count"] == 3 and loft_report["sample_count"] == 8 and loft_report["vertex_count"] == 24
 
     completion_proof = {"status": "PASS", "evidence_kind": "RECON_FIDELITY_GATE", "provenance_id": "recon"}
-    checks = {
-        "shape_graph_validation": "PASS",
-        "rdl_stage_barriers": "PASS",
-        "hard_dimensions": "PASS",
-        "canonical_silhouettes": "PASS",
-        "must_features": "PASS",
-        "multi_view_gate": "PASS",
-        "appearance_fidelity_gate": "NOT_REQUIRED",
-        "reconstruction_fidelity_gate": completion_proof,
-    }
+    checks = {"shape_graph_validation": "PASS", "rdl_stage_barriers": "PASS", "hard_dimensions": "PASS", "canonical_silhouettes": "PASS", "must_features": "PASS", "multi_view_gate": "PASS", "appearance_fidelity_gate": "NOT_REQUIRED", "reconstruction_fidelity_gate": completion_proof}
     done = completion.evaluate_completion(checks, target_level="RECONSTRUCTION_COMPLETE")
     assert done["status"] == "PASS", done
     checks.pop("rdl_stage_barriers")
-    blocked = completion.evaluate_completion(checks, target_level="RECONSTRUCTION_COMPLETE")
-    assert blocked["status"] == "FAIL", blocked
-
+    assert completion.evaluate_completion(checks, target_level="RECONSTRUCTION_COMPLETE")["status"] == "FAIL"
     print("v0.9 Shape Graph smoke tests: PASS")
 
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

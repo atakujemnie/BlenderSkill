@@ -1,148 +1,82 @@
-# Agent State Machine
+# Agent State Machine v0.11
 
-## Stany
+## Core principle
 
-### S0 — DISCOVER
-Cel:
-- ustalić narzędzia, Blender version, stan sceny, jednostki, aktywny plik;
-- związać capabilities;
-- załadować matching project profile.
+The reconstruction state machine is executable state, not narrative guidance.
 
-Wyjście:
-`Scene Snapshot` + Tool/Project Context.
-
-### S1 — ANALYZE
-Cel:
-- zrozumieć funkcję assetu;
-- zinwentaryzować evidence/views;
-- wyodrębnić dimensions/landmarks/features;
-- określić niewiadome i conflicts.
-
-Wyjście:
-`Asset Brief` + Reference/Evidence state.
-
-### S2 — CONTRACT
-Cel:
-- utworzyć Feature Contract;
-- oznaczyć `MUST`, `SHOULD`, `OPTIONAL`;
-- przypisać metryki, tolerancje i authority.
-
-Wyjście:
-`Feature Contract`.
-
-### S3 — PLAN / SHAPE UNDERSTANDING
-
-Dla reference reconstruction ten stan **nie zaczyna od operatorów Blendera**.
-
-Cel:
-- rozbić asset na G0–G5 design forms;
-- zbudować `Reconstruction Shape Graph`;
-- przypisać parent/dependencies;
-- sklasyfikować mathematical shape representation;
-- przypisać authoritative views + controlled properties;
-- przypisać RDL0–RDL5;
-- zaplanować node gates i stage barriers;
-- dopiero potem dobrać semantic skills/implementation.
-
-Wyjście:
-`Shape Graph` + `Node Contracts` + `RDL Plan`.
-
-`Shape Graph != PASS` blokuje produkcyjną geometrię poza diagnostic RDL0.
-
-### S4 — COARSE FORM / BLOCKOUT
-
-Dla zwykłych assetów: blockout.
-
-Dla reference reconstruction:
-- RDL0 envelope;
-- RDL1 primary forms node-by-node;
-- każdy node musi przejść required multi-view gate;
-- RDL1 stage barrier przed secondary forms.
-
-Zakaz:
-- budowy G2–G5 przed odpowiednim barrier;
-- finalnych materiałów;
-- monolitycznego builda tworzącego wiele poziomów formy.
-
-### S5 — STRUCTURAL FORMS / FEATURES
-
-Dla reconstruction:
-- RDL2 secondary structural forms node-by-node;
-- RDL3 structural features tylko na ACCEPTED hosts;
-- leaf skills takie jak panel lines/recess/layer stack dopiero tutaj.
-
-### S6 — EDGE / SECONDARY DETAIL
-
-Dla reconstruction:
-- RDL4 edge language;
-- bevel/fillet/chamfer/SubD support dopiero po accepted form;
-- microgeometry wymagane przez contract.
-
-### S7 — SHADING_UV_MATERIAL
-
-Dla reconstruction najpierw RDL5 surface/detail, potem:
-- UV;
-- normals/shading;
-- runtime material strategy.
-
-UV/runtime nie może rozpocząć się, jeżeli Reconstruction Fidelity Gate jeszcze nie PASS.
-
-### S8 — GAME_READY
-Cel:
-- runtime LOD;
-- collision;
-- pivot/naming;
-- bake/runtime textures;
-- optimization;
-- package preparation.
-
-Runtime LOD jest downstream od RDL. `RDL != LOD`.
-
-### S9 — VALIDATE
-Cel:
-- reconstruction final fidelity proof;
-- mesh/runtime validation;
-- package readback;
-- completion gate.
-
-### S10 — EXPORT / INTEGRATE
-Cel:
-- export;
-- round-trip invariants;
-- target-engine proof dla Level D;
-- final completion report.
-
-## Core gates
-
-Reference reconstruction:
+For reference-driven work:
 
 ```text
-Shape Graph PASS
--> RDL0 PASS
--> G1 node gates + RDL1 barrier
--> G2 node gates + RDL2 barrier
--> G3 node gates + RDL3 barrier
--> RDL4 edge barrier
--> RDL5 as required
--> RECON_FIDELITY_GATE
--> runtime/game-ready
+DISCOVER
+-> ANALYZE
+-> CONTRACT
+-> SHAPE/APPEARANCE PLAN
+-> AUTHORIZE ONE NODE
+-> BUILD ONE NODE
+-> BUILT_UNVERIFIED
+-> SOURCE-ANCHORED QA
+-> ACCEPT / FAIL / UNVERIFIED
+-> repeat
+-> appearance + reconstruction gates
+-> runtime
 ```
 
-Nie wolno:
-- budować child na failed/unverified required parent;
-- używać detail skill do naprawy primary form;
-- przejść do runtime przy reconstruction FAIL/UNVERIFIED;
-- maskować błędu późniejszym etapem.
+## Reconstruction node states
 
-## Cofnięcie
+```text
+DECLARED
+-> CONSTRAINED
+-> READY_TO_BUILD
+-> BUILT_UNVERIFIED
+-> ACCEPTED
+```
 
-Każdy failed gate kieruje do najwcześniejszego ownera:
-- evidence/registration;
-- Shape Graph/representation;
-- konkretny Shape Node;
-- właściwy RDL;
-- runtime stage.
+Failure/rework states: `UNVERIFIED`, `FAIL`, `BLOCKED`, `DIRTY`, `SUPERSEDED`.
 
-## Reconstruction branch
+### Hard ownership
+- only `EXECUTION_AUTHORIZATION_GATE` allows `CONSTRAINED/DIRTY/FAIL/UNVERIFIED -> READY_TO_BUILD`;
+- only a node-scoped builder mutation creates `BUILT_UNVERIFIED`;
+- only `RECONSTRUCTION_NODE_GATE` allows `BUILT_UNVERIFIED -> ACCEPTED`;
+- `BUILT_UNVERIFIED` never unlocks children.
 
-Dla wielowidokowej/blueprint/concept-sheet reconstruction `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md` rozwija S1–S9 i jest canonical controllerem formy.
+## S0 DISCOVER
+Bind Blender 5.1, tools, project profile, canonical BlenderSkill version/commit/source root. `CANONICAL_SKILL_RUNTIME_PIN` must PASS before benchmark execution.
+
+## S1 ANALYZE
+Create source registry, view classes, calibration, dimensions, landmarks, conflicts and uncertainty ledger. Reuse canonical analysis executors before writing local scanners.
+
+## S2 CONTRACT
+Create Feature Contract, property-level authority and MUST/SHOULD/OPTIONAL inventory.
+
+## S3 PLAN
+Create Shape Graph, per-view node contracts, shape representations, RDL plan and Appearance Contract for L4/L5. Resolve or explicitly block material conflicts before dependent geometry.
+
+## S4 RDL0/RDL1
+RDL0 produces neutral diagnostic geometry and registered FRONT/SIDE/TOP proof as applicable. Then build G1 one authorized node at a time.
+
+## S5 RDL2/RDL3
+Secondary forms and structural features only on ACCEPTED hosts. Major boundaries/trim/junction owners are proven while their geometry is still isolated.
+
+## S6 RDL4
+Reference edge-family proof. Bevel is implementation, not acceptance.
+
+## S7 RDL5
+Production material/branding/detail work. All MUST Appearance Owners must be accounted in separate namespace before appearance closure.
+
+## S8/S9 FINAL RECONSTRUCTION
+`APPEARANCE_OWNER_COVERAGE`, `APPEARANCE_FIDELITY_GATE`, `RECON_FIDELITY_GATE`.
+
+## S10 RUNTIME
+Only after reconstruction acceptance: UV, bake, runtime LOD, collision, export, round-trip, engine integration.
+
+## Non-negotiable stop rules
+
+```text
+no READY_TO_BUILD + authorization -> no geometry mutation
+BUILT_UNVERIFIED -> stop branch
+MUST parent not ACCEPTED -> child blocked
+prior RDL barrier FAIL -> next RDL blocked
+unresolved equal-authority reference conflict -> dependent property blocked
+missing MUST appearance owner -> appearance gate FAIL
+stale/duplicate BlenderSkill runtime -> preflight FAIL
+```

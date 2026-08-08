@@ -1,149 +1,55 @@
-# Reconstruction Node Execution Protocol
+# Reconstruction Node Execution Protocol v0.11
 
-## Cel
-
-Zastąpić monolityczny `build_asset()` kontrolowanym wykonywaniem Shape Graph node po node.
-
-v0.9 execution unit:
+## Execution unit
 
 ```text
-ONE SHAPE NODE
+ONE AUTHORIZED SHAPE NODE
 -> ONE MUTATION SCOPE
--> ONE VALIDATION PACKAGE
--> ACCEPT / FAIL
+-> BUILT_UNVERIFIED
+-> ONE SOURCE-ANCHORED VALIDATION PACKAGE
+-> ACCEPTED | UNVERIFIED | FAIL
 ```
 
----
+Code organization into node functions is insufficient. The transaction itself must be node-scoped.
 
 ## Preconditions
-
-Przed budową node'a:
-- Shape Graph revision istnieje;
-- node ma `CONSTRAINED` lub `READY_TO_BUILD`;
-- parent/dependencies wymagane do geometrii są `ACCEPTED`;
-- shape class jest wybrana;
-- required views + controls są zapisane;
-- implementation skill jest zidentyfikowany;
-- expected-change scope jest jawny;
-- QA scene isolation capability jest dostępne dla required render checks.
-
-Brak dowolnego required precondition = `BLOCKED`, nie improwizacja.
-
----
+- graph structural PASS;
+- node contract complete;
+- node is eligible;
+- canonical `EXECUTION_AUTHORIZATION_GATE` record exists;
+- node state has been persisted as `READY_TO_BUILD`;
+- parent/dependencies are `ACCEPTED`;
+- all earlier MUST RDL barriers PASS;
+- per-view evidence contracts exist;
+- shape class and implementation skill are known.
 
 ## Transaction
+1. call `can_mutate`;
+2. mutate current node and explicit helpers only;
+3. persist mutation artifact and `BUILT_UNVERIFIED`;
+4. stop branch;
+5. isolate QA scene;
+6. run source-fit numeric/registered/detail evidence according to each view contract;
+7. validate derived parameters/conflict decisions;
+8. run `RECONSTRUCTION_NODE_GATE`;
+9. persist final node state;
+10. only `ACCEPTED` unlocks children.
 
-### 1. Inspect
-Sprawdź current owner objects/helpers i node revision.
-
-### 2. Build/repair
-Modyfikuj tylko:
-- node owner;
-- jawne helper objects;
-- expected-change region.
-
-### 3. Mark `BUILT_UNVERIFIED`
-Samo utworzenie obiektu nie jest PASS.
-
-### 4. Validate
-Uruchom:
-- numeric checks;
-- required canonical view registered QA;
-- section/profile validator, jeśli dotyczy;
-- parent/sibling regression;
-- topology sanity odpowiednią dla tego etapu.
-
-### 5. Gate
-`RECONSTRUCTION_NODE_GATE` zwraca:
-- `ACCEPTED`;
-- `FAIL`;
-- `BLOCKED`;
-- `UNVERIFIED`.
-
-### 6. Persist
-Zapisz compact node acceptance record i graph revision.
-
----
-
-## No bulk-add rule
-
-Jedna transakcja nie może tworzyć 20 niezależnych form, a potem wykonywać jednego wspólnego renderu.
-
-Jeżeli node jest assembly:
-- assembly node może organizować dzieci;
-- geometry mutation nadal odbywa się na leaf/structural child nodes zgodnie z RDL.
-
-Wyjątek: atomowa geometria, której rozdzielenie uniemożliwia sensowne QA, musi mieć jawny `atomic_group_id`.
-
----
-
-## Node script architecture
-
-Asset-specific builder powinien mieć cienkie funkcje:
+## Forbidden
 
 ```python
-build_primary_body(spec, context)
-build_base_plinth(spec, context)
-build_lower_shoulder(spec, context)
-build_side_frame(spec, context)
+def main():
+    build_foot()
+    build_plinth()
+    build_pole()
+    build_arm()
+    build_details()
 ```
 
-Orchestrator:
+unless every call is separated by persisted authorization, `BUILT_UNVERIFIED`, QA and canonical acceptance.
 
-```text
-resolve ready node
--> invoke registered implementation
--> validate node
--> persist
--> resolve next ready node
-```
+## Repair
+An accepted ancestor change marks dependent nodes `DIRTY` and host-bound appearance evidence `UNVERIFIED`. Do not rebuild unrelated accepted branches.
 
-Nie preferuj jednej funkcji `build_all()`.
-
-Jeżeli convenience `build_all()` istnieje dla manualnego replayu, musi wewnętrznie respektować node gates i nie może ominąć FAIL.
-
----
-
-## Repair semantics
-
-Node repair:
-- nie resetuje całego assetu;
-- oznacza dependent children `DIRTY`, jeśli zmiana może je naruszyć;
-- niezależne accepted nodes pozostają reusable;
-- nie wykonuje późniejszych RDL stages przed ponownym node PASS.
-
----
-
-## Retry and representation switch
-
-Po pierwszym FAIL:
-- diagnoza;
-- jedna poprawiona próba tej samej strategii.
-
-Po drugim udowodnionym FAIL:
-- re-inspect evidence;
-- rozważ registration/parameter/representation error;
-- jeśli representation jest niewystarczająca, route do `SHAPE_CLASSIFY` i zmień strategy.
-
-Nie wykonuj serii `tweak -> render -> tweak -> render` bez zmiany modelu problemu.
-
----
-
-## Output budget
-
-Każdy node execution zwraca compact summary:
-
-```yaml
-node_execution:
-  node_id: BASE_PLINTH
-  revision: n_006
-  skill_id: SECTION_LOFT_HARD_SURFACE
-  mutation_objects: [ACS_WP_BASE]
-  state: ACCEPTED
-  view_results: {FRONT: PASS, SIDE: PASS, TOP: PASS}
-  numeric: PASS
-  blockers: []
-  dirtied_children: [LOWER_LIGHT_SLOT]
-```
-
-Nie echoj całego skryptu ani raw pixel arrays.
+## Replay
+Full deterministic replay may recreate already accepted geometry, but replay itself is not new acceptance evidence.
