@@ -87,8 +87,43 @@ Required checks:
 - no destructive build-script import side effects;
 - reusable executors preferred over duplicate ad-hoc helpers.
 
-Canonical v0.5 B7 benchmark:
+Canonical first B7 benchmark:
 - `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md`.
+
+### B8 — Bake/runtime closure regression
+
+Start from accepted geometry/material authoring state and require Level C game-ready closure.
+
+Pipeline under test:
+
+```text
+UV contract
+-> dirty-channel plan
+-> runtime texture bake
+-> semantic bake validation
+-> runtime material bind
+-> LOD/package export
+-> exported-file readback
+-> baked-runtime QA
+```
+
+Measures:
+- bake operator cancellation handling;
+- target image node binding;
+- semantic BaseColor/Metallic/Emissive channel extraction;
+- AO scene isolation;
+- UV contract stability across bake source and LODs;
+- decal/dynamic UV separation;
+- number of full multichannel rebakes;
+- clean channels reused through dirty-stage cache;
+- timeout/job handling;
+- imported helper side effects;
+- source/scratch collection ownership;
+- runtime LOD/material/image package correctness;
+- baked-runtime visual match.
+
+Canonical v0.6 B8 benchmark:
+- `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`.
 
 ## Metrics
 
@@ -101,15 +136,21 @@ Quality/runtime:
 - collision cost,
 - material slot count,
 - bake/runtime material status,
+- BaseColor/Normal/ORM/Emissive semantic validation,
+- UV contract pass/fail,
 - exported texture/decal survival,
+- exported node/material/image readback,
+- baked-runtime QA,
 - completion level reached,
 - runtime contract violations,
 - human visual score when available.
 
 Efficiency:
 - total token usage,
+- stage token usage,
 - tokens before first valid blockout,
 - number of tool calls,
+- number of Blender mutation calls,
 - number of failed tool calls,
 - retry count,
 - strategy switches,
@@ -117,6 +158,10 @@ Efficiency:
 - raw outputs exceeding Tool Output Budget,
 - complete source-code echoes after artifact creation,
 - repair iterations,
+- full multichannel bake runs,
+- channels rebaked,
+- accepted channels reused,
+- expensive jobs relaunched after timeout,
 - time-to-valid-blockout,
 - time-to-target-completion.
 
@@ -131,6 +176,8 @@ Unknown metrics remain `null`; do not invent them after the run.
 5. `tool calls per accepted feature`
 6. `completion truthfulness`
 7. `token/context efficiency at equal quality`
+8. `full-stage recomputes avoided`
+9. `baked-runtime package correctness`
 
 ## Release gate biblioteki
 
@@ -146,4 +193,17 @@ Release passes only if benchmark evidence shows at least one of:
 
 Token reduction is secondary to fidelity and runtime correctness.
 
-For the Lafar Civic Bollard baseline (~60k tokens), v0.5 targets at least 35% reduction on an equivalent run, with preferred total <=35k and no visual/runtime regression.
+For the first Lafar Civic Bollard full baseline (~60k tokens), later releases must reduce cost without visual/runtime regression.
+
+For the captured v0.5 B8 game-ready continuation (~36k tokens before full closure), v0.6 preferred target for an equivalent accepted hard-surface asset is:
+
+```yaml
+stage_tokens: <= 15000
+blender_python_mutation_calls: <= 10
+full_multichannel_bake_runs: <= 2
+accepted_silent_cancelled_bakes: 0
+missing_uv_contracts: 0
+baked_runtime_qa_required: true
+```
+
+These are benchmark targets, not universal limits for every asset class.
