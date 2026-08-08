@@ -326,10 +326,30 @@ Load:
 - Game Asset Contract
 - Build Plan
 - Execution Protocol
+- Code Artifact and Patch Protocol when generating non-trivial Python
 - Retry Budget and Strategy Switching
 - Visual QA
 
 Do not preload UV/material/LOD/export modules before their state is reached.
+
+## Axisymmetric / rotational hard-surface asset
+
+Typical triggers:
+- bollard/post;
+- round base/collar/cap;
+- cylindrical housing;
+- stacked radial profile where most primary geometry shares one axis.
+
+Load:
+- `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`
+- `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`
+- Game Asset Contract
+- Feature Contract
+
+Route rotational master geometry to `AXISYMMETRIC_PROFILE` before writing another local `lathe()`/profile-revolve helper.
+
+Keep asymmetric service panels, decals, local emitters and similar features as separate feature owners.
 
 ## Poprawka istniejącego assetu
 Load:
@@ -339,6 +359,7 @@ Load:
 - Scene Inspection
 - API Strategy
 - Idempotency/Recovery
+- Code Artifact and Patch Protocol if a build/QA script is being patched
 - Retry Budget and Strategy Switching
 - Visual QA
 - Failure Recovery
@@ -383,6 +404,23 @@ Typical triggers:
 - branch junction cleanup;
 - pole-safe sphere requirement.
 
+## Mesh / topology validation
+
+Route to semantic skill `MESH_VALIDATE`.
+
+Load:
+- `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`
+- `08_scripts/81_MESH_VALIDATION_SNIPPETS.md`
+- active Game Asset Contract
+
+Every mesh must declare topology intent before general PASS/FAIL:
+- CLOSED_SOLID;
+- OPEN_ASSEMBLY_PART;
+- SURFACE_DETAIL;
+- COLLISION.
+
+Do not treat boundary edges as harmless unless the object's contract explicitly allows them.
+
 ## Optymalizacja do gry
 Load Task Pack `GAME_READY`:
 - Game Asset Contract
@@ -393,6 +431,7 @@ Load Task Pack `GAME_READY`:
 - active Project Asset Pipeline Profile
 - glTF Export
 - Final Validation
+- `MESH_VALIDATE`
 
 ## Asset modularny
 Dodatkowo:
@@ -418,7 +457,10 @@ Najpierw użyj Task Pack, potem routera, potem najwęższego modułu.
 Zawsze stosuj `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`:
 - obliczaj lokalnie;
 - agreguj;
-- nie wysyłaj raw arrays/profiles do LLM bez konkretnego diagnostic need.
+- nie wysyłaj raw arrays/profiles do LLM bez konkretnego diagnostic need;
+- nie echoj pełnych wygenerowanych skryptów/patchy, jeśli kod jest już artefaktem na dysku.
+
+Dla kodu używaj `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`.
 
 ## Retry budget rule
 
@@ -527,6 +569,7 @@ Then load only the current Task Pack/stage pack.
 - 110–123
 - 128–134
 - appropriate `11_playbooks`
+- `AXISYMMETRIC_PROFILE` when the primary form is rotationally symmetric
 
 ### Rear/bottom
 - 119
@@ -540,7 +583,7 @@ Then load only the current Task Pack/stage pack.
 
 ### Reconstruction QA
 - 141–148
-- scripts 86–90
+- scripts 81, 83, 86–90, 92
 - prompt 65
 
 ### Lafar bench benchmark
