@@ -32,7 +32,7 @@ jobs:
       - name: Commit generated snapshot if changed
         shell: bash
         run: |
-          if git diff --quiet -- _FULL_LIBRARY.md && git diff --cached --quiet; then
+          if [ -z "$(git status --porcelain -- _FULL_LIBRARY.md)" ]; then
             echo 'No generated changes.'
             exit 0
           fi
