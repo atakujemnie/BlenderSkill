@@ -16576,6 +16576,8 @@ The executor intentionally rejects ambiguous roots instead of picking the first 
 
 `PIPELINE_INTEGRATED` requires evidence from the **target runtime path and loader**, not merely from Blender or a file parser.
 
+The engine test must also prove the space in which its invariants are evaluated. A dimension assertion over local vertex positions is not world-space proof when the runtime node can carry an unapplied transform.
+
 ## Proof hierarchy
 
 ```text
@@ -16622,6 +16624,56 @@ Asset-specific tests may pin:
 
 Do not pin irrelevant implementation details that make tests brittle without protecting a real contract.
 
+## Coordinate-space declaration
+
+Every dimension/contact assertion must declare one of:
+
+```text
+LOCAL_VERTEX_SPACE
+NODE_TRANSFORMED_SPACE
+ENGINE_WORLD_SPACE
+```
+
+A test that reads raw accessor/vertex positions is normally `LOCAL_VERTEX_SPACE`.
+
+It must not be described as proof of final runtime size when non-identity node transforms are permitted and the production loader may ignore them.
+
+## Node transform policy
+
+The active Project Asset Pipeline Profile must declare the runtime policy for node transforms.
+
+Possible policies:
+
+```text
+IDENTITY_TRS_REQUIRED
+TRANSFORMS_APPLIED_BY_LOADER
+TRANSFORMS_BAKED_BY_EXPORTER
+UNVERIFIED
+```
+
+If the production loader does **not** apply glTF node transforms:
+- runtime mesh nodes must use identity/baked TRS according to project policy;
+- package readback must fail on non-identity runtime node transforms;
+- local-vertex dimension assertions are accepted only together with the identity-transform proof.
+
+This protects against a false green where local vertices still measure 2600 mm but the glTF node contains an unconsumed scale.
+
+## Runtime attribute proof
+
+Successful loading is not enough to prove the renderable primitive contract.
+
+For textured materials, package/engine evidence should pin required attributes such as:
+
+```text
+POSITION
+NORMAL
+TEXCOORD_0
+```
+
+when required by the runtime material.
+
+The Lafar Wayfinding Pylon benchmark produced a valid/loadable glTF with images and materials but no `TEXCOORD_0` after UV-layer-name mismatch during mesh joining. This must be a hard package/runtime FAIL, not a later visual surprise.
+
 ## Loader exceptions and automation
 
 A loader exception used in an automated test must become a readable test failure where practical.
@@ -16634,8 +16686,10 @@ Classify:
 ASSET_NOT_FOUND
 PARSE_FAIL
 MATERIAL_MISSING
+ATTRIBUTE_MISSING
 LOD_CONTRACT_FAIL
 DIMENSION_FAIL
+NODE_TRANSFORM_FAIL
 TEST_ASSERTION_FAIL
 PROCESS_CRASH
 ```
@@ -16648,6 +16702,10 @@ The bite test must fail for the intended assertion with a readable message, then
 
 A crash/abort is not a valid bite.
 
+A valid bite test proves only the assertion class it mutates. Example:
+- changing build geometry height and seeing `DIMENSION_FAIL` proves geometry-drift detection;
+- it does **not** prove node-scale detection unless the controlled mutation is specifically a node transform and the intended transform assertion bites.
+
 ## Catalog integration
 
 If the project uses an asset catalog:
@@ -16655,6 +16713,7 @@ If the project uses an asset catalog:
 ```text
 export to canonical runtime root
 -> package readback
+-> transform/attribute contract
 -> catalog registration/readback
 -> engine loader test using runtime path/catalog convention
 -> completion gate
@@ -16675,15 +16734,20 @@ engine_smoke_test:
   build_status: PASS
   test_exit_code: 0
   process_status: PASS
+  coordinate_space: LOCAL_VERTEX_SPACE
+  node_transform_policy: IDENTITY_TRS_REQUIRED
+  package_transform_check: PASS
   assertions:
     lod_family: PASS
     dimensions: PASS
+    required_attributes: PASS
     materials: PASS
   bite_test: PASS | NOT_REQUIRED | NOT_SAFE
   status: PASS
 ```
 
 Only this kind of target-runtime evidence may satisfy `runtime_import_or_instantiation` for Level D.
+
 
 ---
 
