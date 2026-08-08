@@ -2,11 +2,15 @@
 
 Agent nie powinien ładować całej biblioteki do każdego zadania.
 
+Przed wyborem modułów stosuj `00_governance/06_TASK_PACK_PROTOCOL.md`.
+Knowledge Router wybiera najmniejszy wymagany pakiet dla bieżącego STATE i task subtype.
+
 ## Session startup / first scene mutation
-Load:
+Load Task Pack `SESSION_PREFLIGHT`:
 - `00_governance/00_AGENT_CHARTER.md`
 - `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
 - `02_blender_api/19_TOOL_DISCOVERY_AND_REGISTRY.md`
+- `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`
 - `02_blender_api/28_AGENT_TOOL_API_PROFILE.md`
 - `02_blender_api/23_SCENE_INSPECTION.md`
 
@@ -28,6 +32,8 @@ Load:
 - Execution Protocol
 - Retry Budget and Strategy Switching
 - Visual QA
+
+Do not preload UV/material/LOD/export modules before their state is reached.
 
 ## Poprawka istniejącego assetu
 Load:
@@ -82,11 +88,13 @@ Typical triggers:
 - pole-safe sphere requirement.
 
 ## Optymalizacja do gry
-Load:
+Load Task Pack `GAME_READY`:
 - Game Asset Contract
 - Polycount/LOD/Collision
 - Pivots/Transforms
 - Texture/Material Runtime
+- active Engine Profile
+- active Project Asset Pipeline Profile
 - glTF Export
 - Final Validation
 
@@ -109,7 +117,12 @@ Load:
 ## Token budget rule
 
 Jeżeli agent potrzebuje jednej informacji, nie ładuj całego folderu.
-Najpierw użyj routera, potem najwęższego modułu.
+Najpierw użyj Task Pack, potem routera, potem najwęższego modułu.
+
+Zawsze stosuj `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md`:
+- obliczaj lokalnie;
+- agreguj;
+- nie wysyłaj raw arrays/profiles do LLM bez konkretnego diagnostic need.
 
 ## Retry budget rule
 
@@ -151,19 +164,38 @@ Load:
 ## Reference reconstruction
 Load first:
 - `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- `00_governance/06_TASK_PACK_PROTOCOL.md`
 - `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
 
-Then load only the modules required by the failing or current reconstruction stage:
-- Reference Decomposition
-- Reference Measurement Protocol
-- Camera and Reference Matching
-- Visual Feature Map
-- Reference Fidelity Protocol
-- Automated Visual Diff
+Then load only the modules required by the current/failing reconstruction stage.
 
 Do not load detail/modeling skills before the controller has passed camera, scale, silhouette and primary-form gates.
 
 When a validated detail feature is reached, route it through the Semantic Skill Registry rather than improvising a modeling technique.
+
+## Technical concept sheet / blueprint ANALYZE
+
+Use Task Pack `RECON_TECHNICAL_SHEET_ANALYZE`.
+
+Required core:
+- `10_reconstruction/102_EVIDENCE_MODEL.md`
+- `10_reconstruction/103_REFERENCE_INGESTION_PROTOCOL.md`
+- `10_reconstruction/106_VIEW_AUTHORITY_MATRIX.md`
+- `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`
+- `10_reconstruction/160_BLUEPRINT_AND_TECHNICAL_DRAWING_MODE.md`
+- `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`
+- `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`
+- `06_prompts/67_CONCEPT_SHEET_INGEST_PROMPT.md`
+
+Route technical image measurement to semantic skill `REFERENCE_MEASURE`.
+
+After segmentation and calibration are validated:
+- reuse cached ROI/view authority/dimensions;
+- do not rescan the full sheet;
+- re-enter analysis only for a specific failing ROI, metric, feature or source update.
+
+Do not read unrelated sibling build scripts for project conventions if an active `PROJECT_ASSET_PIPELINE_PROFILE.md` is available.
+If no profile exists, inspect the smallest relevant range and persist the discovered convention according to `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md`.
 
 ## Runtime integration
 Load:
@@ -171,6 +203,7 @@ Load:
 - Game Asset Contract
 - Engine Profile Schema
 - Engine Adapter Protocol
+- Project Asset Pipeline Profile Schema
 - Authoring to Runtime Handoff
 - właściwy format eksportu
 
@@ -178,16 +211,20 @@ Load:
 
 Load core:
 - `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
+- `00_governance/06_TASK_PACK_PROTOCOL.md`
 - `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
 - `10_reconstruction/101_DEFINITION_OF_1_TO_1.md`
 - `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`
 - `10_reconstruction/155_RECONSTRUCTION_KNOWLEDGE_ROUTING.md`
 
-Then load only the current stage pack.
+Then load only the current Task Pack/stage pack.
 
 ### Concept sheet ingest
 - 102–109
+- 160
 - 168
+- 170
+- script 91
 - prompt 67
 
 ### Geometry solve
