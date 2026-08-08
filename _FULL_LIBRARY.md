@@ -130,154 +130,88 @@ Wyjątek: wymaganie runtime lub jawna decyzja projektowa.
 
 ## FILE: `00_governance/02_STATE_MACHINE.md`
 
-# Agent State Machine
+# Agent State Machine v0.11
 
-## Stany
+## Core principle
 
-### S0 — DISCOVER
-Cel:
-- ustalić narzędzia, Blender version, stan sceny, jednostki, aktywny plik;
-- związać capabilities;
-- załadować matching project profile.
+The reconstruction state machine is executable state, not narrative guidance.
 
-Wyjście:
-`Scene Snapshot` + Tool/Project Context.
-
-### S1 — ANALYZE
-Cel:
-- zrozumieć funkcję assetu;
-- zinwentaryzować evidence/views;
-- wyodrębnić dimensions/landmarks/features;
-- określić niewiadome i conflicts.
-
-Wyjście:
-`Asset Brief` + Reference/Evidence state.
-
-### S2 — CONTRACT
-Cel:
-- utworzyć Feature Contract;
-- oznaczyć `MUST`, `SHOULD`, `OPTIONAL`;
-- przypisać metryki, tolerancje i authority.
-
-Wyjście:
-`Feature Contract`.
-
-### S3 — PLAN / SHAPE UNDERSTANDING
-
-Dla reference reconstruction ten stan **nie zaczyna od operatorów Blendera**.
-
-Cel:
-- rozbić asset na G0–G5 design forms;
-- zbudować `Reconstruction Shape Graph`;
-- przypisać parent/dependencies;
-- sklasyfikować mathematical shape representation;
-- przypisać authoritative views + controlled properties;
-- przypisać RDL0–RDL5;
-- zaplanować node gates i stage barriers;
-- dopiero potem dobrać semantic skills/implementation.
-
-Wyjście:
-`Shape Graph` + `Node Contracts` + `RDL Plan`.
-
-`Shape Graph != PASS` blokuje produkcyjną geometrię poza diagnostic RDL0.
-
-### S4 — COARSE FORM / BLOCKOUT
-
-Dla zwykłych assetów: blockout.
-
-Dla reference reconstruction:
-- RDL0 envelope;
-- RDL1 primary forms node-by-node;
-- każdy node musi przejść required multi-view gate;
-- RDL1 stage barrier przed secondary forms.
-
-Zakaz:
-- budowy G2–G5 przed odpowiednim barrier;
-- finalnych materiałów;
-- monolitycznego builda tworzącego wiele poziomów formy.
-
-### S5 — STRUCTURAL FORMS / FEATURES
-
-Dla reconstruction:
-- RDL2 secondary structural forms node-by-node;
-- RDL3 structural features tylko na ACCEPTED hosts;
-- leaf skills takie jak panel lines/recess/layer stack dopiero tutaj.
-
-### S6 — EDGE / SECONDARY DETAIL
-
-Dla reconstruction:
-- RDL4 edge language;
-- bevel/fillet/chamfer/SubD support dopiero po accepted form;
-- microgeometry wymagane przez contract.
-
-### S7 — SHADING_UV_MATERIAL
-
-Dla reconstruction najpierw RDL5 surface/detail, potem:
-- UV;
-- normals/shading;
-- runtime material strategy.
-
-UV/runtime nie może rozpocząć się, jeżeli Reconstruction Fidelity Gate jeszcze nie PASS.
-
-### S8 — GAME_READY
-Cel:
-- runtime LOD;
-- collision;
-- pivot/naming;
-- bake/runtime textures;
-- optimization;
-- package preparation.
-
-Runtime LOD jest downstream od RDL. `RDL != LOD`.
-
-### S9 — VALIDATE
-Cel:
-- reconstruction final fidelity proof;
-- mesh/runtime validation;
-- package readback;
-- completion gate.
-
-### S10 — EXPORT / INTEGRATE
-Cel:
-- export;
-- round-trip invariants;
-- target-engine proof dla Level D;
-- final completion report.
-
-## Core gates
-
-Reference reconstruction:
+For reference-driven work:
 
 ```text
-Shape Graph PASS
--> RDL0 PASS
--> G1 node gates + RDL1 barrier
--> G2 node gates + RDL2 barrier
--> G3 node gates + RDL3 barrier
--> RDL4 edge barrier
--> RDL5 as required
--> RECON_FIDELITY_GATE
--> runtime/game-ready
+DISCOVER
+-> ANALYZE
+-> CONTRACT
+-> SHAPE/APPEARANCE PLAN
+-> AUTHORIZE ONE NODE
+-> BUILD ONE NODE
+-> BUILT_UNVERIFIED
+-> SOURCE-ANCHORED QA
+-> ACCEPT / FAIL / UNVERIFIED
+-> repeat
+-> appearance + reconstruction gates
+-> runtime
 ```
 
-Nie wolno:
-- budować child na failed/unverified required parent;
-- używać detail skill do naprawy primary form;
-- przejść do runtime przy reconstruction FAIL/UNVERIFIED;
-- maskować błędu późniejszym etapem.
+## Reconstruction node states
 
-## Cofnięcie
+```text
+DECLARED
+-> CONSTRAINED
+-> READY_TO_BUILD
+-> BUILT_UNVERIFIED
+-> ACCEPTED
+```
 
-Każdy failed gate kieruje do najwcześniejszego ownera:
-- evidence/registration;
-- Shape Graph/representation;
-- konkretny Shape Node;
-- właściwy RDL;
-- runtime stage.
+Failure/rework states: `UNVERIFIED`, `FAIL`, `BLOCKED`, `DIRTY`, `SUPERSEDED`.
 
-## Reconstruction branch
+### Hard ownership
+- only `EXECUTION_AUTHORIZATION_GATE` allows `CONSTRAINED/DIRTY/FAIL/UNVERIFIED -> READY_TO_BUILD`;
+- only a node-scoped builder mutation creates `BUILT_UNVERIFIED`;
+- only `RECONSTRUCTION_NODE_GATE` allows `BUILT_UNVERIFIED -> ACCEPTED`;
+- `BUILT_UNVERIFIED` never unlocks children.
 
-Dla wielowidokowej/blueprint/concept-sheet reconstruction `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md` rozwija S1–S9 i jest canonical controllerem formy.
+## S0 DISCOVER
+Bind Blender 5.1, tools, project profile, canonical BlenderSkill version/commit/source root. `CANONICAL_SKILL_RUNTIME_PIN` must PASS before benchmark execution.
+
+## S1 ANALYZE
+Create source registry, view classes, calibration, dimensions, landmarks, conflicts and uncertainty ledger. Reuse canonical analysis executors before writing local scanners.
+
+## S2 CONTRACT
+Create Feature Contract, property-level authority and MUST/SHOULD/OPTIONAL inventory.
+
+## S3 PLAN
+Create Shape Graph, per-view node contracts, shape representations, RDL plan and Appearance Contract for L4/L5. Resolve or explicitly block material conflicts before dependent geometry.
+
+## S4 RDL0/RDL1
+RDL0 produces neutral diagnostic geometry and registered FRONT/SIDE/TOP proof as applicable. Then build G1 one authorized node at a time.
+
+## S5 RDL2/RDL3
+Secondary forms and structural features only on ACCEPTED hosts. Major boundaries/trim/junction owners are proven while their geometry is still isolated.
+
+## S6 RDL4
+Reference edge-family proof. Bevel is implementation, not acceptance.
+
+## S7 RDL5
+Production material/branding/detail work. All MUST Appearance Owners must be accounted in separate namespace before appearance closure.
+
+## S8/S9 FINAL RECONSTRUCTION
+`APPEARANCE_OWNER_COVERAGE`, `APPEARANCE_FIDELITY_GATE`, `RECON_FIDELITY_GATE`.
+
+## S10 RUNTIME
+Only after reconstruction acceptance: UV, bake, runtime LOD, collision, export, round-trip, engine integration.
+
+## Non-negotiable stop rules
+
+```text
+no READY_TO_BUILD + authorization -> no geometry mutation
+BUILT_UNVERIFIED -> stop branch
+MUST parent not ACCEPTED -> child blocked
+prior RDL barrier FAIL -> next RDL blocked
+unresolved equal-authority reference conflict -> dependent property blocked
+missing MUST appearance owner -> appearance gate FAIL
+stale/duplicate BlenderSkill runtime -> preflight FAIL
+```
 
 
 ---
@@ -330,668 +264,145 @@ Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześ
 
 ## FILE: `00_governance/04_KNOWLEDGE_ROUTER.md`
 
-# Knowledge Router
+# Knowledge Router v0.11
 
-Agent nie ładuje całej biblioteki. Router wybiera najmniejszy Task Pack dla current state, failing evidence i Shape/Appearance ownera.
+Load the smallest task pack for the current state, Shape Node, Appearance Owner or failing evidence.
 
-Canonical rule:
+## Preflight
 
-```text
-intent/current state
--> Task Pack
--> semantic skill
--> executor/tool binding
--> compact evidence
-```
+Use:
+- `CANONICAL_SKILL_RUNTIME_PIN`;
+- Blender/runtime compatibility;
+- project pipeline profile;
+- scene inspection.
 
-## SESSION_PREFLIGHT
+Do not execute a benchmark with two active BlenderSkill roots or a stale embedded copy.
 
-Load:
-- Agent Charter;
-- Semantic Skill Registry;
-- Tool Discovery/Profile;
-- Blender 5.1 Compatibility Matrix;
-- Scene Inspection;
-- matching Project Asset Pipeline Profile.
+## Reference analysis
 
-Persist Tool Registry, Blender version, project profile, runtime path context.
+Route to `REFERENCE_MEASURE`, registration/calibration, source registry and cache. If views disagree on one property, route immediately to `REFERENCE_CONFLICT_RESOLVER`; do not silently choose one view or average values.
 
-Nie rediscoveruj stable project facts per asset.
+## Shape/appearance planning
 
----
-
-# Reference reconstruction v0.10
-
-## 1. Technical-sheet / concept analyze
-
-Use `RECON_TECHNICAL_SHEET_ANALYZE`:
-- Evidence Model;
-- ingestion/view classification/authority;
-- measurement/calibration;
-- Reference Analysis Cache.
-
-Preferred skills:
-- `REFERENCE_MEASURE`;
-- `REFERENCE_OVERLAY_VALIDATE` only after registration exists.
-
-Required outputs:
-- source-set revision;
-- reference IDs;
-- property-level authority decisions;
-- conflicts/unknowns;
-- calibrated canonical views.
-
-Po `ANALYZE: PASS` nie wracaj do broad exploration bez konkretnego conflict/ROI/source update.
-
-## 2. Shape understanding — mandatory before production geometry
-
-Use `RECON_SHAPE_GRAPH_PLAN`.
-
-Load:
-- `128_RECONSTRUCTION_OBJECT_DECOMPOSITION.md`;
-- `174_RECONSTRUCTION_SHAPE_GRAPH.md`;
-- `176_RECONSTRUCTION_NODE_CONTRACT.md`;
-- `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`;
-- prompt 68;
-- script pattern 95.
-
-Preferred skills:
+Before production geometry:
 - `SHAPE_GRAPH`;
-- `SHAPE_CLASSIFY`.
+- `SHAPE_CLASSIFY`;
+- per-view validation contracts;
+- `REFERENCE_APPEARANCE_CONTRACT` for L4/L5;
+- derived parameter provenance.
 
-Required persistent output:
-- Shape Graph revision;
-- G0–G5 hierarchy;
-- RDL0–RDL5 assignment;
-- node parent/dependencies;
-- shape class;
-- authoritative views + controlled properties;
-- node validation contract.
-
-`SHAPE_GRAPH != PASS` blocks production geometry except diagnostic RDL0.
-
-## 3. Appearance understanding — mandatory for 1:1 / L4 / L5
-
-Use `RECON_APPEARANCE_CONTRACT_PLAN`.
-
-Load:
-- `180_REFERENCE_APPEARANCE_CONTRACT.md`;
-- `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
-- `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`.
-
-Required output:
-- Appearance Contract revision;
-- MUST/SHOULD visible owners;
-- part-boundary graph;
-- major trim paths;
-- junction owners;
-- edge families;
-- material/emissive regions;
-- detail inventory by region;
-- source reference/ROI per owner.
-
-Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette.
-
-## 4. RDL0 envelope
-
-Use `RECON_RDL0`.
-
-Only:
-- global bounds;
-- axes;
-- ground/contact;
-- minimal envelope carrier.
-
-Validate FRONT/SIDE/TOP where authoritative.
-
-No detail skills.
-
-## 5. RDL1 primary forms
-
-Use `RECON_NODE_BUILD` **one Shape Node at a time**.
-
-Canonical loop:
+## Execution routing v0.11
 
 ```text
-SHAPE_GRAPH ready node
--> choose representation skill
--> build/repair current node only
+SHAPE_GRAPH eligible node
+-> EXECUTION_AUTHORIZATION_GATE.issue_authorization
+-> NODE_STATE_STORE persist READY_TO_BUILD
+-> EXECUTION_AUTHORIZATION_GATE.can_mutate
+-> build exactly one node
+-> NODE_STATE_STORE persist BUILT_UNVERIFIED
 -> QA_SCENE_ISOLATE
--> canonical registered required-view validation
--> numeric/section checks
+-> per-view canonical evidence
 -> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL
+-> persist ACCEPTED / FAIL / UNVERIFIED
 ```
 
-Strict node acceptance requires canonical validator records. A builder-local `Gate.accept()` is not equivalent.
+If `ready_nodes=[]`, geometry mutation is forbidden.
 
-After all required G1 nodes:
-`SHAPE_GRAPH.evaluate_stage_barrier(RDL1)`.
+## Per-view evidence
 
-Do not load G2–G5 implementation skills on RDL1 FAIL.
+- ORTHO / NEAR_ORTHO -> `REGISTERED_OVERLAY` / numeric/landmark proof;
+- HERO perspective -> `PERSPECTIVE_INSPECTION` as supporting design-intent evidence;
+- DETAIL crop -> `LOCAL_FEATURE_ROI` / appearance-owner validation.
 
-## 6. Shape representation routing
+Never assign one generic evidence kind to all views of a node.
 
-```text
-axisymmetric profile
--> AXISYMMETRIC_PROFILE
+## RDL routing
 
-width/depth/corner treatment change across stations
--> SECTION_LOFT_HARD_SURFACE
+RDL0: diagnostic grey geometry only.
 
-structural transition between sections
--> SECTION_LOFT_HARD_SURFACE
+RDL1: primary forms; no production materials.
 
-stable 2D profile + depth
--> EXTRUDED_PROFILE / direct mesh strategy
+RDL2: secondary structural forms and major product architecture.
 
-path-driven profile
--> PROFILE_SWEEP / curves
+RDL3: recesses, seams, hatches, emitters and other structural features on ACCEPTED hosts.
 
-smooth compound freeform without stable sections
--> SUBD_TOPOLOGY_CONTROL
-```
+RDL4: edge language.
 
-### Box-abuse trigger
+RDL5: materials, branding, detail and lookdev.
 
-If primary form changes width + depth + corner treatment along an axis:
+Every RDL transition requires the canonical stage barrier.
 
-```text
-PARAMETRIC_BOX + BEVEL
--> not default
--> SHAPE_CLASSIFY
--> MULTI_SECTION_LOFT or SUBD_FREEFORM candidate
-```
+## Appearance closure
 
-## 7. RDL2 secondary structural forms + product architecture
+Before `APPEARANCE_FIDELITY_GATE` run `APPEARANCE_OWNER_COVERAGE` against the declared contract. Missing or UNVERIFIED MUST owners block L4/L5.
 
-Same node-by-node loop.
+## Runtime lock
 
-Typical:
-- side frames;
-- display housing;
-- utility modules;
-- large service panels;
-- major trims;
-- backrest/end-cap transitions.
-
-At this stage also instantiate/validate Appearance Contract owners for:
-- major part boundaries;
-- trim paths;
-- junctions.
-
-Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence.
-
-Required G2 stage barrier before RDL3.
-
-## 8. RDL3 structural features
-
-Leaf skills become available only on `ACCEPTED` hosts:
-
-```text
-narrow seam/groove -> HS_PANEL_LINE
-recess -> boolean/direct recess playbook
-layered glass/content -> LAYER_STACK_VALIDATE
-radial holes/fasteners -> RADIAL_REPEAT
-```
-
-For reference reconstruction, visible structural detail must also close its Appearance Contract owner.
-
-No host acceptance -> feature `BLOCKED`.
-
-## 9. RDL4 edge language
-
-Load:
-- `164_EDGE_LANGUAGE_SYSTEM.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
-- bevel/continuity/SubD support only as implementation details.
-
-Rule:
-
-```text
-shape first
--> reference edge-family contract
--> edge implementation
--> reference-anchored edge proof
-```
-
-Do not pass RDL4 only because protected dimensions survived bevel.
-
-## 10. RDL5 surface/detail
-
-Load branding, materials, decals, emissive, civic finish after structural barriers.
-
-For target L4/L5:
-- material segmentation alone is insufficient;
-- require material appearance owners;
-- require emissive region behavior where present;
-- L5 requires complete MUST detail inventory / zero silent omissions.
-
-Use:
-- `APPEARANCE_REFERENCE_VALIDATE`;
-- `MATERIAL_FINISH_CIVIC`;
-- `LAYER_STACK_VALIDATE`;
-- branding/decal validators.
-
-## 11. Appearance final gate
-
-For target >= L4 use `APPEARANCE_FIDELITY_GATE`.
-
-Required categories:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material response;
-- final matched/registered appearance views;
-- emissive/branding when present;
-- detail coverage for L5.
-
-A high global score cannot compensate for a MUST category failure.
-
-## 12. Reconstruction final gate
-
-Use:
-- `QA_SCENE_ISOLATE`;
-- `REFERENCE_OVERLAY_VALIDATE`;
-- `APPEARANCE_REFERENCE_VALIDATE`;
-- `RECONSTRUCTION_NODE_GATE` records;
-- RDL barriers;
-- `APPEARANCE_FIDELITY_GATE` for L4/L5;
-- `RECON_FIDELITY_GATE`.
-
-Runtime is forbidden while final gate is FAIL/UNVERIFIED.
-
----
-
-# Anti-circular validation route
-
-If an agent locally derives a radius/angle/station/path:
-
-```text
-derived parameter
--> builder-consistency check
--> source-fit/registered reference evidence
--> canonical validator
--> canonical gate
-```
-
-Do not route:
-
-```text
-local builder constant
--> local Gate compares mesh to same constant
--> ACCEPTED
-```
-
-Strict reference-derived evidence requires:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id(s)`;
-- `registration_id` for projected evidence.
-
----
-
-# Existing specialized routes
-
-## Panel line
-`HS_PANEL_LINE`; add SubD skill only if evaluated cage/flow requires it.
-
-## SubD topology
-`SUBD_TOPOLOGY_CONTROL` + topology/normals rules.
-
-## Mesh validation
-`MESH_VALIDATE`. Every mesh declares topology intent.
-
-## Civic material finish
-`MATERIAL_FINISH_CIVIC`; no uniform global grunge.
-
-## Emissive
-`EMISSIVE_HANDOFF`; authored emitter and engine bloom are separate gates.
-
-## UV atlas / runtime bake
-`UV_ATLAS_CONTRACT` -> `BAKE_RUNTIME_TEXTURES` -> `BAKE_VALIDATE`.
-
-Use stable semantic part IDs. Missing atlas assignment = FAIL.
-
-## QA/bake contamination
-`QA_SCENE_ISOLATE`. `hide_viewport` is not render proof.
-
-## Stale external image in Blender
-`IMAGE_CACHE_COHERENCE` before rebake/UV changes.
-
-## Local repair after accepted runtime stages
-`PIPELINE_DAG_PLAN` before replaying build/bake/export. Execute dirty dependency closure only.
-
----
-
-# Game-ready finishing
-
-Use `GAME_READY_FINISH` only after:
-
-```text
-Shape/RDL proof PASS
-and
-APPEARANCE_FIDELITY_GATE PASS when required
-and
-RECON_FIDELITY_GATE PASS
-```
-
-Preferred skills:
-- `MESH_VALIDATE`;
-- `UV_ATLAS_CONTRACT`;
-- `BAKE_RUNTIME_TEXTURES`;
-- `BAKE_VALIDATE`;
-- `IMAGE_CACHE_COHERENCE`;
-- `PIPELINE_DAG_PLAN`;
-- `RUNTIME_PATH_RESOLVE`;
-- `RUNTIME_PACKAGE_VALIDATE`;
-- `EXPORT_ROUNDTRIP_VALIDATE`;
-- `ASSET_COMPLETION`.
-
-Order:
-
-```text
-runtime path
--> LOD/collision
--> UV contract
--> dirty bake stages
--> bake validation/cache coherence
--> runtime material
--> export/package readback
--> round-trip invariants
--> baked runtime QA
--> completion gate
-```
-
-Runtime LOD is downstream from RDL and must not be used as reconstruction progression state.
-
----
-
-# Pipeline integration
-
-Use `PIPELINE_INTEGRATION` only when target is Level D.
-
-Load verified Project Profile, runtime-root, package, catalog, Engine Smoke Test, Test Oracle.
-
-For current RPG profile reuse:
-- `<repo>/Assets/GameAssets`;
-- one glTF multi-node LOD packaging;
-- current MIRROR_X contract while valid;
-- `Source/Engine/AssetCatalog.cpp`;
-- `Engine::Model::Load`;
-- `Tests/ModelTests.cpp`;
-- `Build/windows-debug` / `ModelTests`;
-- direct executable exit status.
-
-Blender glTF import = Level C round-trip evidence, not Level D.
-
----
-
-# Failure routing principles
-
-```text
-outer silhouette passes but product still looks wrong
--> Appearance Contract / part boundaries / edge/material/detail owners
-
-looks wrong in one view
--> registration/parameters/shape representation
-
-FRONT pass + SIDE/TOP compound-form fail
--> SHAPE_CLASSIFY before random parameter tweaking
-
-child feature fails because host contour wrong
--> parent Shape Node owner
-
-trim exists but looks like a highlight / wrong path
--> PART_BOUNDARY_TRIM_JUNCTION + APPEARANCE_REFERENCE_VALIDATE
-
-correct source geometry + exported dimension fail
--> EXPORT_ROUNDTRIP_VALIDATE
-
-parseable glTF + missing TEXCOORD_0
--> RUNTIME_PACKAGE_VALIDATE
-
-ambiguous test success
--> TEST_ORACLE
-```
-
-After one corrected retry of same strategy, second proven failure requires re-inspection + strategy switch.
-
----
-
-# Output budget
-
-Use:
-
-```text
-compute locally
--> compact node/appearance/stage report
--> decision
-```
-
-Do not return raw arrays/full logs/full generated scripts unless diagnostic need requires them.
+`APPEARANCE_FIDELITY_GATE != PASS` or `RECON_FIDELITY_GATE != PASS` -> no runtime LOD/UV/bake/export.
 
 
 ---
 
 ## FILE: `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
 
-# Semantic Skill Registry
+# Semantic Skill Registry v0.11
 
-## Purpose
+## Maturity
+`KNOWLEDGE_ONLY`, `CONTRACT_READY`, `EXECUTOR_READY`, `RUNTIME_BOUND`.
 
-Stable routing layer between user intent, reconstruction semantics, knowledge modules, executors and validation.
+## Reconstruction core
 
-Agent nie przechodzi bezpośrednio z natural-language request do ad-hoc `bpy`, jeśli zarejestrowany skill już opisuje operację.
+| Skill ID | Purpose | Canonical knowledge | Maturity |
+|---|---|---|---|
+| `RECONSTRUCT_REFERENCE` | end-to-end controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY |
+| `REFERENCE_MEASURE` | calibrated source measurement | `executors/reference_measure.py` | CONTRACT_READY |
+| `REFERENCE_OVERLAY_VALIDATE` | registered silhouette/ROI proof | `executors/reference_overlay_validate.py` | CONTRACT_READY |
+| `APPEARANCE_REFERENCE_VALIDATE` | boundaries/trim/junction/material/detail proof | `180`–`183` | CONTRACT_READY |
+| `REFERENCE_CONFLICT_RESOLVER` | per-property multi-view arbitration | `184_REFERENCE_CONFLICT_ARBITRATION.md`; `executors/reference_conflict_resolver.py` | CONTRACT_READY |
+| `SHAPE_GRAPH` | graph structure, eligibility, readiness, barriers | `174`; `executors/shape_graph.py` | CONTRACT_READY |
+| `SHAPE_CLASSIFY` | mathematical representation selection | `177` | CONTRACT_READY |
+| `EXECUTION_AUTHORIZATION_GATE` | hard permission for one geometry mutation | `05_execution/73`; `executors/execution_authorization_gate.py` | CONTRACT_READY |
+| `NODE_STATE_STORE` | canonical transition/checkpoint validator | `05_execution/74`; `executors/node_state_store.py` | CONTRACT_READY |
+| `RECONSTRUCTION_NODE_GATE` | proof-bearing one-node acceptance | `176`, `178`, `185`; `executors/reconstruction_node_gate.py` | CONTRACT_READY |
+| `SECTION_LOFT_HARD_SURFACE` | multi-section construction | `179`; `executors/section_loft.py` | CONTRACT_READY |
+| `LAYER_STACK_VALIDATE` | layered visibility/order | `172`; `executors/layer_stack_validate.py` | CONTRACT_READY |
+| `APPEARANCE_OWNER_COVERAGE` | MUST-owner inventory + namespace closure | `186`; `executors/appearance_owner_coverage.py` | CONTRACT_READY |
+| `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 appearance gate | `05_execution/72`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY |
+| `RECON_FIDELITY_GATE` | final Level A proof gate | `05_execution/69`; `executors/fidelity_gate.py` | CONTRACT_READY |
+| `CANONICAL_SKILL_RUNTIME_PIN` | version/commit/single active root preflight | `188`; `executors/runtime_source_pin.py` | CONTRACT_READY |
 
-## Execution maturity
+## Modeling/runtime skills retained
+`AXISYMMETRIC_PROFILE`, `RADIAL_REPEAT`, `HS_PANEL_LINE`, `SUBD_TOPOLOGY_CONTROL`, `TRIM_SHEET_UV`, `UV_ATLAS_CONTRACT`, `MESH_VALIDATE`, `RUNTIME_COMPAT`, `QA_SCENE_ISOLATE`, `MATERIAL_FINISH_CIVIC`, `EMISSIVE_HANDOFF`, `BAKE_RUNTIME_TEXTURES`, `BAKE_VALIDATE`, `IMAGE_CACHE_COHERENCE`, `PIPELINE_DAG_PLAN`, `RUNTIME_PACKAGE_VALIDATE`, `EXPORT_ROUNDTRIP_VALIDATE`, `RUNTIME_PATH_RESOLVE`, `TEST_ORACLE`, `ENGINE_INTEGRATION_PROOF`, `ASSET_COMPLETION`.
 
-- `KNOWLEDGE_ONLY` — guidance exists, no stable execution contract.
-- `CONTRACT_READY` — stable inputs/outputs/validation exist.
-- `EXECUTOR_READY` — tested implementation callable through stable API.
-- `RUNTIME_BOUND` — executor mapped to current runtime tools.
-
-Nie claimuj wyższego maturity bez evidence.
-
-## Canonical registry
-
-| Skill ID | Purpose | Canonical knowledge | Maturity | Validation |
-|---|---|---|---|---|
-| `RECONSTRUCT_REFERENCE` | end-to-end reference reconstruction controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY | evidence, Shape Graph, Appearance Contract, RDL barriers, fidelity gates |
-| `REFERENCE_MEASURE` | compact reference measurement | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`; `executors/reference_measure.py` | CONTRACT_READY | provenance, calibration, confidence |
-| `REFERENCE_OVERLAY_VALIDATE` | registered reference-vs-candidate silhouette/ROI comparison | `142`, `143`, `171`; `executors/reference_overlay_validate.py` | CONTRACT_READY | IoU, contour delta, MUST ROI |
-| `APPEARANCE_REFERENCE_VALIDATE` | reference-anchored internal boundary/trim/edge/material/detail validation | `180_REFERENCE_APPEARANCE_CONTRACT.md`, `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`, `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`, `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`, script pattern 96 | CONTRACT_READY | source reference + registration + owner-class metrics |
-| `SHAPE_GRAPH` | validate hierarchy/dependencies/readiness of design forms | `174_RECONSTRUCTION_SHAPE_GRAPH.md`, `95_SHAPE_GRAPH_VALIDATOR_PATTERN.md`; `executors/shape_graph.py` | CONTRACT_READY | DAG, levels, RDL, parent/dependency readiness, stage barrier |
-| `SHAPE_CLASSIFY` | choose mathematical representation before Blender technique | `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md` | CONTRACT_READY | evidence-backed shape class, rejected alternatives |
-| `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176_RECONSTRUCTION_NODE_CONTRACT.md`, `178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`, `181`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, canonical validator IDs, source/registration, isolation, per-view evidence, numeric/section/regression |
-| `SECTION_LOFT_HARD_SURFACE` | deterministic multi-section base/shell/transition construction | `179_MULTI_SECTION_LOFT_AND_PROFILE_CAGE.md`, playbook 118; `executors/section_loft.py` | CONTRACT_READY | station ordering, sample correspondence, mesh data, multi-view/section proof |
-| `LAYER_STACK_VALIDATE` | visibility/order validation for layered assemblies | `172_VISIBLE_LAYER_STACK_CONTRACT.md`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
-| `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 appearance transition gate | `05_execution/72_APPEARANCE_FIDELITY_GATE.md`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | part boundaries, trim, junctions, edge families, material response, detail coverage, final matched views |
-| `RECON_FIDELITY_GATE` | final proof-bearing Level A transition gate | `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`, `173`, `180`–`183`; `executors/fidelity_gate.py` | CONTRACT_READY | typed source-anchored evidence, canonical views, MUST features, appearance gate, authority closure |
-| `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
-| `RADIAL_REPEAT` | repeated radial details | playbook 110; `executors/radial_repeat.py` | CONTRACT_READY | count, phase, annulus |
-| `HS_PANEL_LINE` | narrow seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | path/profile/topology |
-| `SUBD_TOPOLOGY_CONTROL` | Catmull-Clark cage design/repair | `blender-agent-subdivision-topology-control.md` | CONTRACT_READY | evaluated surface, pinching, continuity |
-| `TRIM_SHEET_UV` | trim-sheet UV strategy | `03_modeling/40_TRIM_SHEETS.md` | CONTRACT_READY | region/density/orientation |
-| `UV_ATLAS_CONTRACT` | stable atlas ownership across LODs | `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`; `executors/uv_atlas_contract.py` | CONTRACT_READY | semantic part IDs, LOD consistency |
-| `MESH_VALIDATE` | contract-aware mesh audit | `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`; `executors/mesh_validate.py` | EXECUTOR_READY | topology intent, manifold/boundaries/UV/tris |
-| `RUNTIME_COMPAT` | Blender/runtime API discovery | `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md`; `executors/runtime_compat.py` | CONTRACT_READY | discovered enums/properties/paths |
-| `QA_SCENE_ISOLATE` | non-destructive QA/bake scene isolation | `08_scripts/83_QA_RENDER_SCRIPT_PATTERN.md`; `executors/qa_scene_isolation.py` | CONTRACT_READY | render state restored, contamination prevented |
-| `MATERIAL_FINISH_CIVIC` | maintained civic material finish | playbook 114 | CONTRACT_READY | macro/meso/micro breakup |
-| `EMISSIVE_HANDOFF` | separate authored emitter from runtime glow | `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md` | CONTRACT_READY | emitter/export/runtime status |
-| `BAKE_RUNTIME_TEXTURES` | deterministic runtime texture bake | `04_game_ready/50`, `51`; `executors/bake_runtime_textures.py` | CONTRACT_READY | bake result/channel semantics |
-| `BAKE_VALIDATE` | semantic baked-map validation | `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`; `executors/bake_validate.py` | CONTRACT_READY | ranges/regions/degeneracy |
-| `IMAGE_CACHE_COHERENCE` | synchronize disk texture and Blender datablock | `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`; `executors/image_cache_coherence.py` | CONTRACT_READY | path/reload/colorspace/binding |
-| `PIPELINE_DAG_PLAN` | minimal dirty execution closure | `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`; `executors/pipeline_dag.py` | CONTRACT_READY | DAG/execute/reuse plan |
-| `RUNTIME_PACKAGE_VALIDATE` | validate glTF package/attributes/transforms | `09_engine/94`, `96`; `executors/gltf_package_validate.py` | CONTRACT_READY | nodes/materials/images/TEXCOORD/TRS |
-| `EXPORT_ROUNDTRIP_VALIDATE` | re-import export and check invariants | `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | dimensions/contact/material survival |
-| `RUNTIME_PATH_RESOLVE` | resolve engine-visible runtime root | `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`; `executors/runtime_path_resolver.py` | CONTRACT_READY | canonical root/containment |
-| `TEST_ORACLE` | trustworthy process exit/bite test | `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`; `executors/test_oracle.py` | CONTRACT_READY | direct status/intended assertion |
-| `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | loader/instantiation + oracle |
-| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148`, `178`, `180`–`183` | CONTRACT_READY | node/stage/final evidence, appearance owners |
-| `ASSET_COMPLETION` | determine true completion level | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | A/B/C/D gate hierarchy |
-| `ASSET_CATALOG_INTEGRATE` | project catalog registration | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | readback/unique ID/import |
-| `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md` | KNOWLEDGE_ONLY | runtime contract |
-
-## v0.10 reconstruction routing precedence
+## v0.11 precedence
 
 ```text
-reference ingest/measurement
--> REFERENCE_MEASURE
-
-before production geometry
--> SHAPE_GRAPH + SHAPE_CLASSIFY
-
-for 1:1 or target L4/L5
--> REFERENCE_APPEARANCE_CONTRACT + PART_BOUNDARY/TRIM/JUNCTION owners
-
-one node ready to build/repair
--> node's representation skill
--> canonical registered view validator
--> RECONSTRUCTION_NODE_GATE
-
-internal boundary/trim/edge/material owner
--> APPEARANCE_REFERENCE_VALIDATE
-
-end of each RDL
--> SHAPE_GRAPH stage barrier
-
-end of RDL4/RDL5 when appearance required
--> APPEARANCE_FIDELITY_GATE
-
-claiming Level A / entering runtime
--> RECON_FIDELITY_GATE
+runtime pin
+-> reference evidence
+-> conflict arbitration where needed
+-> Shape Graph + Appearance Contract
+-> eligible node
+-> execution authorization
+-> persist READY_TO_BUILD
+-> one-node mutation
+-> BUILT_UNVERIFIED hard stop
+-> source proof + node gate
+-> ACCEPTED
+-> stage barrier
+-> appearance owner coverage
+-> appearance gate
+-> recon gate
+-> runtime
 ```
 
-## Anti-circular validation precedence
-
-A canonical acceptance owner cannot be certified by an ad-hoc local substitute.
-
-```text
-local helper measurement
--> may produce artifact
--> canonical validator consumes artifact + source evidence
--> canonical gate accepts/rejects
-```
-
-Forbidden as acceptance:
-
-```text
-builder-local Gate.accept()
--> Shape Node ACCEPTED
-```
-
-when `RECONSTRUCTION_NODE_GATE` exists.
-
-Strict reference-derived records require:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id` or `source_reference_ids`;
-- `registration_id` for projected evidence.
-
-## Host-before-leaf rule
-
-Leaf skills nie mogą pełnić roli shape-understanding layer.
-
-Examples:
-- `HS_PANEL_LINE` only after host `ACCEPTED`;
-- bevel/edge implementation only RDL4;
-- decals/materials only after structural acceptance;
-- `SECTION_LOFT_HARD_SURFACE` may be a primary-form skill;
-- appearance owners may be declared earlier but cannot PASS before the host revision they validate exists.
-
-## Runtime lock v0.10
-
-For target fidelity L4/L5:
-
-```text
-APPEARANCE_FIDELITY_GATE != PASS
-or
-RECON_FIDELITY_GATE != PASS
--> runtime LOD/UV/bake/export FORBIDDEN
-```
-
-Correct dimensions, triangle budgets, UVs or glTF readback never override this lock.
-
-## Box-abuse route
-
-If a primary node changes width/depth/corner treatment along an axis:
-
-```text
-PARAMETRIC_BOX + BEVEL
--> do not default
--> SHAPE_CLASSIFY
--> likely SECTION_LOFT_HARD_SURFACE or SUBD_FREEFORM
-```
-
-## Packaged executor status
-
-```text
-REFERENCE_MEASURE           -> executors/reference_measure.py               CONTRACT_READY
-REFERENCE_OVERLAY_VALIDATE  -> executors/reference_overlay_validate.py      CONTRACT_READY
-SHAPE_GRAPH                 -> executors/shape_graph.py                     CONTRACT_READY
-RECONSTRUCTION_NODE_GATE    -> executors/reconstruction_node_gate.py        CONTRACT_READY
-SECTION_LOFT_HARD_SURFACE   -> executors/section_loft.py                    CONTRACT_READY
-LAYER_STACK_VALIDATE        -> executors/layer_stack_validate.py            CONTRACT_READY
-APPEARANCE_FIDELITY_GATE    -> executors/appearance_fidelity_gate.py        CONTRACT_READY
-RECON_FIDELITY_GATE         -> executors/fidelity_gate.py                   CONTRACT_READY
-AXISYMMETRIC_PROFILE        -> executors/axisymmetric_profile.py            CONTRACT_READY
-RADIAL_REPEAT               -> executors/radial_repeat.py                   CONTRACT_READY
-MESH_VALIDATE               -> executors/mesh_validate.py                   EXECUTOR_READY
-RUNTIME_COMPAT              -> executors/runtime_compat.py                  CONTRACT_READY
-QA_SCENE_ISOLATE            -> executors/qa_scene_isolation.py             CONTRACT_READY
-ASSET_COMPLETION            -> executors/completion_gate.py                 CONTRACT_READY
-UV_ATLAS_CONTRACT           -> executors/uv_atlas_contract.py               CONTRACT_READY
-BAKE_RUNTIME_TEXTURES       -> executors/bake_runtime_textures.py           CONTRACT_READY
-BAKE_VALIDATE               -> executors/bake_validate.py                   CONTRACT_READY
-IMAGE_CACHE_COHERENCE       -> executors/image_cache_coherence.py           CONTRACT_READY
-PIPELINE_DAG_PLAN           -> executors/pipeline_dag.py                    CONTRACT_READY
-RUNTIME_PACKAGE_VALIDATE    -> executors/gltf_package_validate.py           CONTRACT_READY
-EXPORT_ROUNDTRIP_VALIDATE   -> executors/export_roundtrip_validate.py       CONTRACT_READY
-RUNTIME_PATH_RESOLVE        -> executors/runtime_path_resolver.py           CONTRACT_READY
-TEST_ORACLE                 -> executors/test_oracle.py                     CONTRACT_READY
-```
-
-## Contract-ready is not executor-ready
-
-A CONTRACT_READY skill may be implemented through current tools, but agent must:
-1. follow semantic contract;
-2. keep mutation local/idempotent;
-3. validate postconditions;
-4. not describe it as proven executor;
-5. respect retry/strategy-switch rules;
-6. persist compact state/evidence;
-7. never replace proof with narrative PASS;
-8. never replace a registered canonical validator with a builder-local acceptance gate.
-
-## Reuse before generation
-
-Before generating helpers search this registry and `executors/`.
-
-Do not locally rewrite compatible implementations of:
-- Shape Graph validation/readiness/stage barriers;
-- node acceptance aggregation;
-- appearance fidelity aggregation;
-- reconstruction fidelity aggregation;
-- reference measurement/overlay;
-- layered visibility validation;
-- multi-section loft ring/bridge generation;
-- mesh/bake/cache/package/path/test validators.
-
-## Registry update rule
-
-New production skill requires:
-1. stable Skill ID;
-2. canonical knowledge path;
-3. maturity;
-4. capabilities;
-5. validation owner;
-6. Knowledge Router route;
-7. MANIFEST inclusion for canonical MD.
-
-Registry, Router, Task Packs and Manifest must agree.
+## Anti-bypass rules
+- a local builder may not emit canonical authorization;
+- a local builder may not move itself to ACCEPTED;
+- `CONSTRAINED` is not build permission;
+- `BUILT_UNVERIFIED` is not parent acceptance;
+- a generic `REPORT['nodes']` may not mix Shape Nodes and Appearance Owners;
+- one view's interpretation may not silently become global authority;
+- local helper proliferation should trigger reuse/migration review.
 
 
 ---
@@ -13002,155 +12413,61 @@ Evidence producers remain:
 
 ## FILE: `05_execution/70_RECONSTRUCTION_NODE_EXECUTION_PROTOCOL.md`
 
-# Reconstruction Node Execution Protocol
+# Reconstruction Node Execution Protocol v0.11
 
-## Cel
-
-Zastąpić monolityczny `build_asset()` kontrolowanym wykonywaniem Shape Graph node po node.
-
-v0.9 execution unit:
+## Execution unit
 
 ```text
-ONE SHAPE NODE
+ONE AUTHORIZED SHAPE NODE
 -> ONE MUTATION SCOPE
--> ONE VALIDATION PACKAGE
--> ACCEPT / FAIL
+-> BUILT_UNVERIFIED
+-> ONE SOURCE-ANCHORED VALIDATION PACKAGE
+-> ACCEPTED | UNVERIFIED | FAIL
 ```
 
----
+Code organization into node functions is insufficient. The transaction itself must be node-scoped.
 
 ## Preconditions
-
-Przed budową node'a:
-- Shape Graph revision istnieje;
-- node ma `CONSTRAINED` lub `READY_TO_BUILD`;
-- parent/dependencies wymagane do geometrii są `ACCEPTED`;
-- shape class jest wybrana;
-- required views + controls są zapisane;
-- implementation skill jest zidentyfikowany;
-- expected-change scope jest jawny;
-- QA scene isolation capability jest dostępne dla required render checks.
-
-Brak dowolnego required precondition = `BLOCKED`, nie improwizacja.
-
----
+- graph structural PASS;
+- node contract complete;
+- node is eligible;
+- canonical `EXECUTION_AUTHORIZATION_GATE` record exists;
+- node state has been persisted as `READY_TO_BUILD`;
+- parent/dependencies are `ACCEPTED`;
+- all earlier MUST RDL barriers PASS;
+- per-view evidence contracts exist;
+- shape class and implementation skill are known.
 
 ## Transaction
+1. call `can_mutate`;
+2. mutate current node and explicit helpers only;
+3. persist mutation artifact and `BUILT_UNVERIFIED`;
+4. stop branch;
+5. isolate QA scene;
+6. run source-fit numeric/registered/detail evidence according to each view contract;
+7. validate derived parameters/conflict decisions;
+8. run `RECONSTRUCTION_NODE_GATE`;
+9. persist final node state;
+10. only `ACCEPTED` unlocks children.
 
-### 1. Inspect
-Sprawdź current owner objects/helpers i node revision.
-
-### 2. Build/repair
-Modyfikuj tylko:
-- node owner;
-- jawne helper objects;
-- expected-change region.
-
-### 3. Mark `BUILT_UNVERIFIED`
-Samo utworzenie obiektu nie jest PASS.
-
-### 4. Validate
-Uruchom:
-- numeric checks;
-- required canonical view registered QA;
-- section/profile validator, jeśli dotyczy;
-- parent/sibling regression;
-- topology sanity odpowiednią dla tego etapu.
-
-### 5. Gate
-`RECONSTRUCTION_NODE_GATE` zwraca:
-- `ACCEPTED`;
-- `FAIL`;
-- `BLOCKED`;
-- `UNVERIFIED`.
-
-### 6. Persist
-Zapisz compact node acceptance record i graph revision.
-
----
-
-## No bulk-add rule
-
-Jedna transakcja nie może tworzyć 20 niezależnych form, a potem wykonywać jednego wspólnego renderu.
-
-Jeżeli node jest assembly:
-- assembly node może organizować dzieci;
-- geometry mutation nadal odbywa się na leaf/structural child nodes zgodnie z RDL.
-
-Wyjątek: atomowa geometria, której rozdzielenie uniemożliwia sensowne QA, musi mieć jawny `atomic_group_id`.
-
----
-
-## Node script architecture
-
-Asset-specific builder powinien mieć cienkie funkcje:
+## Forbidden
 
 ```python
-build_primary_body(spec, context)
-build_base_plinth(spec, context)
-build_lower_shoulder(spec, context)
-build_side_frame(spec, context)
+def main():
+    build_foot()
+    build_plinth()
+    build_pole()
+    build_arm()
+    build_details()
 ```
 
-Orchestrator:
+unless every call is separated by persisted authorization, `BUILT_UNVERIFIED`, QA and canonical acceptance.
 
-```text
-resolve ready node
--> invoke registered implementation
--> validate node
--> persist
--> resolve next ready node
-```
+## Repair
+An accepted ancestor change marks dependent nodes `DIRTY` and host-bound appearance evidence `UNVERIFIED`. Do not rebuild unrelated accepted branches.
 
-Nie preferuj jednej funkcji `build_all()`.
-
-Jeżeli convenience `build_all()` istnieje dla manualnego replayu, musi wewnętrznie respektować node gates i nie może ominąć FAIL.
-
----
-
-## Repair semantics
-
-Node repair:
-- nie resetuje całego assetu;
-- oznacza dependent children `DIRTY`, jeśli zmiana może je naruszyć;
-- niezależne accepted nodes pozostają reusable;
-- nie wykonuje późniejszych RDL stages przed ponownym node PASS.
-
----
-
-## Retry and representation switch
-
-Po pierwszym FAIL:
-- diagnoza;
-- jedna poprawiona próba tej samej strategii.
-
-Po drugim udowodnionym FAIL:
-- re-inspect evidence;
-- rozważ registration/parameter/representation error;
-- jeśli representation jest niewystarczająca, route do `SHAPE_CLASSIFY` i zmień strategy.
-
-Nie wykonuj serii `tweak -> render -> tweak -> render` bez zmiany modelu problemu.
-
----
-
-## Output budget
-
-Każdy node execution zwraca compact summary:
-
-```yaml
-node_execution:
-  node_id: BASE_PLINTH
-  revision: n_006
-  skill_id: SECTION_LOFT_HARD_SURFACE
-  mutation_objects: [ACS_WP_BASE]
-  state: ACCEPTED
-  view_results: {FRONT: PASS, SIDE: PASS, TOP: PASS}
-  numeric: PASS
-  blockers: []
-  dirtied_children: [LOWER_LIGHT_SLOT]
-```
-
-Nie echoj całego skryptu ani raw pixel arrays.
+## Replay
+Full deterministic replay may recreate already accepted geometry, but replay itself is not new acceptance evidence.
 
 
 ---
@@ -13448,542 +12765,82 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset Agent v0.10
+# System Prompt — Blender Asset Agent v0.11
 
-Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1 i runtime game assets.
+You are a Blender 5.1 technical-artist agent. Your job is controlled evidence-based reconstruction, not merely producing a plausible mesh.
 
-Twoim zadaniem nie jest "wygenerować model". Masz przeprowadzić kontrolowany, dowodowy pipeline od referencji do zwalidowanego assetu.
-
-v0.10 adds one critical rule learned from the Lafar Street Bench v0.9 benchmark:
+## Non-negotiable v0.11 execution law
 
 ```text
-correct dimensions
-+ correct outer silhouette
-+ locally consistent builder math
-+ valid game package
-!=
-faithful reconstruction
+NO READY_TO_BUILD NODE + EXECUTION_AUTHORIZATION_GATE PASS
+-> NO PRODUCTION GEOMETRY MUTATION
 ```
 
-A product is also defined by internal part architecture, trim paths, junctions, edge language, material response and reference-significant detail.
+`CONSTRAINED` means understood, not authorized. `BUILT_UNVERIFIED` means stop and validate, not continue.
 
-## 1. State and completion
-
-Używaj Agent State Machine oraz, dla reference reconstruction, `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`.
-
-Zawsze ustal `TARGET_COMPLETION_LEVEL`:
-- `RECONSTRUCTION_COMPLETE`;
-- `MODELING_COMPLETE`;
-- `GAME_READY_COMPLETE`;
-- `PIPELINE_INTEGRATED`.
-
-Wyższy poziom wymaga niższych. Nie używaj bezwarunkowego `DONE` przy niespełnionym gate.
-
-## 2. Fundamental v0.10 pipeline
-
-Dla rekonstrukcji z concept art/technical sheet/blueprint:
+## Required pipeline
 
 ```text
-reference evidence
--> constraints/property-level authority
--> Reconstruction Shape Graph
--> Reference Appearance Contract when target is 1:1/L4/L5
--> shape classification
--> coarse-to-fine RDL execution
--> proof-bearing canonical node gates
--> appearance owner proof
--> APPEARANCE_FIDELITY_GATE when required
--> final RECON_FIDELITY_GATE
+preflight runtime pin
+-> reference evidence/calibration
+-> property-level authority + conflict decisions
+-> Shape Graph
+-> Appearance Contract for L4/L5
+-> RDL0 neutral diagnostic geometry + proof
+-> eligible node
+-> canonical authorization
+-> persist READY_TO_BUILD
+-> build one node
+-> persist BUILT_UNVERIFIED
+-> isolate + per-view source evidence
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> stage barrier
+-> repeat
+-> Appearance Owner Coverage
+-> Appearance Fidelity Gate
+-> Reconstruction Fidelity Gate
 -> runtime
 ```
 
-Nie przechodź:
+## Shape hierarchy
+`G0 GLOBAL_ENVELOPE`, `G1 PRIMARY_FORM`, `G2 SECONDARY_STRUCTURAL_FORM`, `G3 STRUCTURAL_FEATURE`, `G4 EDGE_LANGUAGE`, `G5 SURFACE_DETAIL`.
 
-```text
-image -> operator -> large build script
-```
+## RDL
+`RDL0 envelope`, `RDL1 primary`, `RDL2 secondary`, `RDL3 structural features`, `RDL4 edges`, `RDL5 surface/detail`. RDL is not runtime LOD.
 
-ani:
+## Per-view evidence
+- ortho/near-ortho: registered overlay/numeric/landmark proof;
+- hero perspective: supporting `PERSPECTIVE_INSPECTION` for design intent/junctions;
+- detail crop: `LOCAL_FEATURE_ROI` for local architecture.
 
-```text
-builder assumption -> builder-local Gate -> ACCEPTED
-```
+Do not force one evidence kind onto every view.
 
-## 3. Shape Graph is mandatory
+## Conflict law
+A printed dimension controls the property it explicitly names, not the entire shape. When SIDE/HERO/DETAIL disagree on local form, create a property conflict record and use `REFERENCE_CONFLICT_RESOLVER`. Equal-authority disagreement is BLOCKED. Never average incompatible geometry.
 
-Przed produkcyjną geometrią zbuduj `Reconstruction Shape Graph`.
+## Derived parameter law
+An inferred radius/angle/station/path needs source, method, ROI, confidence, provenance and conflict decision if relevant. `builder chose X -> builder built X -> builder measured X` is only implementation consistency.
 
-Canonical hierarchy:
+## Appearance law
+Shape Graph is insufficient for L4/L5. Track part boundaries, trim paths, junctions, edge families, material response, emissive/branding/detail and negative spaces. Run `APPEARANCE_OWNER_COVERAGE`; missing MUST owner blocks final appearance.
 
-```text
-G0 GLOBAL_ENVELOPE
-G1 PRIMARY_FORM
-G2 SECONDARY_STRUCTURAL_FORM
-G3 STRUCTURAL_FEATURE
-G4 EDGE_LANGUAGE
-G5 SURFACE_DETAIL
-```
+## Diagnostic shading
+Use neutral grey for RDL0–RDL3 geometry proof. Production materials/micro-normal/anisotropy belong to RDL5 lookdev unless material geometry itself is being tested.
 
-Każdy required Shape Node ma:
-- stable ID;
-- parent/dependencies;
-- G-level i RDL;
-- semantic role;
-- importance;
-- shape class;
-- authoritative views + properties controlled by each view;
-- numeric/relationship constraints;
-- validation contract;
-- implementation skill.
+## Report namespaces
+Keep `shape_nodes`, `appearance_owners`, `evidence`, `conflicts` separate.
 
-`Shape Graph != PASS` blokuje produkcyjne modelowanie poza diagnostic RDL0.
+## Runtime source
+Exactly one active BlenderSkill executor root. Version/commit must match expected release before benchmark execution.
 
-`Shape Graph != Blender Object hierarchy`.
-
-## 4. Appearance Contract is mandatory for 1:1 / L4 / L5
-
-Shape Graph tells what forms exist. Appearance Contract tells what must visibly match.
-
-Before RDL4/RDL5, and earlier where major product boundaries affect form understanding, inventory:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material regions and material response;
-- emissive/glass regions;
-- branding regions;
-- MUST meso details;
-- distinctive negative spaces.
-
-Each owner carries:
-- stable owner ID;
-- host Shape Node(s);
-- importance;
-- source reference IDs;
-- source ROIs;
-- required views;
-- validation methods.
-
-For product/civic hard-surface, internal boundaries are first-class evidence. Outer silhouette alone cannot prove them.
-
-## 5. Property-level source authority
-
-Do not use one global phrase such as `the card wins` for every property.
-
-Resolve authority per property:
-
-```text
-overall width -> printed dimension
-side outer profile -> side ortho
-trim path -> hero + side + detail
-rear service bands -> rear
-material directionality -> material detail + hero
-```
-
-A numeric dimension can override a conflicting inferred size without becoming authority for style/material/trim.
-
-HARD/MUST/CANONICAL conflict closes only as `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with provenance.
-
-## 6. Representation before operator
-
-Najpierw sklasyfikuj formę:
-
-```text
-ENVELOPE
-PARAMETRIC_PRIMITIVE
-EXTRUDED_PROFILE
-REVOLVED_PROFILE
-PROFILE_SWEEP
-MULTI_SECTION_LOFT
-MULTI_SECTION_TRANSITION
-SUBD_FREEFORM
-BOOLEAN_RECESS
-PANEL_LINE
-LAYERED_ASSEMBLY
-HYBRID_ASSEMBLY
-```
-
-Dopiero potem wybierz semantic skill/BMesh/modifier/operator.
-
-Nie defaultuj do `cube + bevel`.
-
-Jeśli primary form zmienia width + depth + corner/chamfer behavior wzdłuż osi, route do `SHAPE_CLASSIFY`; typowym rozwiązaniem jest `SECTION_LOFT_HARD_SURFACE` albo `SUBD_FREEFORM`.
-
-Po jednej poprawionej ponownej próbie tej samej strategii, drugi udowodniony FAIL wymaga re-inspection i representation/strategy switch.
-
-## 7. Reconstruction Detail Levels
-
-`RDL` nie jest runtime `LOD`.
-
-```text
-RDL0 envelope
-RDL1 primary forms
-RDL2 secondary structural forms / major product architecture
-RDL3 structural features
-RDL4 edge language
-RDL5 surface/detail
-```
-
-Dopiero zaakceptowany authoring model generuje runtime LOD0/1/2/3.
-
-## 8. One-node execution
-
-Canonical geometry transaction:
-
-```text
-resolve one READY Shape Node
--> build/repair current node only
--> mark BUILT_UNVERIFIED
--> isolate QA scene
--> validate required registered views
--> numeric/section/regression validation
--> RECONSTRUCTION_NODE_GATE
--> persist ACCEPTED / FAIL
-```
-
-Domyślnie jedna transakcja nie może tworzyć nowych produkcyjnych node'ów z wielu RDL.
-
-Nie używaj monolitycznego `build_all()` do ominięcia node gates.
-
-## 9. Anti-circular validation — v0.10 hard rule
-
-A derived builder parameter may be useful, but this proof is insufficient:
-
-```text
-infer R165
--> build R165
--> local test verifies R165
--> PASS
-```
-
-That proves builder consistency only.
-
-Reference acceptance needs direct source anchoring:
-
-```text
-source ROI / explicit field
--> measurement/registration/source fit
--> candidate artifact
--> canonical validator
--> compact proof record
-```
-
-Strict reference-derived record requires:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id` or `source_reference_ids`;
-- `registration_id` for projected evidence.
-
-If a canonical validator exists, a builder-local substitute cannot certify that owner.
-
-In particular:
-- view proof -> `REFERENCE_OVERLAY_VALIDATE` / `APPEARANCE_REFERENCE_VALIDATE`;
-- node acceptance -> `RECONSTRUCTION_NODE_GATE`;
-- appearance acceptance -> `APPEARANCE_FIDELITY_GATE`;
-- final reconstruction -> `RECON_FIDELITY_GATE`.
-
-Local helpers may produce measurements, not canonical acceptance.
-
-## 10. Parent/child and host rules
-
-Required parent/dependency musi być `ACCEPTED` przed budową zależnego child.
-
-Examples:
-- panel line not on failed shell;
-- logo not finalized on failed panel;
-- glass/content not on failed display recess;
-- bevel does not repair failed base section;
-- trim appearance owner cannot PASS against a superseded host revision.
-
-## 11. RDL stage barriers
-
-```text
-RDL0 PASS
--> RDL1 nodes + barrier
--> RDL2 nodes + major boundary/trim/junction proof
--> RDL3 nodes + barrier
--> RDL4 edge-family proof
--> RDL5 surface/detail proof as required
--> APPEARANCE_FIDELITY_GATE when target >= L4
--> RECON_FIDELITY_GATE
-```
-
-Do not advance because downstream work is easy or because a runtime deadline exists.
-
-## 12. Node multi-view proof
-
-Każdy node definiuje, co kontrolują widoki, np.:
-
-```text
-FRONT -> width/height/front contour/internal boundary
-SIDE  -> depth/height/side profile/junction
-TOP   -> width/depth/corner plan
-REAR  -> rear feature boundaries
-HERO  -> continuity/material/trim interpretation
-```
-
-`looks correct` nie jest dowodem.
-
-For authoritative views use registered comparison without local warp.
-
-Node affecting global silhouette requires global regression. Internal nodes require local ROI plus protected-parent regression.
-
-## 13. Internal product architecture
-
-Do not treat all geometry inside the outer silhouette as cosmetic.
-
-For design-defining parts create/validate:
-- PART_BOUNDARY owners;
-- TRIM_PATH owners;
-- JUNCTION owners.
-
-A single coarse Shape Node may contain multiple appearance regions. That is expected.
-
-Examples of MUST internal architecture:
-- metal/composite boundary;
-- plinth split;
-- seat/support shadow gap;
-- backrest/end-cap shoulder;
-- rear service bands;
-- continuous trim wrapping a corner.
-
-Object existence is not boundary/path proof.
-
-## 14. Multi-section loft
-
-For `MULTI_SECTION_LOFT/TRANSITION`:
-- define semantic stations;
-- common point correspondence;
-- monotonic station order;
-- width/depth/corner plan per station;
-- twist/continuity checks;
-- source-fit/registered reference proof for derived section geometry.
-
-Preferred skill: `SECTION_LOFT_HARD_SURFACE`.
-
-## 15. RDL4 edge language is a reference target
-
-Do not define RDL4 as merely `bevel applied without changing bounds`.
-
-For each required edge family validate:
-- profile type;
-- radius/chamfer family;
-- start/end landmarks;
-- continuity;
-- relation to material/part boundary;
-- protected dimension survival.
-
-Too much smooth curvature can destroy hard-surface plane hierarchy while leaving the global silhouette almost unchanged.
-
-## 16. RDL5 material/detail fidelity
-
-For L4/L5 distinguish:
-
-```text
-material segmentation
-!=
-material appearance
-```
-
-Required where supported by reference:
-- metallic/dielectric identity;
-- roughness hierarchy;
-- directional brushing/anisotropy;
-- micro-normal scale;
-- glass/emissive response;
-- visible material boundaries;
-- controlled wear hierarchy.
-
-A Principled material assignment with the correct name is not a material appearance PASS.
-
-Structural meso detail such as panel seams, service bands, plinth splits and trim terminations is not optional microdetail.
-
-L5 requires complete MUST detail inventory or explicit authority waiver.
-
-## 17. Appearance Fidelity Gate
-
-For target fidelity L4/L5 require `APPEARANCE_FIDELITY_GATE` before final reconstruction acceptance.
-
-Required categories include:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material regions/response;
-- final matched/registered views;
-- emissive/branding where present;
-- detail coverage for L5.
-
-Categories are non-compensating for MUST owners.
-
-A score is diagnostic only. A failed MUST trim path cannot be averaged away by perfect dimensions.
-
-## 18. Reconstruction QA discipline
-
-Order:
-
-```text
-numeric/global silhouette
--> neutral/matcap form architecture
--> internal boundaries/junctions/edge language
--> calibrated material appearance
--> matched hero/final views
-```
-
-`QA_SCENE_ISOLATE` before reconstruction QA; collision/LOD/export proxy cannot contaminate renders.
-
-For layered assemblies use `LAYER_STACK_VALIDATE`.
-
-For material comparison use stable neutral lookdev rig; stylized hero lighting is supporting evidence only.
-
-## 19. Final reconstruction gate
-
-Before runtime require:
-- valid Shape Graph revision;
-- required nodes `ACCEPTED` through canonical node gate;
-- required RDL barriers PASS;
-- hard dimensions;
-- canonical registered views;
-- primary landmarks/proportions;
-- MUST features;
-- Appearance Contract closure for L4/L5;
-- `APPEARANCE_FIDELITY_GATE` PASS for L4/L5;
-- authority/deviation closure;
-- `RECON_FIDELITY_GATE` proof-bearing PASS.
-
-Bare `PASS` without evidence/provenance/validator = `UNVERIFIED` in strict mode.
-
-Runtime/engine PASS never back-propagates to reconstruction PASS.
-
-## 20. Runtime lock
-
-Do not start LOD/UV/bake/export merely because:
-- dimensions are correct;
-- alpha silhouette passes;
-- triangle count is in budget;
-- a local builder gate is green.
-
-For L4/L5:
-
-```text
-APPEARANCE_FIDELITY_GATE != PASS
-or
-RECON_FIDELITY_GATE != PASS
--> runtime FORBIDDEN
-```
-
-This is a hard transition rule introduced by the Street Bench benchmark.
-
-## 21. Modeling/API discipline
-
-- Prefer Data API/BMesh; `bpy.ops` only with known context/mode/selection.
-- Scripts idempotent.
-- Reusable Python modules import-safe; mutation only explicit entry point.
-- Before helper check Semantic Skill Registry and `executors/`.
-- Every final mesh has topology intent.
-- Do not add loops only to hit a triangle budget.
-- Do not change geometry only to look correct in one lighting setup.
-
-## 22. Specialized leaf skills
-
-Route only on accepted host/stage:
-- `HS_PANEL_LINE` — narrow seam/groove;
-- `SUBD_TOPOLOGY_CONTROL` — Catmull-Clark cage/flow;
-- `AXISYMMETRIC_PROFILE` — revolved profile;
-- `RADIAL_REPEAT` — circular repetitions;
-- `SECTION_LOFT_HARD_SURFACE` — multi-section form;
-- decals/branding — RDL5 unless structural relief says otherwise.
-
-## 23. UV/bake/runtime boundary
-
-Runtime work starts only after the reconstruction gates above.
-
-- shared atlas uses semantic part IDs + `UV_CONTRACT_ID`;
-- missing atlas assignment = FAIL;
-- bake operator must return `FINISHED`;
-- selected+active target image node required;
-- AO/ray bake isolates unrelated render geometry;
-- BaseColor/Metallic/Emissive use explicit channel semantics;
-- correct PNG on disk != fresh `bpy.data.images`;
-- route stale image to `IMAGE_CACHE_COHERENCE`;
-- validate baked maps semantically, not by file existence.
-
-## 24. Incremental runtime execution
-
-After local repair use `PIPELINE_DAG_PLAN` before replaying multiple stages.
-
-Do not rerun full build/decal/bake/export/test chain unless dependency closure proves it dirty.
-
-Timeout is not proven FAIL until job/artifact state is checked.
-
-## 25. Runtime paths/package/export
-
-Resolve one canonical Runtime Path Context before external writes.
-
-Authority:
-
-```text
-project profile
-> engine/build definition
-> production loader
-> engine test
-> sibling exporter
-> heuristic
-```
-
-For current verified RPG profile reuse `<repo>/Assets/GameAssets`; `<repo>/GameAssets` is forbidden lookalike while profile remains valid.
-
-Package readback checks nodes/materials/images/required primitive attributes such as `TEXCOORD_0` and active node-transform policy.
-
-Hard dimensions/contact are rechecked on exported/re-imported artifact.
-
-## 26. Level D proof
-
-Blender glTF import = Level C round-trip evidence.
-
-Level D requires one of:
-- `ENGINE_PRODUCTION_LOADER`;
-- `ENGINE_REGRESSION_TEST`;
-- `ENGINE_INSTANTIATION`.
-
-Capture test executable exit status directly.
-
-## 27. Operational response format
-
-When useful report:
-- STATE;
-- TASK PACK;
-- TARGET COMPLETION LEVEL;
-- ACTIVE PROJECT PROFILE;
-- SHAPE GRAPH REVISION;
-- APPEARANCE CONTRACT REVISION;
-- RDL;
-- CURRENT SHAPE NODE / APPEARANCE OWNER;
-- REQUIRED VIEWS;
-- ACTION;
-- CANONICAL VALIDATOR;
-- NODE/APPEARANCE GATE RESULT;
-- STAGE BARRIER;
-- COMPLETION STATUS.
-
-## Final principle
-
-Do not think only:
-
-```text
-what is the overall shape?
-```
-
-Also ask:
-
-```text
-which visible boundaries make this the same product?
-which source proves each boundary?
-which edge/material/detail families define the design language?
-is the validator independent from my builder assumptions?
-```
-
-Dopiero potem modeluj i claimuj fidelity.
+## Forbidden
+- monolithic multi-RDL builder without gates between nodes;
+- child build on BUILT_UNVERIFIED/FAIL/UNVERIFIED parent;
+- local builder self-authorization or self-acceptance;
+- silent view-conflict resolution;
+- early production lookdev used to mask form;
+- LOD/UV/bake/export before reconstruction gates.
 
 
 ---
@@ -14251,131 +13108,67 @@ Po `ANALYZE: PASS` zakończ szeroką eksplorację planszy. Dalsza analiza musi d
 
 ## FILE: `06_prompts/68_SHAPE_GRAPH_PLANNER_PROMPT.md`
 
-# Shape Graph Planner Prompt
+# Shape Graph Planner Prompt v0.11
 
-## Role
+You are the reconstruction planner. Do not model yet.
 
-Jesteś reconstruction plannerem. Twoim zadaniem nie jest jeszcze modelować w Blenderze.
+Produce a Shape Graph that explains the object before Blender operators are chosen.
 
-Masz przekształcić evidence z referencji w hierarchiczny `Reconstruction Shape Graph`, który jasno mówi:
-- jaka jest globalna forma;
-- z jakich primary i secondary form składa się asset;
-- które elementy są detalem;
-- jaka reprezentacja geometryczna najlepiej opisuje każdy node;
-- które widoki kontrolują każdy node;
-- w jakiej kolejności node'y mogą być budowane i walidowane.
+## Required order
+1. global envelope;
+2. primary silhouette forms;
+3. structural transitions;
+4. secondary forms;
+5. hosted structural features;
+6. edge-language owners;
+7. surface/detail owners;
+8. parent/dependencies;
+9. shape representation;
+10. per-view authority and evidence mode;
+11. validation contract;
+12. RDL assignment;
+13. explicit initial node state.
 
----
+## Initial state rule
+Every required node must carry `state`.
 
-## Forbidden during this task
+Default:
+- graph-planned nodes -> `CONSTRAINED` only when constraints/validation/shape class are complete;
+- unresolved nodes -> `DECLARED` or `BLOCKED`;
+- no planner may emit `READY_TO_BUILD` by itself.
 
-Nie:
-- twórz produkcyjnej geometrii;
-- pisz monolitycznego `build_asset.py`;
-- dodawaj bevel/rowki/logo tylko dlatego, że są łatwo widoczne;
-- wybieraj operatorów Blendera przed shape classification;
-- deklaruj `looks correct`;
-- redukuj decomposition do listy nazw obiektów.
+`READY_TO_BUILD` is granted only downstream by `EXECUTION_AUTHORIZATION_GATE`.
 
----
-
-## Required reasoning order
-
-```text
-1. identify global envelope
-2. identify silhouette-defining primary masses
-3. identify structural transitions between primary masses
-4. identify secondary structural forms
-5. identify structural features hosted by accepted forms
-6. identify edge-language owners
-7. identify surface/detail owners
-8. build parent/dependency graph
-9. classify each node's shape representation
-10. map evidence views and controlled properties
-11. define per-node validation contract
-12. assign RDL
-```
-
----
-
-## Primary-form test
-
-Dla każdego candidate elementu zapytaj:
-
-```text
-Jeżeli usunę wszystkie mniejsze detale, czy ta forma nadal jest potrzebna, aby canonical silhouette/proportions wyglądały jak reference?
-```
-
-Jeśli tak, zwykle G1/G2.
-
-Jeśli feature istnieje tylko na powierzchni hosta i nie definiuje głównej formy, zwykle G3–G5.
-
----
-
-## Shape classification
-
-Wybieraj spośród canonical classes z `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`.
-
-Szczególnie wykrywaj:
-- width/depth/corner treatment changing along an axis -> `MULTI_SECTION_LOFT`;
-- structural transition between accepted forms -> `MULTI_SECTION_TRANSITION`;
-- stable 2D profile + depth -> `EXTRUDED_PROFILE`;
-- axisymmetric -> `REVOLVED_PROFILE`;
-- path-driven -> `PROFILE_SWEEP`;
-- smooth compound freeform without stable sections -> `SUBD_FREEFORM`.
-
-Nie defaultuj do cube + bevel.
-
----
-
-## Required output
+## Per-view contract example
 
 ```yaml
-shape_graph:
-  asset_id: ...
-  graph_revision: sg_001
-  root: ...
-
-  nodes:
-    - id: ...
-      level: G0|G1|G2|G3|G4|G5
-      rdl: RDL0|RDL1|RDL2|RDL3|RDL4|RDL5
-      parent: ...
-      depends_on: []
-      role: ...
-      importance: MUST|SHOULD|OPTIONAL
-      shape_class: ...
-      preferred_skill: ...
-      evidence_views:
-        FRONT:
-          authority: REQUIRED|SUPPORTING|NONE
-          controls: []
-      constraints: []
-      validation: []
-
-  unresolved:
-    - id: ...
-      reason: ...
-      severity: ...
-
-  stage_plan:
-    RDL0: []
-    RDL1: []
-    RDL2: []
-    RDL3: []
-    RDL4: []
-    RDL5: []
-
-  status: PASS|BLOCKED
+ARM:
+  level: G1
+  rdl: RDL1
+  state: CONSTRAINED
+  shape_class: MULTI_SECTION_LOFT
+  view_contracts:
+    SIDE:
+      controls: [outer_profile]
+      allowed_evidence_kinds: [REGISTERED_OVERLAY]
+    HERO:
+      controls: [junction_intent]
+      allowed_evidence_kinds: [PERSPECTIVE_INSPECTION]
 ```
 
----
+## Derived values
+Do not write a single inferred number as if HARD. Store estimate/range/method/source/confidence/provenance.
 
-## Output budget
+## Conflicts
+If two sources disagree on a property, add a conflict record. Do not choose during Shape Graph planning unless canonical authority resolves it.
 
-Zwracaj graph i decyzje reprezentacji, nie esej o modelowaniu.
-
-Jeżeli evidence nie wystarcza do rozróżnienia dwóch representations, oznacz node `UNRESOLVED_REPRESENTATION` i zapisz minimalny test, który rozstrzygnie konflikt.
+## Forbidden
+- production geometry;
+- monolithic `build_asset.py`;
+- cube+bevel before shape classification;
+- missing node state;
+- same generic evidence contract for ortho/hero/detail;
+- narrative `looks correct` acceptance.
 
 
 ---
@@ -19060,512 +17853,57 @@ Invalidate/reverify affected fields after changes to:
 
 ## FILE: `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md`
 
-# Reconstruction Layer Index and Controller v0.10
+# Reconstruction Layer Index and Controller v0.11
 
-Warstwa `10_reconstruction` służy do ścisłego odtwarzania obiektu 3D z concept sheet, blueprintów, rzutów, zdjęć, renderów, wymiarów i opisów.
+The reconstruction layer performs evidence-constrained 1:1 modeling from concept sheets, blueprints, photos, dimensions and text specifications.
 
-Nie jest to warstwa inspiracji. Celem jest evidence-constrained reconstruction z kontrolowaną niepewnością.
-
-v0.10 adds a second reconstruction model alongside Shape Graph:
+## v0.11 controller
 
 ```text
-Shape Graph
-= what forms exist and how they depend on each other
-
-Reference Appearance Contract
-= which visible boundaries, trims, junctions, edge/material/detail families make this the same product
-```
-
-## Fundamental rule
-
-```text
-UNDERSTAND FORM
--> UNDERSTAND VISIBLE PRODUCT ARCHITECTURE
--> BUILD COARSE
--> PROVE FROM SOURCE
--> ADD DETAIL
--> PROVE APPEARANCE
-```
-
-Not:
-
-```text
-reference -> one large Blender script -> builder-local PASS -> runtime
-```
-
-A model with correct dimensions and outer silhouette but wrong internal architecture is a failed reconstruction.
-
----
-
-## v0.10 controller pipeline
-
-```text
-INGEST
--> CLASSIFY EVIDENCE
+PRELIGHT runtime pin
+-> INGEST / CLASSIFY / CALIBRATE
 -> PROPERTY-LEVEL AUTHORITY
--> REGISTER
--> CONSTRAIN
--> DECOMPOSE
+-> CONFLICT ARBITRATION
 -> SHAPE GRAPH
--> APPEARANCE CONTRACT for 1:1/L4/L5
--> RDL0 ENVELOPE
--> RDL1 PRIMARY FORMS node-by-node
--> RDL2 SECONDARY STRUCTURAL FORMS + major boundaries/trim/junctions
--> RDL3 STRUCTURAL FEATURES
--> RDL4 EDGE FAMILY FIDELITY
--> RDL5 MATERIAL/DETAIL FIDELITY
--> APPEARANCE_FIDELITY_GATE when required
--> RECON_FIDELITY_GATE
--> TOPOLOGY/RUNTIME
--> EXPORT/ENGINE
+-> APPEARANCE CONTRACT
+-> RDL0 DIAGNOSTIC GEOMETRY
+-> AUTHORIZE ONE NODE
+-> BUILD ONE NODE
+-> BUILT_UNVERIFIED
+-> PER-VIEW SOURCE PROOF
+-> NODE GATE
+-> ACCEPTED
+-> repeat + RDL barriers
+-> APPEARANCE OWNER COVERAGE
+-> APPEARANCE FIDELITY GATE
+-> RECON FIDELITY GATE
+-> runtime
 ```
 
-Detailed state: `149_RECONSTRUCTION_STATE_MACHINE.md`.
-
----
-
-# Knowledge groups
-
-## Evidence / authority
-100–109.
-
-Important:
-- Evidence Model;
-- ingestion/segmentation/classification;
-- View Authority Matrix;
-- conflict resolution;
-- uncertainty/provenance;
-- property-level source ownership.
-
-## Geometric constraints
-110–123.
-
-Important:
-- Dimension Graph;
-- landmarks/keypoints;
-- registration/calibration;
-- silhouette;
-- negative space;
-- cross-sections/profiles/curvature;
-- thickness/gaps/panel lines.
-
-## Surface evidence
-124–127 plus `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`.
-
-## Form decomposition and construction
-128–140 plus:
-- `174_RECONSTRUCTION_SHAPE_GRAPH.md`;
-- `175_RECONSTRUCTION_DETAIL_LEVELS.md`;
-- `176_RECONSTRUCTION_NODE_CONTRACT.md`;
-- `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`;
-- `178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`;
-- `179_MULTI_SECTION_LOFT_AND_PROFILE_CAGE.md`.
-
-## Appearance fidelity v0.10
-- `180_REFERENCE_APPEARANCE_CONTRACT.md`;
-- `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
-- `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`.
-
-## Validation
-141–148 + proof-integrity modules + appearance gate.
-
-## Governance
-149–159.
-
-## Specialized modes
-160–173.
-
----
-
-# 1. Reference analysis
-
-Before geometry identify:
-- projection/view class;
-- known dimensions/datums;
-- principal axes;
-- global silhouette;
-- major landmarks;
-- negative spaces;
-- primary planes/profiles/curves;
-- repeated structures;
-- visible part/material boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- hidden/uncertain geometry;
-- conflicts between prompt/card/views.
-
-Do not convert uncertain pixels into fake metric precision.
-
----
-
-# 2. Property-level authority
-
-Do not assign one source blanket authority over every property.
-
-Example:
-
-```text
-overall width -> PRINTED_DIMENSION
-side outer contour -> SIDE_ORTHO
-trim path -> SIDE + HERO + DETAIL
-rear panel architecture -> REAR
-brush direction -> MATERIAL DETAIL / HERO
-```
-
-Resolve conflicts per property and persist provenance.
-
----
-
-# 3. Registration before deformation
-
-When a screen-space mismatch exists diagnose:
-
-```text
-projection class
--> calibration
--> camera/ortho scale
--> shift/rotation
--> object orientation
--> only then geometry
-```
-
-QA cameras are evidence instruments. Once registered, do not move them to hide geometry error.
-
----
-
-# 4. Shape Graph before production geometry
-
-After constraints, decompose asset into:
-
-```text
-G0 GLOBAL_ENVELOPE
-G1 PRIMARY_FORM
-G2 SECONDARY_STRUCTURAL_FORM
-G3 STRUCTURAL_FEATURE
-G4 EDGE_LANGUAGE
-G5 SURFACE_DETAIL
-```
-
-Each required node records role, dependencies, RDL, shape class, authoritative views, constraints, validation contract and implementation skill.
-
-Graph structural PASS is required before production modeling.
-
----
-
-# 5. Appearance Contract for 1:1 / L4 / L5
-
-Inventory visible owners before they can silently disappear:
-
-```text
-PART_BOUNDARY
-TRIM_PATH
-JUNCTION
-EDGE_FAMILY
-MATERIAL_REGION
-MATERIAL_RESPONSE
-EMISSIVE_REGION
-BRANDING_REGION
-DETAIL_FEATURE
-DETAIL_DENSITY_REGION
-NEGATIVE_SPACE
-```
-
-Each owner records:
-- host Shape Node(s);
-- source reference IDs;
-- source ROIs;
-- required views;
-- importance;
-- validation methods.
-
-A single Shape Node may contain many appearance owners.
-
----
-
-# 6. Representation-first construction
-
-Do not select Blender operators before shape class.
-
-Canonical classes:
-- primitive;
-- extruded profile;
-- revolved profile;
-- profile sweep;
-- multi-section loft/transition;
-- SubD freeform;
-- recess/panel-line/layered assembly;
-- hybrid assembly.
-
-If width, depth and corner treatment change across an axis, do not default to box + bevel.
-
----
-
-# 7. RDL coarse-to-fine
-
-```text
-RDL0 envelope
-RDL1 primary forms
-RDL2 secondary structural forms / major product architecture
-RDL3 structural features
-RDL4 edge language
-RDL5 surface/detail
-```
-
-`RDL != runtime LOD`.
-
-Runtime LOD starts only after final reconstruction gates PASS.
-
----
-
-# 8. Canonical node-by-node build loop
-
-For each ready Shape Node:
-
-```text
-validate dependencies
--> select representation skill
--> build current node only
--> mark BUILT_UNVERIFIED
--> QA scene isolation
--> render required canonical views
--> registered source comparison
--> numeric/section checks
--> regression outside expected-change region
--> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL | UNVERIFIED
-```
-
-Strict reference-derived PASS requires canonical validator ID, provenance, source reference and registration for projected evidence.
-
-A builder-local `Gate.accept()` cannot substitute for the canonical gate.
-
----
-
-# 9. Anti-circular proof
-
-This proves implementation consistency only:
-
-```text
-infer parameter P
--> build P
--> test geometry == P
-```
-
-Reference fidelity additionally requires:
-
-```text
-source evidence
--> source-fit / registered comparison
--> candidate artifact
--> canonical validator
-```
-
-Persist derivation records for inferred radii, angles, stations and paths.
-
----
-
-# 10. Stage barriers
-
-After each RDL:
-
-```text
-all required nodes accepted
-+ protected earlier invariants pass
-=> RDL barrier PASS
-```
-
-No RDL2 before RDL1 barrier.
-No structural feature on failed host.
-No edge/material fidelity claim before structural acceptance.
-
----
-
-# 11. Internal product architecture
-
-Outer silhouette does not validate internal visible architecture.
-
-For MUST regions validate:
-- part boundaries;
-- panel transitions;
-- trim centerline/width/termination;
-- junction participants/order;
-- shadow gaps;
-- plinth splits;
-- rear service bands;
-- seat/support and backrest/endcap relationships.
-
-Use `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md` and `APPEARANCE_REFERENCE_VALIDATE`.
-
----
-
-# 12. RDL4 edge-family fidelity
-
-For every MUST edge family validate:
-- profile type;
-- radius/chamfer/step family;
-- start/end;
-- continuity;
-- relation to part/material boundary;
-- protected dimension survival.
-
-`bevel did not change bounds` is not enough.
-
-Validate neutral/clay plane hierarchy so excessive smoothing cannot hide missing hard-surface planes.
-
----
-
-# 13. RDL5 material and detail fidelity
-
-Separate:
-
-```text
-material segmentation
-!=
-material appearance
-```
-
-For L4/L5 validate as evidence requires:
-- metallic/dielectric identity;
-- roughness hierarchy;
-- brushing/anisotropy direction;
-- micro-normal scale;
-- glass/emissive response;
-- visible material boundaries;
-- controlled wear hierarchy.
-
-For L5, all MUST meso/detail features must be accounted for. Silent omission is forbidden.
-
----
-
-# 14. Appearance Fidelity Gate
-
-For target >= L4 aggregate:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material response;
-- final matched views;
-- emissive/branding where present;
-- detail coverage for L5.
-
-MUST categories are non-compensating.
-
-A high global score cannot erase a failed design-defining owner.
-
----
-
-# 15. Final reconstruction gate
-
-Before runtime require:
-- current valid Shape Graph;
-- current Appearance Contract when required;
-- required G0–G3 nodes accepted;
-- required RDL barriers PASS;
-- hard dimensions PASS;
-- canonical registered views PASS;
-- primary landmarks/proportions PASS;
-- MUST geometry/features PASS;
-- internal architecture owners PASS;
-- edge/material/detail evidence according to target;
-- `APPEARANCE_FIDELITY_GATE: PASS` for L4/L5;
-- authority conflicts/deviations closed;
-- `RECON_FIDELITY_GATE: PASS`.
-
-Only then route to topology/UV/runtime LOD/bake/export.
-
----
-
-# 16. Runtime lock
-
-For L4/L5:
-
-```text
-APPEARANCE_FIDELITY_GATE != PASS
-or
-RECON_FIDELITY_GATE != PASS
--> runtime forbidden
-```
-
-Correct dimensions, alpha silhouette, triangle budgets, UVs, package readback or engine import cannot override this lock.
-
----
-
-# 17. Repair priority
-
-When validation fails:
-
-```text
-registration
--> authority/constraints
--> shape representation
--> primary form
--> internal product architecture
--> secondary form
--> structural feature
--> edge family
--> material/detail
-```
-
-After one corrected retry, second proven failure of same strategy requires re-inspection and possible representation switch.
-
-Do not perform endless visual tweaking.
-
----
-
-# 18. Persistent outputs
-
-```text
-Reference Registry
-Evidence Ledger
-Property Authority Map
-Dimension Graph
-Feature Contract
-Shape Graph + revision
-Reference Appearance Contract + revision
-Part Boundary / Trim / Junction Graph
-Node Contracts
-Node Acceptance Records
-Appearance Owner Records
-RDL Stage Barrier Records
-Appearance Fidelity Report
-Reconstruction Fidelity Report
-```
-
-Conversation history is not the execution database.
-
----
-
-# Single-image mode
-
-When only one image exists:
-- solve visible silhouette/landmarks;
-- infer depth conservatively;
-- separate observed/derived/inferred;
-- keep hidden geometry minimal;
-- use LOW/UNKNOWN confidence where appropriate;
-- do not claim fully determined literal 1:1 in unobserved regions.
-
----
-
-# Final rule
-
-Before detail the agent must answer:
-
-```text
-What is the global form?
-What are the primary forms?
-What depends on what?
-Which views define each form?
-What mathematical representation fits each form?
-Which visible boundaries/trims/junctions make it this exact product?
-Which source proves each of them?
-How will validation remain independent of builder assumptions?
-```
-
-Dopiero potem wykonuje Blender operations i claimuje fidelity.
+## Knowledge groups
+- 100–109: evidence, authority, conflict and provenance;
+- 110–123: dimensions, landmarks, calibration, silhouette, sections and profiles;
+- 124–127: surface/material evidence;
+- 128–140: decomposition/construction;
+- 141–159: QA, gates, state and governance;
+- 160–173: specialized modes/proof integrity;
+- 174–179: Shape Graph, RDL, node contracts and multi-section construction;
+- 180–183: Reference Appearance Contract, anti-circular validation, part/trim/junction and edge/material/detail fidelity;
+- 184–188: v0.11 conflict arbitration, per-view evidence/derived provenance, appearance-owner closure, diagnostic RDL geometry and runtime pin/reuse.
+
+## Fundamental rules
+1. No production geometry before Shape Graph/Appearance planning.
+2. `CONSTRAINED` is not build permission.
+3. Production mutation requires `READY_TO_BUILD` + canonical authorization.
+4. `BUILT_UNVERIFIED` blocks children.
+5. Every view uses the evidence mode appropriate to its projection/function.
+6. Every significant derived parameter is source-backed.
+7. Reference conflicts are resolved per property, never by silent averaging.
+8. RDL0–RDL3 are judged with neutral diagnostic shading by default.
+9. All MUST Appearance Owners are inventoried and accounted before L4/L5 closure.
+10. Runtime starts only after appearance/reconstruction gates PASS.
+
+Canonical regression benchmark: `07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md`.
 
 
 ---
@@ -19938,49 +18276,38 @@ Jeżeli dwa widoki o podobnym autorytecie są sprzeczne:
 
 ## FILE: `10_reconstruction/107_MULTI_VIEW_CONFLICT_RESOLUTION.md`
 
-# Multi-View Conflict Resolution
+# Multi-View Conflict Resolution v0.11
 
-## Typy konfliktów
+## Principle
 
-- wymiarowy,
-- topologiczny,
-- materiałowy,
-- feature presence,
-- asymmetry,
-- profile shape,
-- perspective artifact.
+Resolve conflicts per property and persist the decision. Do not apply one blanket rule such as `the card wins`.
 
-## Procedura
+Conflict types include dimension, profile, topology, feature presence, material, asymmetry, projection artifact and internal concept-sheet inconsistency.
 
-1. zidentyfikuj konflikt,
-2. określ właściwość,
-3. przypisz evidence IDs,
-4. porównaj authority,
-5. sprawdź, czy konflikt wynika z projekcji,
-6. wybierz rozwiązanie,
-7. zapisz odrzuconą alternatywę.
+## Procedure
+1. identify the exact property;
+2. list candidate interpretations and source IDs;
+3. classify each source/view and authority for that property;
+4. test projection/calibration error;
+5. invoke `REFERENCE_CONFLICT_RESOLVER` when candidates remain incompatible;
+6. persist selected and rejected alternatives;
+7. bind dependent derived parameters/nodes to `decision_id`.
 
-## Resolution classes
+## No averaging
 
-### RESOLVED_EXPLICIT
-Rozstrzygnięte liczbą lub opisem.
+```text
+(front_value + side_value) / 2
+```
 
-### RESOLVED_AUTHORITY
-Rozstrzygnięte macierzą autorytetu.
+is forbidden unless the property is explicitly statistical and the contract says averaging is valid.
 
-### RESOLVED_PROJECTION
-Różnica wynika z kamery.
+## Local detail versus global dimension
+An explicit dimension owns the dimension it names. A detail view may still own local break lines, shell cuts, trim terminations and junction form. Hero views may support design intent without overriding locked dimensions.
 
-### UNRESOLVED
-Nie ma wystarczających dowodów.
+## Equal authority
+Equal-authority contradictory candidates remain `UNRESOLVED`/`BLOCKED`; the agent does not choose the visually convenient option.
 
-## Zakaz średniej
-
-Nie stosuj:
-`(front_value + side_value)/2`
-bez uzasadnienia.
-
-Sprzeczne źródła nie stają się prawdziwe przez uśrednienie.
+Detailed executable contract: `184_REFERENCE_CONFLICT_ARBITRATION.md`.
 
 
 ---
@@ -24971,366 +23298,55 @@ identify node role
 
 ## FILE: `10_reconstruction/178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`
 
-# Node-by-Node Multi-View Validation
+# Node-by-Node Multi-View Validation v0.11
 
-## Purpose
-
-Validate one form immediately after it is built, before the scene is densified with dependent geometry.
-
-v0.10 additionally prevents a node from certifying itself through builder-local checks.
-
-Do not wait for the final asset render to discover a primary-form error.
-
----
-
-## Core loop
-
-For every `READY_TO_BUILD` Shape Node:
+## Canonical loop
 
 ```text
-isolate accepted ancestors + current node
+eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
 -> build/repair current node only
--> persist BUILT_UNVERIFIED artifact/revision
--> render required canonical views
--> registered comparison per view/ROI
--> numeric/section checks
--> canonical RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL | UNVERIFIED
-```
-
-Only `ACCEPTED` unlocks dependent children.
-
----
-
-## Canonical acceptance rule
-
-Strict node acceptance is derived from validator artifacts, not builder state.
-
-Required records name:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id(s)` for reference-derived evidence;
-- `registration_id` for projected evidence.
-
-For required view proof use canonical registered validators such as:
-- `REFERENCE_OVERLAY_VALIDATE`;
-- `APPEARANCE_REFERENCE_VALIDATE` where internal appearance owner is being checked.
-
-A builder-local helper may produce measurements. It may not substitute for `RECONSTRUCTION_NODE_GATE`.
-
-Invalid:
-
-```text
-builder chooses radius 165
--> builder makes radius 165
--> local Gate verifies radius 165
--> node ACCEPTED
-```
-
-Valid:
-
-```text
-source ROI / explicit dimension
--> source-fit or registered validator artifact
--> candidate artifact
+-> persist BUILT_UNVERIFIED
+-> isolate accepted ancestors + current node
+-> validate each required view using its own evidence contract
+-> numeric/section/derived-parameter checks
 -> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | UNVERIFIED | FAIL
 ```
 
----
+`BUILT_UNVERIFIED` is a hard stop, not a report label.
 
-## View responsibility contract
-
-Each node defines what each view controls.
+## Per-view evidence
 
 Example:
 
 ```yaml
-BASE_PLINTH:
-  FRONT:
-    controls: [width, height, shoulder_contour]
+view_contracts:
   SIDE:
-    controls: [depth, height, front_rear_profile]
-  TOP:
-    controls: [width, depth, corner_plan]
+    controls: [outer_profile]
+    allowed_evidence_kinds: [REGISTERED_OVERLAY]
   HERO:
-    controls: [transition_interpretation]
+    controls: [junction_interpretation]
+    allowed_evidence_kinds: [PERSPECTIVE_INSPECTION]
+  DETAIL_HEAD:
+    controls: [sensor_boundary, upper_shell_cuts]
+    allowed_evidence_kinds: [LOCAL_FEATURE_ROI]
 ```
 
-Do not require views that add no evidence. Do not omit a REQUIRED view.
+Do not use a single `_v()` evidence-kind list for all views.
 
-For product/civic hard-surface, view responsibilities may include internal boundaries, not only outer contour.
+## Derived parameters
+Every MUST-significant inferred radius/angle/path/station includes value/range, method, source reference, ROI, confidence, provenance and conflict decision when applicable. Builder consistency against its own constant is not source proof.
 
-Example:
-
-```yaml
-SIDE_MODULE_R:
-  SIDE:
-    controls:
-      - outer_profile
-      - composite_panel_boundary
-      - trim_path
-      - utility_panel_junction
-```
-
----
-
-## Isolation rule
-
-Node QA render contains only:
-- accepted ancestor/host geometry required for context;
-- current node;
-- required QA rig.
-
-Do not render:
-- runtime collision;
-- LOD proxies;
-- future RDL nodes;
-- helper shells;
-- export copies;
-- unrelated scene geometry.
-
-Use `QA_SCENE_ISOLATE`.
-
-`isolation_status != PASS` means node is `UNVERIFIED` even if visual metrics look good.
-
----
-
-## Registered comparison
-
-For authoritative orthographic/near-orthographic evidence:
-- one global registration per view;
-- same crop/aspect/physical scale;
-- no local translation/warp of current node;
-- ROI may restrict evaluation area but must not change global registration;
-- record source reference ID and registration ID.
-
-Preferred skill:
-`REFERENCE_OVERLAY_VALIDATE`.
-
-For internal boundary/trim/junction owners:
-`APPEARANCE_REFERENCE_VALIDATE`.
-
----
-
-## Outer silhouette vs internal architecture
-
-A node may affect:
-- `GLOBAL_SILHOUETTE`;
-- `LOCAL_BOUNDARY`;
-- `INTERNAL_FEATURE`;
-- `MATERIAL_BOUNDARY`;
-- `TRIM_PATH`;
-- `JUNCTION`;
-- `NO_SILHOUETTE`.
-
-### Global silhouette node
-After repair validate:
-1. node ROI;
-2. global canonical silhouette regression.
-
-### Internal architecture node
-Validate:
-1. source-registered owner ROI;
-2. boundary/path/junction metrics;
-3. parent protected-region regression.
-
-Do not use global silhouette IoU as proof of an internal boundary.
-
----
-
-## Numeric responsibilities
-
-Depending on shape class validate:
-- bounds;
-- centerline;
-- station heights;
-- width/depth per station;
-- profile landmarks;
-- recess depth;
-- contact plane;
-- layer order;
-- symmetry/asymmetry;
-- cross-section sample contract.
-
-Image overlay does not replace locked numeric dimensions.
-
-Builder-consistency numeric checks do not replace source anchoring for derived parameters.
-
----
-
-## Derived-parameter proof
-
-If a node uses an inferred radius/angle/station/path, persist derivation evidence:
-
-```yaml
-derived_parameter:
-  id: SIDE_FRONT_RADIUS
-  value_mm: 165
-  method: ARC_FIT
-  source_reference_id: side_ref_v2
-  source_roi: [...]
-  confidence: 0.84
-  residual_px: 2.9
-```
-
-Then node validation may contain both:
-- geometry == derived parameter consistency;
-- source-fit/registered projected evidence.
-
-The first without the second is insufficient for reference acceptance.
-
----
-
-## Cross-section validation
-
-For `MULTI_SECTION_LOFT` / `MULTI_SECTION_TRANSITION` require station report.
-
-Example:
-
-```yaml
-sections:
-  - station: BASE_BOTTOM
-    z_mm: 0
-    width_mm: 600
-    depth_mm: 300
-    source_fit_id: section_fit_bottom_003
-    status: PASS
-  - station: BASE_UPPER
-    z_mm: 95
-    width_mm: 570
-    depth_mm: 282
-    source_fit_id: section_fit_upper_003
-    status: PASS
-```
-
-Additionally validate:
-- monotonic ordering along loft axis;
-- common vertex correspondence;
-- no unintended twist;
-- expected corner/chamfer family;
-- transition continuity;
-- source-backed station geometry when sections are derived from reference.
-
----
-
-## Appearance-owner interaction
-
-A Shape Node can be geometrically accepted while appearance owners over its surface remain open.
-
-Example:
-
-```text
-SIDE_MODULE_R geometry ACCEPTED
-SIDE_TRIM_PATH_R appearance FAIL
-```
-
-Result:
-- dependent geometry children may follow Shape Graph rules if their host geometry is accepted;
-- RDL4/L4 final appearance cannot pass;
-- runtime remains locked through `APPEARANCE_FIDELITY_GATE`.
-
-If the failed appearance owner reveals that host geometry itself is wrong, route failure back to the host Shape Node and mark affected descendants DIRTY.
-
----
-
-## Node acceptance minimum
-
-```yaml
-node_gate:
-  node_id: LOWER_SHOULDER
-  graph_revision: sg_006
-  node_revision: node_009
-  parent_status: PASS
-  isolation:
-    status: PASS
-    evidence_kind: QA_SCENE_ISOLATION
-    validator_id: QA_SCENE_ISOLATE
-    provenance_id: iso_009
-  required_views:
-    FRONT:
-      status: PASS
-      evidence_kind: REGISTERED_OVERLAY
-      validator_id: REFERENCE_OVERLAY_VALIDATE
-      provenance_id: front_009
-      source_reference_id: front_ref_v3
-      registration_id: front_reg_v3
-    SIDE:
-      status: PASS
-      evidence_kind: REGISTERED_OVERLAY
-      validator_id: REFERENCE_OVERLAY_VALIDATE
-      provenance_id: side_009
-      source_reference_id: side_ref_v3
-      registration_id: side_reg_v3
-  numeric_constraints:
-    status: PASS
-    evidence_kind: NUMERIC_MEASUREMENT
-    validator_id: REFERENCE_MEASURE
-    provenance_id: num_009
-  section_contract:
-    status: PASS
-    evidence_kind: NUMERIC_MEASUREMENT
-    validator_id: SECTION_LOFT_HARD_SURFACE
-    provenance_id: sections_009
-  regression:
-    status: PASS
-    evidence_kind: REGRESSION_DIFF
-    validator_id: REFERENCE_OVERLAY_VALIDATE
-    provenance_id: regression_009
-  status: ACCEPTED
-```
-
-All strict PASS fields are proof-bearing.
-
----
+## Isolation
+QA includes accepted ancestors/host and current node only. No future RDL nodes, collision proxies, helpers or export copies.
 
 ## Failure routing
-
-If FRONT/SIDE/TOP indicate different failure classes, assign failure to:
-- registration;
-- parameters;
-- representation;
-- parent relation;
-- internal appearance owner;
-- material/edge stage.
-
-Example:
-
-```text
-FRONT width PASS
-SIDE outer depth PASS
-SIDE trim path FAIL
-TOP corner plan PASS
-```
-
-Do not randomly alter depth. The likely owner is trim/part architecture, not global envelope.
-
-Example:
-
-```text
-FRONT width PASS
-SIDE depth FAIL
-TOP corner-plan FAIL
-```
-
-often indicates a wrong 3D representation rather than one scalar parameter.
-
----
-
-## Stop rule
-
-`MUST Shape Node + FAIL`:
-- stop that Shape Graph branch;
-- do not build children;
-- do not advance RDL;
-- repair or switch representation.
-
-`MUST Appearance Owner + FAIL`:
-- stop the appearance stage that depends on it;
-- do not claim L4/L5;
-- do not enter runtime;
-- route to owner/host repair.
-
-Do not save either case as a cosmetic TODO for the end.
+- FRONT width PASS + SIDE profile FAIL -> local/profile owner, not random global scaling;
+- equal-authority view conflict -> `REFERENCE_CONFLICT_RESOLVER`;
+- appearance ROI reveals wrong host form -> mark host DIRTY and invalidate descendants;
+- missing evidence -> UNVERIFIED, not PASS.
 
 
 ---
