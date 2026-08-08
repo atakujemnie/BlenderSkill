@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.10.0 — Full compiled snapshot
+# Blender AI Agent Library v0.11.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -25741,6 +25741,65 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.11.0
+
+v0.11.0 is the **enforced reconstruction execution + reference-conflict closure** release, driven by the Lafar Street Lamp v0.10 benchmark.
+
+The lamp was the best reconstruction so far (human assessment about 7.5/10), proving that v0.10 improved form and appearance understanding. It also exposed the next gap: the agent could still organize code node-by-node while executing the whole RDL0→RDL5 asset in one monolithic run, despite `ready_nodes=[]` and without acceptance between nodes.
+
+### Hard execution authorization
+- added `05_execution/73_EXECUTION_AUTHORIZATION_GATE.md` and `executors/execution_authorization_gate.py`;
+- `CONSTRAINED` is eligibility, not permission to build;
+- production mutation requires persisted `READY_TO_BUILD` plus canonical authorization;
+- parent/dependency acceptance and previous RDL barriers are rechecked immediately before mutation.
+
+### Persistent node state
+- added `05_execution/74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md` and `executors/node_state_store.py`;
+- `BUILT_UNVERIFIED` is a hard branch stop;
+- only `RECONSTRUCTION_NODE_GATE` can transition a built node to `ACCEPTED`;
+- checkpoints separate `shape_nodes`, `appearance_owners`, `evidence` and `conflicts`.
+
+### Node-scoped orchestration
+- added `05_execution/75_NODE_SCOPED_ORCHESTRATION.md`;
+- code organization into `node_*()` functions no longer counts as node-by-node execution;
+- deterministic replay is allowed, but cannot mint new acceptance evidence.
+
+### Conflict arbitration and per-view proof
+- added `184_REFERENCE_CONFLICT_ARBITRATION.md` and `executors/reference_conflict_resolver.py`;
+- added `185_PER_VIEW_EVIDENCE_AND_DERIVED_PARAMETER_PROVENANCE.md`;
+- explicit dimensions own named dimensions, not unrelated local form;
+- detail/hero/ortho evidence uses different proof modes;
+- equal-authority contradictory interpretations remain BLOCKED instead of being averaged or silently selected.
+
+### Appearance-owner closure
+- added `186_APPEARANCE_OWNER_COVERAGE_AND_REPORT_NAMESPACES.md` and `executors/appearance_owner_coverage.py`;
+- `APPEARANCE_FIDELITY_GATE` v0.2 requires canonical MUST-owner inventory closure for strict L4/L5;
+- missing or unverified MUST owners block appearance acceptance.
+
+### Diagnostic form before finish
+- added `187_RDL_DIAGNOSTIC_GEOMETRY_AND_NEUTRAL_SHADING.md`;
+- RDL0 must create falsifiable grey diagnostic geometry;
+- RDL0–RDL3 source-fit QA defaults to neutral diagnostic shading;
+- production material response belongs to RDL5.
+
+### Runtime source integrity and reuse
+- added `188_CANONICAL_SKILL_RUNTIME_PINNING_AND_ANALYSIS_REUSE.md` and `executors/runtime_source_pin.py`;
+- benchmark runs require version/commit/source-root pinning and one active executor root;
+- repeated one-off analysis helpers trigger canonical executor reuse/migration review.
+
+### Benchmark and playbook
+- added benchmark `80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md`;
+- added `119_CIVIC_STREET_LAMP.md`;
+- regression target: human reference fidelity >= 8.5/10, zero unauthorized mutations, zero children built on unaccepted hosts, zero missing MUST appearance owners.
+
+### Tests
+- added `tools/test_v011_execution_enforcement.py`;
+- v0.9 and v0.10 regression suites remain active and were updated for the stricter v0.11 contracts.
+
+Canonical manifest version: **0.11.0**.
+Canonical module count: **234**.
+Canonical benchmark: **80 — Lafar Street Lamp v0.10 Execution and Detail Regression**.
+
 ## 0.10.0
 
 v0.10.0 is the **reference appearance fidelity + anti-self-certification** release.
@@ -25997,46 +26056,37 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.10.0 — reference appearance fidelity, internal product architecture and anti-self-certification.**
+**v0.11.0 — enforced reconstruction execution, conflict arbitration and detail closure.**
 
-v0.10 is driven by the Lafar Street Bench v0.9 benchmark. The previous system produced a technically coherent asset with correct hard dimensions, canonical outer silhouettes, valid LOD budgets and clean package/export checks. The user still rated the reconstruction only **6/10** because the side housings, aluminium trim, rear assembly, edge language, material response and visible detail did not faithfully reproduce the reference.
+v0.11 is driven by the Lafar Street Lamp v0.10 benchmark. v0.10 produced the strongest reconstruction so far, but the run exposed that the state machine was still advisory: `ready_nodes=[]` did not prevent a monolithic RDL0→RDL5 builder, `BUILT_UNVERIFIED` did not stop dependent geometry, and a local SIDE/detail conflict could be resolved too literally.
 
-The release adds the missing distinction:
-
-```text
-technically valid asset
-!=
-faithful reconstruction
-```
-
-The v0.10 reconstruction pipeline is:
+The v0.11 invariant is executable:
 
 ```text
-reference evidence
--> property-level authority
--> Shape Graph
--> Reference Appearance Contract
--> representation-first RDL build
--> canonical source-anchored node proof
--> part-boundary / trim / junction proof
--> edge-family proof
--> material/detail proof
--> APPEARANCE_FIDELITY_GATE
--> RECON_FIDELITY_GATE
--> runtime
+eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> build exactly one node
+-> persist BUILT_UNVERIFIED
+-> source-anchored per-view QA
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> only ACCEPTED unlocks dependants
 ```
 
-not:
+Additional v0.11 closure:
+- persistent node/checkpoint state;
+- per-property `REFERENCE_CONFLICT_RESOLVER`;
+- per-view evidence contracts for ortho / hero / detail;
+- source provenance for significant derived parameters;
+- `APPEARANCE_OWNER_COVERAGE` with separate Shape/Appearance/Evidence namespaces;
+- RDL0 diagnostic geometry and neutral RDL0–RDL3 shading;
+- canonical BlenderSkill version/commit/source-root pinning;
+- benchmark 80 for the Lafar Street Lamp.
 
-```text
-correct bounds
--> alpha silhouette PASS
--> local builder Gate PASS
--> LOD/export
--> "done"
-```
+Runtime remains downstream of `APPEARANCE_FIDELITY_GATE` and `RECON_FIDELITY_GATE`.
 
-## Core v0.10 concepts
+## Core v0.11 concepts
 
 ### 1. Reconstruction Shape Graph
 
@@ -26430,3 +26480,912 @@ zero MUST visual blockers
 ```
 
 The score is a regression oracle, not a replacement for objective evidence.
+
+
+---
+
+## FILE: `05_execution/73_EXECUTION_AUTHORIZATION_GATE.md`
+
+# Execution Authorization Gate
+
+## Purpose
+
+v0.11 makes Shape Graph state executable rather than advisory.
+
+The Lafar Street Lamp v0.10 benchmark exposed a hard loophole:
+
+```text
+SHAPE_GRAPH = PASS
+ready_nodes = []
+-> asset-local builder still created RDL0..RDL5 in one run
+```
+
+That is forbidden in v0.11.
+
+## Fundamental rule
+
+Production geometry mutation requires all of:
+
+```text
+node.state == READY_TO_BUILD
+EXECUTION_AUTHORIZATION_GATE == PASS
+parent/dependencies == ACCEPTED
+all earlier MUST RDL barriers == PASS
+authorization.graph_revision == current graph revision
+authorization.node_revision == requested node revision
+```
+
+No `READY_TO_BUILD` node means no production geometry mutation.
+
+## Eligibility is not authorization
+
+`SHAPE_GRAPH` may report a node as `eligible_nodes` when:
+- its contract is complete;
+- parent/dependencies are accepted;
+- prior RDL barriers are closed.
+
+Eligibility means only that an authorization may be requested.
+
+```text
+CONSTRAINED
+-> eligible
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> can_mutate
+```
+
+Do not treat `CONSTRAINED`, `DIRTY`, `FAIL` or `UNVERIFIED` as build permission.
+
+## BUILT_UNVERIFIED hard barrier
+
+After mutation:
+
+```text
+READY_TO_BUILD
+-> build/repair current node only
+-> BUILT_UNVERIFIED
+-> STOP branch
+-> QA + source-anchored proof
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | UNVERIFIED | FAIL
+```
+
+A `BUILT_UNVERIFIED` parent never unlocks children.
+
+## Required authorization record
+
+```yaml
+authorization:
+  status: PASS
+  validator_id: EXECUTION_AUTHORIZATION_GATE
+  authorization_id: auth:sg_012:HEAD:n_004:BUILD
+  graph_revision: sg_012
+  node_id: HEAD
+  node_revision: n_004
+  action: BUILD
+```
+
+The asset-local builder may not fabricate this record.
+
+## Mutation wrapper
+
+Every builder entry point must conceptually perform:
+
+```text
+can_mutate(node_id, authorization)
+-> FAIL: return before bpy/BMesh mutation
+-> PASS: open one-node transaction
+```
+
+A convenience `build_all()` may exist only as a replay/orchestrator that requests and closes each node gate sequentially. It may never call all node functions directly.
+
+## Failure classes
+
+- `NODE_NOT_READY_TO_BUILD`
+- `AUTHORIZATION_RECORD_REQUIRED`
+- `DEPENDENCY_NOT_ACCEPTED`
+- `PRIOR_RDL_BARRIER_NOT_ACCEPTED`
+- `AUTHORIZATION_GRAPH_REVISION_MISMATCH`
+- `AUTHORIZATION_NODE_MISMATCH`
+- `AUTHORIZATION_ACTION_MISMATCH`
+
+Any one blocks mutation.
+
+## Canonical executor
+
+`executors/execution_authorization_gate.py`
+
+Skill ID: `EXECUTION_AUTHORIZATION_GATE`.
+
+
+---
+
+## FILE: `05_execution/74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md`
+
+# Persistent Node State and Checkpoints
+
+## Purpose
+
+A reconstruction state machine is useless if state exists only in comments or transient Python variables.
+
+v0.11 requires a persistent checkpoint separating design state, appearance state and evidence.
+
+## Canonical node states
+
+```text
+DECLARED
+-> CONSTRAINED
+-> READY_TO_BUILD
+-> BUILT_UNVERIFIED
+-> ACCEPTED
+```
+
+Failure/rework states:
+
+```text
+UNVERIFIED
+FAIL
+BLOCKED
+DIRTY
+SUPERSEDED
+```
+
+`UNVERIFIED` is now a canonical state rather than only a gate return value.
+
+## Transition ownership
+
+- `DECLARED -> CONSTRAINED`: planner/contract completion;
+- `CONSTRAINED -> READY_TO_BUILD`: only with `EXECUTION_AUTHORIZATION_GATE`;
+- `READY_TO_BUILD -> BUILT_UNVERIFIED`: one-node mutation artifact;
+- `BUILT_UNVERIFIED -> ACCEPTED`: only with `RECONSTRUCTION_NODE_GATE`;
+- `ACCEPTED -> DIRTY`: change-impact record required.
+
+## Checkpoint schema
+
+```yaml
+asset_id: LAFAR_3470
+state_revision: state_018
+graph_revision: sg_012
+appearance_revision: ac_007
+current_rdl: RDL1
+shape_nodes:
+  ARM:
+    state: ACCEPTED
+    node_revision: arm_006
+    last_transition_provenance: gate_arm_006
+appearance_owners:
+  T_HEAD_BLUE_STRIP:
+    status: UNVERIFIED
+    host_revision: arm_006
+evidence:
+  gate_arm_006:
+    type: NODE_GATE
+history: []
+```
+
+## Separate namespaces
+
+Never mix:
+
+```text
+Shape Node IDs
+Appearance Owner IDs
+Evidence IDs
+```
+
+The lamp v0.10 builder recorded an Appearance Owner such as `D_SENSOR_LENSES` inside a generic `REPORT['nodes']` namespace. v0.11 forbids that ambiguity.
+
+## Persistence rule
+
+After every state transition persist the checkpoint before requesting the next authorization.
+
+A full scene reset/rebuild may be used for deterministic replay, but the orchestrator must restore and enforce canonical node states. Resetting Blender data is not permission to reset acceptance history.
+
+## Dirty propagation
+
+When an accepted node changes:
+- mark dependent geometry nodes `DIRTY` when their host relationship may change;
+- mark appearance owners tied to the old host revision `UNVERIFIED`;
+- keep unrelated accepted nodes reusable;
+- invalidate later RDL barriers that depended on the changed node.
+
+## Canonical executor
+
+`executors/node_state_store.py` validates transitions and checkpoint namespace integrity.
+
+
+---
+
+## FILE: `05_execution/75_NODE_SCOPED_ORCHESTRATION.md`
+
+# Node-Scoped Orchestration
+
+## Purpose
+
+Code organization into `node_foot()`, `node_arm()`, `node_head()` is not enough. The execution transaction itself must be node-scoped.
+
+The Lafar Street Lamp v0.10 builder had good node functions but `main()` invoked the entire asset from RDL0 through RDL5 in one run. v0.11 treats that as a regression.
+
+## Canonical loop
+
+```text
+load checkpoint
+-> validate Shape Graph
+-> resolve one eligible node
+-> issue EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> execute exactly that node
+-> persist BUILT_UNVERIFIED
+-> isolate accepted ancestors + current node
+-> render required evidence
+-> canonical node gate
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> repeat
+```
+
+## Builder API
+
+Preferred asset-local interface:
+
+```python
+BUILDERS = {
+    'FOOT_PLATE': build_foot,
+    'PLINTH': build_plinth,
+    'POLE': build_pole,
+    'ARM': build_arm,
+}
+
+def build_node(node_id, context, authorization):
+    assert EXECUTION_AUTHORIZATION_GATE.can_mutate(...)
+    return BUILDERS[node_id](context)
+```
+
+CLI pattern:
+
+```text
+build_asset.py --node ARM --authorization auth.json --checkpoint state.json
+```
+
+## Forbidden main
+
+```python
+def main():
+    build_foot()
+    build_plinth()
+    build_pole()
+    build_arm()
+    build_sensor()
+    build_materials()
+```
+
+Even if functions are ordered correctly, this bypasses acceptance between nodes.
+
+## RDL orchestration
+
+One RDL may contain many nodes, but each node closes independently. When all MUST nodes through the target RDL are `ACCEPTED`, run the canonical stage barrier.
+
+```text
+all RDL1 MUST nodes ACCEPTED
+-> RDL1 barrier PASS
+-> only then authorize RDL2 nodes
+```
+
+## RDL0
+
+RDL0 must produce diagnostic geometry, not only a dictionary of dimensions. It exists to falsify envelope interpretation early.
+
+## Replay
+
+A deterministic full replay is allowed after acceptance for reproducibility. Replay must use frozen accepted node revisions and may not create new acceptance evidence by itself.
+
+
+---
+
+## FILE: `07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md`
+
+# Benchmark 80 — Lafar Street Lamp v0.10 Execution and Detail Regression
+
+## Purpose
+
+Canonical regression driver for BlenderSkill v0.11.0.
+
+Source asset: Astera Civic Systems / LAFAR 3470 Civic Lighting Module.
+
+The v0.10 run is the strongest reconstruction result so far, but it exposed the next architectural gap.
+
+## Result
+
+Human assessment: approximately **7.5/10** overall reference fidelity.
+
+Strengths:
+- correct product identity;
+- strong global proportions and envelope;
+- much better Shape Graph decomposition than earlier assets;
+- base/pole/head treated as designed assemblies rather than generic boxes;
+- improved trim, junction and edge-family awareness;
+- technically coherent QA, materials and emissive implementation.
+
+Remaining visible failures:
+- head module too simplified;
+- missing/weak upper shell cuts and break lines;
+- sensor housing interpretation too generic;
+- local detail density below concept art;
+- some material response still reads as procedural Blender lookdev rather than exact product finish;
+- concept-sheet conflict at the head/top profile was resolved too literally from the SIDE view instead of reconciling SIDE with DETAIL_HEAD/HERO design intent.
+
+## Critical process regression
+
+The Shape Graph validator reported no authorized ready node, yet the asset builder invoked the full asset in one `main()`:
+
+```text
+RDL0
+-> all RDL1 nodes
+-> all RDL2 nodes
+-> all RDL3 nodes
+-> RDL4
+-> RDL5
+```
+
+The functions were named node-by-node, but acceptance did not occur between mutations.
+
+This proves:
+
+```text
+node-by-node code organization
+!=
+node-by-node reconstruction execution
+```
+
+## Failure classes protected by v0.11
+
+### V11-01 — advisory state machine
+`ready_nodes=[]` did not prevent mutation.
+
+### V11-02 — BUILT_UNVERIFIED was only a label
+Children were built immediately after an unverified host.
+
+### V11-03 — no persistent node revision state
+One scene reset + one full builder run encouraged monolithic reconstruction.
+
+### V11-04 — RDL0 was not falsifiable geometry
+Envelope existed as a report dictionary instead of a grey diagnostic blockout.
+
+### V11-05 — production lookdev too early
+Full materials were initialized before geometric stages closed.
+
+### V11-06 — mixed report namespaces
+Shape Nodes and Appearance Owners could be written into the same generic report namespace.
+
+### V11-07 — Appearance Contract inventory not executable enough
+Declared MUST owners could still be absent from actual geometry while RDL5 code ran.
+
+### V11-08 — per-view evidence mismatch
+Ortho, hero perspective and local detail crops require different proof modes.
+
+### V11-09 — derived numbers became hard too early
+Values such as inferred radii/angles were stored as single constants without always carrying range, confidence and source-fit residual.
+
+### V11-10 — reference conflict arbitration insufficient
+The head/top profile conflict showed that printed dimensions and one orthographic view do not globally determine local design form.
+
+### V11-11 — duplicate BlenderSkill roots
+A canonical checkout and project-local executor copy can silently diverge unless version/commit/source root is pinned.
+
+### V11-12 — analysis helper proliferation
+Many one-off card-scan helpers indicate missing reusable analysis primitives.
+
+## v0.11 acceptance criteria
+
+A future lamp regression must show:
+
+```text
+eligible node
+-> canonical authorization
+-> READY_TO_BUILD persisted
+-> one node mutation
+-> BUILT_UNVERIFIED persisted
+-> source-anchored QA
+-> ACCEPTED
+-> only then next dependent node
+```
+
+Additionally:
+- RDL0 diagnostic render exists before RDL1;
+- head profile conflict has a decision artifact;
+- all MUST Appearance Owners are accounted;
+- Shape/Appearance/Evidence namespaces are separate;
+- runtime source pin PASS;
+- no LOD/UV/export before appearance/reconstruction gates.
+
+## Regression target
+
+For comparable industrial civic hard-surface concept sheets:
+
+```text
+human reference-fidelity target >= 8.5/10
+zero MUST owner blockers
+zero unauthorized geometry mutations
+zero child builds on BUILT_UNVERIFIED/FAIL/UNVERIFIED hosts
+```
+
+
+---
+
+## FILE: `08_scripts/97_EXECUTION_AUTHORIZATION_STATE_PATTERN.md`
+
+# Execution Authorization and State Pattern
+
+Canonical pure-Python sequence:
+
+```python
+import execution_authorization_gate as auth
+import node_state_store as state
+
+issued = auth.issue_authorization(graph, node_id, node_revision='n_004')
+assert issued['status'] == 'PASS'
+
+transition = state.validate_transition(
+    'CONSTRAINED', 'READY_TO_BUILD', evidence=issued
+)
+assert transition['status'] == 'PASS'
+
+# persist READY_TO_BUILD here
+
+permit = auth.can_mutate(graph_with_ready_state, node_id, issued)
+assert permit['can_mutate_geometry']
+
+# mutate only this node
+# persist BUILT_UNVERIFIED
+# canonical QA + RECONSTRUCTION_NODE_GATE
+```
+
+Do not replace this with an asset-local boolean such as `can_build=True`.
+
+
+---
+
+## FILE: `08_scripts/98_REFERENCE_CONFLICT_ARBITRATION_PATTERN.md`
+
+# Reference Conflict Arbitration Pattern
+
+Use one record per conflicting property.
+
+```python
+from reference_conflict_resolver import resolve
+
+result = resolve({
+    'property_id': 'HEAD_TOP_PROFILE',
+    'candidates': [
+        {
+            'value': 'SLOPED',
+            'source_reference_id': 'SIDE',
+            'authority_kind': 'ORTHOGRAPHIC',
+            'confidence': 0.78,
+        },
+        {
+            'value': 'STEPPED_COMPOUND',
+            'source_reference_id': 'DETAIL_HEAD',
+            'authority_kind': 'DETAIL_ORTHO',
+            'confidence': 0.93,
+        },
+    ],
+})
+```
+
+Persist `decision_id` with every dependent derived parameter and Shape Node.
+
+Equal-authority disagreement must remain BLOCKED; do not average profiles.
+
+
+---
+
+## FILE: `10_reconstruction/184_REFERENCE_CONFLICT_ARBITRATION.md`
+
+# Reference Conflict Arbitration
+
+## Purpose
+
+v0.11 turns multi-view conflict handling from narrative guidance into a decision artifact.
+
+The Lafar Street Lamp benchmark exposed a characteristic failure: the SIDE drawing suggested a sloped top/head interpretation while the close head detail and hero design language supported a different local form. The model followed one view too literally.
+
+## Property-level authority
+
+Authority belongs to a property, not to an entire image or sheet.
+
+A source may be authoritative for width and weak for local head profile.
+
+Example:
+
+```yaml
+property_id: HEAD_TOP_PROFILE
+candidates:
+  - value: SLOPED
+    source_reference_id: SIDE
+    authority_kind: ORTHOGRAPHIC
+    confidence: 0.74
+  - value: STEPPED_COMPOUND
+    source_reference_id: DETAIL_HEAD
+    authority_kind: DETAIL_ORTHO
+    confidence: 0.92
+```
+
+## Canonical authority kinds
+
+Default precedence when the project has no explicit override:
+
+```text
+EXPLICIT_DIMENSION
+EXPLICIT_TEXT_SPEC
+DETAIL_ORTHO
+ORTHOGRAPHIC
+DETAIL_PERSPECTIVE
+HERO_PERSPECTIVE
+PIXEL_INFERENCE
+GENERIC_STYLE_INFERENCE
+```
+
+This ordering is only a default. `106_VIEW_AUTHORITY_MATRIX` may override it per property.
+
+## Conflict classes
+
+- `DIMENSION_CONFLICT`
+- `PROFILE_CONFLICT`
+- `FEATURE_PRESENCE_CONFLICT`
+- `MATERIAL_CONFLICT`
+- `PROJECTION_CONFLICT`
+- `CONCEPT_SHEET_INTERNAL_INCONSISTENCY`
+- `STYLE_VS_TECHNICAL_CONFLICT`
+
+## Rules
+
+1. Never average incompatible geometric interpretations merely to reduce error.
+2. Explicit dimensions control the dimension they name, not unrelated local shape.
+3. Detail views dominate local construction when their intended region is unambiguous.
+4. Orthographic views dominate global projection-derived silhouette where valid.
+5. Hero views may resolve design intent and junction form but do not silently override locked dimensions.
+6. Equal-authority conflicting candidates remain `BLOCKED` until another source or explicit decision exists.
+7. Persist rejected alternatives and reason.
+
+## Decision artifact
+
+```yaml
+status: PASS
+validator_id: REFERENCE_CONFLICT_RESOLVER
+property_id: HEAD_TOP_PROFILE
+decision_id: conflict_head_004
+selected_value: STEPPED_COMPOUND
+selected_source_reference_id: DETAIL_HEAD
+rejected:
+  - source_reference_id: SIDE
+    value: SLOPED
+averaging_used: false
+```
+
+Nodes that depend on the property must reference `decision_id`.
+
+## Canonical executor
+
+`executors/reference_conflict_resolver.py`.
+
+
+---
+
+## FILE: `10_reconstruction/185_PER_VIEW_EVIDENCE_AND_DERIVED_PARAMETER_PROVENANCE.md`
+
+# Per-View Evidence and Derived Parameter Provenance
+
+## Problem
+
+v0.10 allowed a node to list multiple views but asset specs often assigned one generic evidence requirement to all of them. That is wrong for mixed concept sheets.
+
+```text
+SIDE orthographic
+HERO perspective
+DETAIL_HEAD close-up
+```
+
+are not interchangeable instruments.
+
+## Per-view contract
+
+Each node declares evidence mode per view:
+
+```yaml
+view_contracts:
+  SIDE:
+    controls: [outer_profile, projection]
+    allowed_evidence_kinds: [REGISTERED_OVERLAY]
+  HERO:
+    controls: [junction_interpretation]
+    allowed_evidence_kinds: [PERSPECTIVE_INSPECTION]
+  DETAIL_HEAD:
+    controls: [sensor_boundary, trim_termination]
+    allowed_evidence_kinds: [LOCAL_FEATURE_ROI]
+```
+
+Do not demand a globally registered orthographic overlay from a perspective hero crop.
+
+## Derived parameters
+
+A scalar in `lamp_spec.py` is not source truth merely because the builder uses it consistently.
+
+For every derived radius, angle, station, width, path or material seed that matters to MUST fidelity persist:
+
+```yaml
+derived_parameter:
+  id: ELBOW_RADIUS
+  value: 70
+  unit: mm
+  value_range: [62, 78]
+  method: ARC_FIT
+  source_reference_id: SIDE
+  source_roi: [x0, y0, x1, y1]
+  confidence: 0.81
+  residual_px: 2.7
+  provenance_id: fit_elbow_003
+  conflict_decision_id: null
+```
+
+If the source views conflict, `conflict_decision_id` is mandatory.
+
+## Seed versus evidence
+
+Material values inferred from rendered swatches are lookdev seeds unless independently calibrated.
+
+```text
+roughness = 0.28
+anisotropy = 0.65
+```
+
+may initialize the shader but cannot themselves prove material fidelity. The proof is the controlled neutral-lookdev response against the reference.
+
+## Canonical gate behavior
+
+`RECONSTRUCTION_NODE_GATE` v0.3 validates per-view evidence kinds and derived-parameter provenance records.
+
+
+---
+
+## FILE: `10_reconstruction/186_APPEARANCE_OWNER_COVERAGE_AND_REPORT_NAMESPACES.md`
+
+# Appearance Owner Coverage and Report Namespaces
+
+## Purpose
+
+A correct aggregate category is not enough if individual MUST details were never implemented or never reported.
+
+The Street Lamp v0.10 run declared a rich Appearance Contract, but the builder could still complete RDL5 while some branding, head cuts and detail owners were absent or unverified.
+
+## Canonical namespaces
+
+```yaml
+shape_nodes: {}
+appearance_owners: {}
+evidence: {}
+conflicts: {}
+```
+
+Never place an Appearance Owner such as `D_SENSOR_LENSES` inside `shape_nodes`.
+
+## Coverage invariant
+
+Before `APPEARANCE_FIDELITY_GATE`:
+
+```text
+expected MUST owner IDs from Appearance Contract
+==
+reported MUST owner IDs
+```
+
+Every MUST owner must be one of:
+- `PASS` with canonical evidence;
+- `NOT_REQUIRED` with authority record;
+- `FAIL`;
+- `UNVERIFIED`.
+
+Missing from the report is itself a blocker.
+
+## Coverage report
+
+```yaml
+status: PASS
+validator_id: APPEARANCE_OWNER_COVERAGE
+contract_revision: ac_009
+expected_must: 32
+accounted_must: 32
+missing_must: []
+failed_must: []
+unverified_must: []
+coverage: 1.0
+```
+
+For L4/L5 strict acceptance, missing or unverified MUST owner means FAIL of appearance closure.
+
+## Host revision binding
+
+Appearance owner evidence must identify the host node revision it validates. If the host becomes DIRTY, its appearance records become UNVERIFIED until regenerated.
+
+## Canonical executor
+
+`executors/appearance_owner_coverage.py`.
+
+
+---
+
+## FILE: `10_reconstruction/187_RDL_DIAGNOSTIC_GEOMETRY_AND_NEUTRAL_SHADING.md`
+
+# RDL Diagnostic Geometry and Neutral Shading
+
+## Purpose
+
+Coarse-to-fine reconstruction must become visually falsifiable before materials and detail can mask geometry errors.
+
+## RDL0 is geometry
+
+RDL0 must create a disposable diagnostic representation of:
+- total envelope;
+- ground/contact datum;
+- primary extents;
+- major negative space;
+- principal axes.
+
+For a street lamp this can be only:
+
+```text
+base envelope
+pole envelope
+head projection envelope
+```
+
+No service hatches, LEDs, branding or production materials.
+
+## Diagnostic shading rule
+
+RDL0–RDL3 source-fit QA uses a neutral diagnostic material by default:
+- fixed neutral albedo;
+- high enough roughness to read planes;
+- no micro-normal;
+- no anisotropy;
+- no bloom;
+- no stylized lighting;
+- emission shown only when the geometry of the emitter itself is the owner under test.
+
+Production graphite/aluminium/titanium shaders belong to RDL5 lookdev validation.
+
+## Why
+
+The Lamp v0.10 builder created full material nodes before solving primary geometry. That was not the main reason for its remaining errors, but it weakens the diagnostic separation between form and finish.
+
+## Required RDL0 checkpoint
+
+```text
+build diagnostic envelope
+-> FRONT/SIDE/TOP as applicable
+-> numeric envelope check
+-> registered comparison
+-> RDL0 node gate
+-> ACCEPTED
+```
+
+Only then authorize G1/RDL1 forms.
+
+## Material replacement
+
+Diagnostic materials are QA infrastructure, not final materials. Replacing them later must not modify accepted geometry.
+
+
+---
+
+## FILE: `10_reconstruction/188_CANONICAL_SKILL_RUNTIME_PINNING_AND_ANALYSIS_REUSE.md`
+
+# Canonical Skill Runtime Pinning and Analysis Reuse
+
+## Purpose
+
+A project must not unknowingly execute a stale embedded copy of BlenderSkill while analysis reads a different checkout.
+
+The Street Lamp run referenced both `BlenderSkill_main` and a project-local `blenderskill/` copy. They were synchronized during that run, but the architecture permits silent divergence.
+
+## Runtime pin
+
+Every benchmark/project execution records:
+
+```yaml
+skill_runtime:
+  version: 0.11.0
+  commit: <canonical commit>
+  source_path: <single active executor root>
+  active_duplicate_roots: []
+```
+
+Mismatch with the task's expected release is a hard preflight FAIL.
+
+## One active executor root
+
+Multiple copies may exist on disk for history or development, but only one executor root may be active in `sys.path`/tool routing for a run.
+
+## Analysis helper reuse
+
+The Lamp run also produced many one-off `card_scanN.py` helpers. Before creating a local scanner, search the Semantic Skill Registry and `executors/` for:
+- reference measurement;
+- view/crop registration;
+- silhouette mask;
+- landmark projection;
+- conflict arbitration;
+- appearance owner validation.
+
+Local analysis code is allowed for asset-specific extraction, but reusable primitives must migrate into canonical executors after a benchmark proves their generality.
+
+## Canonical executor
+
+`executors/runtime_source_pin.py` validates runtime version/commit/source-root integrity.
+
+
+---
+
+## FILE: `11_playbooks/119_CIVIC_STREET_LAMP.md`
+
+# Civic Street Lamp Reconstruction Playbook
+
+## Scope
+
+Industrial smart street lamps with:
+- plinth/service base;
+- vertical mast;
+- elbow/structural head transition;
+- luminaire shell;
+- sensor housing;
+- diffuser/LED array;
+- integrated trim and emissive strips.
+
+## Recommended Shape Graph
+
+```text
+G0 LAMP_ENVELOPE
+G1 FOOT / PLINTH / SHOULDER / POLE / ARM / ELBOW
+G2 SENSOR_HOUSING / LED_ENGINE / MAJOR_TRIM
+G3 SERVICE_HATCHES / SEAMS / ACCENT_CHANNELS / SENSOR_LENSES
+G4 EDGE_FAMILIES
+G5 MATERIAL / BRANDING / MICRODETAIL
+```
+
+## Head rule
+
+Never treat the head as `rounded box + light` when detail references show separate shell cuts, sensor cap, trim ring, diffuser bezel or layered terminations.
+
+Create appearance owners for:
+- head top break lines;
+- sensor-shell boundary;
+- sensor ring/trim sequence;
+- underside diffuser bezel;
+- accent-strip path and termination;
+- elbow/head junction.
+
+## Conflict rule
+
+Street-lamp concept sheets often exaggerate the head in FRONT/SIDE views for readability. Resolve:
+- global dimensions from explicit dimensions / calibrated views;
+- local shell cuts from detail views;
+- junction intent from detail + hero;
+- never let one view globally override the others.
+
+## RDL0
+
+Render only base/pole/head envelope in neutral grey. Verify height, base footprint and head projection.
+
+## RDL1
+
+Build and accept sequentially:
+1. foot;
+2. plinth;
+3. shoulder;
+4. pole;
+5. arm/head mass;
+6. elbow junction.
+
+Do not build sensor, LED array or emissive strips before all required G1 nodes pass.
+
+## Detail closure
+
+Before RDL5 acceptance inventory all visible head/base cuts, hatches, fasteners, vents, branding and emissive terminations. Missing MUST head cuts are not cosmetic TODOs.

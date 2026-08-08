@@ -1,11 +1,11 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
-  "benchmark": "07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -13,9 +13,10 @@
     "07_examples/76_LAFAR_CIVIC_BOLLARD_PIPELINE_INTEGRATION_REGRESSION_BENCHMARK.md",
     "07_examples/77_LAFAR_WAYFINDING_PYLON_VISUAL_FIDELITY_REGRESSION_BENCHMARK.md",
     "07_examples/78_LAFAR_WAYFINDING_PYLON_SHAPE_GRAPH_REGRESSION_BENCHMARK.md",
-    "07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md"
+    "07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md",
+    "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 222,
+  "module_count": 234,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -238,7 +239,19 @@
     "11_playbooks/118_COMPLEX_HARD_SURFACE_BASE_AND_TRANSITION.md",
     "99_sources/SOURCES.md",
     "CHANGELOG.md",
-    "README.md"
+    "README.md",
+    "05_execution/73_EXECUTION_AUTHORIZATION_GATE.md",
+    "05_execution/74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md",
+    "05_execution/75_NODE_SCOPED_ORCHESTRATION.md",
+    "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
+    "08_scripts/97_EXECUTION_AUTHORIZATION_STATE_PATTERN.md",
+    "08_scripts/98_REFERENCE_CONFLICT_ARBITRATION_PATTERN.md",
+    "10_reconstruction/184_REFERENCE_CONFLICT_ARBITRATION.md",
+    "10_reconstruction/185_PER_VIEW_EVIDENCE_AND_DERIVED_PARAMETER_PROVENANCE.md",
+    "10_reconstruction/186_APPEARANCE_OWNER_COVERAGE_AND_REPORT_NAMESPACES.md",
+    "10_reconstruction/187_RDL_DIAGNOSTIC_GEOMETRY_AND_NEUTRAL_SHADING.md",
+    "10_reconstruction/188_CANONICAL_SKILL_RUNTIME_PINNING_AND_ANALYSIS_REUSE.md",
+    "11_playbooks/119_CIVIC_STREET_LAMP.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository"
