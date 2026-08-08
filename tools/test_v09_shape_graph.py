@@ -90,6 +90,7 @@ def main() -> None:
         "canonical_silhouettes": "PASS",
         "must_features": "PASS",
         "multi_view_gate": "PASS",
+        "appearance_fidelity_gate": "NOT_REQUIRED",
         "reconstruction_fidelity_gate": completion_proof,
     }
     done = completion.evaluate_completion(checks, target_level="RECONSTRUCTION_COMPLETE")
