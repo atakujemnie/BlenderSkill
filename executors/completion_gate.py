@@ -4,9 +4,14 @@ from __future__ import annotations
 
 The caller supplies compact check statuses. This module does not inspect a
 scene; it prevents ambiguous 'DONE' reporting by evaluating explicit levels.
+
+v0.7 hardening: `PIPELINE_INTEGRATED` cannot be closed by a bare Blender-side
+round-trip claim. Runtime import/instantiation evidence must identify a target-
+engine proof kind.
 """
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping
+from typing import Sequence
 
 
 PASS = "PASS"
@@ -21,6 +26,12 @@ LEVELS = (
     "GAME_READY_COMPLETE",
     "PIPELINE_INTEGRATED",
 )
+
+ENGINE_RUNTIME_EVIDENCE_KINDS = {
+    "ENGINE_PRODUCTION_LOADER",
+    "ENGINE_REGRESSION_TEST",
+    "ENGINE_INSTANTIATION",
+}
 
 DEFAULT_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     "RECONSTRUCTION_COMPLETE": (
@@ -42,6 +53,7 @@ DEFAULT_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "bake_or_runtime_material_strategy",
         "export_validation",
         "runtime_emissive_data",
+        "export_roundtrip_invariants",
     ),
     "PIPELINE_INTEGRATED": (
         "asset_catalog_registration",
@@ -50,12 +62,38 @@ DEFAULT_REQUIREMENTS: dict[str, tuple[str, ...]] = {
 }
 
 
-def _requirement_passes(value: str) -> bool:
-    return value in {PASS, NOT_REQUIRED}
+def _status_and_evidence(value) -> tuple[str, str | None]:
+    if isinstance(value, Mapping):
+        status = str(value.get("status", NOT_EVALUATED))
+        evidence = value.get("evidence_kind")
+        return status, str(evidence) if evidence is not None else None
+    return str(value), None
+
+
+def _requirement_passes(key: str, value) -> bool:
+    status, evidence = _status_and_evidence(value)
+    if status == NOT_REQUIRED:
+        return True
+    if status != PASS:
+        return False
+    if key == "runtime_import_or_instantiation":
+        return evidence in ENGINE_RUNTIME_EVIDENCE_KINDS
+    return True
+
+
+def _blocker(key: str, value) -> dict:
+    status, evidence = _status_and_evidence(value)
+    item = {"check": key, "status": status}
+    if key == "runtime_import_or_instantiation":
+        item["evidence_kind"] = evidence
+        if status == PASS and evidence not in ENGINE_RUNTIME_EVIDENCE_KINDS:
+            item["status"] = UNVERIFIED
+            item["reason"] = "TARGET_ENGINE_EVIDENCE_REQUIRED"
+    return item
 
 
 def evaluate_completion(
-    checks: Mapping[str, str],
+    checks: Mapping[str, object],
     *,
     target_level: str,
     requirements: Mapping[str, Sequence[str]] = DEFAULT_REQUIREMENTS,
@@ -78,8 +116,8 @@ def evaluate_completion(
         failed = []
         for key in requirements.get(level, ()):
             value = checks.get(key, NOT_EVALUATED)
-            if not _requirement_passes(value):
-                failed.append({"check": key, "status": value})
+            if not _requirement_passes(key, value):
+                failed.append(_blocker(key, value))
 
         if failed or not previous_pass:
             level_results[level] = FAIL
@@ -101,4 +139,5 @@ def evaluate_completion(
         "levels": level_results,
         "blockers": blockers,
         "can_claim_done": target_status == PASS,
+        "runtime_evidence_kinds": sorted(ENGINE_RUNTIME_EVIDENCE_KINDS),
     }
