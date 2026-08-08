@@ -8,7 +8,8 @@ Minimalizuj:
 - duże logi,
 - iteracyjne mikroruchy,
 - generowanie kodu dla operacji, które można wykonać parametrycznie,
-- przesyłanie do LLM danych, które mogą zostać zagregowane lokalnie.
+- przesyłanie do LLM danych, które mogą zostać zagregowane lokalnie,
+- echo pełnych skryptów i patchy, które już istnieją jako pliki.
 
 Efektywność nie oznacza pomijania walidacji. Oznacza wykonywanie obliczeń tam, gdzie są najtańsze, i zwracanie modelowi tylko informacji potrzebnej do decyzji.
 
@@ -81,7 +82,23 @@ Do not send to the language model:
 - hundreds of unchanged samples;
 - all threshold candidates from image analysis;
 - repeated tool output that has not changed;
-- entire source/build scripts when only a naming/path/material convention is needed.
+- entire source/build scripts when only a naming/path/material convention is needed;
+- complete generated build/QA scripts after they have already been written to disk;
+- complete source files after a small patch;
+- large patches with unrelated context.
+
+## Generated code guard
+
+Generated code is governed by `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`.
+
+Default behavior for a non-trivial script is:
+
+```text
+write file -> report path + changed symbols -> execute -> compact validation
+```
+
+Do not use conversation/tool output as transport for unchanged source code.
+If a 600-line build file already exists, a 10-line fix should not cause 600 lines to re-enter model context.
 
 ## Preferred compact diagnostics
 
@@ -164,6 +181,7 @@ Before analyzing an image, script, repository file or scene region again:
 
 For reconstruction use `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`.
 For project conventions use `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md`.
+For generated source use `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`.
 
 ## Zasada no visual guessing loop
 
