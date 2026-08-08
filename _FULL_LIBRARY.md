@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.6.0 — Full compiled snapshot
+# Blender AI Agent Library v0.7.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -3515,6 +3515,138 @@ When the runtime version differs from the library target:
 - test on a temporary object/scene;
 - record the new compatibility fact before production mutation.
 
+
+---
+
+## FILE: `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`
+
+# Blender Image Datablock Cache Coherence
+
+## Purpose
+
+An external texture file changing on disk does **not** imply that an existing `bpy.data.images` datablock now contains the new pixels.
+
+This is a silent failure class: filename, filepath, node binding and material graph can all look correct while Blender renders an older in-memory version.
+
+## Core rule
+
+```text
+DISK ARTIFACT FRESHNESS != BLENDER IMAGE DATABLOCK FRESHNESS
+```
+
+When the pipeline declares the saved texture file authoritative, runtime material assembly must explicitly synchronize the Blender image datablock before QA.
+
+## Authority states
+
+Every image artifact should declare one state:
+
+```text
+GENERATED_IN_MEMORY_AUTHORITATIVE
+DISK_FILE_AUTHORITATIVE
+PACKED_BLEND_AUTHORITATIVE
+UNRESOLVED
+```
+
+Do not call `reload()` blindly on an image that has unsaved authoritative in-memory edits.
+
+## Disk-authoritative reload
+
+For a baked texture that has already been saved externally:
+
+```python
+img = bpy.data.images.get(expected_name)
+if img is None:
+    img = bpy.data.images.load(path)
+else:
+    img.filepath = path
+    img.reload()
+```
+
+Then verify:
+- resolved absolute filepath points to the expected artifact;
+- image dimensions are non-zero and expected;
+- colorspace matches the channel contract;
+- compact pixel/image statistics match the accepted bake artifact.
+
+Prefer matching by canonical filepath/artifact ID rather than basename alone when duplicate filenames can exist.
+
+## Runtime-material binding gate
+
+Before a baked-runtime render:
+
+```text
+accepted disk bake
+-> synchronize image datablock
+-> verify material node binding
+-> verify UV contract
+-> render runtime material
+```
+
+Do not jump from `file exists` directly to runtime QA.
+
+## Diagnostic order when disk maps look correct but runtime render is wrong
+
+Use this order to avoid expensive false leads:
+
+```text
+1. disk artifact validator
+2. in-memory image freshness / filepath
+3. material node -> image binding
+4. colorspace/channel wiring
+5. UV contract on consuming mesh
+6. shader/runtime interpretation
+```
+
+If disk validation passes but in-memory statistics differ, classify:
+
+```text
+STALE_IMAGE_DATABLOCK
+```
+
+Do not rebuild UVs or rebake channels until cache coherence is resolved.
+
+## Freshness evidence
+
+Useful compact evidence:
+- canonical path;
+- file modification time or content hash;
+- Blender image filepath;
+- dimensions;
+- image/source type;
+- small semantic statistics from `BAKE_VALIDATE`.
+
+Avoid transporting full pixel arrays through the LLM.
+
+## Save/reload transaction
+
+A safe external bake transaction is:
+
+```text
+bake in memory
+-> validate in-memory result
+-> save external file
+-> mark file authoritative
+-> synchronize/reload runtime image datablock
+-> validate runtime material
+```
+
+## Failure cases
+
+Hard FAIL:
+- expected disk artifact exists but Blender image points elsewhere;
+- runtime material uses a stale datablock after a newer accepted bake;
+- reload fails or dimensions become zero;
+- colorspace differs from contract;
+- multiple datablocks with ambiguous ownership cannot be resolved.
+
+## Relation to other modules
+
+Use with:
+- `04_game_ready/51_BAKE_EXECUTION_AND_CHANNEL_SEMANTICS.md`;
+- `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`;
+- `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`.
+
+The dirty cache should distinguish texture-content dirtiness from Blender-datablock binding/freshness dirtiness. A stale datablock normally requires **reload + runtime QA**, not rebaking the texture.
 
 ---
 
@@ -12156,6 +12288,485 @@ A v0.6 agent should reduce full bake reruns substantially compared with the v0.5
 
 ---
 
+## FILE: `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`
+
+# Test Oracle, Exit Code and Bite-Test Integrity
+
+## Purpose
+
+A test result is useful only if the agent is reading the status of the **test process itself** and has evidence that the newly added assertion can actually fail.
+
+A green-looking command is not proof of a green test.
+
+## Core rules
+
+```text
+DISPLAY PIPELINE EXIT CODE != TEST EXIT CODE
+TEST THAT NEVER BITES != VERIFIED REGRESSION TEST
+PROCESS CRASH != ASSERTION FAILURE
+```
+
+## 1. Never lose the real exit status
+
+Unsafe shell pattern:
+
+```bash
+./ModelTests.exe 2>&1 | tail -20
+echo $?
+```
+
+Without `pipefail`, `$?` is normally the status of `tail`, not the test executable.
+
+Preferred patterns:
+
+```bash
+./ModelTests.exe >test.out 2>test.err
+status=$?
+tail -20 test.out
+tail -20 test.err
+exit $status
+```
+
+or, when supported:
+
+```bash
+set -o pipefail
+./ModelTests.exe 2>&1 | tail -20
+status=$?
+```
+
+Better still, invoke the test process directly through a subprocess/tool API that returns its own exit code.
+
+## 2. Classify the result
+
+Use explicit states:
+
+```text
+PASS
+ASSERTION_FAIL
+LOAD_FAIL
+BUILD_FAIL
+CRASH
+TIMEOUT
+UNKNOWN
+```
+
+Do not interpret a non-zero code as a valid bite test until output shows the intended assertion failed.
+
+Example:
+- expected triangle count intentionally changed;
+- process exits 1;
+- stderr contains the exact bollard regression message;
+- restore correct expectation;
+- rebuild;
+- process exits 0.
+
+That is a valid bite test.
+
+An `abort()`/CRT crash with exit 3 is **not** proof that the assertion bites.
+
+## 3. Bite-test protocol
+
+When adding a new engine/project regression assertion, perform one controlled negative proof when practical:
+
+```text
+GREEN BASELINE
+-> controlled mutation of one expected value or fixture
+-> rebuild only affected test target
+-> run test
+-> verify intended assertion fails with readable diagnostic
+-> restore mutation
+-> rebuild
+-> verify clean PASS
+```
+
+The mutation must be:
+- narrow;
+- reversible;
+- owned by the agent;
+- never left committed;
+- not destructive to production assets.
+
+Do not run a bite test if the mutation would be unsafe or expensive; record `BITE_TEST_NOT_SAFE` instead.
+
+## 4. Non-interactive failure requirement
+
+Automated tests used by an agent must fail through machine-readable output/exit state rather than modal dialogs where possible.
+
+Asset loading in a test should surface exceptions as a readable test failure. A modal CRT/error dialog that blocks automation is a test infrastructure defect.
+
+## 5. Build/test target reuse
+
+Before inventing commands:
+1. read active Project Asset Pipeline Profile;
+2. use the known build directory/configuration;
+3. build the narrow test target;
+4. run the known executable/test selector;
+5. capture the real exit code.
+
+Do not rediscover CMake presets, binaries and test locations every asset.
+
+## Compact report
+
+```yaml
+test_oracle:
+  build_target: ModelTests
+  build_status: PASS
+  command_mode: DIRECT_PROCESS
+  exit_code: 0
+  stderr_tail: ""
+  bite_test:
+    performed: true
+    mutated_expectation: triangle_count_lod0
+    failing_exit_code: 1
+    expected_failure_message_seen: true
+    restored_and_green: true
+  status: PASS
+```
+
+## Completion impact
+
+`PIPELINE_INTEGRATED` must not accept a runtime test result whose process exit status is ambiguous.
+
+If the agent used a shell pipeline and cannot prove the executable's status:
+
+```text
+ENGINE_TEST_STATUS = UNVERIFIED
+```
+
+Rerun the test correctly; do not mark Level D PASS from the ambiguous invocation.
+
+---
+
+## FILE: `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`
+
+# Post-Export Invariant and Round-Trip Validation
+
+## Purpose
+
+Authoring-state correctness is not enough. Modifiers, bevels, export copies, coordinate conversion and packaging can change dimensions, ground contact, materials or LOD structure.
+
+The final exported artifact must be measured again.
+
+## Core rule
+
+```text
+AUTHORING PASS != EXPORTED ARTIFACT PASS
+BLENDER IMPORT PASS != ENGINE IMPORT PASS
+```
+
+Use two distinct proof layers:
+
+```text
+LEVEL C / GAME_READY:
+exported artifact -> neutral/Blender round-trip -> invariant checks
+
+LEVEL D / PIPELINE_INTEGRATED:
+exported artifact -> target engine loader/importer -> engine-side checks
+```
+
+## Protected export invariants
+
+For each asset declare only the invariants that matter, for example:
+- hard dimensions;
+- ground/contact datum;
+- pivot/origin;
+- handedness/readable asymmetry;
+- LOD family and node names;
+- triangle budgets;
+- material/image presence;
+- UV presence;
+- required vertex colors/custom attributes;
+- collision packaging.
+
+Example:
+
+```yaml
+export_invariants:
+  dimensions_mm: [210, 210, 1050]
+  tolerance_mm: 2
+  ground_datum_z_mm: 0
+  lods:
+    LOD0: 2844
+    LOD1: 1152
+    LOD2: 480
+    LOD3: 128
+  required_maps:
+    - basecolor
+    - normal
+    - metallic_roughness
+```
+
+## Round-trip order
+
+After export:
+
+```text
+1. parse/read back package metadata
+2. import final artifact into an isolated scratch context
+3. measure protected invariants on imported data
+4. remove scratch import
+5. only then proceed to catalog/runtime integration
+```
+
+Do not measure the pre-export source and assume the exported copy retained the same bounds.
+
+## Modifier/contact regression
+
+A bevel or underside/profile change can preserve apparent height in the build script while moving the true lowest vertex above the ground datum.
+
+Therefore hard height should normally be checked as:
+
+```text
+max_axis - min_axis
+```
+
+and contact datum separately as:
+
+```text
+abs(min_axis - expected_ground) <= tolerance
+```
+
+This catches an asset that is nominally tall enough but floats above the ground, or one whose fillet removes 1–2 mm from the hard product dimension.
+
+## Runtime material round-trip
+
+The round-trip check should inspect the baked runtime material, not procedural authoring materials.
+
+Verify:
+- images resolve;
+- image dimensions are non-zero;
+- expected material slots exist;
+- LOD UVs sample the intended atlas;
+- decals/dynamic materials remain separate when required.
+
+## Engine proof is a different gate
+
+A Blender glTF import proves that Blender's importer can read the exported file. It does **not** prove the custom engine can resolve the same asset path, parse its LOD convention or load its materials.
+
+Required Level D evidence must come from the target engine/importer or an engine test that calls the same production loader.
+
+## Dirty propagation
+
+If a post-export invariant fails:
+- repair the narrow upstream owner;
+- dirty only dependent stages;
+- do not automatically rebake unrelated texture channels.
+
+Example:
+
+```text
+underside geometry changes ground datum
+-> geometry/affected LOD dirty
+-> AO/normal/geometry-driven channels as applicable
+-> export + round-trip dirty
+-> catalog entry content usually clean
+-> engine test dirty
+```
+
+A separate decal atlas normally remains clean.
+
+## Compact report
+
+```yaml
+export_roundtrip:
+  package_readback: PASS
+  imported_lods: 4
+  dimensions:
+    LOD0_mm: [210, 210, 1050]
+    LOD1_mm: [210, 210, 1050]
+  ground_datum: PASS
+  texture_resolution: PASS
+  material_bindings: PASS
+  engine_proof: UNVERIFIED
+  status: PASS
+```
+
+`engine_proof` remains separate until the Level D pack runs.
+
+---
+
+## FILE: `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`
+
+# Pipeline DAG Executor and Stage Reuse
+
+## Purpose
+
+`Incremental Dirty-Stage Cache` is not optional advice. The agent must execute the smallest dependency closure required by the current repair.
+
+A manual sequence such as:
+
+```text
+build -> decals -> bake all -> export -> import -> test
+```
+
+is forbidden when some stages are already clean and independent.
+
+## Canonical DAG
+
+A typical hard-surface runtime asset may use:
+
+```text
+REFERENCE/CONTRACT
+      |
+   BUILD_GEOMETRY
+      |\
+      | UV_CONTRACT
+      |    |
+      | BAKE_CHANNELS
+      |    |
+DECAL_ASSET   RUNTIME_MATERIAL
+      \       /
+       PACKAGE_EXPORT
+            |
+     EXPORT_ROUNDTRIP
+            |
+      CATALOG_REGISTER
+            |
+       ENGINE_SMOKE_TEST
+            |
+      COMPLETION_GATE
+```
+
+Project profiles may override dependencies, but the dependency graph must be explicit.
+
+## Stage record
+
+```yaml
+stage:
+  id: BAKE_AO
+  dependencies:
+    - BUILD_GEOMETRY
+    - UV_CONTRACT
+    - AO_ISOLATION_PROFILE
+  outputs:
+    - TEXTURE_ORM_R
+  signature: ...
+  status: PASS
+  dirty: false
+```
+
+## Execution planner
+
+Before any non-trivial rebuild emit:
+
+```yaml
+execution_plan:
+  changed_inputs:
+    - UNDER_RIM_PROFILE
+  dirty:
+    - BUILD_GEOMETRY
+    - BAKE_AO
+    - BAKE_NORMAL
+    - PACKAGE_EXPORT
+    - EXPORT_ROUNDTRIP
+    - ENGINE_SMOKE_TEST
+  reuse:
+    - DECAL_ASSET
+    - BASECOLOR
+    - ROUGHNESS
+    - METALLIC
+    - EMISSIVE
+```
+
+Then execute only the dirty topological order.
+
+## Geometry change does not mean all textures are dirty
+
+A geometry edit dirties channels only through declared dependencies.
+
+Examples:
+- tangent normal from geometry/procedural bump: likely dirty;
+- AO: dirty;
+- position-dependent dirt mask: dirty;
+- constant/UV-authored metallic: normally clean;
+- separate decal atlas: normally clean;
+- emissive mask on unchanged diffuser UV/geometry: may remain clean.
+
+When uncertain, mark the specific dependency `UNVERIFIED`; do not automatically execute every stage.
+
+## Runtime binding/cache change
+
+A stale Blender image datablock dirties:
+
+```text
+RUNTIME_IMAGE_BINDING
+BAKED_RUNTIME_QA
+```
+
+It does **not** dirty the accepted texture file itself.
+
+Expected repair:
+
+```text
+reload/synchronize image -> QA
+```
+
+not:
+
+```text
+rebake all maps
+```
+
+## Runtime-root change
+
+Correcting export destination from one filesystem tree to another normally dirties:
+- package copy/export destination;
+- package readback;
+- catalog path verification;
+- engine smoke test.
+
+It does not by itself dirty geometry or baked pixels if the accepted artifacts can be copied/re-exported without recomputation.
+
+## Cache signatures
+
+Use narrow signatures:
+- geometry parameters/hash;
+- UV contract ID;
+- channel graph/parameter hash;
+- decal source hash;
+- runtime profile ID;
+- export packaging profile ID;
+- runtime asset root ID.
+
+Do not hash the entire scene for every stage.
+
+## No implicit top-level side effects
+
+A stage runner may import stage modules only if they are import-safe.
+
+Every production mutation must be behind an explicit callable entry point.
+
+## Failure semantics
+
+If stage `X` fails:
+- dependents of `X` remain blocked/dirty;
+- independent previously accepted stages remain clean;
+- repair `X` or its failed dependency;
+- rerun only the affected closure.
+
+## Metrics
+
+Track:
+
+```text
+stages_executed
+stages_reused
+expensive_stages_reused
+full_pipeline_restarts
+channels_rebaked
+```
+
+For an accepted hard-surface asset, `full_pipeline_restarts` after a local repair should normally be zero.
+
+## Candidate executor
+
+Use `executors/pipeline_dag.py` for deterministic dependency closure/planning when its contract fits the project.
+
+The executor plans work; asset-specific stage callables remain owned by the project.
+
+---
+
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
 # System Prompt — Blender Asset Agent
@@ -13553,6 +14164,204 @@ v0.6 is better than v0.5 only if an equivalent bake/runtime closure:
 - preserves or improves visual/runtime quality;
 - reaches the requested completion level instead of stopping during bake debugging.
 
+
+---
+
+## FILE: `07_examples/76_LAFAR_CIVIC_BOLLARD_PIPELINE_INTEGRATION_REGRESSION_BENCHMARK.md`
+
+# Lafar Civic Bollard — Pipeline Integration Regression Benchmark
+
+## Purpose
+
+This benchmark records the final continuation of the real Astera/Lafar civic bollard run after v0.6 bake/runtime closure work.
+
+User-reported cost for this final continuation: approximately **45k additional tokens**. Combined with the preceding approximately 36k-token continuation segment, the post-v0.5 completion work consumed roughly **81k tokens**.
+
+The asset eventually reached `PIPELINE_INTEGRATED`, but the path exposed several silent or falsely interpreted failure classes that v0.7 must eliminate.
+
+## Final accepted runtime facts
+
+```yaml
+asset: Astera civic bollard
+runtime_module: astera_bollard.gltf
+lod_packaging: ONE_FILE_MULTI_NODE
+lods:
+  LOD0_tris: 2844
+  LOD1_tris: 1152
+  LOD2_tris: 480
+  LOD3_tris: 128
+collision_tris: 88
+hard_dimensions_mm: [210, 210, 1050]
+runtime_asset_root: <repo>/Assets/GameAssets
+catalog_id: astera_bollard
+engine_loader_test: ModelTests / Engine::Model::Load
+completion: PIPELINE_INTEGRATED
+```
+
+## Observed v0.6-era failure classes
+
+### F1 — stale Blender image datablock
+
+The baked PNGs on disk were correct, UVs were correct and material links appeared correct, but the runtime material still rendered old pixels.
+
+Cause:
+
+```text
+bpy.data.images.get(...)
+-> reused existing datablock
+-> external file had newer accepted bake
+-> image datablock was not reloaded
+```
+
+Required v0.7 behavior:
+- disk-vs-memory authority is explicit;
+- accepted disk bake triggers image synchronization/reload before runtime QA;
+- stale image cache routes to binding/cache repair, not rebake/UV repair.
+
+### F2 — exported hard dimension regression
+
+Round-trip import found LOD0 at 1048 mm instead of the technical-sheet 1050 mm.
+
+Cause:
+- underside geometry/profile change;
+- base fillet removed the true contact point;
+- source looked plausible but exported bounds failed the hard contract.
+
+Required v0.7 behavior:
+- post-export invariants include dimensions and ground datum;
+- export round-trip runs before catalog completion;
+- repair dirties only dependent stages through the pipeline DAG.
+
+### F3 — Blender import was not engine proof
+
+Blender successfully imported the glTF, but Level D remained correctly unresolved until the custom engine loader was exercised.
+
+Required v0.7 behavior:
+
+```text
+Blender round-trip = Level C evidence
+Engine production loader/test = Level D evidence
+```
+
+### F4 — wrong but valid filesystem tree
+
+The asset was exported to:
+
+```text
+<repo>/GameAssets/...
+```
+
+while the engine read from:
+
+```text
+<repo>/Assets/GameAssets/...
+```
+
+Both looked plausible and existed.
+
+Required v0.7 behavior:
+- runtime asset root resolved from project/build/engine authority before export;
+- no per-script root guessing;
+- project profile stores the verified root;
+- wrong sibling root is explicitly forbidden for this project profile.
+
+### F5 — false green test from shell pipeline
+
+Unsafe invocation:
+
+```bash
+./ModelTests.exe 2>&1 | tail -20
+echo $?
+```
+
+reported the status of `tail`, not necessarily `ModelTests.exe`.
+
+An apparent `EXIT=0` was therefore meaningless.
+
+Required v0.7 behavior:
+- capture executable exit status directly or use `pipefail` correctly;
+- distinguish assertion failure from crash/abort;
+- no Level D PASS from ambiguous test status.
+
+### F6 — invalid first bite-test interpretation
+
+A deliberately broken expected triangle count initially produced exit 3 because the process aborted while loading the asset from the wrong root. That was incorrectly interpreted as proof the assertion 'bit'.
+
+After the runtime path was fixed:
+- wrong expected tris -> clean `EXIT=1`;
+- expected regression message appeared;
+- expectation restored -> `EXIT=0`.
+
+Required v0.7 behavior:
+- bite test must fail for the intended assertion;
+- crash/loader failure is not an assertion bite.
+
+### F7 — unnecessary pipeline replay
+
+After a local underside geometry repair the workflow re-executed build, decals, all bake passes and export as a manual chain.
+
+This bypassed the spirit of the v0.6 Dirty-Stage Cache.
+
+Required v0.7 behavior:
+- pipeline execution is DAG-planned;
+- independent clean stages are reused;
+- stage execution/reuse counts are benchmarked.
+
+### F8 — repeated build-system discovery
+
+The agent spent multiple shell calls locating CMake configuration, test binaries and the existing `ModelTests` pattern.
+
+Required v0.7 behavior:
+- project profile stores build directory, narrow test target, binary, loader and catalog source;
+- future assets consume the profile directly.
+
+## What v0.6 did well
+
+v0.6 concepts materially helped:
+- runtime bake closure was completed instead of deferred;
+- semantic channel bake rules produced correct BaseColor/ORM/Normal/Emissive;
+- completion gate correctly refused Level D while runtime import remained unverified;
+- final accepted asset had all four LODs in budget and correct hard dimensions after repair.
+
+The problem was no longer primarily missing knowledge. It was **execution proof, cache coherence, project-profile completeness and enforced stage reuse**.
+
+## v0.7 regression requirements
+
+A comparable future asset should satisfy:
+
+```yaml
+v0_7_targets:
+  false_green_test_results: 0
+  ambiguous_runtime_roots: 0
+  stale_image_datablock_regressions: 0
+  full_pipeline_restarts_after_local_repair: 0
+  blender_import_used_as_level_d_proof: 0
+  new_engine_assertions_with_valid_bite_test: 100_percent_when_safe
+  project_profile_rediscovery_calls: 0_when_profile_matches
+```
+
+Preferred efficiency targets after `GAME_READY_COMPLETE` is already reached:
+
+```yaml
+pipeline_integration_finish:
+  preferred_tokens: <= 10000
+  preferred_project_discovery_calls: <= 2
+  full_texture_rebakes: 0_unless_dependencies_changed
+  engine_test_runs:
+    green_baseline_or_final: <= 2
+    controlled_bite_test: <= 1_failure_plus_restore
+```
+
+These are benchmark goals, not universal hard limits.
+
+## Release implication
+
+v0.7 is successful only if the next benchmark demonstrates that solved infrastructure is reused:
+- canonical runtime path comes from profile;
+- stage DAG prevents unrelated recomputation;
+- post-export invariants catch dimension/contact drift early;
+- image cache freshness is explicit;
+- Level D is closed only by a trustworthy target-engine test oracle.
 
 ---
 
@@ -15641,6 +16450,332 @@ These are project facts, not asset-specific reasoning.
 
 `PIPELINE_INTEGRATED` additionally requires catalog/importer integration according to the project profile.
 
+
+---
+
+## FILE: `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`
+
+# Runtime Asset Root and Path Contract
+
+## Purpose
+
+An export can succeed to a real directory and still be unusable because the target engine reads from a different asset root.
+
+Filesystem existence is not runtime reachability.
+
+## Core rule
+
+```text
+EXISTING OUTPUT PATH != ENGINE-VISIBLE OUTPUT PATH
+```
+
+The canonical runtime asset root must be resolved **before** bake/export/catalog work that writes external artifacts.
+
+## Resolution authority
+
+Use this precedence:
+
+```text
+1. explicit active Project Asset Pipeline Profile
+2. engine/build definition of asset root
+3. production loader configuration
+4. existing engine regression test fixture/path
+5. narrowly inspected sibling exporter
+6. heuristic directory search only as diagnostic evidence
+```
+
+If two plausible trees exist, such as:
+
+```text
+<repo>/GameAssets
+<repo>/Assets/GameAssets
+```
+
+never choose by directory name alone.
+
+Resolve against the engine's configured root.
+
+## Path record
+
+Persist:
+
+```yaml
+runtime_paths:
+  project_root: ...
+  engine_asset_directory: ...
+  game_asset_root: ...
+  texture_root: ...
+  export_root: ...
+  authority: CMAKE_DEFINE | ENGINE_CONFIG | PROFILE | ...
+  verified_by:
+    - engine_loader_test
+  status: PASS
+```
+
+## Preflight
+
+Before the first external artifact write:
+- canonicalize paths;
+- confirm the path lies under the intended runtime root;
+- verify the target asset class directory convention;
+- verify relative URIs will resolve from the exported module;
+- reject ambiguous sibling roots.
+
+Do not scatter separate `repo_root()` heuristics across bake, decal and export scripts.
+
+All stages should consume one resolved `RuntimePathContext`/profile.
+
+## Single-source path injection
+
+Preferred architecture:
+
+```text
+SESSION/PACK PREFLIGHT
+-> resolve runtime path context once
+-> pass context to decal/bake/export/catalog/test stages
+```
+
+Not:
+
+```text
+bake.py guesses root
+export.py guesses root differently
+decal.py guesses root again
+engine test discovers third root
+```
+
+## Wrong-tree failure
+
+If artifacts were written to a non-runtime sibling tree:
+1. mark package destination FAIL;
+2. do not rebake clean textures merely to move them;
+3. copy/re-export only affected artifacts through the DAG;
+4. verify the engine-visible path;
+5. remove only agent-owned stale artifacts from the wrong tree;
+6. never delete unrelated project assets by broad glob unless ownership is proven.
+
+## Runtime proof
+
+A path contract passes when the target engine loader or its regression test resolves the exported module from the same root.
+
+A Blender importer opening an absolute path does not prove runtime-root correctness.
+
+## Candidate executor
+
+Use `executors/runtime_path_resolver.py` to validate/profile-resolve canonical project/runtime paths when applicable.
+
+The executor intentionally rejects ambiguous roots instead of picking the first directory that exists.
+
+---
+
+## FILE: `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md`
+
+# Engine Integration Smoke-Test Contract
+
+## Purpose
+
+`PIPELINE_INTEGRATED` requires evidence from the **target runtime path and loader**, not merely from Blender or a file parser.
+
+## Proof hierarchy
+
+```text
+package JSON/readback
+< Blender round-trip import
+< engine production loader test
+< engine instantiation/render smoke test
+```
+
+Use the strongest level required by the active completion target.
+
+## Level D minimum
+
+For `PIPELINE_INTEGRATED`, the minimum accepted runtime evidence is normally one of:
+- target engine production loader successfully loads the registered asset;
+- existing engine regression test invokes the same loader on the exported asset;
+- actual engine scene instantiation succeeds.
+
+A Blender `bpy.ops.import_scene.gltf` PASS is Level C round-trip evidence only.
+
+## Reuse existing project test infrastructure
+
+Before creating a new test harness:
+1. read the active Project Asset Pipeline Profile;
+2. locate the configured narrow model/import test target;
+3. inspect the nearest existing asset test pattern;
+4. extend it with only the asset invariants that previously failed or are contract-critical.
+
+Do not rediscover the build system with broad shell exploration when profile facts are already known.
+
+## Recommended engine-side assertions
+
+Asset-specific tests may pin:
+- asset can be resolved from runtime asset root;
+- loader returns expected LOD group/nodes;
+- LOD triangle counts or budget bounds;
+- hard dimensions/tolerance on runtime vertex data;
+- ground datum;
+- required UV channel presence;
+- required PBR image bindings;
+- vertex colors/custom attributes when relied upon;
+- alpha/cutout semantics;
+- material count/names where contract-critical.
+
+Do not pin irrelevant implementation details that make tests brittle without protecting a real contract.
+
+## Loader exceptions and automation
+
+A loader exception used in an automated test must become a readable test failure where practical.
+
+Avoid modal dialogs/abort-only behavior that blocks the agent and hides the failure cause.
+
+Classify:
+
+```text
+ASSET_NOT_FOUND
+PARSE_FAIL
+MATERIAL_MISSING
+LOD_CONTRACT_FAIL
+DIMENSION_FAIL
+TEST_ASSERTION_FAIL
+PROCESS_CRASH
+```
+
+## Bite-test requirement
+
+A newly added regression assertion should prove it can fail through `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md` when safe.
+
+The bite test must fail for the intended assertion with a readable message, then be fully restored and green.
+
+A crash/abort is not a valid bite.
+
+## Catalog integration
+
+If the project uses an asset catalog:
+
+```text
+export to canonical runtime root
+-> package readback
+-> catalog registration/readback
+-> engine loader test using runtime path/catalog convention
+-> completion gate
+```
+
+Registering a catalog entry without proving the target file is visible to the engine is insufficient.
+
+## Completion evidence
+
+Persist:
+
+```yaml
+engine_smoke_test:
+  loader: Engine::Model::Load
+  asset_id: ...
+  runtime_path: ...
+  build_target: ...
+  build_status: PASS
+  test_exit_code: 0
+  process_status: PASS
+  assertions:
+    lod_family: PASS
+    dimensions: PASS
+    materials: PASS
+  bite_test: PASS | NOT_REQUIRED | NOT_SAFE
+  status: PASS
+```
+
+Only this kind of target-runtime evidence may satisfy `runtime_import_or_instantiation` for Level D.
+
+---
+
+## FILE: `09_engine/profiles/RPG_PROJECT_ASSET_PIPELINE_PROFILE.md`
+
+# RPG Project Asset Pipeline Profile
+
+## Scope
+
+Verified project profile extracted from the Lafar/Astera civic-asset pipeline benchmark.
+
+Use only when operating inside the RPG repository whose engine/build layout matches these facts. If the repository/runtime changes, mark the affected facts `UNVERIFIED` and re-resolve them rather than silently reusing stale paths.
+
+```yaml
+project_asset_pipeline:
+  profile_id: RPG_CUSTOM_ENGINE_2026_08_V1
+
+  units:
+    blender_unit: meter
+    unit_scale: 1.0
+    up_axis: Z
+
+  runtime_paths:
+    project_root: <repo>
+    engine_asset_directory: <repo>/Assets
+    game_asset_root: <repo>/Assets/GameAssets
+    authority: RPG_ENGINE_ASSET_DIRECTORY
+    forbidden_lookalike_root:
+      - <repo>/GameAssets
+
+  city_asset_layout:
+    first_planet_road_modules: <repo>/Assets/GameAssets/City/first_planet/road_kit/modules
+
+  runtime_packaging:
+    export_format: GLTF_SEPARATE
+    lod_packaging: ONE_FILE_MULTI_NODE
+    lod_node_pattern: "{mesh}_LOD{n}"
+    handedness_compensation: MIRROR_X
+    export_readback_required: true
+    texture_uri_policy: RELATIVE_TO_GLTF_MODULE
+
+  asset_catalog:
+    required: true
+    registration_source: Source/Engine/AssetCatalog.cpp
+    conflict_policy: NEW_PRODUCT_GETS_NEW_STABLE_ID
+
+  engine_loader:
+    production_loader: Engine::Model::Load
+
+  build_and_test:
+    build_system: CMAKE
+    debug_build_directory: Build/windows-debug
+    model_test_target: ModelTests
+    model_test_source: Tests/ModelTests.cpp
+    model_test_binary: Build/windows-debug/Debug/ModelTests.exe
+    build_command: cmake --build Build/windows-debug --target ModelTests --config Debug
+    test_oracle_policy: DIRECT_EXECUTABLE_EXIT_CODE
+    bite_test_required_for_new_regression_assertion: true
+
+  evidence:
+    - Lafar Civic Bollard final runtime integration benchmark
+    - engine loader resolved assets from RPG_ENGINE_ASSET_DIRECTORY/Assets
+    - ModelTests successfully loaded the Astera bollard after export moved to Assets/GameAssets
+    - wrong sibling root <repo>/GameAssets produced runtime load failure
+```
+
+## Required use
+
+When this profile matches the active project:
+- do not rediscover the runtime root with `ls/find` before every asset;
+- do not write to `<repo>/GameAssets`;
+- inject the resolved runtime root into bake/decal/export stages;
+- package the LOD family into one glTF module using `_LOD0.._LODn` node naming;
+- use the existing `ModelTests` infrastructure for engine-loader regression where appropriate;
+- capture `ModelTests.exe` exit status directly;
+- do not claim Level D from Blender glTF import alone.
+
+## Handedness caution
+
+`MIRROR_X` is a project/runtime packaging fact observed in the current pipeline. Reverify if the engine importer or coordinate conversion changes. Prefer readable asymmetric details as proof.
+
+## Profile freshness
+
+This is a project-specific optimization layer, not a universal Blender rule.
+
+Invalidate/reverify affected fields after changes to:
+- CMake asset-directory definitions;
+- engine loader root configuration;
+- glTF importer handedness;
+- LOD grouping parser;
+- catalog layout;
+- test/build directory layout.
 
 ---
 
