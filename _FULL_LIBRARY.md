@@ -19992,7 +19992,7 @@ Nie kompensuj punktami w scorecard.
 ## R0 — INGEST
 Zapis źródeł i segmentów.
 
-## R1 — CLASSIFY
+## R1 — CLASSIFY EVIDENCE
 Projection, view, material/detail/text.
 
 ## R2 — AUTHORITY
@@ -20002,54 +20002,128 @@ Evidence + View Authority Matrix.
 Skala, osie, image planes, camera.
 
 ## R4 — CONSTRAIN
-Dimension graph, landmarks, feature contract.
+Dimension Graph, landmarks, Feature Contract.
 
-## R5 — DECOMPOSE
-Object decomposition i strategy map.
+## R5 — DECOMPOSE + SHAPE GRAPH
 
-## R6 — D0 BLOCKOUT
-Bounds + silhouette.
+Obowiązkowe:
+- decompose asset na G0–G5 design forms;
+- zbuduj `Reconstruction Shape Graph`;
+- przypisz parent/dependencies;
+- sklasyfikuj shape representation każdego required node;
+- przypisz RDL;
+- przypisz authoritative views i controlled properties;
+- zdefiniuj node validation contracts.
+
+`SHAPE_GRAPH` musi przejść structural validation przed produkcyjnym modelowaniem.
+
+Nie pisz monolitycznego build scriptu tworzącego G1–G5 w tym stanie.
+
+## R6 — RDL0 ENVELOPE
+Bounds + contact datum + minimal silhouette carrier.
 
 Wymagany proof przed advance:
 - numeric bounds;
-- registered silhouette evidence dla authoritative views;
-- QA scene isolation.
+- registered envelope evidence dla authoritative FRONT/SIDE/TOP;
+- QA scene isolation;
+- `RDL0_BARRIER: PASS`.
 
-## R7 — D1 PRIMARY FORMS
-Major profiles i negative space.
+## R7 — RDL1 PRIMARY FORMS
 
-Wymagany proof przed advance:
-- D0/D1 landmarks;
-- canonical profile/proportion comparison;
-- brak open HARD geometry conflict.
+Buduj **node po node**:
 
-## R8 — D2 FEATURES
-Panels, trim, recess, functional details.
+```text
+ready G1 node
+-> build only node
+-> required canonical views
+-> numeric/section checks
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | FAIL
+```
 
-Wymagany proof przed advance:
-- wszystkie MUST feature owners;
-- ROI/visibility/layer-stack proof odpowiedni do feature class.
+Obejmuje:
+- primary body/shell;
+- base/plinth;
+- major structural shoulder/transition;
+- primary negative space.
 
-## R9 — D3 DETAIL
-Fasteners, branding, microgeometry.
+Po wszystkich required nodes:
+`RDL1_STAGE_BARRIER`.
 
-Readable branding/text wymaga canonical orientation proof, w tym project handedness gdy dotyczy.
+Nie wolno budować RDL2 przy FAIL required G1 node.
 
-## R10 — SURFACE
-Materials, UV, decals, emissive.
+## R8 — RDL2 SECONDARY STRUCTURAL FORMS
+
+Buduj oddzielnie:
+- frames;
+- display housing/recess mass;
+- utility housing;
+- large service panels;
+- major trims/inserts.
+
+Każdy node ma własny required-view gate.
+
+Po wszystkich required nodes:
+`RDL2_STAGE_BARRIER`.
+
+## R9 — RDL3 STRUCTURAL FEATURES
+
+Panels, openings, recesses, vents, structural grooves, light channels, handles, layered assemblies.
+
+Leaf skills mogą być używane dopiero, gdy host node jest `ACCEPTED`.
+
+Wymagany proof odpowiedni do feature class:
+- ROI;
+- numeric depth/position;
+- visibility/layer stack;
+- panel-line/path contract;
+- regression outside expected-change region.
+
+Po required nodes:
+`RDL3_STAGE_BARRIER`.
+
+## R10 — RDL4 EDGE LANGUAGE
+
+Bevel, fillet, chamfer, corner radius, tangency, SubD support geometry.
+
+Rule:
+
+```text
+correct shape first
+-> edge treatment second
+```
+
+RDL4 nie może kompensować błędu RDL1/RDL2.
+
+Po edge treatment re-check:
+- protected dimensions;
+- canonical silhouette;
+- local feature boundaries.
+
+`RDL4_STAGE_BARRIER` przed surface detail.
+
+## R11 — RDL5 SURFACE / DETAIL
+
+Branding, decals, microgeometry, materials, texture direction, weathering, emissive finish.
+
+Readable branding/text wymaga canonical orientation proof z project handedness gdy dotyczy.
 
 Dla target fidelity L4/L5 wymagany material segmentation proof.
 
-## R11 — MULTIVIEW QA + FIDELITY GATE
-Wszystkie kanoniczne widoki.
+RDL5 może mieć jawne deferred items zależnie od requested completion level, ale nie może zmieniać accepted primary form bez dirty propagation.
+
+## R12 — MULTIVIEW QA + RECONSTRUCTION FIDELITY GATE
 
 Kolejność:
 
 ```text
-QA_SCENE_ISOLATE
+Shape Graph revision validation
+-> all required node gates accepted
+-> RDL stage barriers pass
+-> QA_SCENE_ISOLATE
 -> registered canonical view validators
 -> hard dimensions
--> D0/D1 landmarks
+-> primary landmarks/proportions
 -> MUST feature evidence
 -> material segmentation when required
 -> authority/deviation closure
@@ -20058,16 +20132,21 @@ QA_SCENE_ISOLATE
 
 `RECON_FIDELITY_GATE` musi zwrócić proof-bearing PASS z provenance.
 
-Bare `PASS`, `looks correct`, `matching the card` albo poprawny overall envelope nie pozwalają wejść do R12.
+Bare `PASS`, `looks correct`, `matching the card` albo poprawny overall envelope nie pozwalają wejść do runtime.
 
-## R12 — TOPOLOGY/RUNTIME
-Optimization bez utraty fidelity.
+## R13 — TOPOLOGY / RUNTIME PREP
 
-Ten etap jest niedostępny przy `RECON_FIDELITY_GATE != PASS`.
+Dopiero tutaj:
+- topology cleanup/freeze;
+- UV;
+- runtime LOD;
+- collision;
+- bake;
+- runtime material closure.
 
-Game-ready package readback musi później sprawdzić wymagane primitive attributes i aktywną node-transform policy.
+Ten etap jest niedostępny przy wcześniejszym barrier/fidelity FAIL.
 
-## R13 — EXPORT VALIDATION
+## R14 — EXPORT VALIDATION
 
 Sprawdź:
 - package readback;
@@ -20078,19 +20157,50 @@ Sprawdź:
 
 ## Backtracking
 
-Każdy FAIL wraca do najwcześniejszego etapu, który może go naprawić.
+Każdy FAIL wraca do najwcześniejszego właściciela problemu.
 
 Przykłady:
 
 ```text
-SIDE contour FAIL -> R6/R7
-LOWER_TAPER visibility FAIL -> R8
-mirrored rear technical decal -> R9/R10
-missing TEXCOORD_0 after export -> R12/R13 package/UV owner
-non-identity node TRS forbidden by profile -> R12/R13 export/package owner
+SIDE primary contour FAIL
+-> current G1 node / RDL1
+
+base FRONT okay + SIDE/TOP corner fail after corrected retry
+-> SHAPE_CLASSIFY representation review
+-> possible MULTI_SECTION_LOFT
+
+DISPLAY_RECESS host FAIL
+-> RDL2; do not continue to glass/content
+
+PANEL_LINE FAIL because host surface wrong
+-> parent G1/G2 owner, not HS_PANEL_LINE tweaking
+
+mirrored rear technical decal
+-> RDL5 branding orientation owner
+
+missing TEXCOORD_0 after export
+-> runtime package/UV owner
 ```
 
-Nie naprawiaj reconstruction FAIL przez runtime detail ani package FAIL przez ponowne modelowanie, jeśli dependency nie prowadzi do geometrii.
+## Monolithic-build prohibition
+
+Regresja v0.9:
+
+```text
+analyze
+-> build body + base + screen + vents + logo + bevel + materials
+-> one QA render
+```
+
+Canonical:
+
+```text
+understand hierarchy
+-> build one form
+-> prove it
+-> commit node acceptance
+-> continue coarse-to-fine
+```
 
 
 ---
