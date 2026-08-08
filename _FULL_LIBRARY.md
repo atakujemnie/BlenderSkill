@@ -8551,14 +8551,21 @@ Reguły:
 14. Nie wymyślaj nazw narzędzi ani możliwości integracji. Knowledge o Blenderze nie oznacza, że bieżący runtime ma capability do wykonania operacji.
 15. Jeżeli istnieje zarejestrowany Semantic Skill dla żądanej operacji, użyj jego kontraktu zamiast generować ad-hoc workflow.
 16. Dla tej samej operacji z tymi samymi preconditions dozwolona jest maksymalnie jedna poprawiona ponowna próba. Po drugiej porażce wymagany jest re-inspection i strategy switch zgodnie z `05_execution/61_RETRY_BUDGET_AND_STRATEGY_SWITCH.md`.
+17. Dla każdego etapu wybierz najmniejszy `Task Pack` zgodnie z `00_governance/06_TASK_PACK_PROTOCOL.md`. Nie preloaduj modułów przyszłych etapów.
+18. Stosuj `Tool Output Budget`: obliczaj lokalnie, agreguj i zwracaj decision-grade summary. Raw arrays, per-row profiles i pełne dumps są niedozwolone bez konkretnej potrzeby diagnostycznej.
+19. Przed ponowną analizą referencji sprawdź `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`. Nie rediscoveruj zwalidowanych ROI, wymiarów i authority decisions.
+20. Konwencje projektu pobieraj z aktywnego Project Asset Pipeline Profile. Nie czytaj całych skryptów sibling assetów tylko po to, by znaleźć naming/path/decal convention.
+21. Po `ANALYZE: PASS` zakończ szeroką eksplorację referencji. Re-entry do analizy musi wskazywać konkretny feature, metric, view conflict, ROI failure albo source update.
 
 W odpowiedzi operacyjnej utrzymuj format:
 - STATE
+- TASK PACK ID
 - INPUT FACTS
 - UNKNOWN / ASSUMPTIONS
 - FEATURE IDS
 - SELECTED SKILL ID
 - REQUIRED CAPABILITIES / BINDING STATUS
+- CACHE STATUS
 - ACTION
 - POSTCONDITIONS
 - CHECKPOINT RESULT
@@ -8567,17 +8574,29 @@ W odpowiedzi operacyjnej utrzymuj format:
 Nie generuj długich opisów, jeżeli agent może zamiast tego wykonać pomiar.
 Nie wykonuj serii prób "na oko". Najpierw zdiagnozuj różnicę.
 
+## Tool output behavior
+
+Domyślnie narzędzia zwracają `SUMMARY`.
+
+```text
+SUMMARY -> failure/ambiguity -> DIAGNOSTIC for minimal ROI/object -> RAW only if unavoidable
+```
+
+Nie zaczynaj od RAW.
+Nie przesyłaj do modelu danych elementarnych, jeżeli Python/NumPy/BMesh może zwrócić agregat, outliery i failing region.
+
 ## Semantic skill routing
 
 Przed implementacją sprawdź `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`.
 
 Przykłady:
+- technical sheet/image measurement -> `REFERENCE_MEASURE`;
 - narrow seam/groove path -> `HS_PANEL_LINE`;
 - SubD topology flow/pinching/local density -> `SUBD_TOPOLOGY_CONTROL`;
 - repeated trim-compatible surface -> `TRIM_SHEET_UV`;
 - reference-driven form solve -> `RECONSTRUCT_REFERENCE`.
 
-Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację przez `bpy`/BMesh, ale nie przedstawiaj jej jako trwałego packaged executora i zawsze przeprowadź walidację zdefiniowaną przez skill.
+Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację przez dostępne narzędzia, ale nie przedstawiaj jej jako trwałego packaged executora i zawsze przeprowadź walidację zdefiniowaną przez skill.
 
 ## Reconstruction mode
 
@@ -8588,7 +8607,38 @@ Jeżeli użytkownik wymaga odtworzenia 1:1 z referencji:
 - nie inventuj unknown geometry,
 - nie pozwalaj hero view nadpisać explicit dimensions/orthographic authority,
 - przeprowadź multi-view QA przed runtime optimization,
-- nie uruchamiaj detail skills przed przejściem camera/scale/silhouette/primary-form gates.
+- nie uruchamiaj detail skills przed przejściem camera/scale/silhouette/primary-form gates,
+- dla technical concept sheet użyj `RECON_TECHNICAL_SHEET_ANALYZE` Task Pack,
+- zapisuj zwalidowane segmenty/pomiary do Reference Analysis Cache.
+
+## Technical sheet authority
+
+Domyślna kolejność źródeł:
+
+```text
+explicit numeric dimensions / datum
+> orthographic views
+> real sections
+> detail close-ups
+> perspective hero
+> approximate prose
+> visual inference
+```
+
+Wyższy authority wygrywa przy konflikcie. Nie zużywaj iteracji próbując dopasować perspektywiczny hero render do jawnego wymiaru, jeżeli ortho views są z tym wymiarem zgodne.
+
+## Analysis completion
+
+ANALYZE kończy się zwartym `Evidence Summary` zawierającym:
+- locked dimensions;
+- high-confidence relations;
+- View Authority Matrix;
+- Feature IDs;
+- unresolved conflicts;
+- cache validity;
+- status PASS/FAIL.
+
+Po PASS przejdź dalej. Nie kontynuuj ogólnego eksplorowania referencji.
 
 ## Failure behavior
 
