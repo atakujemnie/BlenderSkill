@@ -789,6 +789,9 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence.
 |---|---|---|---|---|---|
 | `RECONSTRUCT_REFERENCE` | camera/scale/silhouette/proportion-first reconstruction | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` + stage modules | CONTRACT_READY | scene inspect, image/reference access, camera/render | multi-view, silhouette, landmarks, dimensions |
 | `REFERENCE_MEASURE` | compact technical-sheet/reference measurement and cross-view aggregation | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` + `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`; `executors/reference_measure.py` | CONTRACT_READY | reference image access, Python/NumPy or equivalent image analysis | provenance, calibration, confidence, cross-view deviation, output budget |
+| `REFERENCE_OVERLAY_VALIDATE` | registered reference-vs-candidate silhouette/ROI comparison | `10_reconstruction/142_ORTHOGRAPHIC_OVERLAY_VALIDATION.md`, `143_SILHOUETTE_DIFF_PROTOCOL.md`, `171_REFERENCE_MASK_AND_CONTRAST_MODEL.md`; `executors/reference_overlay_validate.py` | CONTRACT_READY | registered images, Python/NumPy/Pillow or Blender image access | mask mode, IoU, contour deviation, MUST ROI failures, no local warp |
+| `LAYER_STACK_VALIDATE` | numeric visibility/order validation for glass/content/recess and similar layered assemblies | `10_reconstruction/172_VISIBLE_LAYER_STACK_CONTRACT.md`; `executors/layer_stack_validate.py` | CONTRACT_READY | compact geometry/layer coordinates | front-to-back order, burial/occlusion, viewer-facing normals |
+| `RECON_FIDELITY_GATE` | proof-bearing Level A transition gate before topology/runtime | `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`, `10_reconstruction/173_RECONSTRUCTION_ACCEPTANCE_EVIDENCE_INTEGRITY.md`; `executors/fidelity_gate.py` | CONTRACT_READY | compact validator records | typed evidence, provenance, canonical views, MUST features, authority closure, runtime advance decision |
 | `AXISYMMETRIC_PROFILE` | deterministic profile-revolved geometry for rotationally symmetric hard-surface parts | `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`; `executors/axisymmetric_profile.py` | CONTRACT_READY | Python, BMesh | radius/axis bounds, continuity, topology intent, UV, triangle budget |
 | `RADIAL_REPEAT` | repeated anchors/fasteners around a known axis | `11_playbooks/110_HARD_SURFACE_CIVIC_FURNITURE.md`; `executors/radial_repeat.py` | CONTRACT_READY | Python; geometry mutation by caller | count, phase, annulus containment, triangle estimate |
 | `HS_PANEL_LINE` | narrow hard-surface seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | Python, BMesh, modifiers, evaluated mesh | path continuity, topology, profile, modifier order |
@@ -804,13 +807,13 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence.
 | `BAKE_VALIDATE` | semantic validation of baked maps/regions | `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`; `executors/bake_validate.py` | CONTRACT_READY | image access, NumPy or equivalent | degeneracy, ranges, material regions, emissive containment, clipping |
 | `IMAGE_CACHE_COHERENCE` | synchronize accepted external texture artifacts with Blender image datablocks | `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`; `executors/image_cache_coherence.py` | CONTRACT_READY | Blender image/data API, external file access | canonical path, reload/load action, dimensions, colorspace, binding |
 | `PIPELINE_DAG_PLAN` | compute minimal dirty execution closure and reuse accepted stages | `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`; `executors/pipeline_dag.py` | CONTRACT_READY | Python | acyclic graph, execute/reuse closure, invalidation reasons |
-| `RUNTIME_PACKAGE_VALIDATE` | validate exported module nodes/materials/images against packaging profile | `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`; `executors/gltf_package_validate.py` | CONTRACT_READY | exported-file read | LOD nodes, materials, image URIs, project packaging contract |
+| `RUNTIME_PACKAGE_VALIDATE` | validate exported module nodes/materials/images/attributes/transforms against packaging profile | `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`, `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md`; `executors/gltf_package_validate.py` | CONTRACT_READY | exported-file read | LOD nodes, materials, image URIs, required primitive attributes, node-transform policy |
 | `EXPORT_ROUNDTRIP_VALIDATE` | re-import exported asset and re-check hard invariants | `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | Blender import/scratch context, mesh bounds | dimensions, ground datum, LOD family, runtime material availability |
 | `RUNTIME_PATH_RESOLVE` | resolve engine-visible runtime asset root from project authority | `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`; `executors/runtime_path_resolver.py` | CONTRACT_READY | filesystem/project profile/build facts | canonical root, containment, forbidden lookalike roots |
 | `TEST_ORACLE` | trustworthy process exit status and regression bite-test proof | `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`; `executors/test_oracle.py` | CONTRACT_READY | subprocess/shell/test runner | direct exit code, expected failing marker, restored green run |
-| `ENGINE_INTEGRATION_PROOF` | prove Level D with target engine loader/instantiation | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | project build/test/engine loader | engine-visible path, loader success, asset invariants, trustworthy test oracle |
-| `QA_REFERENCE` | visual/numeric reconstruction QA | `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md` through `148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md` | CONTRACT_READY | camera/render/screenshot, geometry metrics | stage-specific gates |
-| `ASSET_COMPLETION` | determine true completion level and blockers | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | compact validation state | Reconstruction/Modeling/Game-ready/Pipeline gates + Level D evidence kind |
+| `ENGINE_INTEGRATION_PROOF` | prove Level D with target engine loader/instantiation | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | project build/test/engine loader | engine-visible path, loader success, coordinate-space/node-transform compatibility, asset invariants, trustworthy test oracle |
+| `QA_REFERENCE` | visual/numeric reconstruction QA | `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md` through `148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md` + v0.8 fidelity modules | CONTRACT_READY | camera/render/screenshot, geometry metrics | stage-specific gates + proof-bearing records |
+| `ASSET_COMPLETION` | determine true completion level and blockers | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | compact validation state | proof-bearing Reconstruction, Modeling, package/Game-ready and Level D engine evidence |
 | `ASSET_CATALOG_INTEGRATE` | register a game-ready asset in a project catalog/registry | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | project catalog read/write | readback, unique ID, file associations, import smoke test |
 | `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md`, engine profile | KNOWLEDGE_ONLY | save/export/file inspect | runtime contract |
 
@@ -837,7 +840,7 @@ The final Bollard continuation exercised `executors/completion_gate.py` twice:
 - it correctly blocked `PIPELINE_INTEGRATED` while runtime import remained `UNVERIFIED`;
 - it passed after the target engine loader regression test was green.
 
-v0.7 additionally hardens the executor so `runtime_import_or_instantiation` must carry an engine evidence kind:
+v0.7 hardened `runtime_import_or_instantiation` so target-engine evidence must be one of:
 
 ```text
 ENGINE_PRODUCTION_LOADER
@@ -845,12 +848,17 @@ ENGINE_REGRESSION_TEST
 ENGINE_INSTANTIATION
 ```
 
-Because this evidence-kind extension is new in v0.7, `ASSET_COMPLETION` remains `CONTRACT_READY` until the next benchmark exercises the new API.
+The Lafar Wayfinding Pylon run then proved a different property: valid target-engine evidence can exist while Level C remains open, and the completion hierarchy correctly must not claim Level D.
+
+v0.8 additionally changes the completion API by requiring typed/provenance-bearing `RECON_FIDELITY_GATE` and `RUNTIME_PACKAGE_VALIDATE` records. These extensions remain `CONTRACT_READY` until a future real run executes the v0.8 API directly.
 
 ## Packaged executor status
 
 ```text
 REFERENCE_MEASURE          -> executors/reference_measure.py          CONTRACT_READY
+REFERENCE_OVERLAY_VALIDATE -> executors/reference_overlay_validate.py CONTRACT_READY
+LAYER_STACK_VALIDATE       -> executors/layer_stack_validate.py       CONTRACT_READY
+RECON_FIDELITY_GATE        -> executors/fidelity_gate.py              CONTRACT_READY
 AXISYMMETRIC_PROFILE       -> executors/axisymmetric_profile.py       CONTRACT_READY
 RADIAL_REPEAT              -> executors/radial_repeat.py              CONTRACT_READY
 MESH_VALIDATE              -> executors/mesh_validate.py              EXECUTOR_READY
@@ -868,7 +876,7 @@ RUNTIME_PATH_RESOLVE       -> executors/runtime_path_resolver.py      CONTRACT_R
 TEST_ORACLE                -> executors/test_oracle.py                 CONTRACT_READY
 ```
 
-New v0.7 executors remain `CONTRACT_READY` until a later real benchmark validates their contracts in the target runtime.
+New v0.8 executors remain `CONTRACT_READY` until a later real benchmark validates their contracts in the target runtime.
 
 ## Registered SubD sub-operations
 
@@ -893,6 +901,15 @@ When multiple skills could solve a feature/problem, route by design intent and f
 ```text
 technical-sheet/reference measurement
 -> REFERENCE_MEASURE
+
+registered canonical-view silhouette/ROI comparison
+-> REFERENCE_OVERLAY_VALIDATE
+
+visible layered assembly/recess ordering ambiguity
+-> LAYER_STACK_VALIDATE
+
+claiming Level A / advancing reconstruction into runtime
+-> RECON_FIDELITY_GATE
 
 rotationally symmetric stacked radius/height form
 -> AXISYMMETRIC_PROFILE
@@ -930,7 +947,7 @@ disk map is correct but Blender runtime material shows old/wrong pixels
 local repair should not rerun independent accepted stages
 -> PIPELINE_DAG_PLAN
 
-exported glTF/module exists but package contents are unknown
+exported glTF/module exists but package contents/attributes/transforms are unknown
 -> RUNTIME_PACKAGE_VALIDATE
 
 exported package exists but dimensions/contact/material survival are unproven
@@ -957,17 +974,16 @@ Before execution the agent records:
 
 ```yaml
 skill_call:
-  skill_id: RUNTIME_PATH_RESOLVE
-  feature_id: RUNTIME_OUTPUT_ROOT
+  skill_id: RECON_FIDELITY_GATE
+  feature_id: RECONSTRUCTION_TRANSITION
   maturity: CONTRACT_READY
   inputs_verified: true
   required_capabilities:
-    - filesystem_read
-    - project_profile_read
+    - compact_validation_records
   runtime_bindings_verified: false
 ```
 
-If `runtime_bindings_verified=false`, run Agent Tool API Profile preflight before mutation.
+If `runtime_bindings_verified=false`, run Agent Tool API Profile preflight before mutation when an executor/tool binding is required.
 
 ## Contract-ready is not executor-ready
 
@@ -982,7 +998,8 @@ In that case the agent may still implement the operation through available tools
 6. respect Tool Output Budget;
 7. follow Code Artifact and Patch Protocol;
 8. use the pipeline DAG/dirty-stage cache for expensive bake/export stages;
-9. keep Blender round-trip and target-engine proof as separate evidence classes.
+9. keep reconstruction, package round-trip and target-engine proof as separate evidence classes;
+10. never convert a bare self-reported `PASS` into typed validator evidence.
 
 ## Reuse before generation
 
@@ -990,6 +1007,9 @@ Before generating helpers for common operations, search registry and `executors/
 
 Do not rewrite compatible local copies of:
 - reference measurement;
+- registered reference overlay/silhouette/ROI validation;
+- layered assembly visibility/order validation;
+- reconstruction fidelity aggregation;
 - profile revolution/lathe helpers;
 - radial placement/annulus math;
 - contract-aware mesh validation;
@@ -1001,7 +1021,7 @@ Do not rewrite compatible local copies of:
 - bake image statistics/emissive containment checks;
 - Blender external-image reload/cache-coherence helpers;
 - dependency/dirty-stage planning;
-- glTF node/material/image readback validation;
+- glTF node/material/image/primitive-attribute/transform readback validation;
 - exported-mesh bound/contact checks;
 - runtime-root containment validation;
 - direct-process test exit-code capture.
@@ -1018,6 +1038,7 @@ Whenever a new specialized skill is added:
 7. include canonical MD in `MANIFEST.json`.
 
 The registry, Knowledge Router and Manifest must never disagree about the existence of a production skill.
+
 
 ---
 
@@ -1537,6 +1558,7 @@ An AI Blender agent must never use the word `DONE` without declaring **what leve
 
 A visually convincing render is not equivalent to a complete game asset.
 A successful export is not equivalent to pipeline integration.
+A bare `PASS` flag is not equivalent to proof.
 
 The asset lifecycle has four explicit completion levels.
 
@@ -1553,17 +1575,21 @@ A higher level requires all lower levels to pass.
 
 # Level A — `RECONSTRUCTION_COMPLETE`
 
-The reference-driven object is geometrically and visually solved.
+The reference-driven object is geometrically and visually solved **with proof-bearing reconstruction evidence**.
 
 Required:
-- hard dimensions pass;
-- canonical silhouettes pass;
-- primary proportions pass;
-- all reference-required MUST features have owners;
+- hard dimensions pass with numeric provenance;
+- canonical silhouettes/views pass through registered comparison where authoritative references exist;
+- primary proportions/landmarks pass;
+- all reference-required MUST features have owners and appropriate visibility/ROI/numeric proof;
 - branding/signage placement is correct or explicitly deferred to surface authoring;
 - rear/bottom/hidden evidence has been handled according to authority policy;
+- HARD/MUST/CANONICAL deviations are `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with identifiable records;
 - unresolved geometry is listed;
-- multi-view regression gate passes.
+- multi-view regression gate passes;
+- `RECON_FIDELITY_GATE` passes with evidence provenance.
+
+A narrative `looks correct`, `matching the card`, correct bounding box, successful export or successful engine test cannot substitute for this evidence.
 
 Not required yet:
 - final texture bake;
@@ -1575,7 +1601,10 @@ Output status example:
 
 ```yaml
 completion:
-  reconstruction: PASS
+  reconstruction:
+    status: PASS
+    evidence_kind: RECON_FIDELITY_GATE
+    provenance_id: recon_gate_report_004
   modeling: NOT_EVALUATED
   game_ready: NOT_EVALUATED
   pipeline_integrated: NOT_EVALUATED
@@ -1612,14 +1641,18 @@ The asset can be consumed by the target runtime without relying on undefined Ble
 Requires Level B plus:
 - active Game Asset Contract;
 - active Engine Profile or explicit neutral-baseline contract;
-- LODs validated;
+- LODs validated against the active hard/authority-resolved budget;
 - collision validated;
 - material count/draw-call implications validated;
 - procedural material effects either baked, recreated in runtime, or explicitly removed;
 - required BaseColor/Normal/ORM/Emissive or engine-specific texture outputs exist;
 - emissive authoring/runtime handoff is documented;
+- exported package readback passes required node/material/image/primitive-attribute/transform contracts;
 - exported files pass post-export validation;
-- protected reconstruction features survive optimization.
+- protected reconstruction features survive optimization;
+- post-export round-trip invariants pass.
+
+A parseable/loadable glTF without required `TEXCOORD_0` or with a node transform forbidden by the active runtime profile is not Level C.
 
 If the Engine Profile is absent, runtime status remains `UNVERIFIED` and Level C cannot be claimed for an engine-specific task.
 
@@ -1637,6 +1670,7 @@ Requires Level C plus:
 - asset catalog/registry/import database integration is complete where the project requires one;
 - engine/project import succeeds;
 - an instantiation/use test succeeds or is explicitly marked unavailable;
+- runtime test coordinate space and node-transform policy are compatible with the active profile;
 - pipeline integration report is persisted.
 
 If the project has a catalog but the agent has no capability to register the asset, report:
@@ -1648,6 +1682,8 @@ reason: ASSET_CATALOG_WRITE_CAPABILITY_MISSING
 ```
 
 Do not call this fully complete.
+
+Target-engine evidence that exists while Level C is failing does not promote the asset to Level D.
 
 ---
 
@@ -1673,10 +1709,13 @@ The agent must stop and report a blocker when a required gate cannot be validate
 Do not silently downgrade the target.
 
 Examples:
+- reconstruction PASS lacks registered/provenance evidence;
+- HARD authority conflict remains open;
 - missing runtime material specification;
 - required bake not possible with available tools;
 - collision contract unknown;
-- export succeeded but textures are missing;
+- export succeeded but required primitive attributes are missing;
+- runtime node transforms violate project policy;
 - catalog registration capability unavailable.
 
 ---
@@ -1694,6 +1733,11 @@ asset_completion:
     modeling: PASS
     game_ready: FAIL
     pipeline_integrated: NOT_REQUIRED
+  evidence:
+    reconstruction_fidelity_gate:
+      status: PASS
+      evidence_kind: RECON_FIDELITY_GATE
+      provenance_id: recon_gate_report_004
   blockers:
     - PBR_BAKE_NOT_DONE
     - RUNTIME_EMISSIVE_NOT_VERIFIED
@@ -1716,11 +1760,13 @@ Never report:
 > Asset finished and exported.
 
 when the same report also says:
+- reconstruction evidence is unverified;
 - textures were not baked;
 - runtime-only details were not produced;
+- required UV attributes disappeared after export;
 - catalog integration was not done.
 
-That state is `MODELING_COMPLETE` or partial Level C, not full completion.
+That state is the highest lower level that actually passed, not full completion.
 
 
 ---
@@ -16576,6 +16622,8 @@ The executor intentionally rejects ambiguous roots instead of picking the first 
 
 `PIPELINE_INTEGRATED` requires evidence from the **target runtime path and loader**, not merely from Blender or a file parser.
 
+The engine test must also prove the space in which its invariants are evaluated. A dimension assertion over local vertex positions is not world-space proof when the runtime node can carry an unapplied transform.
+
 ## Proof hierarchy
 
 ```text
@@ -16622,6 +16670,56 @@ Asset-specific tests may pin:
 
 Do not pin irrelevant implementation details that make tests brittle without protecting a real contract.
 
+## Coordinate-space declaration
+
+Every dimension/contact assertion must declare one of:
+
+```text
+LOCAL_VERTEX_SPACE
+NODE_TRANSFORMED_SPACE
+ENGINE_WORLD_SPACE
+```
+
+A test that reads raw accessor/vertex positions is normally `LOCAL_VERTEX_SPACE`.
+
+It must not be described as proof of final runtime size when non-identity node transforms are permitted and the production loader may ignore them.
+
+## Node transform policy
+
+The active Project Asset Pipeline Profile must declare the runtime policy for node transforms.
+
+Possible policies:
+
+```text
+IDENTITY_TRS_REQUIRED
+TRANSFORMS_APPLIED_BY_LOADER
+TRANSFORMS_BAKED_BY_EXPORTER
+UNVERIFIED
+```
+
+If the production loader does **not** apply glTF node transforms:
+- runtime mesh nodes must use identity/baked TRS according to project policy;
+- package readback must fail on non-identity runtime node transforms;
+- local-vertex dimension assertions are accepted only together with the identity-transform proof.
+
+This protects against a false green where local vertices still measure 2600 mm but the glTF node contains an unconsumed scale.
+
+## Runtime attribute proof
+
+Successful loading is not enough to prove the renderable primitive contract.
+
+For textured materials, package/engine evidence should pin required attributes such as:
+
+```text
+POSITION
+NORMAL
+TEXCOORD_0
+```
+
+when required by the runtime material.
+
+The Lafar Wayfinding Pylon benchmark produced a valid/loadable glTF with images and materials but no `TEXCOORD_0` after UV-layer-name mismatch during mesh joining. This must be a hard package/runtime FAIL, not a later visual surprise.
+
 ## Loader exceptions and automation
 
 A loader exception used in an automated test must become a readable test failure where practical.
@@ -16634,8 +16732,10 @@ Classify:
 ASSET_NOT_FOUND
 PARSE_FAIL
 MATERIAL_MISSING
+ATTRIBUTE_MISSING
 LOD_CONTRACT_FAIL
 DIMENSION_FAIL
+NODE_TRANSFORM_FAIL
 TEST_ASSERTION_FAIL
 PROCESS_CRASH
 ```
@@ -16648,6 +16748,10 @@ The bite test must fail for the intended assertion with a readable message, then
 
 A crash/abort is not a valid bite.
 
+A valid bite test proves only the assertion class it mutates. Example:
+- changing build geometry height and seeing `DIMENSION_FAIL` proves geometry-drift detection;
+- it does **not** prove node-scale detection unless the controlled mutation is specifically a node transform and the intended transform assertion bites.
+
 ## Catalog integration
 
 If the project uses an asset catalog:
@@ -16655,6 +16759,7 @@ If the project uses an asset catalog:
 ```text
 export to canonical runtime root
 -> package readback
+-> transform/attribute contract
 -> catalog registration/readback
 -> engine loader test using runtime path/catalog convention
 -> completion gate
@@ -16675,15 +16780,20 @@ engine_smoke_test:
   build_status: PASS
   test_exit_code: 0
   process_status: PASS
+  coordinate_space: LOCAL_VERTEX_SPACE
+  node_transform_policy: IDENTITY_TRS_REQUIRED
+  package_transform_check: PASS
   assertions:
     lod_family: PASS
     dimensions: PASS
+    required_attributes: PASS
     materials: PASS
   bite_test: PASS | NOT_REQUIRED | NOT_SAFE
   status: PASS
 ```
 
 Only this kind of target-runtime evidence may satisfy `runtime_import_or_instantiation` for Level D.
+
 
 ---
 
@@ -16693,7 +16803,7 @@ Only this kind of target-runtime evidence may satisfy `runtime_import_or_instant
 
 ## Scope
 
-Verified project profile extracted from the Lafar/Astera civic-asset pipeline benchmark.
+Verified project profile extracted from real Lafar/Astera civic-asset pipeline benchmarks.
 
 Use only when operating inside the RPG repository whose engine/build layout matches these facts. If the repository/runtime changes, mark the affected facts `UNVERIFIED` and re-resolve them rather than silently reusing stale paths.
 
@@ -16725,6 +16835,18 @@ project_asset_pipeline:
     export_readback_required: true
     texture_uri_policy: RELATIVE_TO_GLTF_MODULE
 
+    # Verified by the Wayfinding Pylon run: current production loader/test reads
+    # local vertex positions and does not provide proof that arbitrary glTF node
+    # transforms are applied. Runtime mesh transforms must therefore be baked or
+    # identity until importer behavior changes and is revalidated.
+    node_transform_policy: IDENTITY_TRS_REQUIRED
+    engine_loader_transform_application: NOT_APPLIED_FOR_CURRENT_DIMENSION_TEST_PATH
+
+    required_textured_primitive_attributes:
+      - POSITION
+      - NORMAL
+      - TEXCOORD_0
+
   asset_catalog:
     required: true
     registration_source: Source/Engine/AssetCatalog.cpp
@@ -16742,12 +16864,16 @@ project_asset_pipeline:
     build_command: cmake --build Build/windows-debug --target ModelTests --config Debug
     test_oracle_policy: DIRECT_EXECUTABLE_EXIT_CODE
     bite_test_required_for_new_regression_assertion: true
+    dimension_assertion_space: LOCAL_VERTEX_SPACE
 
   evidence:
     - Lafar Civic Bollard final runtime integration benchmark
+    - Lafar Wayfinding Pylon final runtime/reconstruction benchmark
     - engine loader resolved assets from RPG_ENGINE_ASSET_DIRECTORY/Assets
-    - ModelTests successfully loaded the Astera bollard after export moved to Assets/GameAssets
+    - ModelTests successfully loaded Astera civic assets after export to Assets/GameAssets
     - wrong sibling root <repo>/GameAssets produced runtime load failure
+    - Wayfinding Pylon exported once without TEXCOORD_0 despite valid images/materials; fixed before final acceptance
+    - Wayfinding Pylon dimension bite test proved build-geometry drift detection but exposed that local-vertex assertions do not prove node-transform handling
 ```
 
 ## Required use
@@ -16759,11 +16885,45 @@ When this profile matches the active project:
 - package the LOD family into one glTF module using `_LOD0.._LODn` node naming;
 - use the existing `ModelTests` infrastructure for engine-loader regression where appropriate;
 - capture `ModelTests.exe` exit status directly;
-- do not claim Level D from Blender glTF import alone.
+- do not claim Level D from Blender glTF import alone;
+- require identity/baked runtime mesh-node TRS while the current loader path does not prove transform application;
+- require `TEXCOORD_0` on textured runtime primitives.
 
 ## Handedness caution
 
 `MIRROR_X` is a project/runtime packaging fact observed in the current pipeline. Reverify if the engine importer or coordinate conversion changes. Prefer readable asymmetric details as proof.
+
+Do not reduce text/decal orientation to one global `mirror_u` switch. Front-facing and rear-facing surfaces can require opposite authoring-space UV orientation under the same project handedness conversion. Validate readable branding per canonical face/view after export.
+
+## Node-transform caution
+
+Current dimension regression evidence is `LOCAL_VERTEX_SPACE`.
+
+Therefore:
+
+```text
+local vertex dimensions PASS
++
+non-identity runtime node TRS
+=
+NOT sufficient runtime size proof
+```
+
+For current profile:
+
+```text
+package node TRS identity PASS
++
+local vertex dimensions PASS
+=
+accepted dimension evidence for the current loader path
+```
+
+If the production importer begins applying node transforms, update the profile and engine regression pattern together.
+
+## Runtime attribute caution
+
+A glTF package can parse and load while required vertex attributes are absent. For textured PBR/display owners, package readback must validate at least the attributes declared in `required_textured_primitive_attributes`.
 
 ## Profile freshness
 
@@ -16773,9 +16933,12 @@ Invalidate/reverify affected fields after changes to:
 - CMake asset-directory definitions;
 - engine loader root configuration;
 - glTF importer handedness;
+- glTF node-transform application;
+- runtime material/vertex attribute requirements;
 - LOD grouping parser;
 - catalog layout;
 - test/build directory layout.
+
 
 ---
 
@@ -18638,9 +18801,38 @@ Status:
 `FONT_UNRESOLVED`
 lub użyj dostarczonego logo jako grafiki.
 
+## Handedness and surface-facing orientation
+
+Czytelność tekstu/decalu musi być walidowana w **docelowym widoku powierzchni**, nie wyłącznie przez lokalny UV layout.
+
+Jeżeli pipeline posiada export handedness compensation, np. `MIRROR_X`:
+- nie stosuj jednego globalnego `mirror_u` do wszystkich decal planes;
+- front-facing i rear-facing surface mogą wymagać przeciwnej authoring-space orientacji;
+- orientation rule musi uwzględniać surface normal / canonical view;
+- nie kompensuj ponownie ręcznie transformacji, którą wykona exporter/runtime, bez proof.
+
+Wymagany test dla readable feature:
+
+```text
+canonical face/view
+-> exported or runtime-equivalent orientation
+-> readable text/logo
+-> PASS
+```
+
+Dla front/rear technical labels utrzymuj osobne Feature IDs, jeżeli ich surface facing jest różny.
+
 ## QA
 
 Porównuj ROI w widoku kanonicznym.
+
+Dla tekstu/logo PASS wymaga:
+- poprawnej orientacji;
+- braku mirror/reversal;
+- poprawnego anchor/scale;
+- evidence z canonical ROI albo exported/runtime-equivalent readback/render.
+
+Samo poprawne UV w authoring space nie jest dowodem po eksporcie, jeśli aktywny projekt stosuje handedness conversion.
 
 
 ---
@@ -19631,29 +19823,87 @@ Object decomposition i strategy map.
 ## R6 — D0 BLOCKOUT
 Bounds + silhouette.
 
+Wymagany proof przed advance:
+- numeric bounds;
+- registered silhouette evidence dla authoritative views;
+- QA scene isolation.
+
 ## R7 — D1 PRIMARY FORMS
 Major profiles i negative space.
+
+Wymagany proof przed advance:
+- D0/D1 landmarks;
+- canonical profile/proportion comparison;
+- brak open HARD geometry conflict.
 
 ## R8 — D2 FEATURES
 Panels, trim, recess, functional details.
 
+Wymagany proof przed advance:
+- wszystkie MUST feature owners;
+- ROI/visibility/layer-stack proof odpowiedni do feature class.
+
 ## R9 — D3 DETAIL
 Fasteners, branding, microgeometry.
+
+Readable branding/text wymaga canonical orientation proof, w tym project handedness gdy dotyczy.
 
 ## R10 — SURFACE
 Materials, UV, decals, emissive.
 
-## R11 — MULTIVIEW QA
+Dla target fidelity L4/L5 wymagany material segmentation proof.
+
+## R11 — MULTIVIEW QA + FIDELITY GATE
 Wszystkie kanoniczne widoki.
+
+Kolejność:
+
+```text
+QA_SCENE_ISOLATE
+-> registered canonical view validators
+-> hard dimensions
+-> D0/D1 landmarks
+-> MUST feature evidence
+-> material segmentation when required
+-> authority/deviation closure
+-> RECON_FIDELITY_GATE
+```
+
+`RECON_FIDELITY_GATE` musi zwrócić proof-bearing PASS z provenance.
+
+Bare `PASS`, `looks correct`, `matching the card` albo poprawny overall envelope nie pozwalają wejść do R12.
 
 ## R12 — TOPOLOGY/RUNTIME
 Optimization bez utraty fidelity.
 
+Ten etap jest niedostępny przy `RECON_FIDELITY_GATE != PASS`.
+
+Game-ready package readback musi później sprawdzić wymagane primitive attributes i aktywną node-transform policy.
+
 ## R13 — EXPORT VALIDATION
+
+Sprawdź:
+- package readback;
+- runtime primitive attributes;
+- node transform policy;
+- export round-trip dimensions/contact;
+- target engine evidence dopiero dla Level D.
 
 ## Backtracking
 
 Każdy FAIL wraca do najwcześniejszego etapu, który może go naprawić.
+
+Przykłady:
+
+```text
+SIDE contour FAIL -> R6/R7
+LOWER_TAPER visibility FAIL -> R8
+mirrored rear technical decal -> R9/R10
+missing TEXCOORD_0 after export -> R12/R13 package/UV owner
+non-identity node TRS forbidden by profile -> R12/R13 export/package owner
+```
+
+Nie naprawiaj reconstruction FAIL przez runtime detail ani package FAIL przez ponowne modelowanie, jeśli dependency nie prowadzi do geometrii.
 
 
 ---
@@ -20099,36 +20349,43 @@ This module defines **reference-reconstruction acceptance**, corresponding prima
 It does not by itself prove `GAME_READY_COMPLETE` or `PIPELINE_INTEGRATED`.
 Use `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md` for the full asset lifecycle.
 
-Asset reconstruction is accepted when:
+Asset reconstruction is accepted only when the final state is supported by proof-bearing evidence records, not by narrative self-certification.
 
 ## Evidence
-- wszystkie źródła zinwentaryzowane,
-- konflikty rozwiązane lub jawnie oznaczone,
-- unknowns zapisane.
+- wszystkie źródła zinwentaryzowane;
+- konflikty rozwiązane lub jawnie oznaczone;
+- unknowns zapisane;
+- HARD/MUST/CANONICAL deviations mają status `RESOLVED` z resolution evidence albo `ACCEPTED_BY_AUTHORITY` z authority record;
+- bare `PASS` bez evidence kind/provenance nie zamyka wymaganej bramki.
 
 ## Geometry
-- hard dimensions pass,
-- all canonical silhouettes pass,
-- all D0/D1 landmarks pass,
-- all MUST geometry features pass.
+- hard dimensions pass z numeric provenance;
+- all canonical silhouettes/views pass poprzez registered comparison, jeśli authority posiada reference dla widoku;
+- all D0/D1 landmarks pass z validator evidence;
+- all MUST geometry features pass z odpowiednim ROI/numeric/visibility proof.
 
 ## Details
-- D2/D3 zgodne z evidence,
-- branding poprawny lub przekazany do jawnego surface/decal ownera,
+- D2/D3 zgodne z evidence;
+- branding poprawny lub przekazany do jawnego surface/decal ownera;
+- readable front/rear branding ma poprawną orientation po uwzględnieniu project handedness;
 - rear/bottom nie pominięte, jeśli mają authority i są wymagane.
 
 ## Surface evidence
-- material segmentation pass,
-- directional material evidence poprawnie sklasyfikowane,
-- emissive/glass geometry/material ownership zdefiniowane.
+- material segmentation pass dla target fidelity L4+;
+- directional material evidence poprawnie sklasyfikowane;
+- emissive/glass geometry/material ownership zdefiniowane;
+- visible layered assemblies, takie jak glass/content/recess, mają poprawny layer-stack/visibility proof.
 
 Final runtime textures/bloom do not need to be finished for Level A.
 
 ## QA
-- multi-view gate pass,
-- regression gate pass,
-- no unauthorized deviations,
-- lighting/material readability has not been used to justify unsupported geometry changes.
+- QA scene isolation potwierdza brak collision/export proxy contamination;
+- multi-view gate pass;
+- regression gate pass;
+- `RECON_FIDELITY_GATE` pass;
+- no unauthorized deviations;
+- lighting/material readability has not been used to justify unsupported geometry changes;
+- final acceptance bundle zawiera typed evidence + provenance dla wymaganych ownerów.
 
 ## Runtime boundary
 
@@ -20136,19 +20393,36 @@ Reconstruction completion requires that later optimization has a protected Featu
 
 For higher levels:
 - Level B -> clean authoring model/UV/material segmentation;
-- Level C -> LOD/collision/bake/export/runtime material closure;
+- Level C -> LOD/collision/bake/package/export/runtime material closure;
 - Level D -> project catalog/import integration.
 
+Runtime/engine PASS nigdy nie back-propaguje do Level A.
+
 ## Documentation
-- reconstruction report,
-- evidence/unknown list,
-- inferred geometry list,
-- known limitations,
+- reconstruction report;
+- reconstruction acceptance evidence bundle;
+- evidence/unknown list;
+- inferred geometry list;
+- known limitations;
 - highest completion level must be reported separately.
+
+## Required final record
+
+```yaml
+reconstruction_complete:
+  status: PASS
+  evidence_kind: RECON_FIDELITY_GATE
+  provenance_id: recon_gate_report_...
+  target_fidelity: L4_or_L5
+  canonical_views: {...}
+  must_features: [...]
+  deviations: [...]
+```
 
 ## Rule
 
 Do not call the entire asset `DONE` merely because this reconstruction DoD passes.
+Do not call reconstruction `PASS` merely because the builder reports that it looks correct.
 
 
 ---
