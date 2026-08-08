@@ -24990,32 +24990,189 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.7.0** — runtime-proof integrity, cache coherence, canonical project paths and executable stage reuse.
+**v0.9.0 — Shape Graph, coarse-to-fine reconstruction and node-by-node geometric proof.**
 
-v0.7 is based on the final continuation of the real Lafar Civic Bollard pipeline test. After the earlier captured ~36k-token game-ready continuation, another ~45k tokens were consumed closing runtime integration, for roughly ~81k post-v0.5 continuation tokens. The final asset was correct and reached `PIPELINE_INTEGRATED`, but the run exposed a new bottleneck: the agent was spending context proving infrastructure that should already be encoded in the project profile and execution layer.
+v0.9 addresses a failure exposed by the Lafar Wayfinding Pylon: the agent could possess good Blender skills and strong final QA, yet still interpret a complex object too loosely, build many parts at once and represent a compound hard-surface form as stacked boxes/bevels before proving its primary geometry.
 
-## Purpose
+The central change is:
 
-The repository contains modular Markdown skills plus reusable Python executors/candidates for an AI agent that plans, builds, reconstructs, validates and prepares Blender assets for game/VFX pipelines.
+```text
+reference
+-> understand form hierarchy
+-> Shape Graph
+-> classify mathematical representation
+-> RDL coarse-to-fine build
+-> validate one Shape Node at a time
+-> final reconstruction fidelity proof
+-> runtime
+```
 
-The canonical knowledge source is the modular library stored in the numbered directories. `_FULL_LIBRARY.md` is generated automatically from modules listed in `MANIFEST.json` and should not be edited manually.
+not:
 
-## Main areas
+```text
+reference
+-> one large build script
+-> 20 objects appear
+-> quick visual check
+```
 
-- `00_governance` — state/task routing, semantic skills, completion evidence and execution policy
-- `01_analysis` — briefs, references, features and measurements
-- `02_blender_api` — Blender 5.1 API strategy, runtime compatibility and image-datablock cache coherence
-- `03_modeling` — hard-surface, topology, UV, trim sheets, floating details and authoring workflows
-- `04_game_ready` — runtime optimization, deterministic bake, UV/LOD contracts, emissive and export constraints
-- `05_execution` — QA, dirty-stage cache, executable pipeline DAG, post-export invariants, test-oracle integrity and completeness
-- `06_prompts` — planner/reviewer/repair prompts and system prompt
-- `07_examples` — examples and real benchmark/post-mortem runs
-- `08_scripts` — reusable validation/import-safety patterns
-- `09_engine` — engine/project profiles, canonical runtime roots, packaging, catalog and engine smoke-test contracts
-- `10_reconstruction` — evidence-driven 1:1 reconstruction system
-- `11_playbooks` — asset-class production playbooks
-- `executors` — reusable Python executors/candidates
-- `99_sources` — technical sources
+## Core v0.9 concepts
+
+### Reconstruction Shape Graph
+
+Every reference-driven asset is decomposed into stable design forms:
+
+```text
+G0 GLOBAL_ENVELOPE
+G1 PRIMARY_FORM
+G2 SECONDARY_STRUCTURAL_FORM
+G3 STRUCTURAL_FEATURE
+G4 EDGE_LANGUAGE
+G5 SURFACE_DETAIL
+```
+
+A Shape Node stores:
+- semantic role;
+- parent/dependencies;
+- importance;
+- mathematical shape class;
+- authoritative views and the properties each view controls;
+- numeric/relationship constraints;
+- validation contract;
+- implementation skill.
+
+`Shape Graph != Blender Object hierarchy`.
+
+### Reconstruction Detail Levels
+
+RDL is separate from runtime LOD:
+
+```text
+RDL0 envelope
+RDL1 primary forms
+RDL2 secondary structural forms
+RDL3 structural features
+RDL4 edge language
+RDL5 surface/detail
+```
+
+Runtime `LOD0..LOD3` is generated only after reconstruction is accepted.
+
+### Node-by-node execution
+
+Canonical transaction:
+
+```text
+one READY node
+-> build/repair only that node
+-> BUILT_UNVERIFIED
+-> QA isolation
+-> required registered views
+-> numeric/section/regression checks
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | FAIL
+```
+
+Required children remain blocked until their host/parent is accepted.
+
+### RDL stage barriers
+
+A later detail level cannot start because it is convenient.
+
+```text
+RDL0 PASS
+-> RDL1 nodes + barrier
+-> RDL2 nodes + barrier
+-> RDL3 nodes + barrier
+-> RDL4
+-> RDL5
+-> final RECON_FIDELITY_GATE
+```
+
+### Representation before Blender operator
+
+The agent classifies the form before selecting implementation:
+
+```text
+PARAMETRIC_PRIMITIVE
+EXTRUDED_PROFILE
+REVOLVED_PROFILE
+PROFILE_SWEEP
+MULTI_SECTION_LOFT
+MULTI_SECTION_TRANSITION
+SUBD_FREEFORM
+BOOLEAN_RECESS
+PANEL_LINE
+LAYERED_ASSEMBLY
+HYBRID_ASSEMBLY
+```
+
+A complex base that changes width, depth and corner treatment along Z should not default to `cube + bevel`.
+
+### Multi-section hard-surface loft
+
+v0.9 adds `SECTION_LOFT_HARD_SURFACE` and `executors/section_loft.py` for deterministic station-based hard-surface geometry.
+
+Typical use:
+- plinth/base widening toward the ground;
+- structural shoulder between narrow body and wide base;
+- shells with changing width/depth/corner plan.
+
+The executor keeps section point correspondence deterministic and exposes pure geometry validation plus an explicit Blender creation entry point.
+
+## New v0.9 semantic skills
+
+- `SHAPE_GRAPH`;
+- `SHAPE_CLASSIFY`;
+- `RECONSTRUCTION_NODE_GATE`;
+- `SECTION_LOFT_HARD_SURFACE`.
+
+New executors:
+
+```text
+executors/shape_graph.py
+executors/reconstruction_node_gate.py
+executors/section_loft.py
+```
+
+They are `CONTRACT_READY` until a real Blender 5.1 benchmark exercises the v0.9 contracts end-to-end.
+
+`MESH_VALIDATE` remains the currently proven `EXECUTOR_READY` library executor.
+
+## v0.8 foundation retained
+
+v0.9 keeps the v0.8 proof-integrity layer:
+- registered reference overlay validation;
+- chroma-aware reference masks;
+- layer-stack visibility validation;
+- proof-bearing `RECON_FIDELITY_GATE`;
+- no narrative `PASS` without provenance;
+- package checks for primitive attributes such as `TEXCOORD_0` and node-transform policy.
+
+The distinction is:
+
+```text
+v0.8: prove whether reconstruction is correct
+v0.9: structure the work so the agent understands and solves the right forms before detail
+```
+
+## Existing runtime pipeline retained
+
+v0.7 infrastructure remains active:
+- image datablock cache coherence;
+- Pipeline DAG / dirty-stage reuse;
+- canonical runtime path context;
+- post-export round-trip invariants;
+- trustworthy test oracle;
+- Level C vs Level D evidence separation.
+
+For the verified RPG project profile:
+
+```text
+engine asset directory = <repo>/Assets
+game asset root       = <repo>/Assets/GameAssets
+forbidden lookalike   = <repo>/GameAssets
+```
 
 ## Completion model
 
@@ -25026,231 +25183,53 @@ RECONSTRUCTION_COMPLETE
 -> PIPELINE_INTEGRATED
 ```
 
-A Blender render, successful bake, exported glTF or Blender re-import is not automatically a complete runtime asset.
+### Level A now additionally requires
+- valid Shape Graph revision;
+- required Shape Nodes accepted;
+- required RDL barriers passed;
+- proof-bearing final reconstruction fidelity gate.
 
-### Level C — `GAME_READY_COMPLETE`
+### Level C
+Still requires runtime LOD/collision/material/bake/package/export closure and round-trip invariants.
 
-Requires, as applicable:
-- final geometry/LOD/collision validation;
-- runtime material closure;
-- stable UV contract;
-- semantic bake validation;
-- disk/Blender image-cache coherence;
-- canonical output path preflight;
-- package readback;
-- post-export round-trip invariant validation;
-- baked-runtime QA.
+### Level D
+Requires actual target-engine proof such as production loader, engine regression test or instantiation. Blender glTF re-import remains Level C evidence only.
 
-### Level D — `PIPELINE_INTEGRATED`
+## Repository structure
 
-Additionally requires target-runtime proof. v0.7 distinguishes:
+- `00_governance` — state/routing/skills/task packs/completion
+- `01_analysis` — briefs/references/features/measurements
+- `02_blender_api` — Blender 5.1 API/runtime compatibility/cache
+- `03_modeling` — hard-surface/topology/UV/procedural modeling
+- `04_game_ready` — runtime LOD/collision/bake/export contracts
+- `05_execution` — node execution, stage barriers, QA, DAG, completion proof
+- `06_prompts` — system/planner/reviewer/repair prompts
+- `07_examples` — real benchmark/post-mortem runs
+- `08_scripts` — reusable validation patterns
+- `09_engine` — project/runtime profiles and integration proof
+- `10_reconstruction` — evidence-driven 1:1 reconstruction + Shape Graph/RDL layer
+- `11_playbooks` — asset-class production playbooks
+- `executors` — reusable Python executors/candidates
+- `99_sources` — technical sources
 
-```text
-Blender glTF import
-= Level C round-trip evidence
+## Canonical source
 
-ENGINE_PRODUCTION_LOADER
-ENGINE_REGRESSION_TEST
-ENGINE_INSTANTIATION
-= valid Level D evidence kinds
-```
+Modular Markdown files listed in `MANIFEST.json` are canonical.
 
-`executors/completion_gate.py` no longer accepts a bare `runtime_import_or_instantiation: PASS` as Level D proof.
+`_FULL_LIBRARY.md` is generated from the manifest and should not be edited manually.
 
-## v0.7 execution model
+## v0.9 benchmark
 
-The central change is an enforced dependency DAG:
+Canonical new regression benchmark:
 
-```text
-changed input
--> PIPELINE_DAG_PLAN
--> dirty dependency closure
--> execute only dirty stages
--> reuse accepted independent artifacts
--> validate
-```
+`07_examples/78_LAFAR_WAYFINDING_PYLON_SHAPE_GRAPH_REGRESSION_BENCHMARK.md`
 
-A local repair must not default to:
-
-```text
-build -> decals -> bake all -> export -> import -> test
-```
-
-when only a subset depends on the change.
-
-Examples:
-- stale Blender image datablock -> reload/binding QA; baked PNG remains clean;
-- wrong runtime output root -> package/readback/engine test dirty; texture pixels remain clean;
-- underside geometry change -> geometry + actually dependent bake channels + export/round-trip/test; separate decal atlas normally remains clean.
-
-## Image cache coherence
-
-The final Bollard run proved a silent Blender failure class:
-
-```text
-accepted new PNG on disk
-+
-old bpy.data.images datablock with same name
-=
-runtime material renders stale pixels
-```
-
-v0.7 adds `IMAGE_CACHE_COHERENCE` and `executors/image_cache_coherence.py`.
-
-When disk is authoritative:
-
-```text
-validate file
--> load/reload Blender image datablock
--> verify canonical filepath/colorspace/dimensions
--> verify material binding
--> runtime QA
-```
-
-Do not rebake a correct texture merely because Blender is displaying an older cached image.
-
-## Canonical runtime path
-
-A real directory is not necessarily an engine-visible directory.
-
-v0.7 adds `RUNTIME_PATH_RESOLVE` and forbids per-script root guessing.
-
-Authority:
-
-```text
-validated project profile
-> build/engine asset-root definition
-> production loader config
-> engine test fixture
-> sibling exporter
-> heuristic search
-```
-
-For the currently verified RPG project profile:
-
-```text
-engine asset directory = <repo>/Assets
-game asset root       = <repo>/Assets/GameAssets
-forbidden lookalike   = <repo>/GameAssets
-```
-
-These facts are stored in `09_engine/profiles/RPG_PROJECT_ASSET_PIPELINE_PROFILE.md` and should be reused until project configuration invalidates them.
-
-## Post-export invariants
-
-v0.7 explicitly re-measures the final exported/re-imported artifact.
-
-This exists because the Bollard source looked correct while exported LOD0 became 1048 mm instead of the locked 1050 mm after underside/fillet changes.
-
-Protected invariants may include:
-- dimensions;
-- contact datum;
-- LOD family/counts;
-- triangle budgets;
-- material/image survival;
-- UV/custom data;
-- handedness/asymmetry.
-
-## Test oracle integrity
-
-A green-looking shell command is not enough.
-
-Unsafe without verified `pipefail`:
-
-```bash
-./ModelTests.exe 2>&1 | tail -20
-echo $?
-```
-
-because `$?` can belong to `tail` rather than the test process.
-
-v0.7 adds `TEST_ORACLE` and `executors/test_oracle.py` for direct-process return-code capture.
-
-New regression assertions should perform a controlled bite test when safe:
-
-```text
-correct baseline
--> intentionally change one expectation
--> intended assertion fails with expected message
--> restore
--> final test passes
-```
-
-Crash/abort/load failure is not a valid bite.
-
-## Semantic execution
-
-Before ad-hoc Python/shell/project code, check `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`.
-
-New v0.7 semantic skills include:
-- `IMAGE_CACHE_COHERENCE`;
-- `PIPELINE_DAG_PLAN`;
-- `RUNTIME_PATH_RESOLVE`;
-- `EXPORT_ROUNDTRIP_VALIDATE`;
-- `TEST_ORACLE`;
-- `ENGINE_INTEGRATION_PROOF`.
-
-New candidate executors include:
-- `executors/image_cache_coherence.py`;
-- `executors/pipeline_dag.py`;
-- `executors/runtime_path_resolver.py`;
-- `executors/export_roundtrip_validate.py`;
-- `executors/test_oracle.py`.
-
-They remain `CONTRACT_READY` until the next real benchmark exercises the packaged implementations.
-
-`MESH_VALIDATE` remains `EXECUTOR_READY` from real Blender 5.1 evidence.
-
-## Benchmarks
-
-Canonical benchmarks now include:
-- Lafar Street Bench reconstruction;
-- Lafar Civic Bollard end-to-end asset benchmark;
-- Lafar Civic Bollard bake/runtime regression benchmark;
-- Lafar Civic Bollard final pipeline-integration regression benchmark.
-
-Known cost evidence:
-
-```text
-first Bollard full baseline                  ~60k tokens
-captured v0.5 game-ready continuation        ~36k tokens
-additional final integration continuation    ~45k tokens
-post-v0.5 continuation combined              ~81k tokens
-```
-
-Preferred v0.7 target once an asset is already `GAME_READY_COMPLETE` and the matching project profile exists:
-
-```yaml
-pipeline_integration_tokens: <= 10000
-project_profile_rediscovery_calls: 0
-false_green_test_results: 0
-ambiguous_runtime_root_writes: 0
-full_pipeline_restarts_after_local_repair: 0
-blender_import_used_as_level_d_proof: 0
-```
-
-These are benchmark goals, not universal limits.
-
-## Repository rules
-
-1. Prefer updating an existing canonical responsibility over creating duplicate parallel skills.
-2. Add a new skill only for a distinct reusable responsibility/failure class.
-3. Keep semantic identity separate from transient Blender names/UI state.
-4. `MANIFEST.json` defines the canonical modules compiled into `_FULL_LIBRARY.md`.
-5. GitHub Actions regenerates `_FULL_LIBRARY.md`; never edit the snapshot manually.
-6. Candidate executors are not promoted without real runtime evidence.
-7. A release should improve quality, proof strength or cost — documentation volume alone is not progress.
-8. Validated project facts belong in profiles and should not be rediscovered per asset.
-9. Local repairs execute the DAG dirty closure, not the whole pipeline by habit.
-10. Level D requires target-engine evidence with a trustworthy test oracle.
-
-## Current target
-
-- Blender 5.1.x
-- Python automation through Blender API/BMesh where practical
-- evidence-driven reconstruction
-- game-ready hard-surface production
-- deterministic procedural-to-runtime material closure
-- incremental dependency-driven execution
-- target-engine integration proof
-- glTF/GLB neutral baseline unless an Engine Profile overrides it
+It protects against:
+- production geometry before Shape Graph;
+- monolithic multi-RDL builds;
+- child geometry on failed parent;
+- primary nodes without per-view proof;
+- box abuse for multi-section forms;
+- detail skills before host acceptance;
+- RDL barrier bypass;
+- runtime work before reconstruction fidelity PASS.
