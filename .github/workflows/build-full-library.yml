@@ -1,0 +1,47 @@
+name: Build Full Library
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.md'
+      - 'MANIFEST.json'
+      - 'tools/build_full_library.py'
+      - '.github/workflows/build-full-library.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate compiled snapshot
+        run: python tools/build_full_library.py
+
+      - name: Commit generated snapshot if changed
+        shell: bash
+        run: |
+          if git diff --quiet -- _FULL_LIBRARY.md && git diff --cached --quiet; then
+            echo 'No generated changes.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add _FULL_LIBRARY.md
+          if git diff --cached --quiet; then
+            echo 'No generated changes.'
+            exit 0
+          fi
+          git commit -m 'Regenerate _FULL_LIBRARY.md'
+          git push
