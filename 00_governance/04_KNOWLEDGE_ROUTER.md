@@ -119,6 +119,8 @@ Every mesh declares topology intent before general PASS/FAIL:
 - SURFACE_DETAIL;
 - COLLISION.
 
+`MESH_VALIDATE` is `EXECUTOR_READY` after successful Blender 5.1 use in the Lafar Civic Bollard benchmark. It still becomes `RUNTIME_BOUND` only after the current integration can invoke/import it.
+
 ## Civic material looks too clean / procedural
 Route to `MATERIAL_FINISH_CIVIC`.
 Load:
@@ -138,17 +140,71 @@ Load:
 
 Keep asset emitter correctness separate from bloom/exposure/tone-mapping behavior.
 
+## UV atlas shared by bake source and LODs
+Route to `UV_ATLAS_CONTRACT`.
+Load:
+- `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`
+- UV/Texel Density/Materials
+- active Feature/Object registry
+
+Use semantic part IDs rather than transient Blender object names such as `.001`.
+Missing atlas assignment is a hard FAIL.
+Do not apply the atlas only to the temporary bake source while exported LODs keep another UV layout.
+
 ## High -> low / procedural -> runtime bake
 Route runtime texture closure to `BAKE_RUNTIME_TEXTURES`.
 Load:
 - High-Poly / Low-Poly Workflow when geometric transfer is required
 - Baking Pipeline
 - `04_game_ready/50_GAME_READY_BAKE_GATE.md`
+- `04_game_ready/51_BAKE_EXECUTION_AND_CHANNEL_SEMANTICS.md`
+- `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`
+- `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`
+- `05_execution/64_LONG_RUNNING_JOB_AND_POLL_PROTOCOL.md`
+- `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`
 - UV/Texel Density/Materials
 - Texture Packing and Mip Safety
 - active Engine Profile
 
+Preferred executors:
+- `executors/bake_runtime_textures.py`;
+- `executors/uv_atlas_contract.py`;
+- `executors/bake_validate.py`;
+- `executors/qa_scene_isolation.py` for AO/ray-dependent passes.
+
 A separate high-poly source is not mandatory for every procedural-to-texture bake.
+Do not write a new generic multi-material bake helper before checking these executors.
+Do not rerun every channel after a local repair; consult the dirty-stage cache.
+A tool timeout triggers job/artifact inspection, not immediate duplicate bake.
+
+## Bake failure diagnostics
+
+Route by measured failure:
+
+```text
+bpy bake returns CANCELLED / active image warning
+-> BAKE_RUNTIME_TEXTURES target-binding diagnostics
+
+AO nearly black / unexpected global occlusion
+-> QA_SCENE_ISOLATE + AO diagnostics
+
+metal BaseColor black after bake
+-> BaseColor channel semantics, not lighting iteration
+
+metallic = 1 across atlas
+-> scalar channel extraction + region validator
+
+emissive white/full atlas or clipped hue
+-> emissive color*strength normalization + approved-region validator
+
+textures correct but runtime model samples wrong regions
+-> UV_ATLAS_CONTRACT
+
+export file exists but nodes/material/images wrong
+-> RUNTIME_PACKAGE_VALIDATE / EXPORT_VALIDATE
+```
+
+Do not restart the entire bake pipeline when one scoped channel/contract fails.
 
 ## Game-ready finishing
 Use Task Pack `GAME_READY_FINISH` only after modeling/reconstruction acceptance.
@@ -158,16 +214,56 @@ Load:
 - Pivots/Transforms
 - Texture/Material Runtime
 - Bake Gate
+- Bake Execution and Channel Semantics
+- UV Atlas/LOD Stability Contract
+- Bake Output Validation
+- Incremental Dirty-Stage Cache
+- Long-Running Job Protocol for expensive passes
 - Emissive Runtime Handoff if applicable
 - active Engine Profile
 - active Project Asset Pipeline Profile
+- Runtime Module Packaging Contract
 - glTF/export module
 - Final Validation
 - `MESH_VALIDATE`
 - Completion Levels
 - Completeness Report
 
+Preferred skills:
+- `UV_ATLAS_CONTRACT`;
+- `BAKE_RUNTIME_TEXTURES`;
+- `BAKE_VALIDATE`;
+- `RUNTIME_PACKAGE_VALIDATE`;
+- `ASSET_COMPLETION`.
+
 Before claiming Level C route final status through `ASSET_COMPLETION`.
+The final surface check must use the baked runtime material on a runtime LOD mesh, not only the procedural authoring shader.
+
+## Runtime module packaging / export readback
+Route to `RUNTIME_PACKAGE_VALIDATE` and/or `EXPORT_VALIDATE`.
+Load:
+- `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`
+- active Engine Profile
+- active Project Asset Pipeline Profile
+- glTF Export
+- Export Validation Snippets
+
+Persist project facts such as:
+- one-file multi-node vs separate LOD files;
+- node suffix pattern;
+- collision packaging;
+- handedness/mirror compensation;
+- material/image URI expectations.
+
+Do not inspect long sibling exporter scripts again if the active project profile already contains these verified facts.
+
+## Python module/helper reused by another stage
+Load:
+- Code Artifact and Patch Protocol
+- `08_scripts/94_IMPORT_SAFE_PYTHON_MODULE_PATTERN.md`
+
+Reusable modules must be import-safe and scratch collections must have explicit ownership.
+Do not let helper import/exec trigger production export/bake as a top-level side effect.
 
 ## Project/asset catalog integration
 Use Task Pack `PIPELINE_INTEGRATION` only when target is Level D.
@@ -211,11 +307,14 @@ Zawsze stosuj Tool Call and Token Efficiency:
 - nie echoj pełnych wygenerowanych skryptów/patchy, jeśli kod jest już artefaktem na dysku.
 
 Dla kodu używaj Code Artifact and Patch Protocol.
+Dla bake/export używaj dirty-stage cache, aby poprawka jednego kanału nie uruchamiała sześciu zaakceptowanych etapów.
 
 ## Retry budget rule
 
 Po pierwszej porażce agent diagnozuje i może wykonać tylko jedną poprawioną próbę tej samej strategii.
 Po drugiej porażce: re-inspection + strategy switch/blocker.
+
+Dla operacji długotrwałych timeout nie liczy się jako udowodniona porażka. Najpierw sprawdź job/artifact state.
 
 ## Trim-sheet UV texturing
 Load:
@@ -268,6 +367,7 @@ Load:
 - Engine Profile Schema
 - Engine Adapter Protocol
 - Project Asset Pipeline Profile Schema
+- Runtime Module Packaging Contract
 - Asset Catalog Integration Protocol when Level D is required
 - Authoring to Runtime Handoff
 - właściwy format eksportu
@@ -319,3 +419,4 @@ Then load only current Task Pack/stage pack.
 ### Benchmarks
 - `07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md`
 - `07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md`
+- `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`
