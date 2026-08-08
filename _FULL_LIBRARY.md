@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.7.0 — Full compiled snapshot
+# Blender AI Agent Library v0.9.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -12303,6 +12303,485 @@ The executor plans work; asset-specific stage callables remain owned by the proj
 
 ---
 
+## FILE: `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`
+
+# Reconstruction Fidelity Gate
+
+## Cel
+
+Zamienić istniejące zasady fidelity z dokumentacji na twardą, **proof-bearing** bramkę wykonawczą przed `R12 — TOPOLOGY/RUNTIME`.
+
+v0.7 potrafi dowieść poprawnego exportu, ścieżek runtime i integracji silnika. Nie może jednak dopuścić do sytuacji, w której asset z poprawnym bounding boxem albo narracyjnym `looks correct` przechodzi do LOD/exportu mimo nieudowodnionej sylwetki, proporcji lub widoczności cech MUST.
+
+## Zasada nadrzędna
+
+```text
+RECONSTRUCTION FIDELITY FAIL / UNVERIFIED
+!=
+problem do zapisania jako deviation i kontynuowania runtime
+```
+
+Jeżeli błąd dotyczy D0/D1, kanonicznego widoku, cechy MUST albo twardego wymiaru, pipeline wraca do najwcześniejszego właściciela błędu.
+
+`PASS` jest stanem dowodowym, nie komentarzem modelu.
+
+## Kolejność bramek
+
+```text
+registered reference
+-> hard dimensions
+-> canonical silhouette/overlay diff
+-> D0/D1 landmarks and proportions
+-> MUST feature ROI visibility
+-> material segmentation when target >= L4
+-> authority/deviation closure
+-> RECON_FIDELITY_GATE
+-> only then topology/UV/LOD/runtime
+```
+
+## Proof-bearing PASS
+
+Każdy wymagany owner musi przekazać compact record zawierający co najmniej:
+
+```yaml
+status: PASS
+evidence_kind: <allowed kind>
+provenance_id: <artifact/registration/validator id>
+```
+
+Sam zapis:
+
+```yaml
+status: PASS
+```
+
+jest w trybie v0.8 `UNVERIFIED`.
+
+Narracyjne:
+
+```text
+correct
+matching the card
+looks good
+ortho checked
+```
+
+nie jest dowodem Level A.
+
+## Dozwolone klasy dowodu
+
+Przykładowe `evidence_kind`:
+
+```text
+NUMERIC_MEASUREMENT
+REGISTERED_OVERLAY
+SILHOUETTE_DIFF
+LANDMARK_PROJECTION
+FEATURE_ROI
+LAYER_STACK
+RAY_VISIBILITY
+MATERIAL_SEGMENTATION
+AUTHORITY_DECISION
+```
+
+Dopuszczalne klasy zależą od ownera. Na przykład `REGISTERED_OVERLAY` nie zastępuje numeric hard-dimension measurement, a `OBJECT_EXISTS` nie jest wystarczającym dowodem widocznej cechy MUST.
+
+## Minimalny kontrakt wejściowy
+
+```yaml
+fidelity_gate:
+  strict_evidence: true
+  target_fidelity: L4
+  achieved_fidelity: L4
+
+  hard_dimensions:
+    status: PASS
+    evidence_kind: NUMERIC_MEASUREMENT
+    provenance_id: bounds_report_v3
+
+  canonical_views:
+    FRONT:
+      status: PASS
+      evidence_kind: REGISTERED_OVERLAY
+      provenance_id: front_reg_001
+      iou: 0.97
+      mean_contour_delta_px: 1.3
+      max_contour_delta_px: 4.0
+    SIDE:
+      status: FAIL
+      evidence_kind: REGISTERED_OVERLAY
+      provenance_id: side_reg_001
+
+  landmarks_d0_d1:
+    status: PASS
+    evidence_kind: LANDMARK_PROJECTION
+    provenance_id: landmark_report_002
+
+  must_features:
+    - id: LOWER_TAPER
+      status: PASS
+      evidence_kind: FEATURE_ROI
+      provenance_id: lower_taper_roi_004
+
+  material_segmentation:
+    status: PASS
+    evidence_kind: MATERIAL_SEGMENTATION
+    provenance_id: matseg_001
+
+  deviations:
+    - id: BODY_DEPTH
+      severity: HARD
+      status: ACCEPTED_BY_AUTHORITY
+      authority_source: USER_APPROVAL
+      authority_record_id: decision_007
+```
+
+Wynik musi zawierać `can_advance_to_runtime`.
+
+## Canonical-view proof
+
+Dla każdego wymaganego widoku `FRONT/SIDE/TOP/REAR/BOTTOM`:
+- rejestracja ma być globalna dla widoku;
+- kandydat i reference muszą używać zgodnej projekcji/skali/cropu;
+- wymagany jest compact metric report albo jawny blocker;
+- `QA_SCENE_ISOLATE` musi potwierdzić, że render nie został zanieczyszczony collision/export proxy.
+
+Jeżeli reference dla danego widoku nie istnieje, widok nie może zostać po prostu usunięty z evidence. Musi mieć jawny status wynikający z View Authority Matrix, np. `NOT_REQUIRED_BY_AUTHORITY` albo alternatywny proof contract.
+
+## Severity / authority
+
+`HARD`, `MUST`, `CANONICAL`:
+- brak automatycznego waivera;
+- `OPEN` blokuje;
+- może zostać zamknięte tylko jako `RESOLVED` albo `ACCEPTED_BY_AUTHORITY`;
+- `ACCEPTED_BY_AUTHORITY` bez `authority_source` i `authority_record_id` jest nadal blockerem.
+
+Agent budujący asset nie może sam sobie nadać authority przez komentarz typu `card wins` albo `this is more sensible`.
+
+`SOFT`:
+- może pozostać jako znane ograniczenie, jeżeli target fidelity na to pozwala.
+
+## Konflikty wewnątrz technical sheet
+
+Rozróżniaj źródła:
+- `PRINTED_DIMENSION`;
+- `ORTHO_DIMENSION_LINE`;
+- `PROMPT_HARD_VALUE`;
+- `PROMPT_RANGE`;
+- `ORTHO_SILHOUETTE_INFERENCE`;
+- `PIXEL_INFERENCE`;
+- `HERO/PERSPECTIVE_INFERENCE`.
+
+Jeżeli np. wydrukowane `1280 mm` nie odpowiada pikselowo skali wyprowadzonej z `2600 mm`, nie deformuj geometrii dla zgodności z oboma naraz. Zapisz conflict i rozwiąż go przez View Authority Matrix. Pixel inference nie może po cichu nadpisać drukowanego wymiaru.
+
+## Fidelity levels
+
+Korzystaj z `05_execution/59_REFERENCE_FIDELITY_PROTOCOL.md`.
+
+Dla assetu hero / ważnego civic prop domyślnym celem jest L4 lub L5, nie L1/L2.
+
+`achieved_fidelity` nie może być ręcznie zadeklarowane wyżej niż dowody ownerów. Gate może przyjąć deklarację jako wejście diagnostyczne, ale nie może użyć jej jako jedynego dowodu.
+
+## Anti-gaming
+
+Nie wolno zaliczyć bramki przez:
+- poprawne `Dimensions` przy błędnym obrysie;
+- render collision proxy zamiast assetu;
+- wysokie globalne IoU przy dużym błędzie lokalnego MUST ROI;
+- istnienie obiektu w scenie bez dowodu jego widoczności;
+- działający export/engine loader przy niezamkniętym reconstruction FAIL;
+- dopisywanie geometrii wyłącznie po to, aby osiągnąć arbitralny triangle count;
+- deklarację `PASS` bez evidence kind/provenance;
+- `ACCEPTED_BY_AUTHORITY` bez identyfikowalnego authority record.
+
+## Executor
+
+`executors/fidelity_gate.py`
+
+Executor agreguje compact reports. Nie zastępuje pomiarów. Właścicielami dowodu pozostają:
+- `REFERENCE_OVERLAY_VALIDATE` dla silhouette/ROI;
+- numeric/landmark validators;
+- `LAYER_STACK_VALIDATE` dla widocznych warstw/recessów;
+- material segmentation validator dla L4+;
+- Evidence/Authority Ledger dla deviation closure.
+
+
+---
+
+## FILE: `05_execution/70_RECONSTRUCTION_NODE_EXECUTION_PROTOCOL.md`
+
+# Reconstruction Node Execution Protocol
+
+## Cel
+
+Zastąpić monolityczny `build_asset()` kontrolowanym wykonywaniem Shape Graph node po node.
+
+v0.9 execution unit:
+
+```text
+ONE SHAPE NODE
+-> ONE MUTATION SCOPE
+-> ONE VALIDATION PACKAGE
+-> ACCEPT / FAIL
+```
+
+---
+
+## Preconditions
+
+Przed budową node'a:
+- Shape Graph revision istnieje;
+- node ma `CONSTRAINED` lub `READY_TO_BUILD`;
+- parent/dependencies wymagane do geometrii są `ACCEPTED`;
+- shape class jest wybrana;
+- required views + controls są zapisane;
+- implementation skill jest zidentyfikowany;
+- expected-change scope jest jawny;
+- QA scene isolation capability jest dostępne dla required render checks.
+
+Brak dowolnego required precondition = `BLOCKED`, nie improwizacja.
+
+---
+
+## Transaction
+
+### 1. Inspect
+Sprawdź current owner objects/helpers i node revision.
+
+### 2. Build/repair
+Modyfikuj tylko:
+- node owner;
+- jawne helper objects;
+- expected-change region.
+
+### 3. Mark `BUILT_UNVERIFIED`
+Samo utworzenie obiektu nie jest PASS.
+
+### 4. Validate
+Uruchom:
+- numeric checks;
+- required canonical view registered QA;
+- section/profile validator, jeśli dotyczy;
+- parent/sibling regression;
+- topology sanity odpowiednią dla tego etapu.
+
+### 5. Gate
+`RECONSTRUCTION_NODE_GATE` zwraca:
+- `ACCEPTED`;
+- `FAIL`;
+- `BLOCKED`;
+- `UNVERIFIED`.
+
+### 6. Persist
+Zapisz compact node acceptance record i graph revision.
+
+---
+
+## No bulk-add rule
+
+Jedna transakcja nie może tworzyć 20 niezależnych form, a potem wykonywać jednego wspólnego renderu.
+
+Jeżeli node jest assembly:
+- assembly node może organizować dzieci;
+- geometry mutation nadal odbywa się na leaf/structural child nodes zgodnie z RDL.
+
+Wyjątek: atomowa geometria, której rozdzielenie uniemożliwia sensowne QA, musi mieć jawny `atomic_group_id`.
+
+---
+
+## Node script architecture
+
+Asset-specific builder powinien mieć cienkie funkcje:
+
+```python
+build_primary_body(spec, context)
+build_base_plinth(spec, context)
+build_lower_shoulder(spec, context)
+build_side_frame(spec, context)
+```
+
+Orchestrator:
+
+```text
+resolve ready node
+-> invoke registered implementation
+-> validate node
+-> persist
+-> resolve next ready node
+```
+
+Nie preferuj jednej funkcji `build_all()`.
+
+Jeżeli convenience `build_all()` istnieje dla manualnego replayu, musi wewnętrznie respektować node gates i nie może ominąć FAIL.
+
+---
+
+## Repair semantics
+
+Node repair:
+- nie resetuje całego assetu;
+- oznacza dependent children `DIRTY`, jeśli zmiana może je naruszyć;
+- niezależne accepted nodes pozostają reusable;
+- nie wykonuje późniejszych RDL stages przed ponownym node PASS.
+
+---
+
+## Retry and representation switch
+
+Po pierwszym FAIL:
+- diagnoza;
+- jedna poprawiona próba tej samej strategii.
+
+Po drugim udowodnionym FAIL:
+- re-inspect evidence;
+- rozważ registration/parameter/representation error;
+- jeśli representation jest niewystarczająca, route do `SHAPE_CLASSIFY` i zmień strategy.
+
+Nie wykonuj serii `tweak -> render -> tweak -> render` bez zmiany modelu problemu.
+
+---
+
+## Output budget
+
+Każdy node execution zwraca compact summary:
+
+```yaml
+node_execution:
+  node_id: BASE_PLINTH
+  revision: n_006
+  skill_id: SECTION_LOFT_HARD_SURFACE
+  mutation_objects: [ACS_WP_BASE]
+  state: ACCEPTED
+  view_results: {FRONT: PASS, SIDE: PASS, TOP: PASS}
+  numeric: PASS
+  blockers: []
+  dirtied_children: [LOWER_LIGHT_SLOT]
+```
+
+Nie echoj całego skryptu ani raw pixel arrays.
+
+
+---
+
+## FILE: `05_execution/71_RECONSTRUCTION_STAGE_BARRIER.md`
+
+# Reconstruction Stage Barrier
+
+## Cel
+
+Wymusić coarse-to-fine progression. `RDL` nie jest sugestią kolejności, lecz barrierem wykonawczym.
+
+---
+
+## Barrier model
+
+```text
+RDL0_BARRIER
+RDL1_BARRIER
+RDL2_BARRIER
+RDL3_BARRIER
+RDL4_BARRIER
+RDL5_BARRIER
+```
+
+Bariera przechodzi tylko, gdy wszystkie required nodes bieżącego poziomu mają akceptowalny stan.
+
+---
+
+## PASS conditions
+
+Dla poziomu `N`:
+- wszystkie `MUST` node'y poziomu <= N wymagane w tym etapie są `ACCEPTED`;
+- brak `FAIL/BLOCKED/UNVERIFIED` required node;
+- required per-node view evidence jest proof-bearing;
+- global protected invariants nie zostały złamane;
+- Shape Graph revision jest aktualny;
+- brak unresolved HARD representation/evidence conflict dotyczącego bieżącej formy.
+
+---
+
+## Forbidden advancement
+
+Przykłady:
+
+```text
+RDL1 BASE_PLINTH FAIL
+-> nie buduj RDL2 display housing
+
+RDL2 DISPLAY_RECESS FAIL
+-> nie buduj RDL3 screen glass/content
+
+RDL3 PANEL HOST FAIL
+-> nie route do HS_PANEL_LINE
+
+RDL1 silhouette FAIL
+-> nie przechodź do bevel/material work
+```
+
+---
+
+## Stage result
+
+```yaml
+stage_barrier:
+  rdl: RDL1
+  graph_revision: sg_004
+  required_nodes: [PRIMARY_BODY, BASE_PLINTH, LOWER_SHOULDER]
+  accepted_nodes: [PRIMARY_BODY, BASE_PLINTH]
+  blockers:
+    - node_id: LOWER_SHOULDER
+      status: FAIL
+      failing_views: [SIDE]
+  status: FAIL
+  can_advance: false
+```
+
+---
+
+## Regression after later changes
+
+Jeżeli późniejsza zmiana narusza protected primary form:
+- affected earlier node -> `DIRTY`;
+- właściwa wcześniejsza bariera -> `DIRTY/FAIL`;
+- późniejsze node'y zależne zostają `DIRTY/BLOCKED`;
+- nie kontynuuj na podstawie historycznego PASS.
+
+---
+
+## Global vs node gate
+
+`RECONSTRUCTION_NODE_GATE` mówi:
+> czy konkretny node jest zaakceptowany?
+
+`RECONSTRUCTION_STAGE_BARRIER` mówi:
+> czy cały poziom coarse-to-fine jest wystarczająco rozwiązany, aby wejść głębiej?
+
+`RECON_FIDELITY_GATE` pozostaje finalną bramką Level A przed runtime.
+
+Hierarchia:
+
+```text
+node gates
+-> RDL stage barriers
+-> final reconstruction fidelity gate
+```
+
+---
+
+## Anti-pattern
+
+Nie uznawaj stage za PASS na podstawie:
+- liczby utworzonych obiektów;
+- braku wyjątków skryptu;
+- jednego hero renderu;
+- poprawnego total bounding boxu;
+- deklaracji modelu "primary forms done".
+
+PASS wymaga records z zaakceptowanych node'ów.
+
+
+---
+
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
 # System Prompt — Blender Asset Agent v0.9
@@ -12969,6 +13448,137 @@ Nie traktuj dimension lines, leaders, arrows ani separatorów layoutu jako silho
 Nie zwracaj pełnych pixel arrays, per-row profiles ani długich threshold traces. Przy niejednoznaczności wskaż minimalny ROI wymagający diagnostyki.
 
 Po `ANALYZE: PASS` zakończ szeroką eksplorację planszy. Dalsza analiza musi dotyczyć konkretnego feature ID, metric ID, view conflict lub failing ROI.
+
+
+---
+
+## FILE: `06_prompts/68_SHAPE_GRAPH_PLANNER_PROMPT.md`
+
+# Shape Graph Planner Prompt
+
+## Role
+
+Jesteś reconstruction plannerem. Twoim zadaniem nie jest jeszcze modelować w Blenderze.
+
+Masz przekształcić evidence z referencji w hierarchiczny `Reconstruction Shape Graph`, który jasno mówi:
+- jaka jest globalna forma;
+- z jakich primary i secondary form składa się asset;
+- które elementy są detalem;
+- jaka reprezentacja geometryczna najlepiej opisuje każdy node;
+- które widoki kontrolują każdy node;
+- w jakiej kolejności node'y mogą być budowane i walidowane.
+
+---
+
+## Forbidden during this task
+
+Nie:
+- twórz produkcyjnej geometrii;
+- pisz monolitycznego `build_asset.py`;
+- dodawaj bevel/rowki/logo tylko dlatego, że są łatwo widoczne;
+- wybieraj operatorów Blendera przed shape classification;
+- deklaruj `looks correct`;
+- redukuj decomposition do listy nazw obiektów.
+
+---
+
+## Required reasoning order
+
+```text
+1. identify global envelope
+2. identify silhouette-defining primary masses
+3. identify structural transitions between primary masses
+4. identify secondary structural forms
+5. identify structural features hosted by accepted forms
+6. identify edge-language owners
+7. identify surface/detail owners
+8. build parent/dependency graph
+9. classify each node's shape representation
+10. map evidence views and controlled properties
+11. define per-node validation contract
+12. assign RDL
+```
+
+---
+
+## Primary-form test
+
+Dla każdego candidate elementu zapytaj:
+
+```text
+Jeżeli usunę wszystkie mniejsze detale, czy ta forma nadal jest potrzebna, aby canonical silhouette/proportions wyglądały jak reference?
+```
+
+Jeśli tak, zwykle G1/G2.
+
+Jeśli feature istnieje tylko na powierzchni hosta i nie definiuje głównej formy, zwykle G3–G5.
+
+---
+
+## Shape classification
+
+Wybieraj spośród canonical classes z `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`.
+
+Szczególnie wykrywaj:
+- width/depth/corner treatment changing along an axis -> `MULTI_SECTION_LOFT`;
+- structural transition between accepted forms -> `MULTI_SECTION_TRANSITION`;
+- stable 2D profile + depth -> `EXTRUDED_PROFILE`;
+- axisymmetric -> `REVOLVED_PROFILE`;
+- path-driven -> `PROFILE_SWEEP`;
+- smooth compound freeform without stable sections -> `SUBD_FREEFORM`.
+
+Nie defaultuj do cube + bevel.
+
+---
+
+## Required output
+
+```yaml
+shape_graph:
+  asset_id: ...
+  graph_revision: sg_001
+  root: ...
+
+  nodes:
+    - id: ...
+      level: G0|G1|G2|G3|G4|G5
+      rdl: RDL0|RDL1|RDL2|RDL3|RDL4|RDL5
+      parent: ...
+      depends_on: []
+      role: ...
+      importance: MUST|SHOULD|OPTIONAL
+      shape_class: ...
+      preferred_skill: ...
+      evidence_views:
+        FRONT:
+          authority: REQUIRED|SUPPORTING|NONE
+          controls: []
+      constraints: []
+      validation: []
+
+  unresolved:
+    - id: ...
+      reason: ...
+      severity: ...
+
+  stage_plan:
+    RDL0: []
+    RDL1: []
+    RDL2: []
+    RDL3: []
+    RDL4: []
+    RDL5: []
+
+  status: PASS|BLOCKED
+```
+
+---
+
+## Output budget
+
+Zwracaj graph i decyzje reprezentacji, nie esej o modelowaniu.
+
+Jeżeli evidence nie wystarcza do rozróżnienia dwóch representations, oznacz node `UNRESOLVED_REPRESENTATION` i zapisz minimalny test, który rozstrzygnie konflikt.
 
 
 ---
@@ -14020,6 +14630,467 @@ v0.7 is successful only if the next benchmark demonstrates that solved infrastru
 - post-export invariants catch dimension/contact drift early;
 - image cache freshness is explicit;
 - Level D is closed only by a trustworthy target-engine test oracle.
+
+---
+
+## FILE: `07_examples/77_LAFAR_WAYFINDING_PYLON_VISUAL_FIDELITY_REGRESSION_BENCHMARK.md`
+
+# Lafar Wayfinding Pylon — Visual Fidelity and Acceptance-Proof Regression Benchmark
+
+## Purpose
+
+Pierwszy realny benchmark po v0.7, którego celem jest sprawdzenie, czy rozwiązana infrastruktura runtime nie przesłania podstawowego celu rekonstrukcji 1:1 oraz czy końcowy `RECONSTRUCTION_COMPLETE` jest oparty na wykonywalnym dowodzie, a nie na narracyjnym self-report.
+
+User-reported cost tej iteracji: około **67k tokenów**.
+
+Asset: `LAFAR WAYFINDING PYLON / ACS-WP-3470`.
+Źródła: techniczny concept sheet, technical prompt, Astera branding source.
+
+## Finalny wynik runu v0.7
+
+Pipeline wykonał dużą część pracy poprawnie:
+- reuse zweryfikowanego RPG project profile;
+- per-axis pomiary planszy;
+- parametric build;
+- dynamic display jako osobny runtime owner;
+- UV contract;
+- LOD/export/round-trip;
+- engine regression + controlled bite test;
+- naprawę display layer stack;
+- naprawę front/rear decal handedness;
+- finalny engine regression `exit 0`.
+
+Finalny raport agenta zgłosił:
+
+```text
+RECONSTRUCTION_COMPLETE = PASS
+MODELING_COMPLETE       = PASS
+GAME_READY_COMPLETE     = BLOCKED
+PIPELINE_INTEGRATED     = not claimed because Level C remained open
+```
+
+To zmienia diagnozę względem wcześniejszego checkpointu: run nie zakończył się na błędzie ekranu. Ekran został naprawiony, rear decals również, a engine test wrócił do zielonego stanu.
+
+Jednocześnie finalny raport **nie zawierał wystarczającego proof bundle, aby v0.8 mogło zaakceptować `RECONSTRUCTION_COMPLETE` automatycznie**. Zgłaszał ortho QA i stwierdzenie `correct and matching the card`, ale bez zarejestrowanego diffu wszystkich kanonicznych widoków, metryk contour/ROI i bez jawnego authority approval dla części hard conflicts.
+
+Najważniejszy wniosek benchmarku brzmi więc:
+
+```text
+v0.7 potrafi zakończyć technicznie poprawny run,
+ale nadal może self-certify reconstruction PASS bez wystarczającego executable evidence.
+```
+
+## Failure classes
+
+### P1 — luminance-only reference mask loses bright silhouette
+
+`executors/reference_measure.py` używa luminance threshold. Na karcie Astery jasne brushed aluminium i blue emissive są jaśniejsze od ciemnego hosta i mogą wypaść z maski.
+
+Lokalny run musiał stworzyć własny `dark OR chroma/blue` mask.
+
+v0.8 requirement:
+- mask mode jest jawny;
+- bright-material risk jest raportowany;
+- wspólny executor obsługuje chroma-aware reference masks.
+
+### P2 — evidence conflict was converted directly into geometry
+
+SIDE measurement dawał body depth około 167 mm, technical prompt podawał 220–250 mm. Run ustawił 170 mm i zapisał rationale `card wins`.
+
+Finalny raport nadal wykazuje to jako deviation, ale jednocześnie zgłasza `RECONSTRUCTION_COMPLETE = PASS`.
+
+v0.8 requirement:
+- HARD/MUST conflict tworzy unresolved authority item;
+- lokalny agent nie jest sam authority dla zmiany hard contractu;
+- reconstruction gate blokuje przejście, dopóki konflikt nie jest `RESOLVED` albo `ACCEPTED_BY_AUTHORITY` z jawnym źródłem decyzji.
+
+### P3 — runtime work began before primary visual fidelity was formally closed
+
+Agent przeszedł do display, decals, UV, LOD, exportu i engine testów, zanim istniał wykonywalny `RECON_FIDELITY_GATE` z registered multi-view evidence.
+
+Nawet jeśli późniejsze poprawki doprowadziły finalny model do właściwego stanu, kolejność była kosztowna i pozwalała runtime work maskować otwarte problemy reconstruction.
+
+v0.8 requirement:
+
+```text
+R6/R7/R8 fidelity evidence PASS
+-> R11 canonical registered multi-view PASS
+-> RECON_FIDELITY_GATE PASS
+-> dopiero R12 runtime
+```
+
+### P4 — envelope QA produced a false sense of correctness
+
+Render QA został zanieczyszczony export/LOD proxy oraz collision hull. Collision proxy zasłonił asset, a pomiar wciąż raportował poprawne 600 x 300 x 2600 mm.
+
+To dowodzi, że hard dimensions są konieczne, ale nie są dowodem fidelity.
+
+v0.8 requirement:
+- `QA_SCENE_ISOLATE` jest obowiązkowe dla reconstruction QA;
+- canonical silhouette validator sprawdza render właściwego asset ownera, nie sam envelope;
+- scene-isolation evidence jest częścią checkpoint report.
+
+### P5 — existing QA skill was not reused
+
+Biblioteka zawierała `executors/qa_scene_isolation.py`, ale run napisał lokalne prefix-hiding dopiero po wystąpieniu błędu.
+
+v0.8 requirement:
+- router/task pack jawnie wymaga `QA_SCENE_ISOLATE` przed ortho/material QA;
+- lokalny replacement helper jest benchmark regression, jeśli executor binding działa.
+
+### P6 — lower taper existed but was buried
+
+Kluczowa cecha dolnej sylwetki była początkowo wewnątrz body volume. Sam object existence nie wykrył błędu.
+
+v0.8 requirement:
+- MUST visible feature wymaga layer/placement/ROI proof.
+
+### P7 — display stack required repeated reactive debugging
+
+Kolejno wykryto:
+- opaque glass zasłaniające content;
+- content quad normal skierowany od widza;
+- glass/content fizycznie za recess floor, czyli zakopane w korpusie.
+
+Finalny run poprawił depth stack i display zaczął działać.
+
+v0.8 requirement:
+- `LAYER_STACK_VALIDATE` przed material iteration;
+- viewer -> glass -> gap/content -> recess floor order jest numeric invariant;
+- normal/facing jest częścią contractu;
+- ten failure class powinien zostać wykryty jednym preflightem, a nie trzema render/fix cycles.
+
+### P8 — branding handedness was view-dependent
+
+Front display/decal UV oraz rear tech decals wymagały różnych decyzji orientacji. Manualny U-flip połączony z projektowym `MIRROR_X` dawał odbite napisy.
+
+Finalny run naprawił front, a następnie osobno rear-facing decals.
+
+v0.8 requirement:
+- text/decal orientation jest sprawdzana per canonical view / face orientation;
+- authoring-space UV flip nie może być globalnym booleanem bez uwzględnienia surface facing;
+- export handedness i readable asymmetric/text feature tworzą wspólny validation contract.
+
+### P9 — LOD budget hard requirement remained unresolved
+
+LOD0 miał finalnie około 3478 tris wobec prompt budget 8000–15000. Agent słusznie nie dodał dummy geometry tylko po to, aby trafić w liczbę, ale nie może sam zmienić hard acceptance requirement.
+
+Finalny raport poprawnie pozostawił `GAME_READY_COMPLETE = BLOCKED`, jednak jako główny blocker podał brak baked PBR; LOD0 budget również pozostaje otwartym runtime contract conflict, dopóki authority nie zmieni specyfikacji.
+
+v0.8 requirement:
+- HARD runtime budget conflict = blocker/authority decision;
+- nie dodawaj dummy geometry dla countu;
+- nie oznaczaj Level C jako PASS, jeśli hard budget nie został jawnie rozstrzygnięty.
+
+### P10 — too many one-off local executors
+
+Run utworzył osobne skrypty dla reference measurement, front bands, side/rear, crops, build, decals, display, QA, UV i exportu.
+
+Część była asset-specific i uzasadniona. Część powielała semantic skills istniejące w bibliotece albo implementowała ogólny problem, który powinien stać się shared executor.
+
+v0.8 requirement:
+- reusable detection/validation logic trafia do `executors/`;
+- asset-specific scripts zostają cienkimi callerami;
+- target następnego podobnego assetu: brak ponownego pisania mask/overlay/fidelity/layer-stack validatorów.
+
+### P11 — reconstruction PASS was self-certified without proof-bearing canonical view records
+
+Finalny raport podał `RECONSTRUCTION_COMPLETE = PASS`, ale nie dołączył compact machine-checkable records typu:
+
+```yaml
+FRONT:
+  status: PASS
+  evidence_kind: REGISTERED_OVERLAY
+  registration_id: ...
+  iou: ...
+  mean_contour_delta_px: ...
+  max_contour_delta_px: ...
+  failing_rois: []
+```
+
+Analogicznie dla SIDE/TOP/REAR/BOTTOM i MUST feature ROIs.
+
+Narracyjne `correct and matching the card` nie jest Level A evidence.
+
+v0.8 requirement:
+- `PASS` bez dozwolonego `evidence_kind` jest `UNVERIFIED`;
+- canonical view PASS musi wskazywać registered comparison artifact/metrics;
+- `RECONSTRUCTION_COMPLETE` nie może być self-certified przez ten sam krok, który budował asset.
+
+### P12 — contradictory technical-sheet annotations need typed authority resolution
+
+Finalny run wykrył nową klasę konfliktu: sama karta była wewnętrznie niespójna. Przykład: wydrukowana klamra `SCREEN ZONE 1280 mm` odpowiadała około 1545 mm przy skalowaniu z kotwicy 2600 mm.
+
+Agent przyjął wydrukowane 1280 mm, co jest racjonalne, ale decyzja musi być zapisana jako typed authority result, nie tylko jako komentarz.
+
+v0.8 requirement:
+- rozróżniaj `PRINTED_DIMENSION`, `PIXEL_INFERENCE`, `PROMPT_RANGE`, `ORTHO_SILHOUETTE`, `PERSPECTIVE_INFERENCE`;
+- printed dimension może wygrać z pixel inference, ale konflikt pozostaje zapisany w Evidence Ledger;
+- per-axis calibration nie zakłada jednego globalnego mm/px dla marketingowej karty.
+
+### P13 — package could load successfully with no `TEXCOORD_0`
+
+W całym eksporcie brakowało `TEXCOORD_0`, ponieważ łączone siatki miały różne nazwy warstw UV. glTF miał obrazy i materiały, loader działał, ale runtime próbkowałby błędnie.
+
+v0.8 requirement:
+- package readback waliduje wymagane primitive attributes, nie tylko node/material/image names;
+- dla teksturowanego runtime material `TEXCOORD_0` jest hard invariant;
+- dynamic display/atlas owner musi mieć jawny UV attribute proof po eksporcie.
+
+### P14 — engine dimension assertion did not cover node transforms
+
+Controlled bite test wysokości zadziałał dla realnego dryfu build geometry, ale run wykrył lukę: engine loader/test czytał lokalne vertex positions i nie aplikował node transforms. Zmiana skali węzła glTF nie byłaby złapana przez taki assertion.
+
+Ta sama luka istnieje w dotychczasowym bollard test pattern.
+
+v0.8 requirement:
+- Project Asset Pipeline Profile deklaruje policy dla node TRS;
+- jeśli loader nie aplikuje node transforms, runtime nodes wymagają baked/identity TRS;
+- package validator sprawdza node transform policy;
+- engine dimension test określa przestrzeń pomiaru i nie udaje world-space proof, jeśli mierzy tylko local vertices.
+
+### P15 — valid engine evidence does not bypass lower completion levels
+
+Finalny run miał target-engine evidence (`ENGINE_REGRESSION_TEST`, exit 0), ale poprawnie nie zgłosił `PIPELINE_INTEGRATED`, ponieważ `GAME_READY_COMPLETE` było otwarte.
+
+To jest pozytywny regression result v0.7 i musi zostać zachowany:
+
+```text
+Level D evidence exists
++
+Level C FAIL/BLOCKED
+=
+PIPELINE_INTEGRATED not achieved
+```
+
+## What v0.7 did well
+
+Nie cofamy zmian v0.7. Project profile, canonical runtime root, DAG, image-cache coherence, round-trip i trustworthy engine test rozwiązały realne problemy.
+
+Finalny pylon run dodatkowo potwierdził:
+- project profile reuse działa;
+- controlled bite test ma wartość diagnostyczną;
+- completion hierarchy nie pozwoliła Level D przeskoczyć otwartego Level C;
+- runtime path contract uchronił pylon przed zapisem do zakazanego `<repo>/GameAssets`.
+
+v0.8 dodaje brakującą bramkę z przodu pipeline'u oraz wzmacnia proof integrity:
+
+```text
+visual truth with executable evidence
+-> runtime package integrity
+-> runtime proof
+```
+
+## v0.8 regression targets
+
+```yaml
+v0_8_targets:
+  runtime_started_with_reconstruction_must_fail: 0
+  reconstruction_pass_without_proof_bearing_canonical_views: 0
+  canonical_views_without_registered_visual_diff: 0
+  qa_renders_contaminated_by_collision_or_export_proxy: 0
+  luminance_only_mask_used_despite_bright_material_risk: 0
+  hard_deviation_silently_waived: 0
+  must_visible_feature_proved_only_by_object_existence: 0
+  local_reimplementation_of_bound_qa_isolation: 0
+  repeated_layer_stack_debug_iterations_before_numeric_preflight: <= 1
+  gltf_textured_primitive_missing_texcoord0: 0
+  node_transform_policy_unverified_for_runtime_loader: 0
+  reference_fidelity_target_for_hero_civic_prop: L4_or_L5
+```
+
+Preferred operational target dla następnego podobnego technical-sheet prop:
+- reference ingest + calibrated metrics: <= 8k tokens;
+- blockout + primary fidelity closure: <= 15k tokens;
+- no UV/LOD/export work before fidelity gate PASS;
+- reusable visual validators produce compact region/blocker reports zamiast raw logs;
+- no accepted `PASS` record without provenance/evidence kind.
+
+## Release implication
+
+v0.8 jest udane dopiero, gdy kolejny realny benchmark pokaże jednocześnie:
+1. błędna reconstruction zatrzymuje pipeline przed runtime;
+2. poprawna reconstruction przechodzi na podstawie proof-bearing multi-view records, nie narracji;
+3. package readback wykrywa brakujące runtime attributes i niedozwolone node transforms;
+4. Level D nadal wymaga poprawnego Level C i target-engine evidence.
+
+
+---
+
+## FILE: `07_examples/78_LAFAR_WAYFINDING_PYLON_SHAPE_GRAPH_REGRESSION_BENCHMARK.md`
+
+# Lafar Wayfinding Pylon — Shape Graph Regression Benchmark
+
+## Purpose
+
+Drugi benchmark `ACS-WP-3470`, tym razem dotyczący **rozumienia formy i kolejności konstrukcji**.
+
+v0.8 powstało po ~67k-tokenowym runie i naprawiło proof-bearing reconstruction QA. Kolejna ręczna inspekcja finalnego pylona ujawniła jednak błąd wcześniejszy: system potrafił wykrywać fidelity failure, ale nadal budował złożone formy jako luźne zbiory boxów/beveli i tworzył wiele poziomów detalu w jednym monolitycznym skrypcie.
+
+## Observed failure
+
+Concept base/lower transition jest spójnym hard-surface assembly:
+
+```text
+narrow body
+-> diagonal structural shoulder
+-> widening collar/plinth
+-> broad base
+-> lower lip
+```
+
+Przekrój zmienia jednocześnie:
+- width;
+- depth;
+- corner treatment;
+- chamfer/transition behavior.
+
+v0.8-era model reprezentował tę formę głównie przez:
+- stacked boxes;
+- wedges;
+- bevels;
+- overlapping local pieces.
+
+W FRONT część relacji mogła wyglądać plausibly, ale corner language i 3D transition nie odpowiadały conceptowi.
+
+## Root cause A — no persistent form hierarchy
+
+Biblioteka mówiła `primary forms before detail`, ale nie wymagała trwałego modelu hierarchii.
+
+Agent mógł przejść:
+
+```text
+analyze
+-> build body + base + display + decals + vents + bevels
+-> quick QA
+```
+
+bez proof, że każda primary form została osobno rozwiązana.
+
+## Root cause B — operator-first representation
+
+Istniały skille do:
+- panel lines;
+- SubD;
+- bevel/edge treatment;
+- booleans;
+- materials;
+
+ale brakowało warstwy:
+
+```text
+what mathematical class of shape is this?
+```
+
+W efekcie trudny base był traktowany jako `box + bevel`, mimo że evidence wymagało `MULTI_SECTION_LOFT`.
+
+## Root cause C — validation too late
+
+Cały asset był oceniany po dodaniu wielu elementów. Błąd base powinien zostać wykryty przy RDL1, zanim istnieją:
+- screen content;
+- logo;
+- vents;
+- panel seams;
+- materials;
+- runtime LOD.
+
+## v0.9 required architecture
+
+```text
+REFERENCE EVIDENCE
+-> SHAPE GRAPH
+-> RDL0 ENVELOPE
+-> node gate
+-> RDL1 PRIMARY FORMS, one node at a time
+-> stage barrier
+-> RDL2 SECONDARY STRUCTURAL FORMS
+-> stage barrier
+-> RDL3 STRUCTURAL FEATURES
+-> RDL4 EDGE LANGUAGE
+-> RDL5 SURFACE DETAIL
+-> final RECON_FIDELITY_GATE
+-> runtime
+```
+
+## Example target graph
+
+```text
+PYLON [G0]
+├── PRIMARY_BODY [G1, EXTRUDED_PROFILE]
+├── BASE_PLINTH [G1, MULTI_SECTION_LOFT]
+├── LOWER_SHOULDER [G1, MULTI_SECTION_TRANSITION]
+├── SIDE_FRAME [G2, PROFILE_SWEEP]
+├── DISPLAY_ASSEMBLY [G2]
+│   ├── DISPLAY_RECESS [G3, BOOLEAN_RECESS]
+│   ├── GLASS [G3, LAYERED_ASSEMBLY]
+│   └── CONTENT [G3, LAYERED_ASSEMBLY]
+├── FRONT_UTILITY_MODULE [G2]
+└── REAR_SERVICE_ASSEMBLY [G2]
+```
+
+## Representation regression
+
+For base/plinth:
+
+```text
+width changes with Z = true
+depth changes with Z = true
+corner treatment changes with Z = true
+```
+
+Expected:
+
+```text
+shape_class = MULTI_SECTION_LOFT
+preferred_skill = SECTION_LOFT_HARD_SURFACE
+```
+
+Regression if:
+
+```text
+primary_strategy = STACKED_BOXES / PARAMETRIC_BOX + BEVEL
+```
+
+without evidence proving equivalence across canonical views/sections.
+
+## Node-level QA target
+
+Before any RDL2 child:
+
+```yaml
+RDL1:
+  PRIMARY_BODY: ACCEPTED
+  BASE_PLINTH: ACCEPTED
+  LOWER_SHOULDER: ACCEPTED
+  stage_barrier: PASS
+```
+
+Each accepted node must have its own proof-bearing required-view records.
+
+## v0.9 regression targets
+
+```yaml
+v0_9_targets:
+  production_geometry_created_before_shape_graph: 0
+  monolithic_transactions_spanning_multiple_rdl: 0
+  child_nodes_built_on_failed_parent: 0
+  must_primary_nodes_without_per_view_gate: 0
+  box_abuse_for_multisection_primary_form: 0
+  specialist_detail_skill_invoked_before_host_acceptance: 0
+  rdl_stage_barrier_bypasses: 0
+  runtime_started_before_recon_fidelity_pass: 0
+```
+
+Operational target for similar civic prop:
+- initial Shape Graph <= 5k tokens;
+- RDL0/RDL1 solve uses only node-relevant modules;
+- first primary-form mismatch is detected before RDL2;
+- representation switch occurs after at most one corrected retry when evidence shows the original shape class is insufficient.
+
+## Release implication
+
+v0.9 jest udane, gdy następny complex reference asset nie tylko odrzuca błędny model, lecz **najpierw rozumie jego hierarchię brył, buduje primary forms oddzielnie i dobiera właściwą reprezentację geometrii przed detalem**.
+
 
 ---
 
@@ -15348,6 +16419,123 @@ module:
   idempotent: true
   status: PASS
 ```
+
+
+---
+
+## FILE: `08_scripts/95_SHAPE_GRAPH_VALIDATOR_PATTERN.md`
+
+# Shape Graph Validator Pattern
+
+## Cel
+
+Walidować strukturę Reconstruction Shape Graph przed modelowaniem i przy każdym revision change.
+
+Preferred executor:
+`executors/shape_graph.py`.
+
+---
+
+## Structural checks
+
+Validator sprawdza:
+- unique node IDs;
+- root exists;
+- parent IDs exist;
+- dependency IDs exist;
+- graph is acyclic;
+- hierarchy level jest canonical G0–G5;
+- RDL jest canonical RDL0–RDL5;
+- hierarchy/RDL relation jest spójna;
+- required nodes mają shape class;
+- required nodes mają validation contract;
+- child nie może zależeć od późniejszego RDL bez jawnego wyjątku;
+- ready node ma zaakceptowane wymagane dependencies.
+
+---
+
+## Canonical level mapping
+
+Default:
+
+```text
+G0 -> RDL0
+G1 -> RDL1
+G2 -> RDL2
+G3 -> RDL3
+G4 -> RDL4
+G5 -> RDL5
+```
+
+Wyjątek musi być jawny i uzasadniony w node contract.
+
+---
+
+## Readiness computation
+
+Executor może wyliczyć:
+
+```yaml
+ready_nodes:
+  - BASE_PLINTH
+blocked_nodes:
+  - LOWER_SHOULDER:
+      reason: dependency PRIMARY_BODY not ACCEPTED
+```
+
+Gotowość nie oznacza ACCEPTED; oznacza tylko, że node może wejść do transakcji build/repair.
+
+---
+
+## Stage barrier computation
+
+Dla wskazanego RDL:
+- znajdź required nodes;
+- sprawdź ich states/evidence status;
+- zwróć blockers;
+- `can_advance` tylko przy pełnym PASS.
+
+---
+
+## Compact output
+
+```yaml
+shape_graph_validation:
+  status: PASS
+  node_count: 17
+  root: PYLON
+  graph_revision: sg_004
+  ready_nodes: [BASE_PLINTH]
+  blocked_nodes: 6
+  errors: []
+  warnings: []
+```
+
+Nie zwracaj pełnego graph dump, jeśli caller już go posiada.
+
+---
+
+## Failure IDs
+
+Canonical examples:
+- `DUPLICATE_NODE_ID`;
+- `ROOT_MISSING`;
+- `PARENT_MISSING`;
+- `DEPENDENCY_MISSING`;
+- `GRAPH_CYCLE`;
+- `INVALID_LEVEL`;
+- `INVALID_RDL`;
+- `LEVEL_RDL_MISMATCH`;
+- `SHAPE_CLASS_MISSING`;
+- `VALIDATION_CONTRACT_MISSING`;
+- `DEPENDENCY_NOT_ACCEPTED`;
+- `FUTURE_LEVEL_DEPENDENCY`.
+
+---
+
+## Rule
+
+Shape Graph validator nie ocenia, czy geometria wygląda dobrze. Pilnuje, aby system miał poprawny plan zależności i nie mógł ominąć coarse-to-fine execution.
 
 
 ---
@@ -20825,6 +22013,1661 @@ The cache must contain compact structured values. It must not embed:
 
 ---
 
+## FILE: `10_reconstruction/171_REFERENCE_MASK_AND_CONTRAST_MODEL.md`
+
+# Reference Mask and Contrast Model
+
+## Problem
+
+Jedna maska `luminance < threshold` nie jest wystarczająca dla technicznych plansz produktowych.
+
+Na realnym benchmarku Lafar Wayfinding Pylon jasne szczotkowane aluminium i błękitny emissive strip zlewały się z jasnym tłem. Czysty próg luminancji zaniżał szerokość SIDE i mógł fałszywie zaliczyć albo odrzucić obrys.
+
+## Mask modes
+
+Validator reference powinien jawnie deklarować tryb:
+
+```text
+ALPHA
+LUMINANCE_DARK
+LUMINANCE_OR_CHROMA
+EXTERNAL_MASK
+```
+
+### `LUMINANCE_OR_CHROMA`
+
+Minimalny model:
+
+```text
+dark = luminance <= threshold
+chroma = max(rgb) - min(rgb) >= chroma_threshold
+blue_dominant = B - 0.5*(R+G) >= blue_threshold
+mask = dark OR chroma OR blue_dominant
+```
+
+Nie jest to uniwersalna segmentacja obiektu. Jest to kontrolowana odpowiedź na kartę, w której bright material / emissive ma authority jako część sylwetki.
+
+## Per-axis calibration
+
+Technical-sheet crop może być anizotropowy lub `NEAR_ORTHOGRAPHIC`.
+
+Nigdy nie zakładaj jednego `mm_per_pixel` dla X/Y tylko dlatego, że karta wygląda technicznie.
+
+Kalibracja ma zapisywać:
+
+```yaml
+calibration:
+  x:
+    physical: 600_mm
+    pixel_span: 157
+    source: dimension_line
+  y:
+    physical: 2600_mm
+    pixel_span: 530
+    source: dimension_line
+  projection: NEAR_ORTHOGRAPHIC
+```
+
+Skala z jednej osi nie może automatycznie przeliczać drugiej.
+
+## Bright-material risk
+
+Jeżeli maska luminance-only przecina obiekt dokładnie w miejscu:
+- brushed aluminium,
+- white polymer,
+- emissive diffuser,
+- specular highlight,
+
+wynik ma status co najmniej `MASK_RISK`, dopóki alternatywny mask mode albo manual ROI nie potwierdzi granicy.
+
+## Output budget
+
+Do modelu zwracaj:
+- bbox/profile aggregates;
+- mask mode;
+- calibration provenance;
+- flagged regions;
+- confidence.
+
+Nie zwracaj pełnej maski/pixel array bez potrzeby diagnostycznej.
+
+
+---
+
+## FILE: `10_reconstruction/172_VISIBLE_LAYER_STACK_CONTRACT.md`
+
+# Visible Layer Stack Contract
+
+## Cel
+
+Wykrywać cechy, które istnieją geometrycznie, lecz są zakopane w host mesh, zwrócone normalną od kamery albo przesłonięte przez nieprzezroczystą warstwę.
+
+To osobna klasa błędu od `object exists` i od poprawnego bounding boxu.
+
+## Typowe przypadki
+
+- display content za recess floor;
+- glass za nieprzezroczystym hostem;
+- decal/floater pod powierzchnią;
+- emissive strip wewnątrz obudowy;
+- panel relief o poprawnym rozmiarze, lecz po złej stronie host plane;
+- quad skierowany normalną do wnętrza.
+
+## Kontrakt
+
+Dla każdej cechy wymagającej widoczności zapisz:
+
+```yaml
+visible_stack:
+  view: FRONT
+  axis: Y
+  viewer_side: NEGATIVE
+  opaque_occluder_plane: -0.065
+  front_to_back:
+    - glass
+    - content
+    - recess_floor
+  layers:
+    - name: glass
+      interval: [-0.084, -0.080]
+      normal_axis_component: -1.0
+      required_visible: true
+    - name: content
+      interval: [-0.078, -0.078]
+      normal_axis_component: -1.0
+      required_visible: true
+```
+
+Dla viewer po stronie NEGATIVE mniejsza wartość osi jest bliżej obserwatora.
+
+## Gate
+
+MUST visible feature = PASS dopiero, gdy:
+- leży po widocznej stronie opaque occluder/floor;
+- normalna spełnia wymagany kierunek lub materiał jest jawnie two-sided zgodnie z kontraktem;
+- wymagany front-to-back order jest zachowany;
+- feature ROI potwierdza jego obecność, jeżeli ma authority wizualne.
+
+## Anti-fix
+
+Nie przesuwaj cechy losowo w stronę kamery. Najpierw ustal:
+- host surface;
+- recess depth;
+- physical layer ownership;
+- required clearance.
+
+## Executor
+
+`executors/layer_stack_validate.py` zapewnia tani numeric preflight. Finalna cecha może nadal wymagać ROI/ray/render proof.
+
+
+---
+
+## FILE: `10_reconstruction/173_RECONSTRUCTION_ACCEPTANCE_EVIDENCE_INTEGRITY.md`
+
+# Reconstruction Acceptance Evidence Integrity
+
+## Purpose
+
+Prevent a reconstruction agent from certifying its own visual success through narrative statements, unchecked `PASS` flags or downstream runtime success.
+
+This module was added after the Lafar Wayfinding Pylon benchmark, where the final run reported `RECONSTRUCTION_COMPLETE = PASS` after substantial repair work, but the compact final report did not carry machine-checkable registered multi-view proof sufficient for a strict v0.8 acceptance gate.
+
+## Core rule
+
+```text
+claim != evidence
+```
+
+The following are not acceptance evidence by themselves:
+- `looks correct`;
+- `matching the card`;
+- `ortho checked`;
+- object existence;
+- correct overall dimensions;
+- successful export;
+- successful engine load;
+- a bare `{status: PASS}` record.
+
+## Proof-bearing record
+
+Every reconstruction acceptance owner emits:
+
+```yaml
+owner: <view/feature/dimension/material>
+status: PASS | FAIL | UNVERIFIED
+evidence_kind: <typed validator evidence>
+provenance_id: <artifact/report/registration id>
+validator_id: <semantic skill/executor>
+```
+
+Optional metrics belong in the compact record, not raw dumps.
+
+## Canonical view evidence
+
+For a view with authoritative reference:
+
+```yaml
+owner: FRONT
+status: PASS
+evidence_kind: REGISTERED_OVERLAY
+provenance_id: front_reg_003
+validator_id: REFERENCE_OVERLAY_VALIDATE
+metrics:
+  iou: 0.97
+  mean_contour_delta_px: 1.2
+  max_contour_delta_px: 4.0
+failing_rois: []
+```
+
+The registration itself must be valid:
+- same projection class;
+- same physical scale;
+- same centerline/datum;
+- same crop/aspect policy;
+- QA scene isolation applied.
+
+## Feature evidence
+
+A visible MUST feature needs evidence appropriate to its failure mode:
+- `FEATURE_ROI` for local shape/placement;
+- `LAYER_STACK` for glass/content/recess ordering;
+- `RAY_VISIBILITY` for occlusion/host burial;
+- `LANDMARK_PROJECTION` for keypoint placement;
+- `NUMERIC_MEASUREMENT` for explicit dimensions.
+
+`OBJECT_EXISTS` is never sufficient for a visible MUST feature.
+
+## Authority evidence
+
+A hard deviation can close only as:
+
+```text
+RESOLVED
+```
+
+with a resolution evidence record, or:
+
+```text
+ACCEPTED_BY_AUTHORITY
+```
+
+with:
+- `authority_source`;
+- `authority_record_id`;
+- affected contract fields.
+
+The modeling agent is not automatically an authority merely because it can justify one interpretation.
+
+## Separation of builder and acceptance logic
+
+The same process may technically execute build and validation, but acceptance must be derived from independent validator outputs rather than from builder state.
+
+Bad:
+
+```python
+build_finished = True
+reconstruction_pass = True
+```
+
+Required:
+
+```text
+build artifact
+-> registered validators
+-> compact evidence records
+-> fidelity gate aggregation
+-> acceptance state
+```
+
+## Downstream proof does not back-propagate
+
+```text
+ENGINE_REGRESSION_TEST PASS
+```
+
+does not prove:
+- reference fidelity;
+- canonical silhouette;
+- material segmentation;
+- branding orientation;
+- screen layer visibility.
+
+Likewise reconstruction PASS does not prove Game-Ready or Pipeline Integrated.
+
+## Final acceptance bundle
+
+Before `RECONSTRUCTION_COMPLETE`, persist at minimum:
+
+```yaml
+reconstruction_acceptance:
+  target_fidelity: L4_or_L5
+  hard_dimensions: <proof-bearing record>
+  canonical_views:
+    FRONT: <proof-bearing record>
+    SIDE: <proof-bearing record>
+    TOP: <proof-bearing record>
+    REAR: <proof-bearing record>
+    BOTTOM: <proof-bearing record>
+  landmarks_d0_d1: <proof-bearing record>
+  must_features: [<proof-bearing records>]
+  material_segmentation: <proof-bearing record when target >= L4>
+  deviations: [<resolved/authority records>]
+  fidelity_gate: PASS
+```
+
+## Anti-self-certification rule
+
+If a final report contains only prose plus untyped PASS flags, downgrade the affected owners to `UNVERIFIED` before completion evaluation.
+
+
+---
+
+## FILE: `10_reconstruction/174_RECONSTRUCTION_SHAPE_GRAPH.md`
+
+# Reconstruction Shape Graph
+
+## Cel
+
+`Reconstruction Shape Graph` jest obowiązkowym modelem pośrednim pomiędzy analizą referencji a modelowaniem.
+
+Agent nie przechodzi bezpośrednio z:
+
+```text
+concept art -> bpy/BMesh/operator
+```
+
+Najpierw musi ustalić:
+
+```text
+reference evidence
+-> hierarchy of design forms
+-> Shape Graph
+-> per-node representation and validation contract
+-> geometry execution
+```
+
+Shape Graph odpowiada na pytanie **z czego obiekt się składa i które formy są nadrzędne**, zanim agent zacznie wybierać operator Blendera.
+
+---
+
+## Fundamental rule
+
+Jednostką rekonstrukcji nie jest cały asset ani pojedynczy Blender object.
+
+Jednostką pracy jest `Shape Node`.
+
+Każdy node reprezentuje jedną semantycznie spójną formę projektową:
+- global envelope;
+- primary mass;
+- structural transition;
+- secondary mass;
+- structural feature;
+- edge treatment owner;
+- surface/detail owner.
+
+Blender object może implementować jeden node, wiele helperów jednego node'a albo część node'a. Nazwa obiektu w scenie nie zastępuje Shape Node ID.
+
+---
+
+## Hierarchy levels
+
+Canonical hierarchy:
+
+```text
+G0 GLOBAL_ENVELOPE
+G1 PRIMARY_FORM
+G2 SECONDARY_STRUCTURAL_FORM
+G3 STRUCTURAL_FEATURE
+G4 EDGE_LANGUAGE
+G5 SURFACE_DETAIL
+```
+
+### G0 — GLOBAL_ENVELOPE
+
+Tylko:
+- total width;
+- total depth;
+- total height;
+- ground/contact datum;
+- principal axes;
+- global centerline/origin relation.
+
+Nie zawiera ekranu, paneli, logo, rowków ani beveli.
+
+### G1 — PRIMARY_FORM
+
+Bryły, które decydują o rozpoznawalności i głównej sylwetce.
+
+Test praktyczny:
+
+> Jeżeli usuniesz G2–G5, czy obiekt nadal ma poprawną główną formę z canonical views?
+
+Typowe przykłady:
+- main body;
+- base/plinth;
+- major shell;
+- main seat/back shell;
+- large structural shoulder/transition.
+
+### G2 — SECONDARY_STRUCTURAL_FORM
+
+Duże komponenty zmieniające projekt, ale nie globalny envelope:
+- side frame;
+- display housing/recess mass;
+- utility housing;
+- large service panel mass;
+- large trim member.
+
+### G3 — STRUCTURAL_FEATURE
+
+Lokalne cechy wymagające realnej geometrii albo kontrolowanej reprezentacji:
+- recess;
+- opening;
+- vent field;
+- LED channel;
+- panel separation;
+- handle/latch;
+- negative space;
+- functional groove.
+
+### G4 — EDGE_LANGUAGE
+
+Dopiero po zaakceptowaniu G0–G3:
+- bevel;
+- fillet;
+- chamfer;
+- corner radius;
+- local tangency;
+- edge-family consistency.
+
+Bevel nie może maskować błędnej primary form.
+
+### G5 — SURFACE_DETAIL
+
+- branding;
+- decals;
+- screws not affecting structural solve;
+- micro-grooves;
+- microtexture;
+- weathering;
+- cosmetic surface breakup.
+
+---
+
+## Graph relations
+
+Shape Graph jest DAG-iem.
+
+Node może deklarować:
+- `parent` — forma nadrzędna;
+- `depends_on` — node'y, które muszą być zaakceptowane przed budową;
+- `hosts` — features osadzane na danej powierzchni;
+- `contacts` — wymagane relacje styku;
+- `transitions_to` — ciągłość/przejście do innego node'a;
+- `symmetry_group`;
+- `feature_ids` z Feature Contract.
+
+Przykład:
+
+```yaml
+shape_graph:
+  asset_id: ACS_WP_3470
+  root: PYLON
+  nodes:
+    PYLON:
+      level: G0
+      shape_class: ENVELOPE
+
+    PRIMARY_BODY:
+      parent: PYLON
+      level: G1
+      shape_class: EXTRUDED_PROFILE
+
+    BASE_PLINTH:
+      parent: PYLON
+      level: G1
+      shape_class: MULTI_SECTION_LOFT
+
+    LOWER_SHOULDER:
+      parent: PRIMARY_BODY
+      depends_on: [PRIMARY_BODY, BASE_PLINTH]
+      level: G1
+      shape_class: MULTI_SECTION_TRANSITION
+      transitions_to: [PRIMARY_BODY, BASE_PLINTH]
+
+    SIDE_FRAME:
+      parent: PRIMARY_BODY
+      level: G2
+      shape_class: PROFILE_SWEEP
+
+    DISPLAY_RECESS:
+      parent: PRIMARY_BODY
+      level: G2
+      shape_class: BOOLEAN_RECESS
+
+    PANEL_SEAM_01:
+      parent: PRIMARY_BODY
+      level: G3
+      shape_class: PANEL_LINE
+```
+
+---
+
+## Required pre-model output
+
+Przed pierwszą produkcyjną mutacją geometrii agent musi wyemitować compact Shape Graph zawierający co najmniej:
+
+```yaml
+shape_graph_ready:
+  root_id: ...
+  node_count: ...
+  levels_present: [G0, G1, ...]
+  unresolved_nodes: []
+  primary_nodes: []
+  graph_status: PASS
+```
+
+`graph_status != PASS` blokuje modelowanie poza czystym G0 diagnostic blockout.
+
+---
+
+## Coarse-to-fine invariant
+
+Dziecko nie może być budowane przed zaakceptowaniem hosta/parenta, jeżeli jego poprawność zależy od host geometry.
+
+W szczególności zabronione jest:
+
+```text
+PRIMARY_BODY + DISPLAY_RECESS + LOGO + VENTS + BEVELS
+```
+
+w jednym niezwalidowanym monolitycznym kroku.
+
+Dozwolone:
+
+```text
+build PRIMARY_BODY
+-> validate required views
+-> PASS
+-> build next ready node
+```
+
+---
+
+## Shape Graph vs Feature Contract
+
+`Feature Contract` opisuje **co musi istnieć**.
+
+`Shape Graph` opisuje **jak formy składają się w jeden obiekt i w jakiej kolejności mogą być rozwiązane**.
+
+Feature może należeć do node'a:
+
+```yaml
+node: DISPLAY_RECESS
+feature_ids:
+  - F_DISPLAY_RECESS
+  - F_DISPLAY_BORDER
+```
+
+Nie twórz osobnego Shape Node dla każdego mikroskopijnego feature, jeżeli nie ma własnej odpowiedzialności geometrycznej/QA.
+
+---
+
+## Shape Graph vs Scene Graph
+
+Nie utożsamiaj:
+
+```text
+Shape Graph != Blender Object hierarchy
+```
+
+Shape Graph jest modelem projektowym i dowodowym.
+
+Scena Blendera jest implementacją.
+
+Jedna forma może być zbudowana przez:
+- cage + helper cutters;
+- curve + bevel object;
+- multiple temporary sections;
+- one final joined mesh.
+
+Node pozostaje stabilny mimo zmian implementacji.
+
+---
+
+## Anti-patterns
+
+FAIL:
+- jeden `build_asset()` tworzy jednocześnie G1–G5;
+- node jest definiowany dopiero po utworzeniu geometrii;
+- decomposition jest tylko listą nazw obiektów bez hierarchy/role;
+- agent zaczyna od detalu, bo jest łatwy do rozpoznania;
+- bevel/boolean jest wybierany zanim określono shape class;
+- cały asset jest walidowany tylko po finalnym hero renderze.
+
+---
+
+## Completion requirement
+
+Level A wymaga:
+- Shape Graph istnieje;
+- wszystkie wymagane G0–G3 nodes są `ACCEPTED`;
+- G4/G5 wymagane przez target fidelity są `ACCEPTED` albo jawnie deferred zgodnie z completion level;
+- brak child node zaakceptowanego przy FAIL parent geometry;
+- final `RECON_FIDELITY_GATE` odnosi się do zaakceptowanego graph revision.
+
+
+---
+
+## FILE: `10_reconstruction/175_RECONSTRUCTION_DETAIL_LEVELS.md`
+
+# Reconstruction Detail Levels
+
+## Cel
+
+Oddzielić **coarse-to-fine reconstruction** od runtime LOD.
+
+Agent nie zaczyna od kompletnego authoring mesh i nie dodaje wszystkich detali w jednym buildzie. Rekonstrukcja przechodzi przez jawne poziomy `RDL` (Reconstruction Detail Level), a każdy poziom ma własny zakres i gate.
+
+`RDL` nie jest `LOD`.
+
+```text
+RDL = kolejność rozwiązywania formy z referencji
+LOD = późniejsza optymalizacja runtime zaakceptowanego modelu
+```
+
+---
+
+## RDL0 — ENVELOPE
+
+Zakres:
+- total width/depth/height;
+- ground/contact datum;
+- principal axes;
+- global centerline;
+- minimal silhouette carrier.
+
+Zakazane:
+- bevel;
+- panel lines;
+- screen internals;
+- vents;
+- logo;
+- microdetail;
+- final materials.
+
+Gate:
+- hard bounds;
+- required FRONT/SIDE/TOP envelope projections;
+- datum/contact.
+
+---
+
+## RDL1 — PRIMARY FORMS
+
+Zakres:
+- wszystkie `G1 PRIMARY_FORM` Shape Nodes;
+- główne shells, body, bases, plinths, structural shoulders/transitions;
+- major negative space, jeżeli definiuje primary silhouette.
+
+Gate dla każdego node'a:
+- wymagane canonical views;
+- local silhouette/landmark contract;
+- parent/contact relation;
+- representation invariant;
+- brak unresolved HARD conflict.
+
+Po node-level PASS uruchom `RDL1_STAGE_GATE` dla całego zestawu primary forms.
+
+Nie wolno wejść do RDL2 przy FAIL dowolnego required G1 node.
+
+---
+
+## RDL2 — SECONDARY STRUCTURAL FORMS
+
+Zakres:
+- side frames;
+- display housings/recess masses;
+- utility housings;
+- large service panels;
+- major trims;
+- secondary structural inserts.
+
+Każdy node nadal przechodzi własny multi-view/ROI gate.
+
+RDL2 nie może zmieniać zaakceptowanej RDL1 silhouette poza jawnie zadeklarowanym expected-change region.
+
+---
+
+## RDL3 — STRUCTURAL FEATURES
+
+Zakres:
+- recesses;
+- openings;
+- vents;
+- panel gaps;
+- structural grooves;
+- LED channels;
+- handles/latches;
+- functional cutouts;
+- layered display stack.
+
+Tutaj zaczynają być routowane leaf skills, np.:
+- `HS_PANEL_LINE`;
+- boolean recess playbook;
+- `LAYER_STACK_VALIDATE`;
+- radial repeat dla otworów/fastenerów;
+- profile/sweep skills.
+
+Host G1/G2 musi być wcześniej `ACCEPTED`.
+
+---
+
+## RDL4 — EDGE LANGUAGE
+
+Zakres:
+- bevel;
+- fillet;
+- chamfer;
+- edge families;
+- corner radius;
+- local G0/G1 tangency;
+- subdivision support geometry, gdy wymagane.
+
+Rule:
+
+```text
+correct form first
+-> edge treatment second
+```
+
+RDL4 nie może być używane do kompensacji błędnej RDL1/RDL2 formy.
+
+Po RDL4 ponownie waliduj protected dimensions, silhouette i local feature boundaries.
+
+---
+
+## RDL5 — SURFACE / DETAIL
+
+Zakres:
+- branding;
+- decals;
+- screws i micro-fasteners;
+- micro-grooves;
+- materials;
+- texture direction;
+- weathering;
+- emissive finish;
+- cosmetic variation.
+
+RDL5 może być częściowo deferred do późniejszego `SURFACE_FINISH`, zależnie od target completion level, ale nie może nadpisywać geometrii zaakceptowanej na RDL0–RDL4.
+
+---
+
+## Stage barrier
+
+Canonical transition:
+
+```text
+RDL0 PASS
+-> RDL1 node-by-node PASS
+-> RDL1_STAGE_GATE PASS
+-> RDL2 node-by-node PASS
+-> RDL2_STAGE_GATE PASS
+-> RDL3 node-by-node PASS
+-> RDL3_STAGE_GATE PASS
+-> RDL4 PASS
+-> RDL5 PASS / allowed defer
+-> RECON_FIDELITY_GATE
+-> runtime topology/LOD/UV/bake/export
+```
+
+Nie przeskakuj poziomu tylko dlatego, że kolejny detal jest łatwy do wykonania.
+
+---
+
+## One-level mutation rule
+
+Jedna transakcja wykonawcza nie może tworzyć nowych produkcyjnych node'ów z wielu RDL, chyba że są one nieodłącznie jednym atomowym feature contractem i zostało to jawnie zapisane.
+
+Domyślne zachowanie:
+
+```text
+one Shape Node
+-> one build/repair transaction
+-> one validation result
+```
+
+Monolityczne:
+
+```text
+build body + base + screen + vents + logo + bevel + materials
+```
+
+jest regresją v0.9.
+
+---
+
+## Relation to runtime LOD
+
+Dopiero zaakceptowany authoring model może generować:
+
+```text
+LOD0
+LOD1
+LOD2
+LOD3
+```
+
+RDL1/RDL2 mogą być źródłem wiedzy dla uproszczonych LOD, ale nie są runtime assetami i nie muszą mieć tej samej topologii.
+
+---
+
+## Persistent state
+
+Po każdym gate zapisuj:
+
+```yaml
+rdl_state:
+  level: RDL1
+  graph_revision: sg_004
+  accepted_nodes: [PRIMARY_BODY, BASE_PLINTH]
+  blocked_nodes: [LOWER_SHOULDER]
+  dirty_nodes: []
+  stage_status: FAIL
+```
+
+Nie opieraj postępu na historii rozmowy ani tym, że obiekt "już jest w scenie".
+
+
+---
+
+## FILE: `10_reconstruction/176_RECONSTRUCTION_NODE_CONTRACT.md`
+
+# Reconstruction Node Contract
+
+## Cel
+
+Każdy Shape Node musi mieć wystarczający kontrakt, aby agent mógł:
+1. zrozumieć formę;
+2. wybrać reprezentację geometryczną;
+3. zbudować tylko ten element;
+4. porównać go z właściwymi rzutami;
+5. zaakceptować albo odrzucić przed budową dzieci.
+
+---
+
+## Minimalny schema
+
+```yaml
+shape_node:
+  id: BASE_PLINTH
+  graph_revision: sg_004
+
+  hierarchy:
+    level: G1
+    rdl: RDL1
+    parent: PYLON
+    depends_on: []
+
+  semantics:
+    role: STRUCTURAL_BASE
+    importance: MUST
+
+  representation:
+    shape_class: MULTI_SECTION_LOFT
+    strategy: SECTION_LOFT_HARD_SURFACE
+    parameters_owner: pylon_spec.BASE_PLINTH
+
+  evidence:
+    FRONT:
+      authority: REQUIRED
+      controls: [width, height, outer_contour]
+    SIDE:
+      authority: REQUIRED
+      controls: [depth, height, front_rear_profile]
+    TOP:
+      authority: REQUIRED
+      controls: [width, depth, corner_plan]
+    HERO:
+      authority: SUPPORTING
+      controls: [corner_transition, edge_language]
+
+  constraints:
+    symmetry: X
+    contacts: [GROUND, LOWER_SHOULDER]
+    protected_dimensions: [BASE_WIDTH, BASE_DEPTH, BASE_HEIGHT]
+
+  validation:
+    required_views: [FRONT, SIDE, TOP]
+    required_evidence_kinds:
+      - NUMERIC_MEASUREMENT
+      - REGISTERED_OVERLAY
+    roi_ids: [BASE_FRONT, BASE_SIDE, BASE_TOP]
+
+  execution:
+    children_allowed_after: ACCEPTED
+    mutation_scope: NODE_ONLY
+```
+
+---
+
+## Required fields
+
+### Identity
+- stable `id`;
+- graph revision;
+- hierarchy level;
+- RDL;
+- parent/dependencies.
+
+### Semantics
+Node musi opisywać **rolę projektową**, nie operator Blendera.
+
+Dobre:
+- `STRUCTURAL_BASE`;
+- `PRIMARY_SHELL`;
+- `STRUCTURAL_TRANSITION`;
+- `DISPLAY_HOUSING`.
+
+Złe:
+- `CUBE_07`;
+- `BOOLEAN_OBJECT`;
+- `MESH_002`.
+
+### Representation
+Najpierw wybierz `shape_class`, potem implementation strategy.
+
+```text
+design form
+-> shape class
+-> semantic skill / strategy
+-> Blender implementation
+```
+
+Nigdy odwrotnie.
+
+### View responsibilities
+Każdy authoritative view musi mówić **co kontroluje** dla tego node'a.
+
+Nie używaj ogólnego:
+
+```text
+SIDE = check it looks okay
+```
+
+Używaj:
+
+```text
+SIDE = depth + vertical profile + transition angle
+```
+
+### Validation ownership
+Node musi wskazywać testy przed wykonaniem geometrii.
+
+Nie wolno dopisywać kryterium PASS dopiero po zobaczeniu wyniku.
+
+---
+
+## Node states
+
+Canonical states:
+
+```text
+DECLARED
+CONSTRAINED
+READY_TO_BUILD
+BUILT_UNVERIFIED
+ACCEPTED
+FAIL
+BLOCKED
+DIRTY
+SUPERSEDED
+```
+
+Transition:
+
+```text
+DECLARED
+-> CONSTRAINED
+-> READY_TO_BUILD
+-> BUILT_UNVERIFIED
+-> ACCEPTED | FAIL
+```
+
+`FAIL` po naprawie wraca do `BUILT_UNVERIFIED`.
+
+Zmiana parent/authority/representation może oznaczyć node `DIRTY`.
+
+---
+
+## Parent/child gate
+
+Dla geometrycznie zależnego child:
+
+```text
+parent.status != ACCEPTED
+=> child.status = BLOCKED
+```
+
+Wyjątek musi być jawny, np. niezależny module reference albo diagnostic helper.
+
+Przykład:
+- logo nie jest budowane na błędnym front panelu;
+- panel seam nie jest robiony na shellu, którego silhouette jeszcze FAIL;
+- bevel nie jest dopracowywany na złym base profile.
+
+---
+
+## Mutation scope
+
+Domyślnie transakcja node'a może zmieniać:
+- node owner geometry;
+- jawnie zadeklarowane helper/cutter objects;
+- expected-change ROI;
+- zależne temporary QA artifacts.
+
+Nie może zmieniać zaakceptowanego sibling/parent bez jawnego `change_impact` i dirty propagation.
+
+---
+
+## Representation switch
+
+Po dwóch udowodnionych porażkach tej samej strategii node musi przejść re-inspection.
+
+Jeżeli failure wskazuje na złą klasę reprezentacji, nie iteruj parametrów w nieskończoność.
+
+Przykład:
+
+```text
+PARAMETRIC_BOX + BEVEL
+-> FRONT FAIL
+-> corrected retry
+-> SIDE/CORNER FAIL
+=> representation review
+=> MULTI_SECTION_LOFT
+```
+
+---
+
+## Acceptance record
+
+```yaml
+node_acceptance:
+  node_id: BASE_PLINTH
+  graph_revision: sg_004
+  node_revision: n_006
+  status: ACCEPTED
+
+  evidence:
+    FRONT: {status: PASS, evidence_kind: REGISTERED_OVERLAY, provenance_id: base_front_006}
+    SIDE:  {status: PASS, evidence_kind: REGISTERED_OVERLAY, provenance_id: base_side_006}
+    TOP:   {status: PASS, evidence_kind: REGISTERED_OVERLAY, provenance_id: base_top_006}
+    dimensions: {status: PASS, evidence_kind: NUMERIC_MEASUREMENT, provenance_id: base_dims_006}
+
+  implementation:
+    shape_class: MULTI_SECTION_LOFT
+    skill_id: SECTION_LOFT_HARD_SURFACE
+```
+
+Narracyjne `looks correct` nie jest node acceptance.
+
+
+---
+
+## FILE: `10_reconstruction/177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`
+
+# Shape Classification and Representation
+
+## Cel
+
+Agent ma najpierw rozpoznać **matematyczną klasę formy**, a dopiero potem wybrać Blender API/operator.
+
+Błąd klasy reprezentacji jest błędem wyższego poziomu niż błędny parametr bevelu.
+
+---
+
+## Canonical shape classes
+
+### `ENVELOPE`
+Globalna bryła ograniczająca. Nie jest finalną geometrią.
+
+### `PARAMETRIC_PRIMITIVE`
+Forma opisywalna stabilnie przez primitive + niewielki zestaw parametrów:
+- box;
+- cylinder;
+- sphere;
+- cone/frustum.
+
+### `EXTRUDED_PROFILE`
+Jeden authoritative 2D profile + prawie stała głębokość.
+
+### `REVOLVED_PROFILE`
+Profil 2D obracany wokół osi. Route do `AXISYMMETRIC_PROFILE`.
+
+### `PROFILE_SWEEP`
+Przekrój prowadzony po path/curve.
+
+### `MULTI_SECTION_LOFT`
+Forma opisana przez wiele przekrojów o spójnej korespondencji punktów.
+
+Typowy trigger:
+
+```text
+width changes along axis
+AND depth changes along axis
+AND corner/profile treatment changes along axis
+```
+
+### `MULTI_SECTION_TRANSITION`
+Loft pełniący rolę przejścia pomiędzy dwoma zaakceptowanymi formami, np. body -> base.
+
+### `SUBD_FREEFORM`
+Forma kontrolowana cage'em, gdy nie można jej wiarygodnie przedstawić prostym primitive/profile/loftem i evidence wskazuje smooth compound surface.
+
+### `BOOLEAN_RECESS`
+Lokalna forma ujemna osadzona w zaakceptowanym host geometry.
+
+### `PANEL_LINE`
+Wąski seam/groove o własnym path/profile contract.
+
+### `LAYERED_ASSEMBLY`
+Warstwy o krytycznej kolejności głębokości, np. glass/content/recess floor.
+
+### `HYBRID_ASSEMBLY`
+Node jest semantycznym assembly składającym się z kilku shape classes. Używaj tylko, gdy rozdzielenie na dzieci jest zapisane w Shape Graph.
+
+---
+
+## Classification decision tree
+
+```text
+Czy forma jest tylko envelope?
+-> ENVELOPE
+
+Czy jest osiowo symetryczna?
+-> REVOLVED_PROFILE
+
+Czy jeden profil 2D + stała głębokość opisuje formę?
+-> EXTRUDED_PROFILE
+
+Czy przekrój porusza się po ścieżce?
+-> PROFILE_SWEEP
+
+Czy przekrój zmienia się na kilku stacjach?
+-> MULTI_SECTION_LOFT / MULTI_SECTION_TRANSITION
+
+Czy forma jest lokalnym ubytkiem hosta?
+-> BOOLEAN_RECESS / PANEL_LINE
+
+Czy smooth compound surface nie ma stabilnego section/profile modelu?
+-> SUBD_FREEFORM
+```
+
+---
+
+## Box-abuse detector
+
+`PARAMETRIC_PRIMITIVE` jest podejrzane jako primary strategy, gdy reference pokazuje co najmniej dwa z poniższych:
+- różna szerokość na różnych wysokościach;
+- różna głębokość na różnych wysokościach;
+- zmieniający się corner radius/chamfer;
+- ciągły diagonal shoulder;
+- kontrolowane przejście między dwoma różnymi przekrojami;
+- jedna widoczna powierzchnia przechodząca przez kilka stacji bez seam;
+- narożnik, którego forma zależy od dwóch osi jednocześnie.
+
+Jeżeli występują trzy lub więcej:
+
+```text
+PARAMETRIC_BOX_AS_PRIMARY = FORBIDDEN_UNLESS_PROVEN
+BOOLEAN_UNION_OF_BOXES_AS_PRIMARY = FORBIDDEN_UNLESS_PROVEN
+```
+
+Agent musi rozważyć `MULTI_SECTION_LOFT` albo `SUBD_FREEFORM`.
+
+---
+
+## Representation evidence
+
+Każda klasyfikacja ma record:
+
+```yaml
+representation_decision:
+  node_id: BASE_PLINTH
+  selected: MULTI_SECTION_LOFT
+  evidence:
+    - FRONT_width_changes_with_z
+    - SIDE_depth_changes_with_z
+    - TOP_rounded_chamfered_plan
+    - HERO_continuous_corner_transition
+  rejected:
+    PARAMETRIC_PRIMITIVE:
+      reason: cannot preserve coupled width/depth/corner transition
+  confidence: HIGH
+```
+
+Nie wystarczy `easier to build`.
+
+---
+
+## Operator independence
+
+Shape class nie zależy od tego, czy implementacja używa:
+- BMesh;
+- mesh.from_pydata;
+- Geometry Nodes;
+- curves;
+- modifiers;
+- `bpy.ops`.
+
+To implementacja ma spełniać reprezentację, nie reprezentacja operator.
+
+---
+
+## Strategy switch trigger
+
+Gdy node po poprawionym retry nadal FAIL w innym authoritative view:
+1. sprawdź registration/calibration;
+2. sprawdź input parameters;
+3. sprawdź shape class;
+4. jeżeli class nie może jednocześnie spełnić widoków, zmień representation zamiast dalej stroić lokalne wartości.
+
+---
+
+## Anti-pattern
+
+```text
+"Widzę zaokrąglony element, więc dodam cube i bevel"
+```
+
+jest niedozwolonym skrótem poznawczym.
+
+Poprawne:
+
+```text
+identify node role
+-> infer cross-section behavior
+-> classify shape
+-> choose semantic skill
+-> implement
+-> validate views
+```
+
+
+---
+
+## FILE: `10_reconstruction/178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`
+
+# Node-by-Node Multi-View Validation
+
+## Cel
+
+Walidować pojedynczą formę natychmiast po jej zbudowaniu, zanim scena zostanie zagęszczona kolejnymi elementami.
+
+Nie czekaj do finalnego asset renderu, aby odkryć błąd primary form.
+
+---
+
+## Core loop
+
+Dla każdego `READY_TO_BUILD` Shape Node:
+
+```text
+isolate accepted ancestors + current node
+-> build/repair current node only
+-> render required canonical views
+-> registered comparison per view/ROI
+-> numeric/section checks
+-> node gate
+-> ACCEPTED | FAIL
+```
+
+Dopiero `ACCEPTED` odblokowuje zależne dzieci.
+
+---
+
+## View responsibility contract
+
+Każdy node definiuje, co kontroluje dany widok.
+
+Przykład:
+
+```yaml
+BASE_PLINTH:
+  FRONT:
+    controls: [width, height, shoulder_contour]
+  SIDE:
+    controls: [depth, height, front_rear_profile]
+  TOP:
+    controls: [width, depth, corner_plan]
+  HERO:
+    controls: [transition_interpretation]
+```
+
+Nie wymagaj widoku, który nie wnosi evidence dla node'a. Nie pomijaj widoku REQUIRED.
+
+---
+
+## Isolation rule
+
+Node QA render musi zawierać wyłącznie:
+- zaakceptowane ancestor/host geometry potrzebne do kontekstu;
+- current node;
+- wymagany QA rig.
+
+Nie renderuj:
+- runtime collision;
+- LOD proxies;
+- future RDL nodes;
+- hidden helper shells;
+- export copies;
+- unrelated scene geometry.
+
+Użyj `QA_SCENE_ISOLATE`.
+
+`isolation_status != PASS` oznacza `UNVERIFIED`, nawet jeśli silhouette metric wygląda dobrze.
+
+---
+
+## Registered comparison
+
+Dla authoritative orthographic/near-orthographic evidence:
+- jedna globalna registration per view;
+- ten sam crop/aspect/physical scale;
+- żadnego lokalnego przesuwania current node renderu w celu poprawienia wyniku;
+- ROI node'a może ograniczać obszar oceny, ale nie zmieniać registration.
+
+Preferred skill:
+`REFERENCE_OVERLAY_VALIDATE`.
+
+---
+
+## Local vs global silhouette
+
+Node może wpływać na:
+- `GLOBAL_SILHOUETTE`;
+- `LOCAL_BOUNDARY`;
+- `INTERNAL_FEATURE`;
+- `NO_SILHOUETTE`.
+
+### Global silhouette node
+Po naprawie sprawdź:
+1. node ROI;
+2. global canonical silhouette regression.
+
+### Internal node
+Sprawdź:
+1. feature ROI;
+2. parent protected-region regression.
+
+Nie uznawaj lokalnego PASS, jeśli naprawa psuje zaakceptowany parent contour.
+
+---
+
+## Numeric responsibilities
+
+W zależności od shape class waliduj:
+- bounds;
+- centerline;
+- station heights;
+- width/depth per station;
+- profile landmarks;
+- recess depth;
+- contact plane;
+- layer order;
+- symmetry/asymmetry;
+- cross-section sample contract.
+
+Image overlay nie zastępuje locked numeric dimensions.
+
+---
+
+## Cross-section validation
+
+Dla `MULTI_SECTION_LOFT` i `MULTI_SECTION_TRANSITION` wymagaj station report.
+
+Przykład:
+
+```yaml
+sections:
+  - station: BASE_BOTTOM
+    z_mm: 0
+    width_mm: 600
+    depth_mm: 300
+    status: PASS
+  - station: BASE_UPPER
+    z_mm: 95
+    width_mm: 570
+    depth_mm: 282
+    status: PASS
+  - station: SHOULDER
+    z_mm: 165
+    width_mm: 500
+    depth_mm: 230
+    status: PASS
+```
+
+Dodatkowo:
+- ordering monotonic along loft axis;
+- common vertex correspondence;
+- no unintended twist;
+- expected corner/chamfer family;
+- transition continuity.
+
+---
+
+## Node acceptance minimum
+
+```yaml
+node_gate:
+  node_id: LOWER_SHOULDER
+  parent_gate: PASS
+  isolation: PASS
+  required_views:
+    FRONT: PASS
+    SIDE: PASS
+  numeric_constraints: PASS
+  section_contract: PASS
+  regression_outside_expected_change: PASS
+  status: ACCEPTED
+```
+
+`PASS` fields muszą być proof-bearing zgodnie z `173_RECONSTRUCTION_ACCEPTANCE_EVIDENCE_INTEGRITY.md`.
+
+---
+
+## Failure routing
+
+Jeżeli FRONT i SIDE wskazują różne klasy błędu:
+- nie poprawiaj losowo obu;
+- przypisz failure do registration, parameters, representation albo parent relation.
+
+Przykład:
+
+```text
+FRONT width PASS
+SIDE depth FAIL
+TOP corner-plan FAIL
+```
+
+często wskazuje na złą reprezentację 3D, nie na jeden scalar width parameter.
+
+---
+
+## Stop rule
+
+`MUST node + FAIL`:
+- zatrzymaj ten branch Shape Graph;
+- nie buduj dzieci;
+- nie przechodź do wyższego RDL;
+- wykonaj repair albo representation switch.
+
+Nie zapisuj tego jako kosmetycznego TODO na koniec.
+
+
+---
+
+## FILE: `10_reconstruction/179_MULTI_SECTION_LOFT_AND_PROFILE_CAGE.md`
+
+# Multi-Section Loft and Profile Cage
+
+## Cel
+
+Budować twarde formy, których szerokość, głębokość i corner treatment zmieniają się wzdłuż osi, bez składania ich z przypadkowych boxów.
+
+Canonical semantic skill:
+`SECTION_LOFT_HARD_SURFACE`.
+
+Executor candidate:
+`executors/section_loft.py`.
+
+---
+
+## Kiedy używać
+
+Route do loftu, gdy forma ma kilka kontrolowanych przekrojów/stacji, np.:
+- plinth/base rozszerzający się ku dołowi;
+- shoulder pomiędzy wąskim body a szeroką bazą;
+- obudowa zmieniająca width/depth jednocześnie;
+- tapered hard-surface shell;
+- przejście rounded/chamfered rectangle -> inny rounded/chamfered rectangle.
+
+Nie używaj dla:
+- zwykłego boxa z jednym bevel family;
+- obiektu osiowo symetrycznego — użyj revolve;
+- sweep po zakrzywionej ścieżce;
+- organicznej freeform surface bez wiarygodnych section stations.
+
+---
+
+## Section station contract
+
+Każda stacja opisuje przekrój w lokalnej płaszczyźnie prostopadłej do osi loftu.
+
+Minimalny schema dla rounded/chamfered rectangle:
+
+```yaml
+stations:
+  - id: BASE_BOTTOM
+    axis_pos_mm: 0
+    width_mm: 600
+    depth_mm: 300
+    corner:
+      mode: CHAMFERED_ROUNDED
+      radius_mm: 38
+      chamfer_mm: 12
+
+  - id: BASE_UPPER
+    axis_pos_mm: 95
+    width_mm: 570
+    depth_mm: 282
+    corner:
+      mode: CHAMFERED_ROUNDED
+      radius_mm: 30
+      chamfer_mm: 10
+
+  - id: SHOULDER
+    axis_pos_mm: 165
+    width_mm: 500
+    depth_mm: 230
+    corner:
+      mode: CHAMFERED
+      chamfer_mm: 14
+```
+
+Dopuszczalne są także explicit profile points, jeśli reference wymaga niestandardowego przekroju.
+
+---
+
+## Topological correspondence
+
+Wszystkie stacje muszą mieć kompatybilną korespondencję punktów.
+
+Zasada:
+
+```text
+ring vertex i at station N
+connects to
+ring vertex i at station N+1
+```
+
+Nie wolno losowo resamplować każdej stacji inną liczbą punktów po rozpoczęciu loftu.
+
+Jeżeli corner resolution zmienia się dla finalnego shadingu, wykonaj to po geometric match albo przez kontrolowany refinement zachowujący semantic landmarks.
+
+---
+
+## Landmark anchors
+
+Przekrój powinien mieć stabilne landmarks, np.:
+
+```text
+FRONT_CENTER
+FRONT_RIGHT_TANGENT
+RIGHT_FRONT_CORNER
+RIGHT_CENTER
+RIGHT_REAR_CORNER
+REAR_CENTER
+...
+```
+
+Pozwala to sprawdzać twist i przypisać referencyjne narożniki niezależnie od indeksów finalnej siatki.
+
+---
+
+## Hard-surface behavior
+
+Loft nie oznacza automatycznie smooth organic surface.
+
+Segment pomiędzy stacjami może mieć interpolation intent:
+- `LINEAR` — planar/tapered wall;
+- `HOLD_THEN_TRANSITION` — dłuższa stała sekcja + krótka zmiana;
+- `SMOOTH_G1` — tylko jeśli evidence wymaga płynnej tangencji;
+- `SHARP_BREAK` — jawna krawędź projektowa.
+
+Nie smoothuj całego loftu jednym modifierem bez evidence.
+
+---
+
+## Base/shoulder reconstruction
+
+Dla typowego civic prop:
+
+```text
+BODY SECTION
+   ↓
+TRANSITION/SHOULDER SECTION(S)
+   ↓
+BASE UPPER SECTION
+   ↓
+BASE LOWER SECTION
+```
+
+Najpierw rozwiązuj section dimensions i silhouette. Dopiero po PASS dodawaj:
+- edge bevel;
+- lip;
+- panel seam;
+- feet/fasteners;
+- materials.
+
+---
+
+## Validation
+
+Required:
+1. station order monotonic;
+2. positive width/depth;
+3. common ring sample count;
+4. no index twist;
+5. expected bounds per station;
+6. FRONT/SIDE/TOP registered projection where authoritative;
+7. global contour regression;
+8. continuity intent between stations;
+9. no self-intersection for intended convex profiles.
+
+---
+
+## Anti-box rule
+
+Jeżeli reference pokazuje jedną continuous form, nie zastępuj loftu kilkoma nakładającymi się boxami tylko dlatego, że łatwiej uzyskać podobny FRONT.
+
+Taki model zwykle psuje:
+- SIDE;
+- TOP;
+- corner transition;
+- edge language;
+- shading continuity.
+
+---
+
+## Freeze points
+
+Przed RDL4:
+- zachowaj editable station spec;
+- zachowaj semantic section IDs;
+- freeze only after multi-view geometric PASS.
+
+Bevel/subdivision/topology cleanup jest downstream od shape solve.
+
+---
+
+## Executor contract
+
+`section_loft.py` powinien zapewniać:
+- pure-Python validation/spec normalization;
+- deterministic perimeter point generation dla wspieranych section families;
+- deterministic quad bridging;
+- optional Blender mesh creation through explicit entry point;
+- compact station/topology report;
+- brak scene mutation podczas importu.
+
+Status release v0.9: `CONTRACT_READY` do czasu realnego benchmarku w Blender 5.1.
+
+
+---
+
 ## FILE: `11_playbooks/110_HARD_SURFACE_CIVIC_FURNITURE.md`
 
 # Playbook — Civic Hard-Surface Assets
@@ -21674,6 +24517,168 @@ Ten sam brand w różnych assetach powinien używać:
 ## Never hallucinate
 
 Nie generuj alternatywnej pisowni ani symbolu.
+
+
+---
+
+## FILE: `11_playbooks/118_COMPLEX_HARD_SURFACE_BASE_AND_TRANSITION.md`
+
+# Complex Hard-Surface Base and Transition
+
+## Scope
+
+Playbook dla civic/product hard-surface bases, collars, shoulders i transition shells, których nie da się wiernie opisać pojedynczym boxem + bevel.
+
+Typical assets:
+- pylons;
+- kiosks;
+- street terminals;
+- industrial cabinets;
+- charging stations;
+- machine bases.
+
+---
+
+## Recognition
+
+Podejrzewaj `MULTI_SECTION_LOFT` gdy:
+- base jest szersza od body;
+- depth też zmienia się w przejściu;
+- narożnik ma własny plan/chamfer;
+- shoulder jest diagonalny w FRONT/SIDE;
+- concept pokazuje jedną continuous shell bez seams między "klockami".
+
+---
+
+## Decomposition
+
+Najpierw rozdziel role:
+
+```text
+BODY CORE
+LOWER SHOULDER / TRANSITION
+BASE PLINTH
+LOWER LIP / FOOT
+INSERTS / SERVICE MODULES
+```
+
+Nie łącz automatycznie wszystkich w jeden Shape Node. Shoulder może być osobnym `MULTI_SECTION_TRANSITION` pomiędzy body i plinth.
+
+---
+
+## RDL order
+
+### RDL0
+Tylko total envelope/contact.
+
+### RDL1
+1. body core;
+2. base plinth;
+3. shoulder/transition.
+
+Waliduj każdy osobno.
+
+### RDL2+
+Dopiero po RDL1 PASS:
+- side rails;
+- front utility housing;
+- inset plates;
+- lighting channels;
+- service panels.
+
+### RDL4
+Dopiero wtedy final corner radii/bevel families.
+
+---
+
+## Section strategy
+
+Dla plinth/transition zdefiniuj stacje o znaczeniu projektowym, nie równych odstępach tylko dlatego, że tak wygodnie.
+
+Przykład:
+
+```text
+Z0 ground/lower lip
+Z1 top of lower lip
+Z2 main base shoulder
+Z3 base upper collar
+Z4 transition apex
+Z5 body contact
+```
+
+Każda stacja dostaje:
+- width;
+- depth;
+- center offset, jeśli asymetryczna;
+- corner family;
+- corner radius/chamfer;
+- continuity intent do następnej stacji.
+
+---
+
+## Corner language
+
+Nie traktuj narożnika jako efektu końcowego bevelu, jeśli jego plan wpływa na silhouette/top view.
+
+Jeżeli corner shape jest widoczny w TOP lub hero i zmienia się między stacjami, należy do section geometry.
+
+Final micro-bevel jest downstream.
+
+---
+
+## Front/Side/Top responsibilities
+
+```text
+FRONT -> width(z), shoulder angle, lower/upper band heights
+SIDE  -> depth(z), front/rear transition, vertical profile
+TOP   -> plan width/depth, corner/chamfer family
+HERO  -> continuity confirmation, manufacturing/edge interpretation
+```
+
+Żaden pojedynczy rzut nie jest wystarczający dla compound base.
+
+---
+
+## Failure diagnosis
+
+### FRONT good, SIDE bad
+Najpierw sprawdź depth stations/representation, nie width.
+
+### FRONT + SIDE good, TOP/corner bad
+Sprawdź plan section/corner representation. Box+bevel może mieć złą korespondencję narożnika mimo poprawnych wymiarów osiowych.
+
+### Hero wygląda "klockowato"
+Sprawdź, czy continuous shell została błędnie rozbita na overlapping primitives.
+
+### Bevel musi być absurdalnie duży, żeby uzyskać concept contour
+Prawdopodobnie primary section geometry jest zła.
+
+---
+
+## Manufacturing logic
+
+Preferuj rozwiązanie, które można interpretować jako:
+- molded/cast shell;
+- folded/formed metal housing;
+- assembled collar + base;
+
+zgodnie z visible seams/material boundaries.
+
+Nie wymyślaj seam tylko dlatego, że model został złożony z osobnych helperów.
+
+---
+
+## Acceptance
+
+Base/transition RDL1 PASS wymaga:
+- registered FRONT/SIDE/TOP where authoritative;
+- station dimensions PASS;
+- global bounds/contact PASS;
+- no unsupported seams;
+- required continuity intent PASS;
+- Shape Graph parent/transition relationships PASS.
+
+Dopiero po tym route do edge-language i detail skills.
 
 
 ---
