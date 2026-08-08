@@ -29,6 +29,10 @@ Reguły:
 19. Przed ponowną analizą referencji sprawdź `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md`. Nie rediscoveruj zwalidowanych ROI, wymiarów i authority decisions.
 20. Konwencje projektu pobieraj z aktywnego Project Asset Pipeline Profile. Nie czytaj całych skryptów sibling assetów tylko po to, by znaleźć naming/path/decal convention.
 21. Po `ANALYZE: PASS` zakończ szeroką eksplorację referencji. Re-entry do analizy musi wskazywać konkretny feature, metric, view conflict, ROI failure albo source update.
+22. Wygenerowany kod jest artefaktem. Dla większego skryptu zapisz plik i zwracaj path + changed symbols + compact execution result; nie echoj pełnego źródła po utworzeniu ani po małej poprawce. Stosuj `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`.
+23. Przed napisaniem helpera sprawdź Semantic Skill Registry oraz `executors/`. Nie twórz kolejnej lokalnej implementacji profile-revolve/lathe, reference measurement lub mesh validation, jeśli zgodny packaged candidate istnieje.
+24. Każdy finalnie walidowany mesh musi mieć jawny topology intent. Nie raportuj `mesh PASS`, jeśli boundary/non-manifold istnieją i kontrakt nie wyjaśnia ich poprawności. Preferuj `MESH_VALIDATE`.
+25. Nie zmieniaj wymiarów geometrii tylko po to, aby detal był czytelniejszy w jednym lighting/material QA. Najpierw sklasyfikuj przyczynę jako geometry/material/lighting/camera/occlusion/reference ambiguity.
 
 W odpowiedzi operacyjnej utrzymuj format:
 - STATE
@@ -58,15 +62,25 @@ SUMMARY -> failure/ambiguity -> DIAGNOSTIC for minimal ROI/object -> RAW only if
 Nie zaczynaj od RAW.
 Nie przesyłaj do modelu danych elementarnych, jeżeli Python/NumPy/BMesh może zwrócić agregat, outliery i failing region.
 
+Dla source code:
+
+```text
+path/symbol lookup -> targeted range -> patch -> execute -> compact report
+```
+
+Nie używaj pełnej treści istniejącego skryptu jako domyślnego outputu narzędzia.
+
 ## Semantic skill routing
 
 Przed implementacją sprawdź `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`.
 
 Przykłady:
 - technical sheet/image measurement -> `REFERENCE_MEASURE`;
+- rotationally symmetric stacked radius/height form -> `AXISYMMETRIC_PROFILE`;
 - narrow seam/groove path -> `HS_PANEL_LINE`;
 - SubD topology flow/pinching/local density -> `SUBD_TOPOLOGY_CONTROL`;
 - repeated trim-compatible surface -> `TRIM_SHEET_UV`;
+- mesh/topology acceptance -> `MESH_VALIDATE`;
 - reference-driven form solve -> `RECONSTRUCT_REFERENCE`.
 
 Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację przez dostępne narzędzia, ale nie przedstawiaj jej jako trwałego packaged executora i zawsze przeprowadź walidację zdefiniowaną przez skill.
@@ -99,6 +113,19 @@ explicit numeric dimensions / datum
 ```
 
 Wyższy authority wygrywa przy konflikcie. Nie zużywaj iteracji próbując dopasować perspektywiczny hero render do jawnego wymiaru, jeżeli ortho views są z tym wymiarem zgodne.
+
+## QA geometry discipline
+
+Geometry validation precedes material/hero readability:
+
+```text
+silhouette/numeric
+-> neutral/matcap
+-> material
+-> hero
+```
+
+If a panel, emitter or floating detail is meant to be visible, object/material existence is not proof. Require ROI pixel evidence, ray/occlusion evidence or validated placement outside the host surface.
 
 ## Analysis completion
 
