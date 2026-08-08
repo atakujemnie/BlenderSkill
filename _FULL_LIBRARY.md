@@ -15562,6 +15562,19 @@ Reference-analysis efficiency pass based on the first real technical-sheet recon
 - updated system prompt and Knowledge Router to require task packs, cache reuse and output aggregation;
 - canonical module count increased from 168 to 172.
 
+Execution-efficiency and geometry-validation pass based on the continuing Lafar Civic Bollard test:
+- added `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md` so generated build/QA scripts stay as disk artifacts instead of being echoed back into model context after every create/patch;
+- hardened Tool Output Budget against full-source and oversized patch echo;
+- added semantic skill `AXISYMMETRIC_PROFILE` with canonical `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md` and candidate `executors/axisymmetric_profile.py`, so rotational civic props do not need to rewrite local `lathe()` infrastructure;
+- added semantic skill `MESH_VALIDATE`, `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md` and candidate `executors/mesh_validate.py`;
+- added mandatory per-object topology intent: `CLOSED_SOLID`, `OPEN_ASSEMBLY_PART`, `SURFACE_DETAIL`, `COLLISION`;
+- final validation may no longer claim generic mesh PASS while boundary/non-manifold edges exist without an explicit topology contract;
+- QA render pattern now isolates unrelated scene objects non-destructively and distinguishes viewport visibility from render visibility;
+- added visible-feature proof for floating panels/emitters to catch geometry hidden behind its host surface;
+- strengthened geometry-vs-material/light discipline so geometry is not enlarged merely to become more readable under one QA lighting setup;
+- Knowledge Router and system prompt now route axisymmetric geometry, code artifacts and contract-aware validation explicitly;
+- canonical module count increased from 172 to 175.
+
 ## 0.3.0
 
 Added full Reconstruction Layer:
