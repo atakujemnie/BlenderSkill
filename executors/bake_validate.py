@@ -19,12 +19,15 @@ def _array(image):
 
 def image_stats(image) -> dict:
     a = _array(image)[:, :, :3]
+    mins = [float(a[:, :, i].min()) for i in range(3)]
+    maxs = [float(a[:, :, i].max()) for i in range(3)]
     return {
         "name": image.name,
         "size": [int(image.size[0]), int(image.size[1])],
-        "min": [round(float(a[:, :, i].min()), 6) for i in range(3)],
-        "max": [round(float(a[:, :, i].max()), 6) for i in range(3)],
+        "min": [round(v, 6) for v in mins],
+        "max": [round(v, 6) for v in maxs],
         "mean": [round(float(a[:, :, i].mean()), 6) for i in range(3)],
+        "spatial_range": [round(maxs[i] - mins[i], 6) for i in range(3)],
         "nonzero_fraction": round(float((a.max(axis=2) > 1e-6).mean()), 6),
         "near_one_fraction": round(float((a.min(axis=2) >= 0.999).mean()), 6),
     }
@@ -43,10 +46,13 @@ def rect_stats(image, rects: Mapping[str, Sequence[float]]) -> dict:
     out = {}
     for key, rect in rects.items():
         r = _slice(a, rect)
+        mins = [float(r[:, :, i].min()) for i in range(3)]
+        maxs = [float(r[:, :, i].max()) for i in range(3)]
         out[str(key)] = {
-            "min": [round(float(r[:, :, i].min()), 6) for i in range(3)],
-            "max": [round(float(r[:, :, i].max()), 6) for i in range(3)],
+            "min": [round(v, 6) for v in mins],
+            "max": [round(v, 6) for v in maxs],
             "mean": [round(float(r[:, :, i].mean()), 6) for i in range(3)],
+            "spatial_range": [round(maxs[i] - mins[i], 6) for i in range(3)],
             "nonzero_fraction": round(float((r.max(axis=2) > 1e-6).mean()), 6),
         }
     return out
@@ -60,12 +66,12 @@ def validate_non_degenerate(
     epsilon: float = 1e-5,
 ) -> dict:
     stats = image_stats(image)
-    dynamic = max(stats["max"]) - min(stats["min"])
+    spatial_dynamic = max(stats["spatial_range"])
     reasons = []
     if not allow_all_zero and max(stats["max"]) <= epsilon:
         reasons.append("ALL_ZERO")
-    if not allow_constant and dynamic <= epsilon:
-        reasons.append("UNEXPECTED_CONSTANT")
+    if not allow_constant and spatial_dynamic <= epsilon:
+        reasons.append("UNEXPECTED_SPATIALLY_CONSTANT")
     return {
         "status": "FAIL" if reasons else "PASS",
         "stats": stats,
