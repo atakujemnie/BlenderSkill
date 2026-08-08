@@ -12444,70 +12444,137 @@ The executor plans work; asset-specific stage callables remain owned by the proj
 
 # Reconstruction Fidelity Gate
 
-## Cel
+## Purpose
 
-Zamienić istniejące zasady fidelity z dokumentacji na twardą, **proof-bearing** bramkę wykonawczą przed `R12 — TOPOLOGY/RUNTIME`.
+Provide the hard, proof-bearing transition from reference reconstruction to runtime work.
 
-v0.7 potrafi dowieść poprawnego exportu, ścieżek runtime i integracji silnika. Nie może jednak dopuścić do sytuacji, w której asset z poprawnym bounding boxem albo narracyjnym `looks correct` przechodzi do LOD/exportu mimo nieudowodnionej sylwetki, proporcji lub widoczności cech MUST.
+v0.10 extends the gate after the Lafar Street Bench v0.9 benchmark demonstrated:
 
-## Zasada nadrzędna
+```text
+hard dimensions PASS
++ outer silhouette PASS
++ local builder gates PASS
++ game-ready package PASS
+!=
+faithful reconstruction
+```
+
+For target fidelity L4/L5, internal product architecture and appearance are now mandatory upstream owners.
+
+---
+
+## Core rule
 
 ```text
 RECONSTRUCTION FIDELITY FAIL / UNVERIFIED
 !=
-problem do zapisania jako deviation i kontynuowania runtime
+known deviation that runtime may hide
 ```
 
-Jeżeli błąd dotyczy D0/D1, kanonicznego widoku, cechy MUST albo twardego wymiaru, pipeline wraca do najwcześniejszego właściciela błędu.
+If a HARD/MUST/CANONICAL owner fails, pipeline returns to its earliest owner.
 
-`PASS` jest stanem dowodowym, nie komentarzem modelu.
+`PASS` is an evidence state, not a builder comment.
 
-## Kolejność bramek
+---
+
+## v0.10 gate order
 
 ```text
-registered reference
+registered source set
 -> hard dimensions
--> canonical silhouette/overlay diff
+-> canonical global silhouette/views
 -> D0/D1 landmarks and proportions
--> MUST feature ROI visibility
--> material segmentation when target >= L4
+-> MUST geometry/features
+-> Appearance Contract closure when target >= L4
+-> APPEARANCE_FIDELITY_GATE when target >= L4
 -> authority/deviation closure
 -> RECON_FIDELITY_GATE
--> only then topology/UV/LOD/runtime
+-> only then topology/LOD/UV/bake/export/runtime
 ```
+
+The appearance gate does not replace canonical geometry proof. It closes the class of failures that global silhouette cannot see:
+- part boundaries;
+- trim paths;
+- junctions;
+- edge families;
+- material response;
+- detail coverage;
+- final matched appearance views.
+
+---
 
 ## Proof-bearing PASS
 
-Każdy wymagany owner musi przekazać compact record zawierający co najmniej:
+Every required owner carries at minimum:
 
 ```yaml
 status: PASS
 evidence_kind: <allowed kind>
-provenance_id: <artifact/registration/validator id>
+validator_id: <canonical validator>
+provenance_id: <artifact/report id>
 ```
 
-Sam zapis:
+Reference-derived evidence additionally requires:
+
+```yaml
+source_reference_id: ref_...
+```
+
+or:
+
+```yaml
+source_reference_ids: [...]
+```
+
+Projected evidence additionally requires:
+
+```yaml
+registration_id: reg_...
+```
+
+A bare:
 
 ```yaml
 status: PASS
 ```
 
-jest w trybie v0.8 `UNVERIFIED`.
+is `UNVERIFIED` in strict mode.
 
-Narracyjne:
+---
+
+## Canonical validator rule
+
+If a canonical validator exists for the owner, local builder acceptance cannot substitute for it.
+
+Examples:
 
 ```text
-correct
-matching the card
-looks good
-ortho checked
+view/silhouette/ROI -> REFERENCE_OVERLAY_VALIDATE
+appearance boundary/trim/material -> APPEARANCE_REFERENCE_VALIDATE
+node acceptance -> RECONSTRUCTION_NODE_GATE
+layer order -> LAYER_STACK_VALIDATE
+appearance aggregate -> APPEARANCE_FIDELITY_GATE
+final aggregate -> RECON_FIDELITY_GATE
 ```
 
-nie jest dowodem Level A.
+A local helper may produce a measurement artifact. It may not certify the final owner itself.
 
-## Dozwolone klasy dowodu
+This explicitly blocks circular chains such as:
 
-Przykładowe `evidence_kind`:
+```text
+builder infers R165
+-> builder constructs R165
+-> builder-local Gate checks R165
+-> reference PASS
+```
+
+The last transition is invalid without source-anchored evidence.
+
+---
+
+## Allowed evidence classes
+
+Examples:
 
 ```text
 NUMERIC_MEASUREMENT
@@ -12518,129 +12585,196 @@ FEATURE_ROI
 LAYER_STACK
 RAY_VISIBILITY
 MATERIAL_SEGMENTATION
+PART_BOUNDARY_VALIDATION
+TRIM_PATH_VALIDATION
+JUNCTION_VALIDATION
+EDGE_FAMILY_VALIDATION
+MATERIAL_APPEARANCE_VALIDATION
+EMISSIVE_REGION_VALIDATION
+DETAIL_COVERAGE
 AUTHORITY_DECISION
+APPEARANCE_FIDELITY_GATE
 ```
 
-Dopuszczalne klasy zależą od ownera. Na przykład `REGISTERED_OVERLAY` nie zastępuje numeric hard-dimension measurement, a `OBJECT_EXISTS` nie jest wystarczającym dowodem widocznej cechy MUST.
+Allowed evidence depends on owner class.
 
-## Minimalny kontrakt wejściowy
+`OBJECT_EXISTS` is never sufficient for a visible MUST feature.
+
+---
+
+## Minimal v0.10 contract
 
 ```yaml
 fidelity_gate:
   strict_evidence: true
-  target_fidelity: L4
-  achieved_fidelity: L4
+  target_fidelity: L5
+  achieved_fidelity: L5
 
   hard_dimensions:
     status: PASS
     evidence_kind: NUMERIC_MEASUREMENT
-    provenance_id: bounds_report_v3
+    validator_id: REFERENCE_MEASURE
+    provenance_id: bounds_report_v4
+    source_reference_id: sheet_v3
 
   canonical_views:
     FRONT:
       status: PASS
       evidence_kind: REGISTERED_OVERLAY
-      provenance_id: front_reg_001
-      iou: 0.97
-      mean_contour_delta_px: 1.3
-      max_contour_delta_px: 4.0
+      validator_id: REFERENCE_OVERLAY_VALIDATE
+      provenance_id: front_compare_004
+      source_reference_id: sheet_front_v3
+      registration_id: front_reg_004
     SIDE:
-      status: FAIL
+      status: PASS
       evidence_kind: REGISTERED_OVERLAY
-      provenance_id: side_reg_001
+      validator_id: REFERENCE_OVERLAY_VALIDATE
+      provenance_id: side_compare_004
+      source_reference_id: sheet_side_v3
+      registration_id: side_reg_004
 
   landmarks_d0_d1:
     status: PASS
     evidence_kind: LANDMARK_PROJECTION
-    provenance_id: landmark_report_002
+    validator_id: REFERENCE_OVERLAY_VALIDATE
+    provenance_id: landmarks_004
+    source_reference_id: sheet_v3
+    registration_id: canonical_reg_set_004
 
   must_features:
-    - id: LOWER_TAPER
+    - id: SIDE_TRIM_R
       status: PASS
-      evidence_kind: FEATURE_ROI
-      provenance_id: lower_taper_roi_004
+      evidence_kind: TRIM_PATH_VALIDATION
+      validator_id: APPEARANCE_REFERENCE_VALIDATE
+      provenance_id: trim_r_004
+      source_reference_ids: [sheet_side_v3, hero_v2]
+      registration_id: side_reg_004
 
   material_segmentation:
     status: PASS
     evidence_kind: MATERIAL_SEGMENTATION
-    provenance_id: matseg_001
+    validator_id: APPEARANCE_REFERENCE_VALIDATE
+    provenance_id: matseg_004
+    source_reference_ids: [material_sheet_v1, hero_v2]
 
-  deviations:
-    - id: BODY_DEPTH
-      severity: HARD
-      status: ACCEPTED_BY_AUTHORITY
-      authority_source: USER_APPROVAL
-      authority_record_id: decision_007
+  appearance_fidelity:
+    status: PASS
+    evidence_kind: APPEARANCE_FIDELITY_GATE
+    validator_id: APPEARANCE_FIDELITY_GATE
+    provenance_id: appearance_gate_004
+
+  deviations: []
 ```
 
-Wynik musi zawierać `can_advance_to_runtime`.
+The output must contain `can_advance_to_runtime`.
+
+---
 
 ## Canonical-view proof
 
-Dla każdego wymaganego widoku `FRONT/SIDE/TOP/REAR/BOTTOM`:
-- rejestracja ma być globalna dla widoku;
-- kandydat i reference muszą używać zgodnej projekcji/skali/cropu;
-- wymagany jest compact metric report albo jawny blocker;
-- `QA_SCENE_ISOLATE` musi potwierdzić, że render nie został zanieczyszczony collision/export proxy.
+For every required `FRONT/SIDE/TOP/REAR/BOTTOM/HERO` view:
+- use one global registration for that view;
+- candidate/reference use compatible projection, physical scale and crop policy;
+- no local warp/translation to improve one feature;
+- record compact metrics or explicit blocker;
+- `QA_SCENE_ISOLATE` proves collision/export/LOD proxies did not contaminate the render.
 
-Jeżeli reference dla danego widoku nie istnieje, widok nie może zostać po prostu usunięty z evidence. Musi mieć jawny status wynikający z View Authority Matrix, np. `NOT_REQUIRED_BY_AUTHORITY` albo alternatywny proof contract.
+If a reference view is unavailable, do not silently omit it. Resolve via View Authority Matrix with explicit `NOT_REQUIRED_BY_AUTHORITY` or alternative proof.
+
+---
+
+## Appearance owner requirement for L4/L5
+
+The final gate consumes `APPEARANCE_FIDELITY_GATE`, which itself is non-compensating for required categories.
+
+A candidate cannot pass because:
+- dimensions are perfect but side trim path is wrong;
+- global silhouette is high-IoU but rear panel architecture is missing;
+- material names are correct but brushed aluminium has no directionality;
+- all built details are valid but half the reference MUST details were silently omitted.
+
+---
 
 ## Severity / authority
 
 `HARD`, `MUST`, `CANONICAL`:
-- brak automatycznego waivera;
-- `OPEN` blokuje;
-- może zostać zamknięte tylko jako `RESOLVED` albo `ACCEPTED_BY_AUTHORITY`;
-- `ACCEPTED_BY_AUTHORITY` bez `authority_source` i `authority_record_id` jest nadal blockerem.
+- no automatic waiver;
+- `OPEN` blocks;
+- close only as `RESOLVED` or `ACCEPTED_BY_AUTHORITY`;
+- authority acceptance requires `authority_source` and `authority_record_id`.
 
-Agent budujący asset nie może sam sobie nadać authority przez komentarz typu `card wins` albo `this is more sensible`.
+The modeling agent is not authority simply because it can justify an interpretation.
 
-`SOFT`:
-- może pozostać jako znane ograniczenie, jeżeli target fidelity na to pozwala.
+`SOFT` may remain known limitation only if target fidelity permits it.
 
-## Konflikty wewnątrz technical sheet
+---
 
-Rozróżniaj źródła:
+## Conflicts inside technical sheets
+
+Distinguish evidence types:
 - `PRINTED_DIMENSION`;
 - `ORTHO_DIMENSION_LINE`;
 - `PROMPT_HARD_VALUE`;
 - `PROMPT_RANGE`;
 - `ORTHO_SILHOUETTE_INFERENCE`;
 - `PIXEL_INFERENCE`;
-- `HERO/PERSPECTIVE_INFERENCE`.
+- `HERO/PERSPECTIVE_INFERENCE`;
+- `MATERIAL/DETAIL_INFERENCE`.
 
-Jeżeli np. wydrukowane `1280 mm` nie odpowiada pikselowo skali wyprowadzonej z `2600 mm`, nie deformuj geometrii dla zgodności z oboma naraz. Zapisz conflict i rozwiąż go przez View Authority Matrix. Pixel inference nie może po cichu nadpisać drukowanego wymiaru.
+Resolve authority per property.
+
+A printed dimension may control width without controlling trim path or material boundary.
+
+Pixel inference cannot silently overwrite a printed dimension; a printed dimension cannot silently overwrite unrelated appearance evidence.
+
+---
 
 ## Fidelity levels
 
-Korzystaj z `05_execution/59_REFERENCE_FIDELITY_PROTOCOL.md`.
+Use `05_execution/59_REFERENCE_FIDELITY_PROTOCOL.md`.
 
-Dla assetu hero / ważnego civic prop domyślnym celem jest L4 lub L5, nie L1/L2.
+For hero/important civic props default target remains L4/L5.
 
-`achieved_fidelity` nie może być ręcznie zadeklarowane wyżej niż dowody ownerów. Gate może przyjąć deklarację jako wejście diagnostyczne, ale nie może użyć jej jako jedynego dowodu.
+v0.10 interpretation:
+- L3: geometry/structural match may remain neutral-surface;
+- L4: internal product architecture, edge language and material appearance required;
+- L5: complete MUST detail coverage, branding and reference-significant microstructure required.
+
+`achieved_fidelity` cannot be manually declared above proof owners.
+
+---
 
 ## Anti-gaming
 
-Nie wolno zaliczyć bramki przez:
-- poprawne `Dimensions` przy błędnym obrysie;
-- render collision proxy zamiast assetu;
-- wysokie globalne IoU przy dużym błędzie lokalnego MUST ROI;
-- istnienie obiektu w scenie bez dowodu jego widoczności;
-- działający export/engine loader przy niezamkniętym reconstruction FAIL;
-- dopisywanie geometrii wyłącznie po to, aby osiągnąć arbitralny triangle count;
-- deklarację `PASS` bez evidence kind/provenance;
-- `ACCEPTED_BY_AUTHORITY` bez identyfikowalnego authority record.
+Do not pass through:
+- correct `Dimensions` with wrong internal architecture;
+- alpha silhouette while trim/panel boundaries are wrong;
+- builder-local numeric gates derived from builder constants;
+- collision/export proxy rendered instead of asset;
+- high global IoU with failed MUST ROI;
+- object existence without feature visibility;
+- correct material slot names without material appearance evidence;
+- successful export/engine loader with unresolved appearance/reconstruction FAIL;
+- arbitrary triangle-count padding;
+- bare PASS without provenance/validator/source;
+- `ACCEPTED_BY_AUTHORITY` without authority record.
+
+---
 
 ## Executor
 
 `executors/fidelity_gate.py`
 
-Executor agreguje compact reports. Nie zastępuje pomiarów. Właścicielami dowodu pozostają:
-- `REFERENCE_OVERLAY_VALIDATE` dla silhouette/ROI;
-- numeric/landmark validators;
-- `LAYER_STACK_VALIDATE` dla widocznych warstw/recessów;
-- material segmentation validator dla L4+;
-- Evidence/Authority Ledger dla deviation closure.
+The executor aggregates compact reports. It does not perform measurements.
+
+Evidence producers remain:
+- `REFERENCE_MEASURE`;
+- `REFERENCE_OVERLAY_VALIDATE`;
+- `APPEARANCE_REFERENCE_VALIDATE`;
+- `LAYER_STACK_VALIDATE`;
+- material/appearance validators;
+- `APPEARANCE_FIDELITY_GATE`;
+- Evidence/Authority Ledger.
 
 
 ---
