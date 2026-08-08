@@ -29,6 +29,7 @@ Reference-analysis efficiency pass based on the first real technical-sheet recon
 - added `00_governance/06_TASK_PACK_PROTOCOL.md` to bound active knowledge by state/task subtype and prevent loading later-stage modules too early;
 - expanded `02_blender_api/25_TOOL_CALL_AND_TOKEN_EFFICIENCY.md` with a strict Tool Output Budget and `SUMMARY -> DIAGNOSTIC -> RAW` progressive disclosure policy;
 - added `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` and registered semantic skill `REFERENCE_MEASURE` for local pixel/NumPy measurement with compact aggregate outputs;
+- added candidate runnable implementation `executors/reference_measure.py`; it stays `CONTRACT_READY` until validated in a real Blender runtime;
 - added `10_reconstruction/170_REFERENCE_ANALYSIS_CACHE.md` so validated view ROIs, dimensions, calibration and authority decisions are reused instead of repeatedly rediscovered;
 - added `09_engine/92_PROJECT_ASSET_PIPELINE_PROFILE_SCHEMA.md` to separate project naming/material/decal/path conventions from sibling asset geometry scripts;
 - updated technical-sheet authority to `explicit numeric dimensions/datum > orthographic views > sections > details > perspective hero > approximate prose > visual inference`;
