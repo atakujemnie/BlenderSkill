@@ -539,6 +539,7 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence from
 | Skill ID | Purpose | Canonical knowledge | Current maturity | Required capabilities | Validation |
 |---|---|---|---|---|---|
 | `RECONSTRUCT_REFERENCE` | camera/scale/silhouette/proportion-first reconstruction | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` + stage modules | CONTRACT_READY | scene inspect, image/reference access, camera/render | multi-view, silhouette, landmarks, dimensions |
+| `REFERENCE_MEASURE` | compact technical-sheet/reference measurement and cross-view aggregation | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` + `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md` | CONTRACT_READY | reference image access, Python/NumPy or equivalent image analysis | provenance, calibration, confidence, cross-view deviation, output budget |
 | `HS_PANEL_LINE` | narrow hard-surface seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | Python, BMesh, modifiers, evaluated mesh | path continuity, topology, profile, modifier order |
 | `SUBD_TOPOLOGY_CONTROL` | SubD cage design and topology repair | `blender-agent-subdivision-topology-control.md` | CONTRACT_READY | Python/BMesh, Subdivision evaluation | evaluated surface, pinching, density, continuity |
 | `TRIM_SHEET_UV` | trim-sheet classification and deterministic UV assignment | `03_modeling/40_TRIM_SHEETS.md` | CONTRACT_READY | mesh UV access, materials | region bounds, density, orientation, intentional overlap |
@@ -566,6 +567,9 @@ SUBD_TOPOLOGY_AUDIT
 When multiple skills could solve a feature, route by design intent:
 
 ```text
+technical-sheet/reference measurement
+-> REFERENCE_MEASURE
+
 changes silhouette / primary mass
 -> base-mesh or reconstruction geometry
 
@@ -606,17 +610,20 @@ skill_call:
 
 If `runtime_bindings_verified=false`, the agent must run the Agent Tool API Profile preflight before scene mutation.
 
+For read-only analysis skills such as `REFERENCE_MEASURE`, capability binding may occur without scene mutation, but the agent still must not invent unavailable tools.
+
 ## Contract-ready is not executor-ready
 
 A semantic skill can define excellent behavior without having a packaged Python executor.
 
-In that case the agent may still implement the operation through `bpy`/BMesh, but it must:
+In that case the agent may still implement the operation through available tools, but it must:
 
 1. follow the skill contract;
-2. keep the implementation local and transactional;
+2. keep the implementation local and transactional where scene writes occur;
 3. validate against the skill's postconditions;
 4. avoid presenting an ad-hoc implementation as a permanent library executor;
-5. record failed calls and repair iterations.
+5. record failed calls and repair iterations;
+6. respect the Tool Output Budget.
 
 ## Registry update rule
 
