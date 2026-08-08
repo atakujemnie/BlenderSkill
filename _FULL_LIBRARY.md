@@ -3942,6 +3942,167 @@ Przed eksportem sprawdź:
 
 ---
 
+## FILE: `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`
+
+# Axisymmetric Profile Asset Primitive
+
+## Skill ID
+
+`AXISYMMETRIC_PROFILE`
+
+## Purpose
+
+Build rotationally symmetric hard-surface parts from an explicit 2D radius/height profile revolved around a known axis.
+
+Typical assets/features:
+- bollards;
+- posts;
+- cylindrical housings;
+- caps and collars;
+- light rings;
+- bases;
+- round knobs and service rings.
+
+Use this skill when the design is defined primarily by stacked radial profile changes rather than arbitrary surface sculpting.
+
+## Why this is a semantic primitive
+
+A profile revolution guarantees by construction:
+- shared center axis;
+- exact radii;
+- deterministic height transitions;
+- repeatable circumferential segmentation;
+- predictable triangle cost;
+- straightforward cylindrical UVs.
+
+Do not rebuild the same `lathe()`/revolve helper inside every asset script.
+
+## Input contract
+
+```yaml
+axisymmetric_profile:
+  feature_id: F001
+  object_name: BOL_MainBody
+  axis: Z
+  unit: mm
+  segments: 32
+  profile:
+    - [70.0, 66.0]
+    - [70.0, 954.0]
+  closed_profile: false
+  cap_bottom: false
+  cap_top: false
+  smoothing: AUTO_BY_PROFILE
+  uv_mode: CYLINDRICAL_ARC_LENGTH
+```
+
+A profile point is `[radius, axis_position]`.
+
+Optional:
+- explicit corner fillet radii;
+- per-segment material bands;
+- start angle;
+- seam angle;
+- cap policy;
+- normal/sharp-edge policy.
+
+## Preconditions
+
+- axis and origin are known;
+- radial dimensions are LOCKED/HIGH confidence or explicitly provisional;
+- no required feature breaks rotational symmetry inside this primitive;
+- segment count satisfies silhouette and triangle budget.
+
+Asymmetric features such as service panels, logos or local emitters are separate feature owners added after the master rotational geometry is accepted.
+
+## Segment selection
+
+Choose circumference segments from:
+- projected silhouette size;
+- target LOD;
+- radius;
+- expected viewing distance;
+- triangle budget.
+
+Do not increase segmentation because a local asymmetric detail needs more topology. Keep local detail separate when possible.
+
+For a small game-ready civic prop, 24–32 segments is often sufficient, but the actual contract/QA result wins.
+
+## Fillet/bevel policy
+
+Prefer fillets encoded directly in the radial profile when:
+- the radius is dimension-critical;
+- modifier order would make bevel width unstable;
+- the part is fully rotationally symmetric.
+
+Use a normal Bevel modifier when editability or downstream variation is more important and the modifier can be validated reliably.
+
+Do not create unnecessary profile rings. Every extra radial profile point multiplies around the circumference and can dominate triangle count.
+
+## UV policy
+
+For the revolved side wall:
+- U = normalized angle around axis;
+- V = normalized or physical arc length along the profile.
+
+This produces deterministic orientation and avoids selection-dependent UV operators.
+
+Caps require a separate planar/radial mapping policy.
+
+## Topology contract
+
+Each generated object must explicitly declare one of:
+
+```text
+CLOSED_SOLID
+OPEN_ASSEMBLY_PART
+SURFACE_DETAIL
+```
+
+`CLOSED_SOLID` requires zero boundary/non-manifold edges.
+
+`OPEN_ASSEMBLY_PART` is allowed only when the open boundary is intentionally sealed/occluded by another owned assembly feature and the Game Asset Contract allows it.
+
+Never report a general `mesh PASS` while boundary edges exist and topology intent is unspecified.
+
+## Postconditions
+
+Validate:
+- axis center deviation;
+- min/max radius;
+- min/max Z/axis position;
+- total dimensions;
+- circumferential continuity;
+- duplicate vertices;
+- zero-area faces;
+- boundary edges against topology intent;
+- UV existence;
+- triangle count.
+
+## Asymmetric feature handoff
+
+After the rotational master passes:
+
+```text
+service panel -> dedicated curved-surface/local-detail strategy
+radial bolt pattern -> radial repetition strategy
+logo/serial -> decal
+local base emitter -> local feature owner
+```
+
+Do not distort the rotational master simply to accommodate these details.
+
+## Candidate executor
+
+Canonical candidate implementation:
+
+`executors/axisymmetric_profile.py`
+
+Until that implementation is benchmarked in the active Blender runtime, registry maturity remains `CONTRACT_READY`.
+
+
+---
+
 ## FILE: `blender-agent-procedural-hard-surface-panel-lines.md`
 
 # Blender Agent Skill: Procedural Hard-Surface Panel Lines and Grooves
@@ -8893,6 +9054,130 @@ If nothing meaningful changed, do not call the tool again.
 
 ---
 
+## FILE: `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md`
+
+# Code Artifact and Patch Protocol
+
+## Purpose
+
+Generated Blender Python is an executable artifact, not conversational prose.
+
+The language model must not repeatedly place complete build scripts, complete QA scripts or large patches into its own reasoning context when the file already exists on disk.
+
+## Core rule
+
+```text
+plan in context
+-> write/update artifact on disk
+-> execute artifact
+-> return compact result
+-> inspect only the failing symbol/range
+```
+
+## File-first policy
+
+If generated code is more than roughly 120 lines or contains reusable helpers, write it to a file and treat the path as persistent state.
+
+After creation, return only:
+- path;
+- changed symbols/functions;
+- approximate line count;
+- execution status;
+- compact diagnostics.
+
+Do not echo the complete source unless the user explicitly asks to see it.
+
+## Patch policy
+
+For an existing script:
+
+1. identify the failing function or constant;
+2. read only the required range;
+3. apply the smallest coherent patch;
+4. report the changed symbols and reason;
+5. execute tests/validation.
+
+Do not re-read or re-print the entire file after every edit.
+
+## Tool output contract
+
+Preferred result:
+
+```yaml
+code_artifact:
+  path: build_asset.py
+  action: PATCHED
+  changed_symbols:
+    - build_base_accent
+    - ACCENT_DEPTH
+  lines_touched: 18
+  syntax: PASS
+  execution: PASS
+  validation:
+    visible_pixels: 214
+    mesh_issues: 0
+```
+
+Not acceptable by default:
+- full 600-line source after creation;
+- full source after a 5-line patch;
+- complete unified diff containing unrelated context;
+- repeated unchanged function bodies;
+- long stderr/stdout when a compact error classification is sufficient.
+
+## Read budget
+
+Read source in this order:
+
+```text
+symbol index / grep
+-> targeted line range
+-> local dependency function
+-> whole file only when architecture cannot be inferred otherwise
+```
+
+## Generated helper reuse
+
+Before writing a helper such as:
+- lathe/profile revolution;
+- fillet generation;
+- radial repetition;
+- mesh validation;
+- QA scene isolation;
+- reference measurement;
+
+check the Semantic Skill Registry and `executors/` directory.
+
+If a compatible reusable executor exists, import/use it instead of generating another local implementation.
+
+## Artifact persistence
+
+Persist:
+- build script path;
+- QA script path;
+- last successful execution hash/mtime when available;
+- produced asset collection/object IDs;
+- validation summary.
+
+A later phase should reference the artifact, not reconstruct its source from conversation history.
+
+## Failure diagnostics
+
+On failure, return:
+- error class;
+- file/function/line when available;
+- relevant state;
+- smallest required source range.
+
+Raw stack traces may be retained on disk. The LLM should normally receive only the decisive portion.
+
+## Token objective
+
+Code generation should consume tokens for design decisions, not for transporting unchanged source code between tools and the model.
+
+
+---
+
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
 # System Prompt — Blender Asset Agent
@@ -10446,6 +10731,113 @@ After failure:
 - confidence per measurement;
 - cross-view conflicts reported;
 - no raw diagnostic dump in normal output.
+
+
+---
+
+## FILE: `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`
+
+# Mesh Contract Validator Pattern
+
+## Skill ID
+
+`MESH_VALIDATE`
+
+## Purpose
+
+Validate render meshes against an explicit per-object topology contract instead of reporting generic statements such as "no mesh defects" while boundary edges are still present.
+
+## Topology intent is mandatory
+
+Every mesh object entering GAME_READY validation declares one of:
+
+```text
+CLOSED_SOLID
+OPEN_ASSEMBLY_PART
+SURFACE_DETAIL
+COLLISION
+```
+
+### `CLOSED_SOLID`
+
+Requires:
+- zero boundary edges;
+- zero non-manifold edges;
+- zero loose vertices/edges;
+- zero zero-area faces;
+- no duplicate vertices within configured tolerance.
+
+### `OPEN_ASSEMBLY_PART`
+
+Boundary edges are permitted only when:
+- the exact boundary is intentional;
+- it is covered/sealed by another owned assembly part;
+- runtime backface assumptions permit it;
+- the Feature/Game Asset Contract records the exception.
+
+The validator must report the boundary count even when accepted.
+
+### `SURFACE_DETAIL`
+
+Floating/decal-like geometry may be open, but must additionally validate:
+- visibility from intended views;
+- no accidental z-fighting;
+- no hidden placement behind the host surface;
+- no unintended silhouette change unless owned by the feature.
+
+### `COLLISION`
+
+Use the active Engine Profile requirements. Prefer closed simple volumes unless the engine explicitly supports other collision forms.
+
+## Compact report
+
+```yaml
+mesh_validation:
+  object: BOL_MainBody
+  topology_intent: CLOSED_SOLID
+  status: FAIL
+  verts: 128
+  tris: 192
+  boundary_edges: 64
+  non_manifold_edges: 64
+  loose_vertices: 0
+  duplicate_vertices: 0
+  zero_area_faces: 0
+  uv_present: true
+  reasons:
+    - CLOSED_SOLID_HAS_BOUNDARY_EDGES
+```
+
+## Assembly-level validation
+
+Also report:
+- aggregate dimensions;
+- origin/pivot;
+- transforms;
+- total triangles;
+- material slots/submeshes;
+- feature ownership;
+- interpenetration/occlusion exceptions when relevant.
+
+## Visibility validation for floating details
+
+A floating feature is not valid merely because:
+- the object exists;
+- emission/material assignment is correct;
+- its vertices are numerically near the host surface.
+
+For a visible feature, require at least one visibility proof:
+- QA render contains feature pixels in its ROI;
+- ray/occlusion test shows the detail is not hidden by host geometry;
+- geometric offset is proven outside the host surface along the correct normal.
+
+This specifically prevents a local emitter or panel from being created inside a cylinder and silently disappearing.
+
+## Candidate executor
+
+`executors/mesh_validate.py`
+
+Registry maturity stays `CONTRACT_READY` until benchmarked against the active Blender runtime and the project's topology policies.
 
 
 ---
