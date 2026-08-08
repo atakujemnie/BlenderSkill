@@ -4,46 +4,29 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.10.0 — reference appearance fidelity, internal product architecture and anti-self-certification.**
+**v0.11.0 — enforced reconstruction execution, conflict arbitration and detail closure.**
 
-v0.10 is driven by the Lafar Street Bench v0.9 benchmark. The previous system produced a technically coherent asset with correct hard dimensions, canonical outer silhouettes, valid LOD budgets and clean package/export checks. The user still rated the reconstruction only **6/10** because the side housings, aluminium trim, rear assembly, edge language, material response and visible detail did not faithfully reproduce the reference.
+v0.11 is driven by the Lafar Street Lamp v0.10 benchmark. v0.10 produced the strongest reconstruction so far, but exposed that the state machine was still advisory: `ready_nodes=[]` did not prevent a monolithic RDL0→RDL5 builder, `BUILT_UNVERIFIED` did not stop dependent geometry, and a local SIDE/detail conflict could be resolved too literally.
 
-The release adds the missing distinction:
-
-```text
-technically valid asset
-!=
-faithful reconstruction
-```
-
-The v0.10 reconstruction pipeline is:
+Canonical v0.11 execution:
 
 ```text
-reference evidence
--> property-level authority
--> Shape Graph
--> Reference Appearance Contract
--> representation-first RDL build
--> canonical source-anchored node proof
--> part-boundary / trim / junction proof
--> edge-family proof
--> material/detail proof
--> APPEARANCE_FIDELITY_GATE
--> RECON_FIDELITY_GATE
--> runtime
+eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> build exactly one node
+-> persist BUILT_UNVERIFIED
+-> source-anchored per-view QA
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> only ACCEPTED unlocks dependants
 ```
 
-not:
+v0.11 also adds persistent node/checkpoint state, per-property conflict arbitration, per-view evidence contracts, derived-parameter provenance, Appearance Owner Coverage, neutral diagnostic RDL geometry, canonical runtime pinning and benchmark 80 for the Lafar Street Lamp.
 
-```text
-correct bounds
--> alpha silhouette PASS
--> local builder Gate PASS
--> LOD/export
--> "done"
-```
+Runtime remains downstream of `APPEARANCE_FIDELITY_GATE` and `RECON_FIDELITY_GATE`.
 
-## Core v0.10 concepts
+## Core v0.11 concepts
 
 ### 1. Reconstruction Shape Graph
 

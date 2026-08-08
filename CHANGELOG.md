@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.11.0
+
+v0.11.0 is the **enforced reconstruction execution + reference-conflict closure** release, driven by the Lafar Street Lamp v0.10 benchmark.
+
+The lamp was the best reconstruction so far (human assessment about 7.5/10), proving that v0.10 improved form and appearance understanding. It also exposed the next gap: the agent could still organize code node-by-node while executing the whole RDL0→RDL5 asset in one monolithic run, despite `ready_nodes=[]` and without acceptance between nodes.
+
+### Hard execution authorization
+- added `05_execution/73_EXECUTION_AUTHORIZATION_GATE.md` and `executors/execution_authorization_gate.py`;
+- `CONSTRAINED` is eligibility, not permission to build;
+- production mutation requires persisted `READY_TO_BUILD` plus canonical authorization;
+- parent/dependency acceptance and previous RDL barriers are rechecked immediately before mutation.
+
+### Persistent node state
+- added `05_execution/74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md` and `executors/node_state_store.py`;
+- `BUILT_UNVERIFIED` is a hard branch stop;
+- only `RECONSTRUCTION_NODE_GATE` can transition a built node to `ACCEPTED`;
+- checkpoints separate `shape_nodes`, `appearance_owners`, `evidence` and `conflicts`.
+
+### Node-scoped orchestration
+- added `05_execution/75_NODE_SCOPED_ORCHESTRATION.md`;
+- code organization into `node_*()` functions no longer counts as node-by-node execution;
+- deterministic replay is allowed, but cannot mint new acceptance evidence.
+
+### Conflict arbitration and per-view proof
+- added `184_REFERENCE_CONFLICT_ARBITRATION.md` and `executors/reference_conflict_resolver.py`;
+- added `185_PER_VIEW_EVIDENCE_AND_DERIVED_PARAMETER_PROVENANCE.md`;
+- explicit dimensions own named dimensions, not unrelated local form;
+- detail/hero/ortho evidence uses different proof modes;
+- equal-authority contradictory interpretations remain BLOCKED instead of being averaged or silently selected.
+
+### Appearance-owner closure
+- added `186_APPEARANCE_OWNER_COVERAGE_AND_REPORT_NAMESPACES.md` and `executors/appearance_owner_coverage.py`;
+- `APPEARANCE_FIDELITY_GATE` v0.2 requires canonical MUST-owner inventory closure for strict L4/L5;
+- missing or unverified MUST owners block appearance acceptance.
+
+### Diagnostic form before finish
+- added `187_RDL_DIAGNOSTIC_GEOMETRY_AND_NEUTRAL_SHADING.md`;
+- RDL0 must create falsifiable grey diagnostic geometry;
+- RDL0–RDL3 source-fit QA defaults to neutral diagnostic shading;
+- production material response belongs to RDL5.
+
+### Runtime source integrity and reuse
+- added `188_CANONICAL_SKILL_RUNTIME_PINNING_AND_ANALYSIS_REUSE.md` and `executors/runtime_source_pin.py`;
+- benchmark runs require version/commit/source-root pinning and one active executor root;
+- repeated one-off analysis helpers trigger canonical executor reuse/migration review.
+
+### Benchmark and playbook
+- added benchmark `80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md`;
+- added `119_CIVIC_STREET_LAMP.md`;
+- regression target: human reference fidelity >= 8.5/10, zero unauthorized mutations, zero children built on unaccepted hosts, zero missing MUST appearance owners.
+
+### Tests
+- added `tools/test_v011_execution_enforcement.py`;
+- v0.9 and v0.10 regression suites remain active and were updated for the stricter v0.11 contracts.
+
+Canonical manifest version: **0.11.0**.
+Canonical module count: **234**.
+Canonical benchmark: **80 — Lafar Street Lamp v0.10 Execution and Detail Regression**.
+
 ## 0.10.0
 
 v0.10.0 is the **reference appearance fidelity + anti-self-certification** release.

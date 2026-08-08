@@ -1,5 +1,11 @@
 # Multi-View Conflict Resolution
 
+## v0.11 executable arbitration amendment
+
+Conflict resolution is now a proof-bearing per-property artifact. Use `REFERENCE_CONFLICT_RESOLVER` / `184_REFERENCE_CONFLICT_ARBITRATION.md` when candidates remain incompatible after projection/calibration checks. Explicit dimensions own the property they name, not unrelated local shell shape. Detail views can own local cuts/trim/junctions while orthographic dimensions remain locked. Equal-authority contradictory candidates remain BLOCKED. Dependent nodes/derived values persist the resulting `decision_id`.
+
+---
+
 ## Typy konfliktów
 
 - wymiarowy,

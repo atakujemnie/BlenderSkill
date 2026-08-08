@@ -1,5 +1,15 @@
 # Reconstruction Node Execution Protocol
 
+## v0.11 hard-enforcement amendment
+
+v0.10/v0.9 described the correct node loop, but the Lafar Street Lamp benchmark proved that an asset-local `main()` could still call all node functions in sequence. v0.11 makes the loop executable.
+
+Before mutation require `EXECUTION_AUTHORIZATION_GATE.can_mutate == PASS`, persisted `READY_TO_BUILD`, accepted parent/dependencies and prior RDL barriers. Immediately after one node mutation persist `BUILT_UNVERIFIED` and stop that branch until source-anchored QA plus `RECONSTRUCTION_NODE_GATE` returns `ACCEPTED`.
+
+Node-by-node function names are not sufficient. A monolithic function calling RDL0..RDL5 without persisted gates is a regression. See `73_EXECUTION_AUTHORIZATION_GATE.md`, `74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md` and `75_NODE_SCOPED_ORCHESTRATION.md`.
+
+---
+
 ## Cel
 
 Zastąpić monolityczny `build_asset()` kontrolowanym wykonywaniem Shape Graph node po node.

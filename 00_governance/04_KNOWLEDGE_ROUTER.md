@@ -1,5 +1,29 @@
 # Knowledge Router
 
+## v0.11 routing override
+
+This section has precedence over the v0.10 execution routing later in the document.
+
+```text
+runtime pin
+-> reference evidence/calibration
+-> REFERENCE_CONFLICT_RESOLVER for incompatible property interpretations
+-> Shape Graph + Appearance Contract
+-> eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> NODE_STATE_STORE persists READY_TO_BUILD
+-> build exactly one node
+-> persist BUILT_UNVERIFIED
+-> per-view source proof
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> RDL barrier
+```
+
+View evidence is typed per view: ORTHO uses registered overlay/numeric evidence, HERO uses supporting `PERSPECTIVE_INSPECTION`, DETAIL uses `LOCAL_FEATURE_ROI`. Before L4/L5 closure run `APPEARANCE_OWNER_COVERAGE`. Missing authorization or `ready_nodes=[]` blocks geometry mutation.
+
+---
+
 Agent nie ładuje całej biblioteki. Router wybiera najmniejszy Task Pack dla current state, failing evidence i Shape/Appearance ownera.
 
 Canonical rule:

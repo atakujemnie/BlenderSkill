@@ -1,5 +1,34 @@
 # Reconstruction Layer Index and Controller v0.10
 
+## v0.11 controller amendment
+
+v0.11 preserves the complete v0.10 reconstruction layer and adds enforced execution:
+
+```text
+PRELIGHT runtime pin
+-> evidence / calibration / property authority
+-> conflict arbitration
+-> Shape Graph + Appearance Contract
+-> RDL0 diagnostic geometry
+-> eligible node
+-> canonical execution authorization
+-> persist READY_TO_BUILD
+-> mutate one node
+-> persist BUILT_UNVERIFIED
+-> per-view source proof
+-> node gate
+-> ACCEPTED
+-> repeat + RDL barriers
+-> Appearance Owner Coverage
+-> Appearance Fidelity Gate
+-> Reconstruction Fidelity Gate
+-> runtime
+```
+
+New modules 184–188 cover conflict arbitration, per-view evidence/derived provenance, owner coverage/report namespaces, diagnostic geometry/neutral shading and canonical runtime pinning/reuse. Benchmark 80 (Lafar Street Lamp) is the canonical regression driver.
+
+---
+
 Warstwa `10_reconstruction` służy do ścisłego odtwarzania obiektu 3D z concept sheet, blueprintów, rzutów, zdjęć, renderów, wymiarów i opisów.
 
 Nie jest to warstwa inspiracji. Celem jest evidence-constrained reconstruction z kontrolowaną niepewnością.

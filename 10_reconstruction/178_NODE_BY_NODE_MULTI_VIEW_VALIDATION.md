@@ -1,5 +1,13 @@
 # Node-by-Node Multi-View Validation
 
+## v0.11 validation amendment
+
+Before the loop begins, one eligible node must receive `EXECUTION_AUTHORIZATION_GATE` and persisted `READY_TO_BUILD`. After mutation persist `BUILT_UNVERIFIED` and stop until the canonical node gate closes.
+
+Evidence mode is per view: ORTHO/NEAR_ORTHO -> registered overlay; HERO -> supporting `PERSPECTIVE_INSPECTION`; DETAIL -> `LOCAL_FEATURE_ROI`. Significant derived parameters require value/method/source/confidence/provenance and a conflict decision when needed. Builder consistency against its own constants never replaces source proof.
+
+---
+
 ## Purpose
 
 Validate one form immediately after it is built, before the scene is densified with dependent geometry.

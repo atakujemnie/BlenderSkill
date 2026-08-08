@@ -1,5 +1,21 @@
 # Semantic Skill Registry
 
+## v0.11 registry additions and precedence
+
+The following skills are canonical additions. They have precedence over any v0.10 routing sequence later in this document where the rules conflict.
+
+| Skill ID | Purpose | Canonical implementation | Maturity |
+|---|---|---|---|
+| `REFERENCE_CONFLICT_RESOLVER` | per-property multi-view arbitration | `184_REFERENCE_CONFLICT_ARBITRATION.md`; `executors/reference_conflict_resolver.py` | CONTRACT_READY |
+| `EXECUTION_AUTHORIZATION_GATE` | hard permission for one geometry mutation | `05_execution/73`; `executors/execution_authorization_gate.py` | CONTRACT_READY |
+| `NODE_STATE_STORE` | persistent transition/checkpoint validation | `05_execution/74`; `executors/node_state_store.py` | CONTRACT_READY |
+| `APPEARANCE_OWNER_COVERAGE` | MUST-owner inventory and namespace closure | `186`; `executors/appearance_owner_coverage.py` | CONTRACT_READY |
+| `CANONICAL_SKILL_RUNTIME_PIN` | version/commit/single-root preflight | `188`; `executors/runtime_source_pin.py` | CONTRACT_READY |
+
+Canonical v0.11 order: eligible node -> authorization -> persisted READY_TO_BUILD -> one-node mutation -> BUILT_UNVERIFIED stop -> canonical node proof -> ACCEPTED. Local builders cannot self-authorize or self-accept.
+
+---
+
 ## Purpose
 
 Stable routing layer between user intent, reconstruction semantics, knowledge modules, executors and validation.

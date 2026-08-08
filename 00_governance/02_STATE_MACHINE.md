@@ -1,5 +1,22 @@
 # Agent State Machine
 
+## v0.11 execution-enforcement amendment
+
+This amendment supersedes any weaker execution wording below while preserving the full v0.10 state-machine knowledge.
+
+Canonical reconstruction node transition:
+
+```text
+DECLARED -> CONSTRAINED
+CONSTRAINED -> READY_TO_BUILD       only via EXECUTION_AUTHORIZATION_GATE
+READY_TO_BUILD -> BUILT_UNVERIFIED one-node mutation only
+BUILT_UNVERIFIED -> ACCEPTED       only via RECONSTRUCTION_NODE_GATE
+```
+
+`UNVERIFIED`, `FAIL`, `BLOCKED`, `DIRTY`, `SUPERSEDED` are persistent states. `BUILT_UNVERIFIED` is a hard branch stop and never unlocks children. No `READY_TO_BUILD` node plus canonical authorization means no production geometry mutation. RDL0 must create neutral diagnostic geometry. Preflight also requires `CANONICAL_SKILL_RUNTIME_PIN`.
+
+---
+
 ## Stany
 
 ### S0 — DISCOVER
