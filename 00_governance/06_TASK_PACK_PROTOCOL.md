@@ -166,36 +166,102 @@ Do not start generic grunge iteration before material identity is correct.
 
 Load only after reconstruction/modeling acceptance.
 
-Required:
+### Required knowledge
+
 - Game Asset Contract;
-- completion levels;
-- polycount/LOD/collision;
-- transforms/pivots/naming;
+- Completion Levels;
+- Polycount/LOD/Collision;
+- Pivots/Transforms/Naming;
 - Texture/Material Runtime;
 - Game-Ready Bake Gate;
+- Runtime Bake Execution and Channel Semantics;
+- UV Atlas and LOD Stability Contract;
+- Bake Output Validation Pattern;
+- Incremental Dirty-Stage Cache;
+- Long-Running Job and Poll Protocol for expensive operations;
 - Emissive Runtime Handoff if applicable;
 - active Engine Profile;
 - active Project Asset Pipeline Profile;
+- Runtime Module Packaging Contract;
 - export module;
 - Final Validation;
 - Mesh Contract Validator;
-- Reference-to-Runtime Completeness Report.
+- Reference-to-Runtime Completeness Report;
+- Import-Safe Python Module Pattern when scripts call/reuse one another.
 
-Preferred skills:
+### Preferred skills
+
 - `MESH_VALIDATE`;
-- `BAKE_RUNTIME_TEXTURES` when bake/runtime texture closure is required;
+- `UV_ATLAS_CONTRACT`;
+- `BAKE_RUNTIME_TEXTURES`;
+- `BAKE_VALIDATE`;
+- `RUNTIME_PACKAGE_VALIDATE`;
 - `EXPORT_VALIDATE`;
 - `ASSET_COMPLETION`.
 
-Persistent outputs:
+### Preferred candidate executors
+
+```text
+executors/mesh_validate.py
+executors/uv_atlas_contract.py
+executors/bake_runtime_textures.py
+executors/bake_validate.py
+executors/qa_scene_isolation.py
+executors/gltf_package_validate.py
+executors/completion_gate.py
+```
+
+Do not write replacement generic helpers before checking these files.
+
+### Internal stage order
+
+```text
+GAME_READY_PREFLIGHT
+-> LOD_COLLISION_VALIDATE
+-> UV_CONTRACT
+-> BAKE_PLAN_DIRTY_GRAPH
+-> BAKE_CHANNELS
+-> BAKE_VALIDATE
+-> RUNTIME_MATERIAL_BIND
+-> PACKAGE_EXPORT
+-> PACKAGE_READBACK
+-> BAKED_RUNTIME_QA
+-> ASSET_COMPLETION
+```
+
+Do not jump from successful bake files directly to Level C.
+
+### Bake rules
+
+- Bake operator must return `FINISHED`.
+- Every contributing material must have the correct selected+active target image node.
+- AO/ray-dependent pass must isolate unrelated render-visible geometry.
+- BaseColor/Metallic/Emissive use explicit channel semantics.
+- Structural bake must not absorb unrelated decal/dynamic-display UV owners.
+- Bake source and consuming runtime LODs must share a validated UV contract.
+- A channel repair dirties only dependent channels/artifacts.
+- Timeout triggers job/artifact inspection, not duplicate full bake.
+
+### Persistent outputs
+
 - LOD report;
 - collision report;
-- texture/bake report;
+- `UV_CONTRACT_ID` + part assignments;
+- dirty-stage artifact cache;
+- per-channel bake reports;
+- semantic bake validation;
 - runtime material disposition;
-- export validation;
+- runtime package/readback report;
+- baked-runtime QA result;
 - completion report.
 
-Level C cannot pass while required Blender-only material effects remain without a runtime strategy.
+### Efficiency target
+
+For a standard hard-surface prop starting from accepted geometry, plan this pack to fit roughly within a 15k-token operational budget when possible.
+
+This is a benchmark target, not a universal hard limit. Complexity may justify more, but solved infrastructure must not be rediscovered.
+
+Level C cannot pass while required Blender-only material effects remain without a runtime strategy or while baked runtime QA/package readback is failing.
 
 ---
 
@@ -207,6 +273,7 @@ Required:
 - Completion Levels;
 - Project Asset Pipeline Profile;
 - Engine Adapter Protocol;
+- Runtime Module Packaging Contract;
 - Asset Catalog Integration Protocol;
 - Authoring to Runtime Handoff;
 - Reference-to-Runtime Completeness Report.
@@ -216,6 +283,7 @@ Preferred skill:
 
 Persistent outputs:
 - stable asset ID;
+- verified packaging profile;
 - previous conflicting catalog entry if any;
 - registration/update result;
 - readback verification;
@@ -244,6 +312,10 @@ Build Plan
 Code Artifact Registry
 Checkpoint results
 Material Runtime Disposition
+UV Contract
+Dirty-Stage Artifact Cache
+Bake Channel Reports
+Runtime Package Profile
 Completion Report
 ```
 
