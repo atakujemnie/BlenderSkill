@@ -19,15 +19,17 @@ Nie claimuj wyższego maturity bez evidence.
 
 | Skill ID | Purpose | Canonical knowledge | Maturity | Validation |
 |---|---|---|---|---|
-| `RECONSTRUCT_REFERENCE` | end-to-end reference reconstruction controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY | evidence, Shape Graph, RDL barriers, fidelity gate |
+| `RECONSTRUCT_REFERENCE` | end-to-end reference reconstruction controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY | evidence, Shape Graph, Appearance Contract, RDL barriers, fidelity gates |
 | `REFERENCE_MEASURE` | compact reference measurement | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`; `executors/reference_measure.py` | CONTRACT_READY | provenance, calibration, confidence |
 | `REFERENCE_OVERLAY_VALIDATE` | registered reference-vs-candidate silhouette/ROI comparison | `142`, `143`, `171`; `executors/reference_overlay_validate.py` | CONTRACT_READY | IoU, contour delta, MUST ROI |
+| `APPEARANCE_REFERENCE_VALIDATE` | reference-anchored internal boundary/trim/edge/material/detail validation | `180_REFERENCE_APPEARANCE_CONTRACT.md`, `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`, `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`, `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`, script pattern 96 | CONTRACT_READY | source reference + registration + owner-class metrics |
 | `SHAPE_GRAPH` | validate hierarchy/dependencies/readiness of design forms | `174_RECONSTRUCTION_SHAPE_GRAPH.md`, `95_SHAPE_GRAPH_VALIDATOR_PATTERN.md`; `executors/shape_graph.py` | CONTRACT_READY | DAG, levels, RDL, parent/dependency readiness, stage barrier |
 | `SHAPE_CLASSIFY` | choose mathematical representation before Blender technique | `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md` | CONTRACT_READY | evidence-backed shape class, rejected alternatives |
-| `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176_RECONSTRUCTION_NODE_CONTRACT.md`, `178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, isolation, per-view evidence, numeric/section/regression |
+| `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176_RECONSTRUCTION_NODE_CONTRACT.md`, `178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`, `181`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, canonical validator IDs, source/registration, isolation, per-view evidence, numeric/section/regression |
 | `SECTION_LOFT_HARD_SURFACE` | deterministic multi-section base/shell/transition construction | `179_MULTI_SECTION_LOFT_AND_PROFILE_CAGE.md`, playbook 118; `executors/section_loft.py` | CONTRACT_READY | station ordering, sample correspondence, mesh data, multi-view/section proof |
 | `LAYER_STACK_VALIDATE` | visibility/order validation for layered assemblies | `172_VISIBLE_LAYER_STACK_CONTRACT.md`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
-| `RECON_FIDELITY_GATE` | final proof-bearing Level A transition gate | `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`, `173`; `executors/fidelity_gate.py` | CONTRACT_READY | typed evidence, canonical views, MUST features, authority closure |
+| `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 appearance transition gate | `05_execution/72_APPEARANCE_FIDELITY_GATE.md`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | part boundaries, trim, junctions, edge families, material response, detail coverage, final matched views |
+| `RECON_FIDELITY_GATE` | final proof-bearing Level A transition gate | `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`, `173`, `180`–`183`; `executors/fidelity_gate.py` | CONTRACT_READY | typed source-anchored evidence, canonical views, MUST features, appearance gate, authority closure |
 | `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
 | `RADIAL_REPEAT` | repeated radial details | playbook 110; `executors/radial_repeat.py` | CONTRACT_READY | count, phase, annulus |
 | `HS_PANEL_LINE` | narrow seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | path/profile/topology |
@@ -48,12 +50,12 @@ Nie claimuj wyższego maturity bez evidence.
 | `RUNTIME_PATH_RESOLVE` | resolve engine-visible runtime root | `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`; `executors/runtime_path_resolver.py` | CONTRACT_READY | canonical root/containment |
 | `TEST_ORACLE` | trustworthy process exit/bite test | `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`; `executors/test_oracle.py` | CONTRACT_READY | direct status/intended assertion |
 | `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | loader/instantiation + oracle |
-| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148` + v0.8/v0.9 validation modules | CONTRACT_READY | node/stage/final evidence |
+| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148`, `178`, `180`–`183` | CONTRACT_READY | node/stage/final evidence, appearance owners |
 | `ASSET_COMPLETION` | determine true completion level | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | A/B/C/D gate hierarchy |
 | `ASSET_CATALOG_INTEGRATE` | project catalog registration | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | readback/unique ID/import |
 | `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md` | KNOWLEDGE_ONLY | runtime contract |
 
-## v0.9 reconstruction routing precedence
+## v0.10 reconstruction routing precedence
 
 ```text
 reference ingest/measurement
@@ -62,48 +64,80 @@ reference ingest/measurement
 before production geometry
 -> SHAPE_GRAPH + SHAPE_CLASSIFY
 
+for 1:1 or target L4/L5
+-> REFERENCE_APPEARANCE_CONTRACT + PART_BOUNDARY/TRIM/JUNCTION owners
+
 one node ready to build/repair
 -> node's representation skill
+-> canonical registered view validator
 -> RECONSTRUCTION_NODE_GATE
 
-width/depth/corner profile changes across stations
--> SECTION_LOFT_HARD_SURFACE
-
-axisymmetric profile
--> AXISYMMETRIC_PROFILE
-
-narrow seam on ACCEPTED host
--> HS_PANEL_LINE
-
-SubD/freeform cage on ACCEPTED structural node
--> SUBD_TOPOLOGY_CONTROL
-
-layered visible assembly
--> LAYER_STACK_VALIDATE
-
-registered view comparison
--> REFERENCE_OVERLAY_VALIDATE
+internal boundary/trim/edge/material owner
+-> APPEARANCE_REFERENCE_VALIDATE
 
 end of each RDL
 -> SHAPE_GRAPH stage barrier
+
+end of RDL4/RDL5 when appearance required
+-> APPEARANCE_FIDELITY_GATE
 
 claiming Level A / entering runtime
 -> RECON_FIDELITY_GATE
 ```
 
+## Anti-circular validation precedence
+
+A canonical acceptance owner cannot be certified by an ad-hoc local substitute.
+
+```text
+local helper measurement
+-> may produce artifact
+-> canonical validator consumes artifact + source evidence
+-> canonical gate accepts/rejects
+```
+
+Forbidden as acceptance:
+
+```text
+builder-local Gate.accept()
+-> Shape Node ACCEPTED
+```
+
+when `RECONSTRUCTION_NODE_GATE` exists.
+
+Strict reference-derived records require:
+- `validator_id`;
+- `provenance_id`;
+- `source_reference_id` or `source_reference_ids`;
+- `registration_id` for projected evidence.
+
 ## Host-before-leaf rule
 
 Leaf skills nie mogą pełnić roli shape-understanding layer.
 
-Przykłady:
-- `HS_PANEL_LINE` dopiero po host node `ACCEPTED`;
-- bevel/edge work dopiero RDL4;
-- decals/materials dopiero po structural acceptance;
-- `SECTION_LOFT_HARD_SURFACE` może być primary-form skill, bo reprezentuje samą formę, nie detal.
+Examples:
+- `HS_PANEL_LINE` only after host `ACCEPTED`;
+- bevel/edge implementation only RDL4;
+- decals/materials only after structural acceptance;
+- `SECTION_LOFT_HARD_SURFACE` may be a primary-form skill;
+- appearance owners may be declared earlier but cannot PASS before the host revision they validate exists.
+
+## Runtime lock v0.10
+
+For target fidelity L4/L5:
+
+```text
+APPEARANCE_FIDELITY_GATE != PASS
+or
+RECON_FIDELITY_GATE != PASS
+-> runtime LOD/UV/bake/export FORBIDDEN
+```
+
+Correct dimensions, triangle budgets, UVs or glTF readback never override this lock.
 
 ## Box-abuse route
 
-Jeżeli primary node zmienia jednocześnie width/depth/corner treatment wzdłuż osi:
+If a primary node changes width/depth/corner treatment along an axis:
 
 ```text
 PARAMETRIC_BOX + BEVEL
@@ -112,54 +146,33 @@ PARAMETRIC_BOX + BEVEL
 -> likely SECTION_LOFT_HARD_SURFACE or SUBD_FREEFORM
 ```
 
-## Runtime evidence retained from earlier releases
-
-`MESH_VALIDATE` pozostaje `EXECUTOR_READY` dzięki realnemu Blender 5.1 benchmarkowi bollarda.
-
-Nowe executory v0.8/v0.9 pozostają `CONTRACT_READY`, dopóki kolejny realny benchmark nie wykona ich kontraktów w docelowym środowisku.
-
 ## Packaged executor status
 
 ```text
-REFERENCE_MEASURE          -> executors/reference_measure.py              CONTRACT_READY
-REFERENCE_OVERLAY_VALIDATE -> executors/reference_overlay_validate.py     CONTRACT_READY
-SHAPE_GRAPH                -> executors/shape_graph.py                     CONTRACT_READY
-RECONSTRUCTION_NODE_GATE   -> executors/reconstruction_node_gate.py        CONTRACT_READY
-SECTION_LOFT_HARD_SURFACE  -> executors/section_loft.py                    CONTRACT_READY
-LAYER_STACK_VALIDATE       -> executors/layer_stack_validate.py            CONTRACT_READY
-RECON_FIDELITY_GATE        -> executors/fidelity_gate.py                   CONTRACT_READY
-AXISYMMETRIC_PROFILE       -> executors/axisymmetric_profile.py            CONTRACT_READY
-RADIAL_REPEAT              -> executors/radial_repeat.py                   CONTRACT_READY
-MESH_VALIDATE              -> executors/mesh_validate.py                   EXECUTOR_READY
-RUNTIME_COMPAT             -> executors/runtime_compat.py                  CONTRACT_READY
-QA_SCENE_ISOLATE           -> executors/qa_scene_isolation.py             CONTRACT_READY
-ASSET_COMPLETION           -> executors/completion_gate.py                 CONTRACT_READY
-UV_ATLAS_CONTRACT          -> executors/uv_atlas_contract.py               CONTRACT_READY
-BAKE_RUNTIME_TEXTURES      -> executors/bake_runtime_textures.py           CONTRACT_READY
-BAKE_VALIDATE              -> executors/bake_validate.py                   CONTRACT_READY
-IMAGE_CACHE_COHERENCE      -> executors/image_cache_coherence.py           CONTRACT_READY
-PIPELINE_DAG_PLAN          -> executors/pipeline_dag.py                     CONTRACT_READY
-RUNTIME_PACKAGE_VALIDATE   -> executors/gltf_package_validate.py           CONTRACT_READY
-EXPORT_ROUNDTRIP_VALIDATE  -> executors/export_roundtrip_validate.py       CONTRACT_READY
-RUNTIME_PATH_RESOLVE       -> executors/runtime_path_resolver.py           CONTRACT_READY
-TEST_ORACLE                -> executors/test_oracle.py                      CONTRACT_READY
+REFERENCE_MEASURE           -> executors/reference_measure.py               CONTRACT_READY
+REFERENCE_OVERLAY_VALIDATE  -> executors/reference_overlay_validate.py      CONTRACT_READY
+SHAPE_GRAPH                 -> executors/shape_graph.py                     CONTRACT_READY
+RECONSTRUCTION_NODE_GATE    -> executors/reconstruction_node_gate.py        CONTRACT_READY
+SECTION_LOFT_HARD_SURFACE   -> executors/section_loft.py                    CONTRACT_READY
+LAYER_STACK_VALIDATE        -> executors/layer_stack_validate.py            CONTRACT_READY
+APPEARANCE_FIDELITY_GATE    -> executors/appearance_fidelity_gate.py        CONTRACT_READY
+RECON_FIDELITY_GATE         -> executors/fidelity_gate.py                   CONTRACT_READY
+AXISYMMETRIC_PROFILE        -> executors/axisymmetric_profile.py            CONTRACT_READY
+RADIAL_REPEAT               -> executors/radial_repeat.py                   CONTRACT_READY
+MESH_VALIDATE               -> executors/mesh_validate.py                   EXECUTOR_READY
+RUNTIME_COMPAT              -> executors/runtime_compat.py                  CONTRACT_READY
+QA_SCENE_ISOLATE            -> executors/qa_scene_isolation.py             CONTRACT_READY
+ASSET_COMPLETION            -> executors/completion_gate.py                 CONTRACT_READY
+UV_ATLAS_CONTRACT           -> executors/uv_atlas_contract.py               CONTRACT_READY
+BAKE_RUNTIME_TEXTURES       -> executors/bake_runtime_textures.py           CONTRACT_READY
+BAKE_VALIDATE               -> executors/bake_validate.py                   CONTRACT_READY
+IMAGE_CACHE_COHERENCE       -> executors/image_cache_coherence.py           CONTRACT_READY
+PIPELINE_DAG_PLAN           -> executors/pipeline_dag.py                    CONTRACT_READY
+RUNTIME_PACKAGE_VALIDATE    -> executors/gltf_package_validate.py           CONTRACT_READY
+EXPORT_ROUNDTRIP_VALIDATE   -> executors/export_roundtrip_validate.py       CONTRACT_READY
+RUNTIME_PATH_RESOLVE        -> executors/runtime_path_resolver.py           CONTRACT_READY
+TEST_ORACLE                 -> executors/test_oracle.py                     CONTRACT_READY
 ```
-
-## Skill invocation contract
-
-```yaml
-skill_call:
-  skill_id: SECTION_LOFT_HARD_SURFACE
-  shape_node_id: BASE_PLINTH
-  graph_revision: sg_004
-  maturity: CONTRACT_READY
-  inputs_verified: true
-  parent_dependencies_accepted: true
-  required_capabilities: [python, blender_mesh_create]
-  runtime_bindings_verified: false
-```
-
-If runtime binding is required and unverified, perform capability preflight before mutation.
 
 ## Contract-ready is not executor-ready
 
@@ -170,7 +183,8 @@ A CONTRACT_READY skill may be implemented through current tools, but agent must:
 4. not describe it as proven executor;
 5. respect retry/strategy-switch rules;
 6. persist compact state/evidence;
-7. never replace proof with narrative PASS.
+7. never replace proof with narrative PASS;
+8. never replace a registered canonical validator with a builder-local acceptance gate.
 
 ## Reuse before generation
 
@@ -179,11 +193,11 @@ Before generating helpers search this registry and `executors/`.
 Do not locally rewrite compatible implementations of:
 - Shape Graph validation/readiness/stage barriers;
 - node acceptance aggregation;
-- multi-section loft ring/bridge generation;
+- appearance fidelity aggregation;
+- reconstruction fidelity aggregation;
 - reference measurement/overlay;
 - layered visibility validation;
-- reconstruction fidelity aggregation;
-- axisymmetric profile/radial repeat;
+- multi-section loft ring/bridge generation;
 - mesh/bake/cache/package/path/test validators.
 
 ## Registry update rule
