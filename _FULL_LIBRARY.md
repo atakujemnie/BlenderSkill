@@ -789,6 +789,9 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence.
 |---|---|---|---|---|---|
 | `RECONSTRUCT_REFERENCE` | camera/scale/silhouette/proportion-first reconstruction | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` + stage modules | CONTRACT_READY | scene inspect, image/reference access, camera/render | multi-view, silhouette, landmarks, dimensions |
 | `REFERENCE_MEASURE` | compact technical-sheet/reference measurement and cross-view aggregation | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` + `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`; `executors/reference_measure.py` | CONTRACT_READY | reference image access, Python/NumPy or equivalent image analysis | provenance, calibration, confidence, cross-view deviation, output budget |
+| `REFERENCE_OVERLAY_VALIDATE` | registered reference-vs-candidate silhouette/ROI comparison | `10_reconstruction/142_ORTHOGRAPHIC_OVERLAY_VALIDATION.md`, `143_SILHOUETTE_DIFF_PROTOCOL.md`, `171_REFERENCE_MASK_AND_CONTRAST_MODEL.md`; `executors/reference_overlay_validate.py` | CONTRACT_READY | registered images, Python/NumPy/Pillow or Blender image access | mask mode, IoU, contour deviation, MUST ROI failures, no local warp |
+| `LAYER_STACK_VALIDATE` | numeric visibility/order validation for glass/content/recess and similar layered assemblies | `10_reconstruction/172_VISIBLE_LAYER_STACK_CONTRACT.md`; `executors/layer_stack_validate.py` | CONTRACT_READY | compact geometry/layer coordinates | front-to-back order, burial/occlusion, viewer-facing normals |
+| `RECON_FIDELITY_GATE` | proof-bearing Level A transition gate before topology/runtime | `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`, `10_reconstruction/173_RECONSTRUCTION_ACCEPTANCE_EVIDENCE_INTEGRITY.md`; `executors/fidelity_gate.py` | CONTRACT_READY | compact validator records | typed evidence, provenance, canonical views, MUST features, authority closure, runtime advance decision |
 | `AXISYMMETRIC_PROFILE` | deterministic profile-revolved geometry for rotationally symmetric hard-surface parts | `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`; `executors/axisymmetric_profile.py` | CONTRACT_READY | Python, BMesh | radius/axis bounds, continuity, topology intent, UV, triangle budget |
 | `RADIAL_REPEAT` | repeated anchors/fasteners around a known axis | `11_playbooks/110_HARD_SURFACE_CIVIC_FURNITURE.md`; `executors/radial_repeat.py` | CONTRACT_READY | Python; geometry mutation by caller | count, phase, annulus containment, triangle estimate |
 | `HS_PANEL_LINE` | narrow hard-surface seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | Python, BMesh, modifiers, evaluated mesh | path continuity, topology, profile, modifier order |
@@ -804,13 +807,13 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence.
 | `BAKE_VALIDATE` | semantic validation of baked maps/regions | `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`; `executors/bake_validate.py` | CONTRACT_READY | image access, NumPy or equivalent | degeneracy, ranges, material regions, emissive containment, clipping |
 | `IMAGE_CACHE_COHERENCE` | synchronize accepted external texture artifacts with Blender image datablocks | `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`; `executors/image_cache_coherence.py` | CONTRACT_READY | Blender image/data API, external file access | canonical path, reload/load action, dimensions, colorspace, binding |
 | `PIPELINE_DAG_PLAN` | compute minimal dirty execution closure and reuse accepted stages | `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`; `executors/pipeline_dag.py` | CONTRACT_READY | Python | acyclic graph, execute/reuse closure, invalidation reasons |
-| `RUNTIME_PACKAGE_VALIDATE` | validate exported module nodes/materials/images against packaging profile | `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`; `executors/gltf_package_validate.py` | CONTRACT_READY | exported-file read | LOD nodes, materials, image URIs, project packaging contract |
+| `RUNTIME_PACKAGE_VALIDATE` | validate exported module nodes/materials/images/attributes/transforms against packaging profile | `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`, `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md`; `executors/gltf_package_validate.py` | CONTRACT_READY | exported-file read | LOD nodes, materials, image URIs, required primitive attributes, node-transform policy |
 | `EXPORT_ROUNDTRIP_VALIDATE` | re-import exported asset and re-check hard invariants | `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | Blender import/scratch context, mesh bounds | dimensions, ground datum, LOD family, runtime material availability |
 | `RUNTIME_PATH_RESOLVE` | resolve engine-visible runtime asset root from project authority | `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`; `executors/runtime_path_resolver.py` | CONTRACT_READY | filesystem/project profile/build facts | canonical root, containment, forbidden lookalike roots |
 | `TEST_ORACLE` | trustworthy process exit status and regression bite-test proof | `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`; `executors/test_oracle.py` | CONTRACT_READY | subprocess/shell/test runner | direct exit code, expected failing marker, restored green run |
-| `ENGINE_INTEGRATION_PROOF` | prove Level D with target engine loader/instantiation | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | project build/test/engine loader | engine-visible path, loader success, asset invariants, trustworthy test oracle |
-| `QA_REFERENCE` | visual/numeric reconstruction QA | `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md` through `148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md` | CONTRACT_READY | camera/render/screenshot, geometry metrics | stage-specific gates |
-| `ASSET_COMPLETION` | determine true completion level and blockers | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | compact validation state | Reconstruction/Modeling/Game-ready/Pipeline gates + Level D evidence kind |
+| `ENGINE_INTEGRATION_PROOF` | prove Level D with target engine loader/instantiation | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | project build/test/engine loader | engine-visible path, loader success, coordinate-space/node-transform compatibility, asset invariants, trustworthy test oracle |
+| `QA_REFERENCE` | visual/numeric reconstruction QA | `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md` through `148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md` + v0.8 fidelity modules | CONTRACT_READY | camera/render/screenshot, geometry metrics | stage-specific gates + proof-bearing records |
+| `ASSET_COMPLETION` | determine true completion level and blockers | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | compact validation state | proof-bearing Reconstruction, Modeling, package/Game-ready and Level D engine evidence |
 | `ASSET_CATALOG_INTEGRATE` | register a game-ready asset in a project catalog/registry | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | project catalog read/write | readback, unique ID, file associations, import smoke test |
 | `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md`, engine profile | KNOWLEDGE_ONLY | save/export/file inspect | runtime contract |
 
@@ -837,7 +840,7 @@ The final Bollard continuation exercised `executors/completion_gate.py` twice:
 - it correctly blocked `PIPELINE_INTEGRATED` while runtime import remained `UNVERIFIED`;
 - it passed after the target engine loader regression test was green.
 
-v0.7 additionally hardens the executor so `runtime_import_or_instantiation` must carry an engine evidence kind:
+v0.7 hardened `runtime_import_or_instantiation` so target-engine evidence must be one of:
 
 ```text
 ENGINE_PRODUCTION_LOADER
@@ -845,12 +848,17 @@ ENGINE_REGRESSION_TEST
 ENGINE_INSTANTIATION
 ```
 
-Because this evidence-kind extension is new in v0.7, `ASSET_COMPLETION` remains `CONTRACT_READY` until the next benchmark exercises the new API.
+The Lafar Wayfinding Pylon run then proved a different property: valid target-engine evidence can exist while Level C remains open, and the completion hierarchy correctly must not claim Level D.
+
+v0.8 additionally changes the completion API by requiring typed/provenance-bearing `RECON_FIDELITY_GATE` and `RUNTIME_PACKAGE_VALIDATE` records. These extensions remain `CONTRACT_READY` until a future real run executes the v0.8 API directly.
 
 ## Packaged executor status
 
 ```text
 REFERENCE_MEASURE          -> executors/reference_measure.py          CONTRACT_READY
+REFERENCE_OVERLAY_VALIDATE -> executors/reference_overlay_validate.py CONTRACT_READY
+LAYER_STACK_VALIDATE       -> executors/layer_stack_validate.py       CONTRACT_READY
+RECON_FIDELITY_GATE        -> executors/fidelity_gate.py              CONTRACT_READY
 AXISYMMETRIC_PROFILE       -> executors/axisymmetric_profile.py       CONTRACT_READY
 RADIAL_REPEAT              -> executors/radial_repeat.py              CONTRACT_READY
 MESH_VALIDATE              -> executors/mesh_validate.py              EXECUTOR_READY
@@ -868,7 +876,7 @@ RUNTIME_PATH_RESOLVE       -> executors/runtime_path_resolver.py      CONTRACT_R
 TEST_ORACLE                -> executors/test_oracle.py                 CONTRACT_READY
 ```
 
-New v0.7 executors remain `CONTRACT_READY` until a later real benchmark validates their contracts in the target runtime.
+New v0.8 executors remain `CONTRACT_READY` until a later real benchmark validates their contracts in the target runtime.
 
 ## Registered SubD sub-operations
 
@@ -893,6 +901,15 @@ When multiple skills could solve a feature/problem, route by design intent and f
 ```text
 technical-sheet/reference measurement
 -> REFERENCE_MEASURE
+
+registered canonical-view silhouette/ROI comparison
+-> REFERENCE_OVERLAY_VALIDATE
+
+visible layered assembly/recess ordering ambiguity
+-> LAYER_STACK_VALIDATE
+
+claiming Level A / advancing reconstruction into runtime
+-> RECON_FIDELITY_GATE
 
 rotationally symmetric stacked radius/height form
 -> AXISYMMETRIC_PROFILE
@@ -930,7 +947,7 @@ disk map is correct but Blender runtime material shows old/wrong pixels
 local repair should not rerun independent accepted stages
 -> PIPELINE_DAG_PLAN
 
-exported glTF/module exists but package contents are unknown
+exported glTF/module exists but package contents/attributes/transforms are unknown
 -> RUNTIME_PACKAGE_VALIDATE
 
 exported package exists but dimensions/contact/material survival are unproven
@@ -957,17 +974,16 @@ Before execution the agent records:
 
 ```yaml
 skill_call:
-  skill_id: RUNTIME_PATH_RESOLVE
-  feature_id: RUNTIME_OUTPUT_ROOT
+  skill_id: RECON_FIDELITY_GATE
+  feature_id: RECONSTRUCTION_TRANSITION
   maturity: CONTRACT_READY
   inputs_verified: true
   required_capabilities:
-    - filesystem_read
-    - project_profile_read
+    - compact_validation_records
   runtime_bindings_verified: false
 ```
 
-If `runtime_bindings_verified=false`, run Agent Tool API Profile preflight before mutation.
+If `runtime_bindings_verified=false`, run Agent Tool API Profile preflight before mutation when an executor/tool binding is required.
 
 ## Contract-ready is not executor-ready
 
@@ -982,7 +998,8 @@ In that case the agent may still implement the operation through available tools
 6. respect Tool Output Budget;
 7. follow Code Artifact and Patch Protocol;
 8. use the pipeline DAG/dirty-stage cache for expensive bake/export stages;
-9. keep Blender round-trip and target-engine proof as separate evidence classes.
+9. keep reconstruction, package round-trip and target-engine proof as separate evidence classes;
+10. never convert a bare self-reported `PASS` into typed validator evidence.
 
 ## Reuse before generation
 
@@ -990,6 +1007,9 @@ Before generating helpers for common operations, search registry and `executors/
 
 Do not rewrite compatible local copies of:
 - reference measurement;
+- registered reference overlay/silhouette/ROI validation;
+- layered assembly visibility/order validation;
+- reconstruction fidelity aggregation;
 - profile revolution/lathe helpers;
 - radial placement/annulus math;
 - contract-aware mesh validation;
@@ -1001,7 +1021,7 @@ Do not rewrite compatible local copies of:
 - bake image statistics/emissive containment checks;
 - Blender external-image reload/cache-coherence helpers;
 - dependency/dirty-stage planning;
-- glTF node/material/image readback validation;
+- glTF node/material/image/primitive-attribute/transform readback validation;
 - exported-mesh bound/contact checks;
 - runtime-root containment validation;
 - direct-process test exit-code capture.
@@ -1018,6 +1038,7 @@ Whenever a new specialized skill is added:
 7. include canonical MD in `MANIFEST.json`.
 
 The registry, Knowledge Router and Manifest must never disagree about the existence of a production skill.
+
 
 ---
 
