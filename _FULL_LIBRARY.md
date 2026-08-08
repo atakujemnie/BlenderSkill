@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.5.0 — Full compiled snapshot
+# Blender AI Agent Library v0.6.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -9409,6 +9409,580 @@ Record the reason. Never silently skip bake because Blender viewport already loo
 
 ---
 
+## FILE: `04_game_ready/51_BAKE_EXECUTION_AND_CHANNEL_SEMANTICS.md`
+
+# Runtime Bake Execution and Channel Semantics
+
+## Purpose
+
+`BAKE_RUNTIME_TEXTURES` must be a deterministic production stage, not an ad-hoc sequence of Blender operator experiments.
+
+A correct-looking Blender material is not evidence that the runtime textures are correct. A texture file existing on disk is not evidence that the bake succeeded.
+
+Use this transaction:
+
+```text
+PRECHECK
+-> UV CONTRACT
+-> SOURCE/MATERIAL CONTRACT
+-> SCENE ISOLATION
+-> TARGET IMAGE BINDING
+-> CHANNEL BAKE
+-> IMAGE VALIDATION
+-> RUNTIME MATERIAL BINDING
+-> EXPORTED-ASSET READBACK
+```
+
+Every stage must return a compact PASS/FAIL report.
+
+---
+
+# 1. Operator result is evidence
+
+Never assume `bpy.ops.object.bake(...)` succeeded merely because no Python exception was raised.
+
+Required:
+
+```python
+result = bpy.ops.object.bake(type=bake_type)
+if "FINISHED" not in result:
+    raise RuntimeError(f"Bake failed: {result}")
+```
+
+`{'CANCELLED'}` is FAIL.
+
+A Blender info/warning such as:
+
+```text
+No active and selected image texture node found in material ...
+```
+
+must route to `BAKE_TARGET_BINDING_FAIL`, not to another blind full bake.
+
+---
+
+# 2. Target image node contract
+
+For a joined/source object using multiple material slots, the target image must be active and selected in every material that contributes faces to the bake.
+
+Use the explicit order:
+
+```text
+create/reuse ShaderNodeTexImage
+-> assign target image
+-> deselect all material nodes
+-> select the target image node
+-> set it as active
+-> verify active == target AND target.select == true
+```
+
+Do not rely on setting `nodes.active` before selection and assuming selection state will remain correct.
+
+Before calling the operator, emit only a compact binding report:
+
+```yaml
+bake_target_binding:
+  materials_required: 5
+  materials_bound: 5
+  image: aster_bollard_basecolor
+  status: PASS
+```
+
+---
+
+# 3. Scene isolation is mandatory for environment-sensitive passes
+
+AO and other ray-dependent passes are invalid if unrelated scene geometry can occlude the bake source.
+
+Typical trap:
+- object has `hide_viewport=true`;
+- object has `hide_render=false`;
+- AO rays hit it even though the agent does not see it in the viewport.
+
+Before AO/ray-dependent bake:
+- isolate the bake source non-destructively;
+- use `QA_SCENE_ISOLATE` or equivalent registered executor;
+- preserve and restore `hide_render` state;
+- do not delete unrelated scene objects.
+
+The default Cube, test geometry, reference planes and helper meshes must not influence AO unless explicitly part of the bake contract.
+
+---
+
+# 4. Channel semantics
+
+## BaseColor
+
+For metallic-roughness runtime pipelines, do not use the Blender `DIFFUSE` bake as a generic BaseColor extractor.
+
+A metal can have little/no diffuse response while its Principled `Base Color` still carries the runtime metal reflectance color.
+
+Preferred procedural-material closure:
+
+```text
+Principled Base Color socket
+-> temporary Emission output, strength 1
+-> EMIT bake
+-> BaseColor texture
+```
+
+This captures the authored Base Color value/graph rather than lighting or diffuse response.
+
+## Roughness
+
+Bake the authored roughness signal, not a rendered highlight.
+
+Use either:
+- a verified Roughness pass;
+- or direct socket/channel override to an emission bake when exact authored-value transfer is required.
+
+## Metallic
+
+Metallic is a scalar material property.
+
+For deterministic authored-value transfer:
+
+```text
+Principled Metallic socket
+-> grayscale temporary Emission
+-> EMIT bake
+-> pack into the Engine Profile's metallic channel
+```
+
+Do not assume a dedicated bake pass exists in every runtime/API version.
+
+## AO
+
+AO is geometry/environment dependent.
+
+Requirements:
+- isolated source scene;
+- known distance/samples;
+- output validated for non-degenerate range;
+- no unrelated render-visible enclosure.
+
+## Normal
+
+Normal bake must document:
+- tangent-space vs object-space;
+- tangent basis expectation;
+- authoring bump/procedural normal source;
+- whether geometry detail is being transferred high->low.
+
+A material-only normal bake does not require a separate high-poly when the source detail is procedural shader/bump information.
+
+## Emissive
+
+The emissive texture describes **where and what color the emitter is**, not final bloom.
+
+Do not bake bloom, glare or post-process response.
+
+Non-emitting materials must produce black emissive output.
+
+If Principled uses both `Emission Color` and `Emission Strength`, the bake must account for both. Baking color alone is unsafe because non-emitting materials may still have a non-black default emission color with strength zero.
+
+Recommended normalized representation:
+
+```text
+emissive_texture_rgb = emission_color * emission_strength / EMIT_REFERENCE_STRENGTH
+```
+
+where `EMIT_REFERENCE_STRENGTH` is an explicit authoring/runtime handoff value.
+
+Validate that normalization does not clip channels and destroy hue.
+
+---
+
+# 5. Decals and foreign UV spaces
+
+Do not automatically join permanent decal geometry into the structural bake source.
+
+If a decal uses:
+- a separate atlas;
+- shared project branding sheet;
+- dynamic display UV;
+- different sampling/material pipeline;
+
+keep it outside the structural bake unless the bake contract explicitly remaps it.
+
+A decal with unrelated UV coordinates can silently contaminate structural atlas regions.
+
+---
+
+# 6. UV contract before bake
+
+The bake source and every runtime LOD that consumes the baked maps must use the same `UV_CONTRACT_ID`.
+
+Before baking, validate:
+- every required semantic part has an atlas assignment;
+- no required assignment was skipped because Blender added `.001`/`.002` to an object name;
+- LOD runtime meshes actually received the same contract, not only the temporary bake source;
+- intentional overlaps are declared;
+- decal/dynamic-display UV spaces are excluded where appropriate.
+
+Use `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`.
+
+---
+
+# 7. Incremental bake rule
+
+Do not rebake every channel after every local repair.
+
+Maintain dirty dependencies.
+
+Examples:
+
+```text
+emission normalization changed
+-> dirty: Emissive only
+
+Base Color graph changed
+-> dirty: BaseColor only, plus any packed channel explicitly depending on it
+
+AO scene isolation changed
+-> dirty: AO / ORM.R only
+
+UV contract changed
+-> dirty: all texture channels using that UV set
+
+mesh geometry changed
+-> dirty: AO, Normal, and any geometry-position-driven procedural channels;
+   BaseColor/Roughness only if their authoring graph depends on geometry/object coordinates
+```
+
+Use `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`.
+
+---
+
+# 8. Validation before export
+
+Every baked map must pass semantic validation before runtime material assembly.
+
+Minimum checks:
+- file/image exists;
+- expected dimensions;
+- expected color space;
+- not all zero unless channel contract permits it;
+- not unexpectedly constant;
+- channel-specific range is plausible;
+- expected material/feature regions contain signal;
+- forbidden regions do not contain signal beyond configured padding/bleed;
+- no unexplained clipping;
+- map is bound to the intended runtime material.
+
+Use `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md` and packaged validator when available.
+
+---
+
+# 9. Exported runtime asset is the final bake QA target
+
+After binding baked textures, render/inspect the runtime mesh/material combination — not only the authoring procedural material.
+
+Required final proof:
+
+```text
+baked textures
+-> runtime material
+-> runtime LOD0 mesh UV
+-> export
+-> exported material/image readback
+-> baked-runtime QA render / smoke test
+```
+
+A correct authoring render with a broken baked-runtime material is FAIL.
+
+---
+
+# 10. Long-running bake behavior
+
+A tool/MCP timeout is not proof that Blender stopped the bake.
+
+Before retrying an expensive pass:
+1. inspect job state if available;
+2. inspect output image/file timestamps;
+3. inspect Blender state;
+4. only restart if the previous execution is proven failed/stopped.
+
+Never launch duplicate AO/full bakes merely because the transport call timed out.
+
+Use `05_execution/64_LONG_RUNNING_JOB_AND_POLL_PROTOCOL.md`.
+
+---
+
+# Compact completion report
+
+```yaml
+runtime_bake:
+  uv_contract: PASS
+  source_isolation: PASS
+  basecolor: PASS
+  normal: PASS
+  orm:
+    ao: PASS
+    roughness: PASS
+    metallic: PASS
+  emissive: PASS
+  runtime_material_binding: PASS
+  exported_texture_readback: PASS
+  baked_runtime_qa: PASS
+  channels_rebaked_this_iteration:
+    - emissive
+  status: PASS
+```
+
+Do not return raw pixel arrays or complete shader graphs unless a scoped diagnostic explicitly requires them.
+
+
+---
+
+## FILE: `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`
+
+# UV Atlas and LOD Stability Contract
+
+## Purpose
+
+A baked runtime texture is useful only if the bake source and every runtime mesh sample the same semantic UV layout.
+
+This contract prevents a common silent failure:
+
+```text
+bake source uses correct atlas
+runtime LODs keep raw/default UVs
+-> exported model reads valid textures through wrong coordinates
+```
+
+It also prevents object-name suffixes such as `.001` from silently breaking atlas assignment.
+
+---
+
+# 1. Stable semantic part identity
+
+Do not use transient Blender object names as the primary UV atlas key.
+
+Bad:
+
+```python
+UV_RECTS.get(obj.name)
+```
+
+because Blender may rename duplicates:
+
+```text
+BOL_MainBody
+BOL_MainBody.001
+BOL_MainBody.002
+```
+
+Preferred identity:
+
+```text
+semantic_part_id = BODY_MAIN
+uv_contract_id = ACS_BOLLARD_V1
+```
+
+Store identity in:
+- explicit build data;
+- custom property;
+- Feature Contract / object registry;
+- another deterministic semantic identifier.
+
+Name normalization may be used as a compatibility fallback, but it must emit a warning and must not be the canonical identity mechanism.
+
+---
+
+# 2. UV contract data model
+
+Example:
+
+```yaml
+uv_contract:
+  id: ACS_BOLLARD_V1
+  texture_size: 1024
+  padding_px: 16
+  parts:
+    BODY_MAIN:
+      rect: [0.00, 0.00, 1.00, 0.46]
+      owner: STRUCTURAL_ATLAS
+    BASE_PLATE:
+      rect: [0.00, 0.56, 1.00, 0.76]
+      owner: STRUCTURAL_ATLAS
+    BRAND_DECAL:
+      owner: PROJECT_DECAL_ATLAS
+      external: true
+    DISPLAY_DYNAMIC:
+      owner: DYNAMIC_SCREEN
+      dedicated_uv_0_1: true
+```
+
+Every runtime mesh part must resolve to exactly one declared UV owner.
+
+---
+
+# 3. One contract across bake source and LODs
+
+Atlas assignment belongs in the reusable mesh/LOD construction path, not only in the bake script.
+
+Required:
+
+```text
+build part
+-> assign semantic part ID
+-> assign/validate UV contract
+-> construct bake source OR runtime LOD
+```
+
+Do not implement:
+
+```text
+build runtime LODs with default UV
+build second bake source
+apply atlas only to bake source
+```
+
+That pipeline can produce perfect textures and a broken exported model.
+
+---
+
+# 4. Missing assignment is a hard failure
+
+Never silently skip a part when no atlas record is found.
+
+Required behavior:
+
+```yaml
+uv_contract_validation:
+  required_parts: 9
+  assigned_parts: 8
+  missing:
+    - BODY_MAIN
+  status: FAIL
+```
+
+Do not continue to bake/export.
+
+---
+
+# 5. Lower LOD behavior
+
+A lower LOD may omit a semantic part, but remaining parts must retain their UV ownership and contract.
+
+Example:
+
+```text
+LOD0: BODY + BASE + PANEL + BOLTS + EMITTER
+LOD1: BODY + BASE + PANEL + EMITTER
+LOD2: BODY + BASE + EMITTER
+```
+
+The removal of `BOLTS` must not cause surviving parts to be repacked into new atlas regions if all LODs are expected to share the same texture set.
+
+If LOD-specific repacking is intentionally used, it becomes a different `UV_CONTRACT_ID` and requires its own texture/binding strategy.
+
+---
+
+# 6. Semantic correspondence
+
+Simply normalizing arbitrary existing UV bounds into the same rectangle does not always guarantee meaningful correspondence between LODs.
+
+For procedural/parametric assets prefer UV generation from stable geometric parameters:
+- revolution angle + profile distance;
+- local planar coordinates;
+- normalized part coordinates;
+- explicit seam/axis rules.
+
+This lets different segment counts sample corresponding locations.
+
+A generic min/max remap may be acceptable only when the distortion and cross-LOD correspondence have been validated for that part class.
+
+---
+
+# 7. Dedicated spaces must remain dedicated
+
+Do not mix these into the structural bake atlas unless explicitly required:
+- shared project decal atlas;
+- logo atlas;
+- dynamic display surface;
+- video/render-target surface;
+- externally tiled materials;
+- lightmap UV.
+
+Dynamic displays normally require their own deterministic full `0..1` UV space.
+
+---
+
+# 8. Padding and edge bleed
+
+Atlas rectangles must reserve sufficient padding for:
+- bake margin;
+- mip filtering;
+- compression;
+- bilinear sampling.
+
+Record padding in pixels and derive normalized gutter from texture resolution.
+
+Do not let bake margin cross semantic part boundaries.
+
+---
+
+# 9. Texel density
+
+Fixed atlas regions may intentionally have unequal texel density.
+
+This is acceptable when documented and driven by:
+- projected size;
+- visual importance;
+- repeated placement frequency;
+- reference detail density;
+- runtime budget.
+
+Do not pretend a 1024 atlas can maintain impossible uniform density on a very tall/long asset.
+
+Record the tradeoff explicitly.
+
+---
+
+# 10. Validation
+
+Before bake:
+- unique contract ID;
+- all required part IDs resolved;
+- no undeclared rect overlap;
+- rects inside 0..1;
+- padding sufficient;
+- dedicated/external UV owners excluded from structural atlas;
+- runtime LOD meshes report same contract ID.
+
+After export:
+- read back UV set presence;
+- verify expected material/texture binding;
+- render/inspect baked runtime LOD0;
+- sample at least one known region per material family when debugging.
+
+---
+
+# Compact report
+
+```yaml
+uv_contract:
+  id: ACS_BOLLARD_V1
+  texture_size: 1024
+  required_parts: 9
+  assigned_parts: 9
+  external_parts:
+    - BRAND_DECAL
+  lods:
+    LOD0: PASS
+    LOD1: PASS
+    LOD2: PASS
+    LOD3: PASS
+  rect_overlap: PASS
+  padding: PASS
+  status: PASS
+```
+
+
+---
+
 ## FILE: `05_execution/50_BUILD_PLAN_TEMPLATE.md`
 
 # Build Plan Template
@@ -10967,6 +11541,380 @@ Efficiency gains never justify losing protected features.
 
 ---
 
+## FILE: `05_execution/64_LONG_RUNNING_JOB_AND_POLL_PROTOCOL.md`
+
+# Long-Running Blender Job and Poll Protocol
+
+## Purpose
+
+Expensive Blender operations such as AO bake, high-resolution bake, export and heavy Geometry Nodes evaluation may outlive a tool/MCP request timeout.
+
+A transport timeout is not the same thing as a Blender failure.
+
+Without this distinction an agent may launch the same expensive operation multiple times, corrupt state, overwrite outputs or waste large amounts of time/tokens.
+
+---
+
+# Core rule
+
+```text
+REQUEST TIMEOUT != PROVEN JOB FAILURE
+```
+
+After timeout:
+
+```text
+inspect state/artifacts
+-> classify RUNNING / FINISHED / FAILED / UNKNOWN
+-> only retry if FAILED or proven absent
+```
+
+Do not immediately execute the same expensive operation again.
+
+---
+
+# Job record
+
+For a long-running stage maintain a compact record:
+
+```yaml
+job:
+  id: BOLLARD_BAKE_ORM_001
+  stage: BAKE
+  operation: AO
+  status: RUNNING
+  started_at:
+  expected_outputs:
+    - aster_bollard_tmp_ao
+  checkpoint_before:
+  dirty_channels:
+    - orm_ao
+  last_error:
+```
+
+Status vocabulary:
+
+```text
+PENDING
+RUNNING
+FINISHED
+FAILED
+CANCELLED
+UNKNOWN
+```
+
+---
+
+# Evidence order after timeout
+
+Check in this order:
+
+1. explicit runtime/job status if the integration exposes one;
+2. Blender scene/image state;
+3. expected image/file existence and modification time;
+4. compact output validation;
+5. only then consider rerunning.
+
+If output exists but its validity is uncertain, validate it. Do not recompute it merely to gain confidence.
+
+---
+
+# Blender threading caution
+
+Do not move normal `bpy` scene mutation/bake logic into arbitrary Python background threads just to avoid an MCP timeout.
+
+Blender API operations are generally expected to run in Blender's main execution context. Use mechanisms compatible with the active runtime, for example:
+- supported timer/modal workflow;
+- controlled external Blender process;
+- integration-provided async job mechanism;
+- synchronous execution followed by artifact/status inspection when transport timeout is possible.
+
+Do not invent asynchronous capabilities that the connected tool does not expose.
+
+---
+
+# Channel checkpoints
+
+Expensive multi-channel bake should checkpoint after each accepted channel:
+
+```text
+BaseColor PASS
+Normal PASS
+AO PASS
+Roughness PASS
+Metallic PASS
+Emissive PASS
+```
+
+If Emissive later fails, do not destroy/recompute accepted BaseColor/Normal/AO unless a changed dependency invalidates them.
+
+Use `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`.
+
+---
+
+# Retry policy
+
+For an expensive job:
+- at most one launch while state is `RUNNING` or `UNKNOWN`;
+- timeout triggers inspection, not retry;
+- proven `FAILED` may use one corrected retry of the same strategy;
+- second proven failure requires strategy switch according to the global retry protocol.
+
+---
+
+# Compact polling
+
+Poll only decision-grade state:
+
+```yaml
+job_status:
+  id: BOLLARD_BAKE_AO_001
+  status: FINISHED
+  output_exists: true
+  output_validation: PASS
+  elapsed_s: 41.2
+```
+
+Do not return render logs, complete image arrays or full Blender console output during normal polling.
+
+---
+
+# Completion
+
+A long-running job is complete only when:
+- Blender/tool status is finished or artifact evidence proves completion;
+- expected artifact exists;
+- semantic validator accepts it;
+- job state is persisted.
+
+File existence without semantic validation is not enough.
+
+
+---
+
+## FILE: `05_execution/65_INCREMENTAL_DIRTY_STAGE_CACHE.md`
+
+# Incremental Dirty-Stage Cache
+
+## Purpose
+
+A local fix must not force the agent to rerun the entire build/bake/export pipeline when earlier accepted artifacts are still valid.
+
+The cache tracks dependencies and marks only affected stages/channels as dirty.
+
+This is an execution-efficiency contract, not merely an optimization suggestion.
+
+---
+
+# Core model
+
+```text
+INPUT FACT
+-> dependency graph
+-> dirty artifacts only
+-> targeted execution
+-> validation
+-> update signatures
+```
+
+Persist the cache as compact structured state or a small project-side file.
+
+---
+
+# Artifact record
+
+```yaml
+artifact:
+  id: TEXTURE_EMISSIVE
+  path: .../astera_bollard_emissive.png
+  status: PASS
+  dependencies:
+    - UV_CONTRACT_ACS_BOLLARD_V1
+    - MATERIAL_EMISSIVE_GRAPH
+    - EMIT_REFERENCE_STRENGTH
+  signature:
+  dirty: false
+  last_validation:
+```
+
+---
+
+# Canonical dependencies
+
+Typical artifacts:
+
+```text
+BLOCKOUT
+FINAL_GEOMETRY
+UV_CONTRACT
+BASECOLOR
+NORMAL
+AO
+ROUGHNESS
+METALLIC
+ORM
+EMISSIVE
+RUNTIME_MATERIAL
+LOD0
+LOD1
+LOD2
+LOD3
+COLLISION
+EXPORT_MODULE
+EXPORT_COLLISION
+CATALOG_ENTRY
+```
+
+---
+
+# Dirty propagation examples
+
+## Emission normalization change
+
+```text
+EMIT_REFERENCE_STRENGTH changed
+-> EMISSIVE dirty
+-> RUNTIME_MATERIAL dirty only if binding/parameter changes
+-> EXPORT_MODULE dirty
+```
+
+Do not rebake BaseColor/Normal/AO/Roughness/Metallic.
+
+## AO isolation fix
+
+```text
+AO source/isolation changed
+-> AO dirty
+-> ORM dirty
+-> EXPORT_MODULE dirty
+```
+
+Do not rebake BaseColor/Normal/Emissive.
+
+## Base Color graph change
+
+```text
+material Base Color graph changed
+-> BaseColor dirty
+-> EXPORT_MODULE dirty
+```
+
+Other channels remain clean unless they share the changed nodes/data.
+
+## UV contract change
+
+```text
+UV contract changed
+-> all maps using that UV set dirty
+-> all LOD mesh UV validation dirty
+-> runtime material QA dirty
+-> export dirty
+```
+
+## Geometry change
+
+At minimum consider:
+- AO dirty;
+- Normal dirty when geometry/tangent source changes;
+- geometry-position/object-coordinate procedural channels dirty;
+- affected LOD/export meshes dirty;
+- collision only if collision-relevant volume changed.
+
+Do not blindly dirty all material channels if they are independent of geometry.
+
+## Decal change
+
+If decals use a separate project atlas/material:
+
+```text
+decal content changed
+-> decal asset/material dirty
+-> export dirty
+```
+
+Structural PBR maps remain clean.
+
+---
+
+# Signatures
+
+A signature may use:
+- stable content hash;
+- selected parameter hash;
+- file modification state plus explicit dependencies;
+- another deterministic project mechanism.
+
+Do not hash or serialize the entire Blender scene when a narrow parameter signature is sufficient.
+
+---
+
+# Accepted artifact reuse
+
+Before running an expensive operation:
+
+```text
+if artifact PASS
+and dirty == false
+and dependencies unchanged
+-> REUSE
+```
+
+Report:
+
+```yaml
+bake_plan:
+  reuse:
+    - BaseColor
+    - Normal
+    - AO
+    - Roughness
+    - Metallic
+  execute:
+    - Emissive
+```
+
+This report should be small enough to remain in active context.
+
+---
+
+# Failure behavior
+
+A failed artifact does not automatically invalidate siblings.
+
+Example:
+- Emissive mask outside allowed emitter region -> Emissive FAIL;
+- BaseColor PASS remains valid.
+
+Invalidate siblings only when they share the failed dependency.
+
+---
+
+# Pipeline boundary
+
+Changing exported packaging without changing mesh/material data should not force rebake.
+
+Changing runtime material bindings without changing texture content should not force rebake.
+
+Changing catalog registration should not force Blender rebuild/export unless the project contract explicitly requires regenerated metadata inside the asset.
+
+---
+
+# Benchmark metric
+
+Track:
+
+```text
+full_stage_recomputes
+channels_rebaked
+clean_artifacts_reused
+expensive_operations_avoided
+```
+
+A v0.6 agent should reduce full bake reruns substantially compared with the v0.5 bollard continuation benchmark.
+
+
+---
+
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
 # System Prompt — Blender Asset Agent
@@ -12080,6 +13028,250 @@ This benchmark is the evidence source for v0.5 additions covering:
 
 ---
 
+## FILE: `07_examples/75_LAFAR_CIVIC_BOLLARD_BAKE_REGRESSION_BENCHMARK.md`
+
+# Benchmark — Lafar Civic Bollard Bake/Runtime Closure
+
+## Purpose
+
+This benchmark captures the v0.5 continuation from accepted bollard geometry into surface finishing, baking and runtime packaging.
+
+It exists because the agent's geometric/reconstruction quality was already high, while the bake/runtime phase still consumed excessive reasoning/tool iterations.
+
+---
+
+# Baseline capture
+
+User-reported token use at the captured point:
+
+```text
+~36k tokens
+```
+
+The agent had still not fully finished the bake/runtime closure when the transcript was captured.
+
+The supplied transcript contains approximately:
+- 20 Blender Python execution calls;
+- repeated bake reruns;
+- multiple corrections to bake/channel/UV/export infrastructure.
+
+This benchmark is stage-specific. It does not replace the earlier full bollard benchmark.
+
+---
+
+# Positive v0.5 behavior
+
+The v0.5 knowledge layer successfully caused the agent to:
+- fetch the current BlenderSkill repository;
+- read the completion/bake/material modules;
+- recognize that material bake does not always require a separate high-poly;
+- use the packaged mesh validator;
+- distinguish `OPEN_ASSEMBLY_PART`, `SURFACE_DETAIL` and `CLOSED_SOLID`;
+- verify underside normal direction;
+- discover engine LOD/collision conventions;
+- improve maintained-civic material breakup;
+- keep LODs inside target budgets after repair;
+- inspect exported glTF nodes/materials/images instead of trusting export alone.
+
+This proves v0.5 improved decision quality.
+
+---
+
+# Failures that v0.6 must prevent
+
+## B01 — silent bake cancellation
+
+Observed pattern:
+
+```text
+No active and selected image texture node found...
+bpy.ops.object.bake -> {'CANCELLED'}
+```
+
+The first pipeline treated file creation/execution as if bake succeeded and produced degenerate maps.
+
+v0.6 requirement:
+- bake executor checks operator result;
+- verifies target node in every contributing material;
+- rejects cancelled/degenerate output immediately.
+
+## B02 — target node selection ordering
+
+Target image node was active but `select == false`.
+
+Correct sequence discovered:
+
+```text
+deselect all nodes
+-> target.select = true
+-> nodes.active = target
+```
+
+v0.6 requirement: encoded in reusable bake executor, not rediscovered per asset.
+
+## B03 — AO contaminated by unrelated scene geometry
+
+A viewport-hidden but render-visible default Cube enclosed the asset and made AO nearly black.
+
+v0.6 requirement:
+- ray-dependent bake uses scene isolation;
+- `hide_viewport` is never treated as equivalent to `hide_render`.
+
+## B04 — wrong BaseColor semantics for metal
+
+Blender DIFFUSE bake made brushed aluminium read too dark/black.
+
+v0.6 requirement:
+- authored Principled Base Color is extracted directly for metallic-roughness runtime BaseColor;
+- bake channel semantics are explicit.
+
+## B05 — emissive false-white/clipping
+
+Baking emission incorrectly:
+- ignored zero emission strength on non-emitters;
+- produced white/unwanted signal;
+- or multiplied color by authoring strength until channels clipped and hue was lost.
+
+v0.6 requirement:
+- emissive output accounts for both color and strength;
+- uses explicit normalization/reference strength;
+- validates approved emitter UV regions and hue/clipping.
+
+## B06 — metallic channel extraction failure
+
+Scalar channel extraction temporarily produced metallic = 1 across the atlas.
+
+v0.6 requirement:
+- direct scalar-channel extraction helper;
+- region-aware validation of metal vs dielectric regions.
+
+## B07 — UV assignment depended on Blender object names
+
+A second build produced names such as `.001`, causing atlas lookup by full object name to miss. UV assignment silently failed and parts overlapped 0..1.
+
+v0.6 requirement:
+- semantic part ID owns atlas mapping;
+- `.001` is never canonical identity;
+- missing UV assignment is hard FAIL.
+
+## B08 — bake source and runtime LOD UV diverged
+
+Atlas assignment was applied to the temporary bake source but not the exported LODs.
+
+Result:
+- textures were valid;
+- exported runtime mesh sampled them incorrectly.
+
+v0.6 requirement:
+- UV contract is applied in the shared build/LOD path;
+- bake source and every consuming LOD report the same `UV_CONTRACT_ID`.
+
+## B09 — decal atlas contamination
+
+Decal plates used a separate project decal atlas but were joined into the structural bake source.
+
+v0.6 requirement:
+- external decal/dynamic-display UV owners are excluded unless explicitly remapped.
+
+## B10 — import-time side effects
+
+Loading build/export files for helper functions triggered production work or interacted destructively with working collections.
+
+v0.6 requirement:
+- import-safe module pattern;
+- guarded entrypoints;
+- explicit scratch collection ownership.
+
+## B11 — export scratch cleared source LODs
+
+A helper used the same reset/clear collection for temporary mirror copies and for source LODs.
+
+v0.6 requirement:
+- source, bake scratch, export scratch and QA scratch ownership are separate.
+
+## B12 — project packaging rediscovered from sibling scripts
+
+The agent read project exporter code to discover:
+- one glTF with multiple `_LODn` nodes;
+- collision convention;
+- X-mirror compensation due engine handedness and readable branding.
+
+Useful once, expensive repeatedly.
+
+v0.6 requirement:
+- persist verified packaging facts in Project Asset Pipeline/Engine Profile;
+- subsequent assets consume the profile.
+
+## B13 — full rebakes after local channel repairs
+
+Many fixes affected only one channel, yet the whole multi-pass bake pipeline was rerun.
+
+v0.6 requirement:
+- dirty-stage dependency cache;
+- accepted channels are reused until a dependency invalidates them.
+
+## B14 — tool timeout during expensive bake
+
+A Blender/MCP request timed out while the bake could continue/complete.
+
+v0.6 requirement:
+- timeout -> inspect job/artifact state;
+- do not duplicate expensive work without proof of failure.
+
+---
+
+# v0.6 stage targets
+
+Starting from accepted Level B/model geometry:
+
+```yaml
+GAME_READY_FINISH_target:
+  token_budget_preferred: <= 15000
+  blender_python_mutation_calls_preferred: <= 10
+  full_multichannel_bake_runs: <= 2
+  silent_cancelled_bakes_accepted: 0
+  missing_uv_contracts_accepted: 0
+  exported_runtime_qa_required: true
+```
+
+These are benchmark targets, not universal hard limits for every asset.
+
+A more complex animated/dynamic-display asset may legitimately exceed them, but must still avoid rediscovering solved infrastructure.
+
+---
+
+# Required evidence for PASS
+
+```text
+UV contract PASS
+BaseColor PASS
+Normal PASS
+AO PASS
+Roughness PASS
+Metallic PASS
+ORM packing PASS
+Emissive PASS
+Runtime material binding PASS
+LOD budgets PASS
+Runtime module packaging PASS
+Export readback PASS
+Baked-runtime visual QA PASS
+Completion gate PASS
+```
+
+---
+
+# Release criterion
+
+v0.6 is better than v0.5 only if an equivalent bake/runtime closure:
+- uses fewer expensive/repeated operations;
+- avoids the failure classes above;
+- preserves or improves visual/runtime quality;
+- reaches the requested completion level instead of stopping during bake debugging.
+
+
+---
+
 ## FILE: `08_scripts/80_SCENE_AUDIT_SNIPPETS.md`
 
 # Scene Audit Snippets
@@ -13012,6 +14204,403 @@ Registry maturity stays `CONTRACT_READY` until benchmarked against the active Bl
 
 ---
 
+## FILE: `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`
+
+# Bake Output Validation Pattern
+
+## Purpose
+
+Baked images require semantic validation. File existence and a successful operator return are necessary but not sufficient.
+
+The validator should reduce image data locally and return compact statistics/failing regions rather than full pixel arrays.
+
+---
+
+# Generic image checks
+
+For every output record:
+- dimensions;
+- color space;
+- per-channel min/max/mean;
+- nonzero fraction;
+- clipped-low/clipped-high fraction when meaningful;
+- unexpected constant-image detection;
+- file path and modification state.
+
+Example:
+
+```yaml
+image:
+  channel: emissive
+  size: [1024, 1024]
+  min_rgb: [0.0, 0.0, 0.0]
+  max_rgb: [0.259, 0.745, 1.0]
+  nonzero_fraction: 0.052
+  status: PASS
+```
+
+Do not send the complete pixel buffer to the LLM.
+
+---
+
+# BaseColor checks
+
+Validate against material expectations.
+
+Examples:
+- expected metallic/brushed-aluminium atlas region must not become black merely because a DIFFUSE response was baked;
+- dark graphite may legitimately be near black, so use region/material-aware thresholds rather than one global minimum;
+- unexplained white/black full-atlas output is FAIL.
+
+When a known UV region belongs to a material family, sample/aggregate that region separately.
+
+---
+
+# Normal checks
+
+For tangent-space normals:
+- verify image is not all zero/black;
+- verify blue/Z component is generally positive where expected;
+- detect impossible/degenerate constant values according to the material contract;
+- verify color space is Non-Color;
+- verify runtime tangent basis separately.
+
+Do not require an arbitrary exact mean such as `[0.5, 0.5, 1.0]`; procedural detail may legitimately shift the distribution.
+
+---
+
+# AO checks
+
+AO must not be globally black/near-zero because an unrelated render-visible object enclosed the asset.
+
+Also do not require AO to have strong variation when the geometry is genuinely unoccluded.
+
+Use configured expectations:
+
+```yaml
+ao_expectation:
+  allow_constant_white: false
+  max_near_black_fraction: 0.10
+  required_occluded_regions:
+    - BASE_RECESS
+```
+
+The specific thresholds belong to the asset/project validator.
+
+---
+
+# Roughness checks
+
+Validate:
+- values inside expected 0..1 range;
+- not unexpectedly constant when authored breakup is required;
+- material-family regions roughly match intended roughness bands;
+- no color-space transform.
+
+A maintained civic asset with authored roughness breakup should not collapse to one uniform scalar after bake.
+
+---
+
+# Metallic checks
+
+Validate known material regions:
+- metal regions contain high metallic values where expected;
+- dielectric/composite/rubber regions remain near zero;
+- the entire atlas must not become 1.0 because scalar channel extraction accidentally used the wrong default/socket behavior.
+
+Region-aware validation is preferred over global mean.
+
+---
+
+# Emissive checks
+
+Emissive must be validated spatially.
+
+Given approved emitter UV rectangles/masks:
+
+```text
+expected emitter signal
+unexpected signal outside emitters
+padding bleed allowance
+clipping/hue preservation
+```
+
+Required report:
+
+```yaml
+emissive:
+  approved_signal_px: 52000
+  outside_signal_px: 1800
+  outside_allowed_padding: 0
+  max_rgb: [0.259, 0.745, 1.0]
+  clipped_channels: []
+  status: PASS
+```
+
+A full/mostly white emissive atlas is FAIL when only small light strips are emitters.
+
+Baking Principled `Emission Color` without considering zero `Emission Strength` can produce false white emission on non-emitting materials; this validator must detect that spatially.
+
+---
+
+# UV-region diagnostics
+
+The validator may consume the same semantic UV contract as the bake source.
+
+For each atlas owner:
+- aggregate mean/min/max;
+- check expected signal type;
+- detect foreign contamination;
+- detect missing part output.
+
+Do not infer regions from `.001` object names. Use stable semantic part IDs.
+
+---
+
+# Runtime material check
+
+After image validation, verify the runtime material actually references the accepted outputs.
+
+For glTF metallic-roughness baseline:
+- BaseColor -> correct base color texture;
+- ORM/project packed texture -> correct roughness/metallic channel interpretation;
+- Normal -> correct normal texture;
+- Emissive -> correct emissive texture;
+- decal material remains separate if required.
+
+Engine Profile may override packing.
+
+---
+
+# Export readback
+
+Parse the exported runtime file/manifest and verify:
+- expected image URIs;
+- expected material names;
+- expected LOD nodes;
+- dynamic/decal materials preserved separately;
+- no accidental missing texture.
+
+Do not trust Blender-side material state alone.
+
+---
+
+# Baked-runtime visual QA
+
+Final visual comparison for texture closure must use:
+
+```text
+runtime LOD mesh
++
+baked runtime material
+```
+
+not the original procedural authoring material.
+
+If authoring render passes but baked-runtime render fails, the bake stage is FAIL.
+
+---
+
+# Progressive diagnostics
+
+Default output: `SUMMARY`.
+
+On failure:
+1. identify map;
+2. identify semantic region/channel;
+3. return aggregate stats for only that region;
+4. raw pixel data only as last resort.
+
+This validator exists partly to prevent large image arrays from entering model context.
+
+
+---
+
+## FILE: `08_scripts/94_IMPORT_SAFE_PYTHON_MODULE_PATTERN.md`
+
+# Import-Safe Blender Python Module Pattern
+
+## Purpose
+
+Reusable Blender build/bake/export code must be safe to load for functions without accidentally executing destructive top-level work.
+
+The v0.5 bollard bake exposed two expensive failure classes:
+- loading an export script for helper functions also executed the export;
+- reusing a collection helper cleared objects that were still needed by the caller.
+
+v0.6 treats module side effects and collection ownership as explicit contracts.
+
+---
+
+# 1. No production side effects on import
+
+Reusable modules may define:
+- constants;
+- pure helpers;
+- builders;
+- validators;
+- `run()` / `main()` entrypoints.
+
+They must not automatically:
+- rebuild the production asset;
+- clear collections;
+- export files;
+- save the blend;
+- delete objects;
+- run a full bake;
+
+merely because another script imports/executes them for a helper.
+
+Preferred:
+
+```python
+def main():
+    ...
+
+if __name__ == "__main__":
+    result = main()
+```
+
+When code is loaded through `exec`/`runpy`, choose the synthetic `__name__` intentionally.
+
+---
+
+# 2. Separate responsibilities
+
+Prefer modules such as:
+
+```text
+build_asset.py     -> geometry/material authoring functions
+bake_asset.py      -> texture closure
+export_asset.py    -> LOD/package/export
+qa_asset.py        -> QA cameras/render/validation
+```
+
+Shared helpers belong in reusable executors or a side-effect-free helper module.
+
+Do not make `bake_asset.py` import `export_asset.py` if doing so automatically exports.
+
+---
+
+# 3. Collection ownership
+
+A helper that clears a collection must own that collection exclusively.
+
+Do not call:
+
+```text
+work_collection()
+```
+
+from a nested export helper if `work_collection()` clears the collection that currently contains the LODs being exported.
+
+Use explicit ownership:
+
+```text
+ASSET_AUTHORING_COLLECTION
+BAKE_SCRATCH_COLLECTION
+EXPORT_SCRATCH_COLLECTION
+QA_SCRATCH_COLLECTION
+```
+
+Scratch helpers may clear only their own scratch namespace.
+
+---
+
+# 4. Destructive helper naming
+
+A function that clears/replaces state must say so in its contract/name/documentation.
+
+Bad:
+
+```python
+work_collection()
+```
+
+when the function silently clears objects.
+
+Better:
+
+```python
+reset_scratch_collection(name)
+get_or_create_collection(name)
+```
+
+with distinct behavior.
+
+---
+
+# 5. Caller-owned objects
+
+A callee must not delete, unlink or rename caller-owned production objects unless the call contract explicitly transfers ownership.
+
+For temporary mirrored export copies:
+- clone source data;
+- operate in export scratch collection;
+- export clones;
+- remove clones;
+- restore/leave source unchanged.
+
+Do not mutate the source hierarchy merely to satisfy one export call when a copy can carry the transformation.
+
+---
+
+# 6. Idempotent entrypoints
+
+`main()` / `run()` should:
+- identify previous artifacts by stable names/tags;
+- update/replace only owned artifacts;
+- leave unrelated scene content unchanged;
+- return a compact report.
+
+Repeated invocation should not accumulate `.001` copies unless those copies are deliberately versioned artifacts.
+
+---
+
+# 7. Stable part identity
+
+Imported/rebuilt objects may receive Blender suffixes. Never let `.001` change semantic behavior.
+
+Use semantic part IDs/custom properties for:
+- UV assignment;
+- Feature Contract ownership;
+- LOD mapping;
+- material routing;
+- validation.
+
+Names remain useful for human readability/export conventions but are not sufficient as internal identity.
+
+---
+
+# 8. Validation
+
+Before treating a helper module as reusable:
+- load it without calling `main()`;
+- assert no production files were written;
+- assert production object count did not unexpectedly change;
+- assert no source collection was cleared;
+- call one helper in a scratch scene/collection;
+- run twice and verify idempotent behavior where required.
+
+---
+
+# Compact module contract
+
+```yaml
+module:
+  path: export_asset.py
+  import_safe: true
+  top_level_scene_mutation: false
+  owned_collections:
+    - EXPORT_SCRATCH
+  entrypoint: main
+  idempotent: true
+  status: PASS
+```
+
+
+---
+
 ## FILE: `09_engine/90_ENGINE_PROFILE_SCHEMA.md`
 
 # Engine Profile Schema
@@ -13441,6 +15030,201 @@ This protocol describes **project registration**.
 `09_engine/91_ENGINE_ADAPTER_PROTOCOL.md` describes runtime format/import behavior.
 
 Both may be required for Level D.
+
+
+---
+
+## FILE: `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`
+
+# Runtime Module Packaging Contract
+
+## Purpose
+
+Export packaging is engine/project-specific and must be discovered once, persisted and reused.
+
+The agent must not repeatedly inspect sibling exporters to rediscover basic facts such as:
+- whether LODs live in one file or separate files;
+- collision representation;
+- handedness compensation;
+- module naming;
+- material/texture binding conventions.
+
+Persist these facts in the active Project Asset Pipeline Profile / Engine Profile.
+
+---
+
+# Required packaging fields
+
+```yaml
+runtime_packaging:
+  module_id:
+  export_format: GLTF_SEPARATE
+  lod_packaging: ONE_FILE_MULTI_NODE
+  lod_node_pattern: "{mesh_name}_LODn"
+  collision:
+    source: EXTERNAL_PREFAB_BOXES | SEPARATE_FILE | EMBEDDED_NODE
+    naming_pattern:
+  handedness:
+    blender:
+    engine:
+    compensation:
+  mirror_compensation:
+    required: false
+    axis: X
+    verified_by:
+  materials:
+    runtime_material_names: []
+    decal_material_separate: true
+  textures:
+    uri_policy:
+    packing_profile:
+  catalog:
+    asset_id:
+    registration_required: true
+```
+
+---
+
+# 1. LOD packaging
+
+Do not assume one export file per LOD.
+
+Supported project strategies include:
+
+```text
+ONE_FILE_MULTI_NODE
+ONE_FILE_ENGINE_METADATA
+SEPARATE_FILE_PER_LOD
+ENGINE_GENERATED_LOD
+```
+
+Discover from the Engine/Profile once.
+
+If the engine recognizes LODs by node suffix such as `_LOD0`, `_LOD1`, ... then the export validator must confirm all expected node names exist in the final module file.
+
+Do not keep producing separate files merely because they were convenient during Blender QA.
+
+---
+
+# 2. Collision packaging
+
+Collision may be:
+- a separate glTF/module;
+- external project/prefab primitives;
+- embedded collision nodes;
+- generated by engine/importer.
+
+Do not spend time embedding detailed render-mesh collision if the engine contract uses simple box/convex primitives elsewhere.
+
+Record the actual project strategy.
+
+---
+
+# 3. Handedness and mirror compensation
+
+Coordinate-system conversion must be proven with an asymmetric test.
+
+Symmetric props can hide mirror mistakes.
+
+Good verification features:
+- readable logo/text;
+- asymmetric service panel;
+- left/right port;
+- directional decal.
+
+If the current engine/importer mirrors imported glTF, export-side compensation may be required.
+
+Do not apply a mirror globally because another asset happened to use one. Persist the verified rule in the Engine/Profile.
+
+When mirroring export copies:
+- do not mutate the authoring source;
+- transform a copy;
+- correct normals/winding as required;
+- preserve UV/material semantics;
+- validate branding is readable after runtime import.
+
+---
+
+# 4. Export scratch ownership
+
+Packaging must be non-destructive.
+
+Use an export-owned scratch collection for temporary copies.
+
+Do not call a helper that clears the same collection containing source LOD objects.
+
+Use `08_scripts/94_IMPORT_SAFE_PYTHON_MODULE_PATTERN.md`.
+
+---
+
+# 5. Runtime material binding
+
+Before export:
+- procedural authoring materials must have an explicit runtime disposition;
+- accepted baked textures must be bound to runtime material(s);
+- project decal material remains separate when its atlas is separate;
+- dynamic display material remains separately addressable when required.
+
+After export, read back material names and image URIs.
+
+---
+
+# 6. Export readback
+
+For JSON-based glTF baseline, parse the file instead of trusting console output.
+
+Verify:
+- expected node names;
+- expected LOD count;
+- expected material names;
+- expected texture/image URIs;
+- dynamic/decal material separation;
+- absence of unexpected missing assets.
+
+Compact report:
+
+```yaml
+package_validation:
+  module: astera_bollard
+  file: astera_bollard.gltf
+  lod_nodes:
+    - ..._LOD0
+    - ..._LOD1
+    - ..._LOD2
+    - ..._LOD3
+  materials:
+    - M_Runtime
+    - M_Decal
+  images:
+    - basecolor.png
+    - normal.png
+    - orm.png
+    - emissive.png
+    - decals.png
+  status: PASS
+```
+
+---
+
+# 7. Project-profile persistence
+
+Once a packaging rule is verified, write it into the project profile so future assets do not inspect long sibling scripts again.
+
+Example discoveries worth persisting:
+- one glTF per asset with multiple LOD nodes;
+- node suffix drives LOD grouping;
+- collision is external/prefab-based;
+- engine handedness requires X-mirror export compensation for readable branding.
+
+These are project facts, not asset-specific reasoning.
+
+---
+
+# 8. Completion gate
+
+`GAME_READY_COMPLETE` requires the runtime module package to pass its packaging contract when export is part of the requested target.
+
+`PIPELINE_INTEGRATED` additionally requires catalog/importer integration according to the project profile.
 
 
 ---
