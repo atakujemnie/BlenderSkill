@@ -1,5 +1,100 @@
 # Changelog
 
+## 0.10.0
+
+v0.10.0 is the **reference appearance fidelity + anti-self-certification** release.
+
+It is driven by the Lafar Street Bench v0.9 benchmark. That run was technically strong: hard dimensions, outer silhouettes, LOD budgets and glTF package checks passed. The user still rated the reconstruction only **6/10** because the side housings, aluminium trim, rear assembly, edge language, material response and meso detail did not faithfully reproduce the concept art.
+
+The release closes the gap between:
+
+```text
+technically coherent asset
+```
+
+and:
+
+```text
+visibly the same designed product
+```
+
+### Reference Appearance Contract
+- added `10_reconstruction/180_REFERENCE_APPEARANCE_CONTRACT.md`;
+- 1:1/L4/L5 reconstruction now inventories visible appearance owners in addition to Shape Nodes;
+- owner classes include part boundaries, trim paths, junctions, edge families, material/emissive/branding regions, detail features and negative spaces;
+- source authority is resolved per visible property rather than through one global `card wins` decision;
+- A0–A5 appearance hierarchy separates massing, product architecture, edge language, materials, meso detail and micro detail.
+
+### Anti-circular validation
+- added `10_reconstruction/181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
+- a builder can no longer prove reference fidelity only by checking geometry against constants it inferred itself;
+- strict reference-derived evidence requires canonical `validator_id`, provenance and source reference;
+- projected evidence additionally requires registration;
+- canonical validators cannot be replaced by a builder-local `Gate.accept()`.
+
+### Part Boundary / Trim / Junction Graph
+- added `10_reconstruction/182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
+- internal visible architecture is now first-class evidence instead of being hidden behind a correct outer silhouette;
+- major panel/material boundaries, trim paths and multi-part junctions receive stable IDs, source ROIs and validation ownership;
+- trim validation checks path, width, start/end, corner wrapping, host adjacency and continuity.
+
+### Edge, material and detail fidelity
+- added `10_reconstruction/183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
+- strengthened `164_EDGE_LANGUAGE_SYSTEM.md`;
+- strengthened `124_MATERIAL_EVIDENCE_RECONSTRUCTION.md`;
+- RDL4 cannot pass only because bevel preserves protected dimensions;
+- edge families now require reference profile/radius/start-end/continuity evidence;
+- material segmentation is explicitly separated from material appearance;
+- brushed/directional material response, roughness hierarchy, neutral lookdev, emissive recession and detail coverage become evidence owners;
+- L5 requires zero silently missing MUST details unless authority explicitly waives them.
+
+### Appearance Fidelity Gate
+- added `05_execution/72_APPEARANCE_FIDELITY_GATE.md`;
+- added `executors/appearance_fidelity_gate.py`;
+- L4/L5 categories are non-compensating: a failed MUST trim path cannot be averaged away by perfect dimensions or materials;
+- optional benchmark score remains diagnostic, with Street Bench regression target `>= 8.5/10` plus zero MUST blockers.
+
+### Canonical proof hardening
+- `executors/reconstruction_node_gate.py` upgraded to v0.2.0;
+- required view proof names canonical validators;
+- reference-derived proof requires source reference IDs;
+- projected proof requires registration IDs;
+- local builder gates are rejected as canonical view acceptance.
+
+### Final reconstruction gate hardening
+- `executors/fidelity_gate.py` upgraded to v0.3.0;
+- target L4/L5 requires `APPEARANCE_FIDELITY_GATE` before runtime;
+- final gate validates canonical validator identity and source anchoring;
+- correct dimensions, silhouette, UVs, triangle budgets, package readback or engine load cannot compensate for failed appearance fidelity.
+
+### Runtime lock
+
+For L4/L5:
+
+```text
+APPEARANCE_FIDELITY_GATE != PASS
+or
+RECON_FIDELITY_GATE != PASS
+-> LOD / UV / bake / export / runtime FORBIDDEN
+```
+
+This prevents spending large runtime effort on a visually unresolved reconstruction.
+
+### Benchmark
+- added `07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md`;
+- records the v0.9 Street Bench result as a reconstruction regression despite technical pipeline success;
+- separates `TECHNICAL_PIPELINE_SCORE` from `REFERENCE_FIDELITY_SCORE`;
+- protects against outer-silhouette-only acceptance, local circular gates, coarse side-module decomposition, wrong trim paths, weak rear architecture, generic edge language, placeholder materials and silent detail omission.
+
+### Validator pattern / tests
+- added `08_scripts/96_REFERENCE_ANCHORED_APPEARANCE_VALIDATOR_PATTERN.md`;
+- added `tools/test_v010_reference_fidelity.py`;
+- CI preserves v0.9 Shape Graph regression tests and adds v0.10 tests for source anchoring, registration, local-gate rejection, appearance blocking and final runtime lock.
+
+Canonical manifest version: **0.10.0**.
+Canonical module count: **222**.
+Canonical benchmark: **79 — Lafar Street Bench v0.9 Appearance-Fidelity Failure**.
+
 ## 0.9.0
 
 v0.9.0 is the **Shape Graph + coarse-to-fine geometric reasoning** release.

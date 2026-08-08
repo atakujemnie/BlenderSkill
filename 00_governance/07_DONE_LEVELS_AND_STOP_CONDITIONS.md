@@ -21,35 +21,51 @@ Wyższy poziom wymaga wszystkich niższych.
 
 Reference-driven object jest geometrycznie i wizualnie rozwiązany **oraz udowodniony**.
 
-Required v0.9:
-- Reference/Evidence Registry i authority są spójne;
-- aktualny `Reconstruction Shape Graph` structural PASS;
-- required G0–G3 nodes mają shape class, parent/dependencies, authoritative views i Node Contracts;
+Required v0.10:
+- Reference/Evidence Registry and property-level authority are coherent;
+- current `Reconstruction Shape Graph` structural PASS;
+- required G0–G3 nodes have shape class, parent/dependencies, authoritative views and Node Contracts;
 - RDL0 barrier PASS;
 - required G1 primary nodes `ACCEPTED` + RDL1 barrier PASS;
 - required G2 nodes `ACCEPTED` + RDL2 barrier PASS;
 - required G3 nodes `ACCEPTED` + RDL3 barrier PASS;
-- required RDL4 edge-language work PASS zgodnie z target fidelity;
-- hard dimensions PASS z numeric provenance;
-- canonical silhouettes/views PASS przez registered evidence, jeśli reference ma authority;
+- canonical node acceptance records use canonical validators rather than builder-local gates;
+- hard dimensions PASS with source/numeric provenance;
+- canonical silhouettes/views PASS through registered evidence where reference has authority;
 - primary proportions/landmarks PASS;
-- MUST features mają owner + visibility/ROI/numeric proof;
-- branding/orientation poprawne lub jawnie deferred do późniejszej powierzchni;
-- rear/bottom/hidden evidence obsłużone wg authority;
-- HARD/MUST/CANONICAL deviations są `RESOLVED` albo `ACCEPTED_BY_AUTHORITY` z recordem;
+- MUST features have owner + source-anchored visibility/ROI/numeric proof;
+- branding/orientation correct or explicitly deferred only when target fidelity allows it;
+- rear/bottom/hidden evidence handled according to authority;
+- HARD/MUST/CANONICAL deviations are `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with record;
 - multi-view regression PASS;
-- `RECON_FIDELITY_GATE` proof-bearing PASS dla zaakceptowanego graph revision.
+- `RECON_FIDELITY_GATE` proof-bearing PASS for accepted graph revision.
 
-Nie jest wymagane:
+For explicit 1:1/exact reconstruction or target fidelity L4/L5 additionally required:
+- current `Reference Appearance Contract`;
+- required part boundaries inventoried and PASS;
+- required trim paths PASS;
+- required junctions PASS;
+- required edge families PASS with reference profile evidence;
+- material segmentation PASS;
+- material appearance response PASS where reference defines it;
+- emissive/glass/branding appearance owners PASS where present;
+- final matched/registered appearance views PASS;
+- `APPEARANCE_FIDELITY_GATE: PASS`;
+- L5: all MUST detail owners accounted for and `must_missing = 0` unless authority explicitly waives a feature.
+
+Not required for Level A by itself:
 - final runtime bake;
 - runtime LOD/collision;
 - engine integration.
 
-Nie wystarcza:
+Not sufficient:
 - `looks correct`;
-- poprawny overall bounding box;
-- istniejące Blender objects;
-- jeden hero render;
+- correct overall bounding box;
+- alpha outer silhouette PASS by itself;
+- existing Blender objects;
+- one hero render;
+- builder-local numeric gates against builder constants;
+- correctly named material slots without appearance proof;
 - successful export/engine load.
 
 ---
@@ -67,7 +83,7 @@ Requires Level A plus:
 - editable authoring source saved;
 - no temporary QA/helper contamination of production collection.
 
-Procedural Blender shader może nadal istnieć.
+Procedural Blender shader may still exist if runtime disposition is not yet required.
 
 ---
 
@@ -85,10 +101,10 @@ Requires Level B plus:
 - package readback validates nodes/materials/images/required primitive attributes and transform policy;
 - export validation PASS;
 - export round-trip protected invariants PASS;
-- protected Shape Graph/Feature Contract survives optimization;
+- protected Shape Graph, Appearance Contract and Feature Contract survive optimization;
 - baked/runtime-material QA PASS.
 
-Parseable glTF bez required `TEXCOORD_0`, z niedozwolonym node TRS albo bez wymaganych runtime textures nie jest Level C.
+Parseable glTF without required `TEXCOORD_0`, with forbidden node TRS, without required runtime textures, or derived from an unresolved Level A asset is not Level C.
 
 ---
 
@@ -125,16 +141,23 @@ Examples:
 
 For a game-production request `build the asset` defaults to Level C unless user scope clearly says otherwise.
 
+A Level C target does not permit skipping Level A appearance proof.
+
 ---
 
 # Stop conditions
 
-Stop/report blocker when required gate cannot pass.
+Stop/report blocker when a required gate cannot pass.
 
 Examples:
 - Shape Graph unresolved for primary form;
 - required G1 node FAIL in SIDE/TOP;
+- builder tries to replace canonical node gate with local self-certification;
 - RDL stage barrier FAIL;
+- required part boundary/trim/junction FAIL;
+- edge family unverified;
+- material appearance unverified for L4/L5;
+- `APPEARANCE_FIDELITY_GATE` FAIL/UNVERIFIED;
 - hard authority conflict unresolved;
 - missing runtime material/bake;
 - collision contract unknown;
@@ -142,6 +165,21 @@ Examples:
 - catalog write or target-engine proof unavailable.
 
 Do not silently downgrade target.
+
+---
+
+# Runtime lock
+
+For 1:1/L4/L5:
+
+```text
+APPEARANCE_FIDELITY_GATE != PASS
+or
+RECON_FIDELITY_GATE != PASS
+-> GAME_READY_FINISH must not start
+```
+
+Correct dimensions, silhouette, triangle budgets, UVs or export success cannot raise the completion level through this lock.
 
 ---
 
@@ -158,9 +196,23 @@ asset_completion:
     pipeline_integrated: NOT_REQUIRED
 
   reconstruction_evidence:
-    graph_revision: sg_004
-    rdl_barriers: {RDL0: PASS, RDL1: PASS, RDL2: PASS, RDL3: PASS, RDL4: PASS}
-    fidelity_gate: {status: PASS, evidence_kind: RECON_FIDELITY_GATE, provenance_id: recon_gate_004}
+    graph_revision: sg_010
+    appearance_revision: ac_006
+    rdl_barriers:
+      RDL0: PASS
+      RDL1: PASS
+      RDL2: PASS
+      RDL3: PASS
+      RDL4: PASS
+      RDL5: PASS
+    appearance_gate:
+      status: PASS
+      evidence_kind: APPEARANCE_FIDELITY_GATE
+      provenance_id: appearance_gate_006
+    fidelity_gate:
+      status: PASS
+      evidence_kind: RECON_FIDELITY_GATE
+      provenance_id: recon_gate_010
 
   blockers:
     - PBR_BAKE_NOT_DONE
@@ -170,12 +222,14 @@ asset_completion:
     textures: false
 ```
 
-Pierwszy failing required level jest realnym completion state.
+First failing required level is the real completion state.
 
 ---
 
 # Anti-pattern
 
-Nigdy nie raportuj assetu jako ukończonego, jeśli ten sam raport zawiera required blocker.
+Never report an asset as complete when the same report contains a required blocker.
 
-Nie raportuj Level A tylko dlatego, że monolityczny builder stworzył wszystkie elementy sceny. v0.9 wymaga coarse-to-fine Shape Node evidence.
+Do not report Level A merely because a monolithic builder created all scene elements.
+
+Do not report Level A merely because hard dimensions and global alpha silhouette pass while product-defining internal boundaries, edge/material families or MUST detail remain wrong/unverified.

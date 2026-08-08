@@ -1,36 +1,75 @@
 # Node-by-Node Multi-View Validation
 
-## Cel
+## Purpose
 
-Walidować pojedynczą formę natychmiast po jej zbudowaniu, zanim scena zostanie zagęszczona kolejnymi elementami.
+Validate one form immediately after it is built, before the scene is densified with dependent geometry.
 
-Nie czekaj do finalnego asset renderu, aby odkryć błąd primary form.
+v0.10 additionally prevents a node from certifying itself through builder-local checks.
+
+Do not wait for the final asset render to discover a primary-form error.
 
 ---
 
 ## Core loop
 
-Dla każdego `READY_TO_BUILD` Shape Node:
+For every `READY_TO_BUILD` Shape Node:
 
 ```text
 isolate accepted ancestors + current node
 -> build/repair current node only
+-> persist BUILT_UNVERIFIED artifact/revision
 -> render required canonical views
 -> registered comparison per view/ROI
 -> numeric/section checks
--> node gate
--> ACCEPTED | FAIL
+-> canonical RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | FAIL | UNVERIFIED
 ```
 
-Dopiero `ACCEPTED` odblokowuje zależne dzieci.
+Only `ACCEPTED` unlocks dependent children.
+
+---
+
+## Canonical acceptance rule
+
+Strict node acceptance is derived from validator artifacts, not builder state.
+
+Required records name:
+- `validator_id`;
+- `provenance_id`;
+- `source_reference_id(s)` for reference-derived evidence;
+- `registration_id` for projected evidence.
+
+For required view proof use canonical registered validators such as:
+- `REFERENCE_OVERLAY_VALIDATE`;
+- `APPEARANCE_REFERENCE_VALIDATE` where internal appearance owner is being checked.
+
+A builder-local helper may produce measurements. It may not substitute for `RECONSTRUCTION_NODE_GATE`.
+
+Invalid:
+
+```text
+builder chooses radius 165
+-> builder makes radius 165
+-> local Gate verifies radius 165
+-> node ACCEPTED
+```
+
+Valid:
+
+```text
+source ROI / explicit dimension
+-> source-fit or registered validator artifact
+-> candidate artifact
+-> RECONSTRUCTION_NODE_GATE
+```
 
 ---
 
 ## View responsibility contract
 
-Każdy node definiuje, co kontroluje dany widok.
+Each node defines what each view controls.
 
-Przykład:
+Example:
 
 ```yaml
 BASE_PLINTH:
@@ -44,69 +83,91 @@ BASE_PLINTH:
     controls: [transition_interpretation]
 ```
 
-Nie wymagaj widoku, który nie wnosi evidence dla node'a. Nie pomijaj widoku REQUIRED.
+Do not require views that add no evidence. Do not omit a REQUIRED view.
+
+For product/civic hard-surface, view responsibilities may include internal boundaries, not only outer contour.
+
+Example:
+
+```yaml
+SIDE_MODULE_R:
+  SIDE:
+    controls:
+      - outer_profile
+      - composite_panel_boundary
+      - trim_path
+      - utility_panel_junction
+```
 
 ---
 
 ## Isolation rule
 
-Node QA render musi zawierać wyłącznie:
-- zaakceptowane ancestor/host geometry potrzebne do kontekstu;
+Node QA render contains only:
+- accepted ancestor/host geometry required for context;
 - current node;
-- wymagany QA rig.
+- required QA rig.
 
-Nie renderuj:
+Do not render:
 - runtime collision;
 - LOD proxies;
 - future RDL nodes;
-- hidden helper shells;
+- helper shells;
 - export copies;
 - unrelated scene geometry.
 
-Użyj `QA_SCENE_ISOLATE`.
+Use `QA_SCENE_ISOLATE`.
 
-`isolation_status != PASS` oznacza `UNVERIFIED`, nawet jeśli silhouette metric wygląda dobrze.
+`isolation_status != PASS` means node is `UNVERIFIED` even if visual metrics look good.
 
 ---
 
 ## Registered comparison
 
-Dla authoritative orthographic/near-orthographic evidence:
-- jedna globalna registration per view;
-- ten sam crop/aspect/physical scale;
-- żadnego lokalnego przesuwania current node renderu w celu poprawienia wyniku;
-- ROI node'a może ograniczać obszar oceny, ale nie zmieniać registration.
+For authoritative orthographic/near-orthographic evidence:
+- one global registration per view;
+- same crop/aspect/physical scale;
+- no local translation/warp of current node;
+- ROI may restrict evaluation area but must not change global registration;
+- record source reference ID and registration ID.
 
 Preferred skill:
 `REFERENCE_OVERLAY_VALIDATE`.
 
+For internal boundary/trim/junction owners:
+`APPEARANCE_REFERENCE_VALIDATE`.
+
 ---
 
-## Local vs global silhouette
+## Outer silhouette vs internal architecture
 
-Node może wpływać na:
+A node may affect:
 - `GLOBAL_SILHOUETTE`;
 - `LOCAL_BOUNDARY`;
 - `INTERNAL_FEATURE`;
+- `MATERIAL_BOUNDARY`;
+- `TRIM_PATH`;
+- `JUNCTION`;
 - `NO_SILHOUETTE`.
 
 ### Global silhouette node
-Po naprawie sprawdź:
+After repair validate:
 1. node ROI;
 2. global canonical silhouette regression.
 
-### Internal node
-Sprawdź:
-1. feature ROI;
-2. parent protected-region regression.
+### Internal architecture node
+Validate:
+1. source-registered owner ROI;
+2. boundary/path/junction metrics;
+3. parent protected-region regression.
 
-Nie uznawaj lokalnego PASS, jeśli naprawa psuje zaakceptowany parent contour.
+Do not use global silhouette IoU as proof of an internal boundary.
 
 ---
 
 ## Numeric responsibilities
 
-W zależności od shape class waliduj:
+Depending on shape class validate:
 - bounds;
 - centerline;
 - station heights;
@@ -118,15 +179,40 @@ W zależności od shape class waliduj:
 - symmetry/asymmetry;
 - cross-section sample contract.
 
-Image overlay nie zastępuje locked numeric dimensions.
+Image overlay does not replace locked numeric dimensions.
+
+Builder-consistency numeric checks do not replace source anchoring for derived parameters.
+
+---
+
+## Derived-parameter proof
+
+If a node uses an inferred radius/angle/station/path, persist derivation evidence:
+
+```yaml
+derived_parameter:
+  id: SIDE_FRONT_RADIUS
+  value_mm: 165
+  method: ARC_FIT
+  source_reference_id: side_ref_v2
+  source_roi: [...]
+  confidence: 0.84
+  residual_px: 2.9
+```
+
+Then node validation may contain both:
+- geometry == derived parameter consistency;
+- source-fit/registered projected evidence.
+
+The first without the second is insufficient for reference acceptance.
 
 ---
 
 ## Cross-section validation
 
-Dla `MULTI_SECTION_LOFT` i `MULTI_SECTION_TRANSITION` wymagaj station report.
+For `MULTI_SECTION_LOFT` / `MULTI_SECTION_TRANSITION` require station report.
 
-Przykład:
+Example:
 
 ```yaml
 sections:
@@ -134,25 +220,43 @@ sections:
     z_mm: 0
     width_mm: 600
     depth_mm: 300
+    source_fit_id: section_fit_bottom_003
     status: PASS
   - station: BASE_UPPER
     z_mm: 95
     width_mm: 570
     depth_mm: 282
-    status: PASS
-  - station: SHOULDER
-    z_mm: 165
-    width_mm: 500
-    depth_mm: 230
+    source_fit_id: section_fit_upper_003
     status: PASS
 ```
 
-Dodatkowo:
-- ordering monotonic along loft axis;
+Additionally validate:
+- monotonic ordering along loft axis;
 - common vertex correspondence;
 - no unintended twist;
 - expected corner/chamfer family;
-- transition continuity.
+- transition continuity;
+- source-backed station geometry when sections are derived from reference.
+
+---
+
+## Appearance-owner interaction
+
+A Shape Node can be geometrically accepted while appearance owners over its surface remain open.
+
+Example:
+
+```text
+SIDE_MODULE_R geometry ACCEPTED
+SIDE_TRIM_PATH_R appearance FAIL
+```
+
+Result:
+- dependent geometry children may follow Shape Graph rules if their host geometry is accepted;
+- RDL4/L4 final appearance cannot pass;
+- runtime remains locked through `APPEARANCE_FIDELITY_GATE`.
+
+If the failed appearance owner reveals that host geometry itself is wrong, route failure back to the host Shape Node and mark affected descendants DIRTY.
 
 ---
 
@@ -161,28 +265,73 @@ Dodatkowo:
 ```yaml
 node_gate:
   node_id: LOWER_SHOULDER
-  parent_gate: PASS
-  isolation: PASS
+  graph_revision: sg_006
+  node_revision: node_009
+  parent_status: PASS
+  isolation:
+    status: PASS
+    evidence_kind: QA_SCENE_ISOLATION
+    validator_id: QA_SCENE_ISOLATE
+    provenance_id: iso_009
   required_views:
-    FRONT: PASS
-    SIDE: PASS
-  numeric_constraints: PASS
-  section_contract: PASS
-  regression_outside_expected_change: PASS
+    FRONT:
+      status: PASS
+      evidence_kind: REGISTERED_OVERLAY
+      validator_id: REFERENCE_OVERLAY_VALIDATE
+      provenance_id: front_009
+      source_reference_id: front_ref_v3
+      registration_id: front_reg_v3
+    SIDE:
+      status: PASS
+      evidence_kind: REGISTERED_OVERLAY
+      validator_id: REFERENCE_OVERLAY_VALIDATE
+      provenance_id: side_009
+      source_reference_id: side_ref_v3
+      registration_id: side_reg_v3
+  numeric_constraints:
+    status: PASS
+    evidence_kind: NUMERIC_MEASUREMENT
+    validator_id: REFERENCE_MEASURE
+    provenance_id: num_009
+  section_contract:
+    status: PASS
+    evidence_kind: NUMERIC_MEASUREMENT
+    validator_id: SECTION_LOFT_HARD_SURFACE
+    provenance_id: sections_009
+  regression:
+    status: PASS
+    evidence_kind: REGRESSION_DIFF
+    validator_id: REFERENCE_OVERLAY_VALIDATE
+    provenance_id: regression_009
   status: ACCEPTED
 ```
 
-`PASS` fields muszą być proof-bearing zgodnie z `173_RECONSTRUCTION_ACCEPTANCE_EVIDENCE_INTEGRITY.md`.
+All strict PASS fields are proof-bearing.
 
 ---
 
 ## Failure routing
 
-Jeżeli FRONT i SIDE wskazują różne klasy błędu:
-- nie poprawiaj losowo obu;
-- przypisz failure do registration, parameters, representation albo parent relation.
+If FRONT/SIDE/TOP indicate different failure classes, assign failure to:
+- registration;
+- parameters;
+- representation;
+- parent relation;
+- internal appearance owner;
+- material/edge stage.
 
-Przykład:
+Example:
+
+```text
+FRONT width PASS
+SIDE outer depth PASS
+SIDE trim path FAIL
+TOP corner plan PASS
+```
+
+Do not randomly alter depth. The likely owner is trim/part architecture, not global envelope.
+
+Example:
 
 ```text
 FRONT width PASS
@@ -190,16 +339,22 @@ SIDE depth FAIL
 TOP corner-plan FAIL
 ```
 
-często wskazuje na złą reprezentację 3D, nie na jeden scalar width parameter.
+often indicates a wrong 3D representation rather than one scalar parameter.
 
 ---
 
 ## Stop rule
 
-`MUST node + FAIL`:
-- zatrzymaj ten branch Shape Graph;
-- nie buduj dzieci;
-- nie przechodź do wyższego RDL;
-- wykonaj repair albo representation switch.
+`MUST Shape Node + FAIL`:
+- stop that Shape Graph branch;
+- do not build children;
+- do not advance RDL;
+- repair or switch representation.
 
-Nie zapisuj tego jako kosmetycznego TODO na koniec.
+`MUST Appearance Owner + FAIL`:
+- stop the appearance stage that depends on it;
+- do not claim L4/L5;
+- do not enter runtime;
+- route to owner/host repair.
+
+Do not save either case as a cosmetic TODO for the end.

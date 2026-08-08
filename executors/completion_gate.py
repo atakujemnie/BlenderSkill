@@ -5,6 +5,9 @@ from __future__ import annotations
 v0.7: Level D requires target-engine evidence.
 v0.8: Level A requires proof-bearing fidelity; Level C requires package proof.
 v0.9: Level A additionally requires Shape Graph validation and RDL barriers.
+v0.10: Level A requires explicit APPEARANCE_FIDELITY_GATE disposition. For
+        lower target fidelity it must be NOT_REQUIRED rather than silently
+        omitted; for L4/L5 it must be proof-bearing PASS.
 """
 
 from collections.abc import Mapping
@@ -30,6 +33,7 @@ ENGINE_RUNTIME_EVIDENCE_KINDS = {
 }
 
 TYPED_EVIDENCE_REQUIREMENTS = {
+    "appearance_fidelity_gate": {"APPEARANCE_FIDELITY_GATE"},
     "reconstruction_fidelity_gate": {"RECON_FIDELITY_GATE"},
     "runtime_package_validation": {"RUNTIME_PACKAGE_VALIDATE"},
 }
@@ -42,6 +46,7 @@ DEFAULT_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "canonical_silhouettes",
         "must_features",
         "multi_view_gate",
+        "appearance_fidelity_gate",
         "reconstruction_fidelity_gate",
     ),
     "MODELING_COMPLETE": (
