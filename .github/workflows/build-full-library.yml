@@ -10,6 +10,7 @@ on:
       - 'tools/build_full_library.py'
       - 'tools/test_v09_shape_graph.py'
       - 'tools/test_v010_reference_fidelity.py'
+      - 'tools/test_v011_execution_enforcement.py'
       - '.github/workflows/build-full-library.yml'
 
 permissions:
@@ -23,21 +24,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Run v0.9 Shape Graph regression smoke tests
         run: python tools/test_v09_shape_graph.py
-
       - name: Run v0.10 reference appearance/fidelity smoke tests
         run: python tools/test_v010_reference_fidelity.py
-
+      - name: Run v0.11 execution-enforcement smoke tests
+        run: python tools/test_v011_execution_enforcement.py
       - name: Generate compiled snapshot
         run: python tools/build_full_library.py
-
       - name: Commit generated snapshot if changed
         shell: bash
         run: |
