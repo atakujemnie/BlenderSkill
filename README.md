@@ -4,35 +4,48 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.9.0 — Shape Graph, coarse-to-fine reconstruction and node-by-node geometric proof.**
+**v0.10.0 — reference appearance fidelity, internal product architecture and anti-self-certification.**
 
-v0.9 addresses a failure exposed by the Lafar Wayfinding Pylon: the agent could possess good Blender skills and strong final QA, yet still interpret a complex object too loosely, build many parts at once and represent a compound hard-surface form as stacked boxes/bevels before proving its primary geometry.
+v0.10 is driven by the Lafar Street Bench v0.9 benchmark. The previous system produced a technically coherent asset with correct hard dimensions, canonical outer silhouettes, valid LOD budgets and clean package/export checks. The user still rated the reconstruction only **6/10** because the side housings, aluminium trim, rear assembly, edge language, material response and visible detail did not faithfully reproduce the reference.
 
-The central change is:
+The release adds the missing distinction:
 
 ```text
-reference
--> understand form hierarchy
+technically valid asset
+!=
+faithful reconstruction
+```
+
+The v0.10 reconstruction pipeline is:
+
+```text
+reference evidence
+-> property-level authority
 -> Shape Graph
--> classify mathematical representation
--> RDL coarse-to-fine build
--> validate one Shape Node at a time
--> final reconstruction fidelity proof
+-> Reference Appearance Contract
+-> representation-first RDL build
+-> canonical source-anchored node proof
+-> part-boundary / trim / junction proof
+-> edge-family proof
+-> material/detail proof
+-> APPEARANCE_FIDELITY_GATE
+-> RECON_FIDELITY_GATE
 -> runtime
 ```
 
 not:
 
 ```text
-reference
--> one large build script
--> 20 objects appear
--> quick visual check
+correct bounds
+-> alpha silhouette PASS
+-> local builder Gate PASS
+-> LOD/export
+-> "done"
 ```
 
-## Core v0.9 concepts
+## Core v0.10 concepts
 
-### Reconstruction Shape Graph
+### 1. Reconstruction Shape Graph
 
 Every reference-driven asset is decomposed into stable design forms:
 
@@ -50,62 +63,114 @@ A Shape Node stores:
 - parent/dependencies;
 - importance;
 - mathematical shape class;
-- authoritative views and the properties each view controls;
+- authoritative views and properties controlled by each view;
 - numeric/relationship constraints;
 - validation contract;
 - implementation skill.
 
 `Shape Graph != Blender Object hierarchy`.
 
-### Reconstruction Detail Levels
+### 2. Reference Appearance Contract
 
-RDL is separate from runtime LOD:
+For 1:1 reconstruction or target fidelity L4/L5, Shape Graph is necessary but insufficient.
+
+The Appearance Contract inventories what must be visibly true for the model to read as the same designed product.
+
+Canonical appearance-owner classes:
+
+```text
+PART_BOUNDARY
+TRIM_PATH
+JUNCTION
+EDGE_FAMILY
+MATERIAL_REGION
+MATERIAL_RESPONSE
+EMISSIVE_REGION
+BRANDING_REGION
+DETAIL_FEATURE
+DETAIL_DENSITY_REGION
+NEGATIVE_SPACE
+```
+
+Each owner links to:
+- host Shape Nodes;
+- source reference IDs;
+- source ROIs;
+- required views;
+- importance;
+- validation method.
+
+This prevents a coarse node such as `SIDE_MODULE` from hiding wrong trim, panel boundaries or shoulder transitions inside a correct outer silhouette.
+
+### 3. Appearance hierarchy A0–A5
+
+```text
+A0 composition / massing
+A1 internal product architecture
+A2 edge language
+A3 material identity
+A4 meso detail
+A5 micro detail / wear
+```
+
+A high A0 score does not compensate for failed A1/A2 when those owners are MUST.
+
+### 4. Reconstruction Detail Levels
+
+RDL remains separate from runtime LOD:
 
 ```text
 RDL0 envelope
 RDL1 primary forms
-RDL2 secondary structural forms
+RDL2 secondary structural forms / major product architecture
 RDL3 structural features
 RDL4 edge language
 RDL5 surface/detail
 ```
 
-Runtime `LOD0..LOD3` is generated only after reconstruction is accepted.
+Runtime `LOD0..LOD3` is generated only after reconstruction acceptance.
 
-### Node-by-node execution
-
-Canonical transaction:
+### 5. Canonical node-by-node execution
 
 ```text
 one READY node
 -> build/repair only that node
 -> BUILT_UNVERIFIED
 -> QA isolation
--> required registered views
+-> registered required views
 -> numeric/section/regression checks
 -> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL
+-> ACCEPTED | FAIL | UNVERIFIED
 ```
 
 Required children remain blocked until their host/parent is accepted.
 
-### RDL stage barriers
+### 6. Anti-circular validation
 
-A later detail level cannot start because it is convenient.
+v0.10 closes a concrete loophole exposed by the Street Bench run.
+
+This is not reference proof:
 
 ```text
-RDL0 PASS
--> RDL1 nodes + barrier
--> RDL2 nodes + barrier
--> RDL3 nodes + barrier
--> RDL4
--> RDL5
--> final RECON_FIDELITY_GATE
+builder infers R165
+-> builder constructs R165
+-> builder-local Gate checks R165
+-> PASS
 ```
 
-### Representation before Blender operator
+It proves only internal consistency.
 
-The agent classifies the form before selecting implementation:
+Strict reference-derived acceptance now requires:
+- canonical `validator_id`;
+- `provenance_id`;
+- `source_reference_id` / `source_reference_ids`;
+- `registration_id` for projected evidence.
+
+A local helper may produce a measurement artifact. It cannot replace the canonical acceptance validator.
+
+### 7. Representation before Blender operator
+
+The agent still classifies geometry before implementation:
 
 ```text
 PARAMETRIC_PRIMITIVE
@@ -121,58 +186,168 @@ LAYERED_ASSEMBLY
 HYBRID_ASSEMBLY
 ```
 
-A complex base that changes width, depth and corner treatment along Z should not default to `cube + bevel`.
+Compound hard-surface forms must not default to `cube + bevel` when width, depth and corner behavior vary across stations.
 
-### Multi-section hard-surface loft
+### 8. Part Boundary / Trim / Junction Graph
 
-v0.9 adds `SECTION_LOFT_HARD_SURFACE` and `executors/section_loft.py` for deterministic station-based hard-surface geometry.
+Outer silhouette answers where the object ends.
 
-Typical use:
-- plinth/base widening toward the ground;
-- structural shoulder between narrow body and wide base;
-- shells with changing width/depth/corner plan.
+The new graph captures where its manufactured regions begin and end:
+- metal/composite boundaries;
+- panel perimeters;
+- shadow gaps;
+- trim centerlines and widths;
+- trim terminations;
+- multi-part junctions;
+- rear service bands;
+- plinth splits.
 
-The executor keeps section point correspondence deterministic and exposes pure geometry validation plus an explicit Blender creation entry point.
+For major trim, validation covers:
+- path;
+- visible width;
+- start/end;
+- corner wrapping;
+- host adjacency;
+- continuity;
+- material identity.
 
-## New v0.9 semantic skills
+Object existence is not sufficient.
 
-- `SHAPE_GRAPH`;
-- `SHAPE_CLASSIFY`;
+### 9. RDL4 edge-language proof
+
+v0.10 treats edge language as reference geometry, not generic cleanup.
+
+For every MUST edge family validate:
+- profile type;
+- radius/chamfer/step family;
+- start/end landmarks;
+- continuity;
+- relation to part/material boundaries;
+- protected-dimension survival.
+
+`dimensions survived bevel` alone no longer passes RDL4.
+
+### 10. Material segmentation != material appearance
+
+For target L4/L5 the system distinguishes:
+
+```text
+which region uses which material
+```
+
+from:
+
+```text
+does that region respond like the reference material?
+```
+
+Appearance evidence can include:
+- metallic/dielectric identity;
+- roughness hierarchy;
+- brushed directionality / anisotropy;
+- micro-normal scale;
+- glass response;
+- emissive recession/intensity;
+- controlled wear hierarchy.
+
+A correctly named Principled material slot is not material appearance proof.
+
+### 11. Detail coverage
+
+Visible structural meso detail is not treated as optional microdetail.
+
+Examples:
+- service-panel perimeter;
+- rear service bands;
+- plinth split;
+- utility recess;
+- major fastener groups;
+- trim terminations;
+- underside service-cover layout.
+
+For L5, all MUST reference features must be accounted for as:
+
+```text
+PASS
+NOT_REQUIRED_BY_AUTHORITY
+BLOCKING_DEVIATION
+```
+
+Silent omission is forbidden.
+
+### 12. Appearance Fidelity Gate
+
+For target L4/L5:
+
+```text
+part boundaries
++ trim paths
++ junctions
++ edge families
++ material response
++ final matched views
++ emissive/branding when present
++ detail coverage for L5
+-> APPEARANCE_FIDELITY_GATE
+```
+
+MUST categories are non-compensating.
+
+A failed trim path cannot be averaged away by perfect dimensions.
+
+### 13. Final runtime lock
+
+For L4/L5:
+
+```text
+APPEARANCE_FIDELITY_GATE != PASS
+or
+RECON_FIDELITY_GATE != PASS
+-> LOD / UV / bake / export / runtime FORBIDDEN
+```
+
+Correct dimensions, triangle budgets, UV attributes, glTF readback or engine import do not override this lock.
+
+## v0.9 foundation retained
+
+v0.10 keeps the Shape Graph/coarse-to-fine architecture introduced in v0.9:
+- mandatory form hierarchy;
+- RDL0–RDL5;
+- representation-first modeling;
+- one-node transactions;
+- stage barriers;
+- multi-section hard-surface loft support.
+
+The distinction is now:
+
+```text
+v0.8 -> proof-bearing reconstruction fidelity
+v0.9 -> understand and build the right forms in the right order
+v0.10 -> prove the same visible product architecture, style and finish without self-certification
+```
+
+## New v0.10 semantic skills
+
+- `APPEARANCE_REFERENCE_VALIDATE`;
+- `APPEARANCE_FIDELITY_GATE`.
+
+Strengthened:
 - `RECONSTRUCTION_NODE_GATE`;
-- `SECTION_LOFT_HARD_SURFACE`.
+- `RECON_FIDELITY_GATE`;
+- `QA_REFERENCE`;
+- edge/material reconstruction routing.
 
-New executors:
-
-```text
-executors/shape_graph.py
-executors/reconstruction_node_gate.py
-executors/section_loft.py
-```
-
-They are `CONTRACT_READY` until a real Blender 5.1 benchmark exercises the v0.9 contracts end-to-end.
-
-`MESH_VALIDATE` remains the currently proven `EXECUTOR_READY` library executor.
-
-## v0.8 foundation retained
-
-v0.9 keeps the v0.8 proof-integrity layer:
-- registered reference overlay validation;
-- chroma-aware reference masks;
-- layer-stack visibility validation;
-- proof-bearing `RECON_FIDELITY_GATE`;
-- no narrative `PASS` without provenance;
-- package checks for primitive attributes such as `TEXCOORD_0` and node-transform policy.
-
-The distinction is:
+New executor:
 
 ```text
-v0.8: prove whether reconstruction is correct
-v0.9: structure the work so the agent understands and solves the right forms before detail
+executors/appearance_fidelity_gate.py
 ```
+
+`MESH_VALIDATE` remains the currently proven `EXECUTOR_READY` library executor. New appearance executors remain `CONTRACT_READY` until a real Blender 5.1 end-to-end v0.10 benchmark proves runtime execution maturity.
 
 ## Existing runtime pipeline retained
 
-v0.7 infrastructure remains active:
+The runtime infrastructure remains active:
 - image datablock cache coherence;
 - Pipeline DAG / dirty-stage reuse;
 - canonical runtime path context;
@@ -197,14 +372,18 @@ RECONSTRUCTION_COMPLETE
 -> PIPELINE_INTEGRATED
 ```
 
-### Level A now additionally requires
+### Level A for L4/L5 now requires
 - valid Shape Graph revision;
-- required Shape Nodes accepted;
+- valid Appearance Contract revision;
+- required Shape Nodes accepted by canonical gates;
 - required RDL barriers passed;
-- proof-bearing final reconstruction fidelity gate.
+- internal part/trim/junction owners closed;
+- edge/material appearance proof;
+- `APPEARANCE_FIDELITY_GATE: PASS`;
+- `RECON_FIDELITY_GATE: PASS`.
 
 ### Level C
-Still requires runtime LOD/collision/material/bake/package/export closure and round-trip invariants.
+Requires runtime LOD/collision/material/bake/package/export closure and round-trip invariants after Level A is proven.
 
 ### Level D
 Requires actual target-engine proof such as production loader, engine regression test or instantiation. Blender glTF re-import remains Level C evidence only.
@@ -216,12 +395,12 @@ Requires actual target-engine proof such as production loader, engine regression
 - `02_blender_api` — Blender 5.1 API/runtime compatibility/cache
 - `03_modeling` — hard-surface/topology/UV/procedural modeling
 - `04_game_ready` — runtime LOD/collision/bake/export contracts
-- `05_execution` — node execution, stage barriers, QA, DAG, completion proof
+- `05_execution` — node/appearance/fidelity gates, QA, DAG, completion proof
 - `06_prompts` — system/planner/reviewer/repair prompts
 - `07_examples` — real benchmark/post-mortem runs
 - `08_scripts` — reusable validation patterns
 - `09_engine` — project/runtime profiles and integration proof
-- `10_reconstruction` — evidence-driven 1:1 reconstruction + Shape Graph/RDL layer
+- `10_reconstruction` — evidence-driven 1:1 reconstruction, Shape Graph and Appearance Contract
 - `11_playbooks` — asset-class production playbooks
 - `executors` — reusable Python executors/candidates
 - `99_sources` — technical sources
@@ -232,18 +411,29 @@ Modular Markdown files listed in `MANIFEST.json` are canonical.
 
 `_FULL_LIBRARY.md` is generated from the manifest and should not be edited manually.
 
-## v0.9 benchmark
+## v0.10 benchmark
 
-Canonical new regression benchmark:
+Canonical release regression benchmark:
 
-`07_examples/78_LAFAR_WAYFINDING_PYLON_SHAPE_GRAPH_REGRESSION_BENCHMARK.md`
+`07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md`
 
 It protects against:
-- production geometry before Shape Graph;
-- monolithic multi-RDL builds;
-- child geometry on failed parent;
-- primary nodes without per-view proof;
-- box abuse for multi-section forms;
-- detail skills before host acceptance;
-- RDL barrier bypass;
-- runtime work before reconstruction fidelity PASS.
+- dimensions/global silhouette being mistaken for full fidelity;
+- builder-local circular acceptance gates;
+- coarse Shape Nodes hiding wrong internal product architecture;
+- incorrect aluminium trim path/width/continuity;
+- weak rear panel architecture;
+- generic/oversoft edge language;
+- placeholder material response;
+- missing meso detail;
+- runtime work before appearance fidelity is locked.
+
+Benchmark release target:
+
+```text
+REFERENCE_FIDELITY_SCORE >= 8.5/10
+and
+zero MUST visual blockers
+```
+
+The score is a regression oracle, not a replacement for objective evidence.
