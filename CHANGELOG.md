@@ -1,5 +1,19 @@
-
 # Changelog
+
+## 0.3.1
+
+Integrated two reviewed production skills without creating redundant parallel modules:
+- expanded `03_modeling/40_TRIM_SHEETS.md` into a full semantic trim-sheet UV texturing skill;
+- integrated the reference-image proportion/silhouette workflow into `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` as the high-level reconstruction controller;
+- added explicit trim-sheet routing and controller-first reference routing to the Knowledge Router.
+
+Important integration corrections:
+- texel density is now unit-explicit (`px_per_m`) instead of a bare numeric value;
+- intentional trim-sheet UV reuse is distinguished from accidental overlap;
+- trim-sheet reuse is not treated as an automatic draw-call reduction;
+- persistent surface identity should not rely only on transient polygon indices;
+- reconstruction confidence vocabulary is aligned with the existing `LOCKED/HIGH/MEDIUM/LOW/UNKNOWN` ledger;
+- image-space quality thresholds are defined as overridable heuristics, not universal hard limits.
 
 ## 0.3.0
 
