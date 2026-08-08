@@ -4,7 +4,7 @@
 
 This registry is the stable routing layer between user intent, knowledge modules, executable primitives, Blender capabilities and validation.
 
-The agent must not jump directly from a natural-language request to ad-hoc `bpy` code when a registered semantic skill already covers the operation.
+The agent must not jump directly from a natural-language request to ad-hoc `bpy`, shell or project code when a registered semantic skill already covers the operation.
 
 ## Execution maturity
 
@@ -13,7 +13,7 @@ Every semantic skill has one maturity state:
 - `KNOWLEDGE_ONLY` — guidance exists, but no stable execution contract.
 - `CONTRACT_READY` — stable semantic inputs/outputs, validation and fallback rules exist.
 - `EXECUTOR_READY` — a tested implementation is callable through a stable API.
-- `RUNTIME_BOUND` — executor is mapped to the tools available in the current agent/Blender integration.
+- `RUNTIME_BOUND` — executor is mapped to the tools available in the current agent/runtime integration.
 
 Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence.
 
@@ -36,17 +36,23 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence.
 | `EMISSIVE_HANDOFF` | separate emitter authoring from engine glow/bloom | `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md` + playbook 115 | CONTRACT_READY | material/export; engine profile for runtime proof | emitter visibility, exported emissive, runtime status |
 | `BAKE_RUNTIME_TEXTURES` | deterministic closure of Blender material state into runtime textures | `04_game_ready/50_GAME_READY_BAKE_GATE.md` + `04_game_ready/51_BAKE_EXECUTION_AND_CHANNEL_SEMANTICS.md`; `executors/bake_runtime_textures.py` | CONTRACT_READY | UV, material nodes, Cycles bake, image write | operator result, target binding, channel semantics, dirty-stage cache |
 | `BAKE_VALIDATE` | semantic validation of baked maps/regions | `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`; `executors/bake_validate.py` | CONTRACT_READY | image access, NumPy or equivalent | degeneracy, ranges, material regions, emissive containment, clipping |
+| `IMAGE_CACHE_COHERENCE` | synchronize accepted external texture artifacts with Blender image datablocks | `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`; `executors/image_cache_coherence.py` | CONTRACT_READY | Blender image/data API, external file access | canonical path, reload/load action, dimensions, colorspace, binding |
+| `PIPELINE_DAG_PLAN` | compute minimal dirty execution closure and reuse accepted stages | `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`; `executors/pipeline_dag.py` | CONTRACT_READY | Python | acyclic graph, execute/reuse closure, invalidation reasons |
 | `RUNTIME_PACKAGE_VALIDATE` | validate exported module nodes/materials/images against packaging profile | `09_engine/94_RUNTIME_MODULE_PACKAGING_CONTRACT.md`; `executors/gltf_package_validate.py` | CONTRACT_READY | exported-file read | LOD nodes, materials, image URIs, project packaging contract |
+| `EXPORT_ROUNDTRIP_VALIDATE` | re-import exported asset and re-check hard invariants | `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | Blender import/scratch context, mesh bounds | dimensions, ground datum, LOD family, runtime material availability |
+| `RUNTIME_PATH_RESOLVE` | resolve engine-visible runtime asset root from project authority | `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`; `executors/runtime_path_resolver.py` | CONTRACT_READY | filesystem/project profile/build facts | canonical root, containment, forbidden lookalike roots |
+| `TEST_ORACLE` | trustworthy process exit status and regression bite-test proof | `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`; `executors/test_oracle.py` | CONTRACT_READY | subprocess/shell/test runner | direct exit code, expected failing marker, restored green run |
+| `ENGINE_INTEGRATION_PROOF` | prove Level D with target engine loader/instantiation | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | project build/test/engine loader | engine-visible path, loader success, asset invariants, trustworthy test oracle |
 | `QA_REFERENCE` | visual/numeric reconstruction QA | `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md` through `148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md` | CONTRACT_READY | camera/render/screenshot, geometry metrics | stage-specific gates |
-| `ASSET_COMPLETION` | determine true completion level and blockers | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | compact validation state | Reconstruction/Modeling/Game-ready/Pipeline gates |
+| `ASSET_COMPLETION` | determine true completion level and blockers | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | compact validation state | Reconstruction/Modeling/Game-ready/Pipeline gates + Level D evidence kind |
 | `ASSET_CATALOG_INTEGRATE` | register a game-ready asset in a project catalog/registry | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | project catalog read/write | readback, unique ID, file associations, import smoke test |
 | `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md`, engine profile | KNOWLEDGE_ONLY | save/export/file inspect | runtime contract |
 
 ## Runtime evidence
 
-### `MESH_VALIDATE` promoted to `EXECUTOR_READY`
+### `MESH_VALIDATE` is `EXECUTOR_READY`
 
-The Lafar Civic Bollard v0.5 continuation imported `executors/mesh_validate.py` in Blender 5.1.
+The Lafar Civic Bollard production benchmark imported `executors/mesh_validate.py` in Blender 5.1.
 
 Observed evidence:
 - invalid custom topology intent vocabulary was rejected;
@@ -57,25 +63,46 @@ Observed evidence:
 
 This is sufficient for `EXECUTOR_READY` library status.
 
-It is **not automatically `RUNTIME_BOUND`** in every future agent session. The current integration must still prove it can import/invoke the executor.
+It is **not automatically `RUNTIME_BOUND`** in every future session. The current integration must still prove it can import/invoke the executor.
+
+### Completion gate runtime evidence
+
+The final Bollard continuation exercised `executors/completion_gate.py` twice:
+- it correctly blocked `PIPELINE_INTEGRATED` while runtime import remained `UNVERIFIED`;
+- it passed after the target engine loader regression test was green.
+
+v0.7 additionally hardens the executor so `runtime_import_or_instantiation` must carry an engine evidence kind:
+
+```text
+ENGINE_PRODUCTION_LOADER
+ENGINE_REGRESSION_TEST
+ENGINE_INSTANTIATION
+```
+
+Because this evidence-kind extension is new in v0.7, `ASSET_COMPLETION` remains `CONTRACT_READY` until the next benchmark exercises the new API.
 
 ## Packaged executor status
 
 ```text
-REFERENCE_MEASURE        -> executors/reference_measure.py       CONTRACT_READY
-AXISYMMETRIC_PROFILE     -> executors/axisymmetric_profile.py    CONTRACT_READY
-RADIAL_REPEAT            -> executors/radial_repeat.py           CONTRACT_READY
-MESH_VALIDATE            -> executors/mesh_validate.py           EXECUTOR_READY
-RUNTIME_COMPAT           -> executors/runtime_compat.py          CONTRACT_READY
-QA_SCENE_ISOLATE         -> executors/qa_scene_isolation.py      CONTRACT_READY
-ASSET_COMPLETION         -> executors/completion_gate.py         CONTRACT_READY
-UV_ATLAS_CONTRACT        -> executors/uv_atlas_contract.py       CONTRACT_READY
-BAKE_RUNTIME_TEXTURES    -> executors/bake_runtime_textures.py   CONTRACT_READY
-BAKE_VALIDATE            -> executors/bake_validate.py           CONTRACT_READY
-RUNTIME_PACKAGE_VALIDATE -> executors/gltf_package_validate.py   CONTRACT_READY
+REFERENCE_MEASURE          -> executors/reference_measure.py          CONTRACT_READY
+AXISYMMETRIC_PROFILE       -> executors/axisymmetric_profile.py       CONTRACT_READY
+RADIAL_REPEAT              -> executors/radial_repeat.py              CONTRACT_READY
+MESH_VALIDATE              -> executors/mesh_validate.py              EXECUTOR_READY
+RUNTIME_COMPAT             -> executors/runtime_compat.py             CONTRACT_READY
+QA_SCENE_ISOLATE           -> executors/qa_scene_isolation.py         CONTRACT_READY
+ASSET_COMPLETION           -> executors/completion_gate.py            CONTRACT_READY
+UV_ATLAS_CONTRACT          -> executors/uv_atlas_contract.py          CONTRACT_READY
+BAKE_RUNTIME_TEXTURES      -> executors/bake_runtime_textures.py      CONTRACT_READY
+BAKE_VALIDATE              -> executors/bake_validate.py              CONTRACT_READY
+IMAGE_CACHE_COHERENCE      -> executors/image_cache_coherence.py      CONTRACT_READY
+PIPELINE_DAG_PLAN          -> executors/pipeline_dag.py                CONTRACT_READY
+RUNTIME_PACKAGE_VALIDATE   -> executors/gltf_package_validate.py      CONTRACT_READY
+EXPORT_ROUNDTRIP_VALIDATE  -> executors/export_roundtrip_validate.py  CONTRACT_READY
+RUNTIME_PATH_RESOLVE       -> executors/runtime_path_resolver.py      CONTRACT_READY
+TEST_ORACLE                -> executors/test_oracle.py                 CONTRACT_READY
 ```
 
-New v0.6 bake/UV/package executors remain `CONTRACT_READY` until the next real Blender benchmark validates their contracts end-to-end.
+New v0.7 executors remain `CONTRACT_READY` until a later real benchmark validates their contracts in the target runtime.
 
 ## Registered SubD sub-operations
 
@@ -95,7 +122,7 @@ SUBD_TOPOLOGY_AUDIT
 
 ## Routing precedence
 
-When multiple skills could solve a feature, route by design intent:
+When multiple skills could solve a feature/problem, route by design intent and failing evidence:
 
 ```text
 technical-sheet/reference measurement
@@ -107,29 +134,17 @@ rotationally symmetric stacked radius/height form
 radially repeated anchor/fastener/vent pattern
 -> RADIAL_REPEAT
 
-changes silhouette / primary mass but is not axisymmetric
--> base-mesh or reconstruction geometry
-
-wide/deep recess or cutout
--> Boolean/recess modeling knowledge
-
 narrow seam represented as a path
 -> HS_PANEL_LINE
 
 smooth control cage under Catmull-Clark
 -> SUBD_TOPOLOGY_CONTROL
 
-repeated structural surface treatment
--> TRIM_SHEET_UV
-
 shared baked atlas across LODs
 -> UV_ATLAS_CONTRACT
 
 mesh/topology acceptance gate
 -> MESH_VALIDATE
-
-unique local graphic
--> decal/floating-detail workflow
 
 maintained civic material looks sterile/uniform
 -> MATERIAL_FINISH_CIVIC
@@ -143,14 +158,32 @@ Blender procedural material must become runtime data
 baked map exists but correctness is unknown
 -> BAKE_VALIDATE
 
+disk map is correct but Blender runtime material shows old/wrong pixels
+-> IMAGE_CACHE_COHERENCE before rebake/UV changes
+
+local repair should not rerun independent accepted stages
+-> PIPELINE_DAG_PLAN
+
 exported glTF/module exists but package contents are unknown
 -> RUNTIME_PACKAGE_VALIDATE
 
-claiming asset completion
+exported package exists but dimensions/contact/material survival are unproven
+-> EXPORT_ROUNDTRIP_VALIDATE
+
+runtime/output root is ambiguous or multiple GameAssets-like trees exist
+-> RUNTIME_PATH_RESOLVE
+
+test is green but shell pipeline/exit status is ambiguous
+-> TEST_ORACLE
+
+claiming target-engine integration
+-> ENGINE_INTEGRATION_PROOF
+
+claiming final completion
 -> ASSET_COMPLETION
 ```
 
-A lower-level skill must not override a higher-level reconstruction constraint.
+A lower-level skill must not override a higher-level reconstruction/runtime constraint.
 
 ## Skill invocation contract
 
@@ -158,20 +191,17 @@ Before execution the agent records:
 
 ```yaml
 skill_call:
-  skill_id: BAKE_RUNTIME_TEXTURES
-  feature_id: RUNTIME_SURFACE
+  skill_id: RUNTIME_PATH_RESOLVE
+  feature_id: RUNTIME_OUTPUT_ROOT
   maturity: CONTRACT_READY
   inputs_verified: true
   required_capabilities:
-    - python_execute
-    - cycles_bake
-    - image_write
+    - filesystem_read
+    - project_profile_read
   runtime_bindings_verified: false
 ```
 
 If `runtime_bindings_verified=false`, run Agent Tool API Profile preflight before mutation.
-
-For read-only analysis/validation skills, capability binding may occur without scene mutation, but the agent still must not invent unavailable tools.
 
 ## Contract-ready is not executor-ready
 
@@ -185,7 +215,8 @@ In that case the agent may still implement the operation through available tools
 5. record failed calls and repair iterations;
 6. respect Tool Output Budget;
 7. follow Code Artifact and Patch Protocol;
-8. use incremental dirty-stage cache for expensive bake/export stages.
+8. use the pipeline DAG/dirty-stage cache for expensive bake/export stages;
+9. keep Blender round-trip and target-engine proof as separate evidence classes.
 
 ## Reuse before generation
 
@@ -202,13 +233,18 @@ Do not rewrite compatible local copies of:
 - multi-material bake target/channel helpers;
 - semantic UV atlas ownership/remapping;
 - bake image statistics/emissive containment checks;
-- glTF node/material/image readback validation.
+- Blender external-image reload/cache-coherence helpers;
+- dependency/dirty-stage planning;
+- glTF node/material/image readback validation;
+- exported-mesh bound/contact checks;
+- runtime-root containment validation;
+- direct-process test exit-code capture.
 
 ## Registry update rule
 
 Whenever a new specialized skill is added:
-1. assign stable Skill ID;
-2. add canonical file here;
+1. assign a stable Skill ID;
+2. add its canonical file here;
 3. define maturity;
 4. define required runtime capabilities;
 5. define validation ownership;
