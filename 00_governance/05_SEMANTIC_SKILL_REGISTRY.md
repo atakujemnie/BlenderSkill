@@ -23,25 +23,25 @@ Never claim a skill is `EXECUTOR_READY` or `RUNTIME_BOUND` without evidence from
 |---|---|---|---|---|---|
 | `RECONSTRUCT_REFERENCE` | camera/scale/silhouette/proportion-first reconstruction | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` + stage modules | CONTRACT_READY | scene inspect, image/reference access, camera/render | multi-view, silhouette, landmarks, dimensions |
 | `REFERENCE_MEASURE` | compact technical-sheet/reference measurement and cross-view aggregation | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md` + `01_analysis/14_REFERENCE_MEASUREMENT_PROTOCOL.md`; candidate code: `executors/reference_measure.py` | CONTRACT_READY | reference image access, Python/NumPy or equivalent image analysis | provenance, calibration, confidence, cross-view deviation, output budget |
+| `AXISYMMETRIC_PROFILE` | deterministic profile-revolved geometry for rotationally symmetric hard-surface parts | `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`; candidate code: `executors/axisymmetric_profile.py` | CONTRACT_READY | Python, BMesh | radius/axis bounds, continuity, topology intent, UV, triangle budget |
 | `HS_PANEL_LINE` | narrow hard-surface seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | Python, BMesh, modifiers, evaluated mesh | path continuity, topology, profile, modifier order |
 | `SUBD_TOPOLOGY_CONTROL` | SubD cage design and topology repair | `blender-agent-subdivision-topology-control.md` | CONTRACT_READY | Python/BMesh, Subdivision evaluation | evaluated surface, pinching, density, continuity |
 | `TRIM_SHEET_UV` | trim-sheet classification and deterministic UV assignment | `03_modeling/40_TRIM_SHEETS.md` | CONTRACT_READY | mesh UV access, materials | region bounds, density, orientation, intentional overlap |
+| `MESH_VALIDATE` | contract-aware mesh/topology audit with compact output | `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`; candidate code: `executors/mesh_validate.py` | CONTRACT_READY | scene inspect, Python/BMesh | topology intent, boundaries, non-manifold, duplicates, loose/zero-area geometry, UV, tris |
 | `QA_REFERENCE` | visual/numeric reconstruction QA | `10_reconstruction/141_RECONSTRUCTION_QA_CAMERA_RIG.md` through `148_ACCEPTANCE_THRESHOLDS_AND_ERROR_BUDGETS.md` | CONTRACT_READY | camera/render/screenshot, geometry metrics | stage-specific gates |
 | `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md`, engine profile | KNOWLEDGE_ONLY | save/export/file inspect | runtime contract |
 
 ## Candidate executor status
 
-`executors/reference_measure.py` is a packaged candidate implementation for `REFERENCE_MEASURE`.
+Packaged candidate implementations currently include:
 
-It remains `CONTRACT_READY` until it has passed a real Blender/runtime test covering:
-- image loading;
-- registered ROI measurement;
-- annotation/dimension-line rejection;
-- compact output shape;
-- cross-view aggregation;
-- failure handling.
+```text
+REFERENCE_MEASURE      -> executors/reference_measure.py
+AXISYMMETRIC_PROFILE   -> executors/axisymmetric_profile.py
+MESH_VALIDATE          -> executors/mesh_validate.py
+```
 
-After such evidence, the registry may promote it to `EXECUTOR_READY`. It becomes `RUNTIME_BOUND` only after the active tool integration can invoke it reliably.
+They remain `CONTRACT_READY` until each implementation passes a real Blender/runtime benchmark for its contract. After such evidence, the relevant skill may be promoted to `EXECUTOR_READY`. It becomes `RUNTIME_BOUND` only after the active tool integration can invoke it reliably.
 
 ## Registered SubD sub-operations
 
@@ -67,7 +67,10 @@ When multiple skills could solve a feature, route by design intent:
 technical-sheet/reference measurement
 -> REFERENCE_MEASURE
 
-changes silhouette / primary mass
+rotationally symmetric stacked radius/height form
+-> AXISYMMETRIC_PROFILE
+
+changes silhouette / primary mass but is not axisymmetric
 -> base-mesh or reconstruction geometry
 
 wide/deep recess or cutout
@@ -81,6 +84,9 @@ smooth control cage under Catmull-Clark
 
 repeated structural surface treatment
 -> TRIM_SHEET_UV
+
+mesh/topology acceptance gate
+-> MESH_VALIDATE
 
 unique local graphic
 -> decal workflow
@@ -107,7 +113,7 @@ skill_call:
 
 If `runtime_bindings_verified=false`, the agent must run the Agent Tool API Profile preflight before scene mutation.
 
-For read-only analysis skills such as `REFERENCE_MEASURE`, capability binding may occur without scene mutation, but the agent still must not invent unavailable tools.
+For read-only analysis/validation skills, capability binding may occur without scene mutation, but the agent still must not invent unavailable tools.
 
 ## Contract-ready is not executor-ready
 
@@ -120,7 +126,19 @@ In that case the agent may still implement the operation through available tools
 3. validate against the skill's postconditions;
 4. avoid presenting an untested/ad-hoc implementation as a proven library executor;
 5. record failed calls and repair iterations;
-6. respect the Tool Output Budget.
+6. respect the Tool Output Budget;
+7. follow `05_execution/62_CODE_ARTIFACT_AND_PATCH_PROTOCOL.md` for generated scripts and patches.
+
+## Reuse before generation
+
+Before generating helpers for common operations, search the registry and `executors/` directory.
+
+In particular do not rewrite local copies of:
+- reference measurement;
+- profile revolution/lathe helpers;
+- contract-aware mesh validation;
+
+when a compatible packaged candidate can be reused.
 
 ## Registry update rule
 
