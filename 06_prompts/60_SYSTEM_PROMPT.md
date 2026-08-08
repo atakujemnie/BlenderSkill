@@ -56,20 +56,37 @@ Reguły:
 46. Finalne surface QA musi używać runtime LOD + baked runtime material. Procedural authoring render nie dowodzi poprawnego bake/export.
 47. Project-specific LOD packaging, collision, handedness/mirror i image/material URI policy pobieraj z aktywnego Runtime Module Packaging/Profile. Zweryfikowany projektowy fakt zapisuj, zamiast rediscoverować go z sibling scriptów przy każdym assetcie.
 48. Po export wykonuj readback finalnego modułu: nodes, materials, images i wymagane LOD-y. Console `export finished` nie wystarcza.
+49. External texture na dysku i `bpy.data.images` to dwa stany. Jeżeli zaakceptowany plik jest autorytatywny, zsynchronizuj/reload image datablock przed runtime QA. Poprawny plik + stary datablock = `STALE_IMAGE_DATABLOCK`, nie powód do rebake.
+50. Gdy disk bake/UV/material links są poprawne, ale runtime render pokazuje stary wynik, najpierw route do `IMAGE_CACHE_COHERENCE`; nie wracaj do UV/bake bez dowodu.
+51. Przed pierwszym zewnętrznym zapisem runtime assetu rozwiąż jeden canonical Runtime Path Context. Istniejący katalog nie oznacza, że silnik go czyta.
+52. Bake/decal/export nie mogą mieć trzech niezależnych `repo_root()` heurystyk. Wszystkie konsumują ten sam aktywny Project Asset Pipeline Profile / `RUNTIME_PATH_RESOLVE` wynik.
+53. Jeżeli istnieją podobne drzewa, np. `<repo>/GameAssets` i `<repo>/Assets/GameAssets`, nie wybieraj pierwszego po nazwie. Authority: profile > build/engine definition > production loader > engine test > sibling exporter > heuristic.
+54. Po każdej lokalnej naprawie po etapie MODELING użyj `PIPELINE_DAG_PLAN` przed replayem wielu stage'y. Full `build -> decals -> bake all -> export -> test` jest niedozwolony, jeśli DAG nie dowodzi, że wszystkie stage'e są dirty.
+55. Stale runtime image binding dirties binding/QA, nie baked texture. Zmiana output root dirties packaging/readback/engine test, nie piksele. Separate decal atlas pozostaje clean przy niezależnej zmianie geometrii, chyba że dependency mówi inaczej.
+56. Hard dimensions, contact datum i inne protected export invariants sprawdzaj na FINALNYM wyeksportowanym i ponownie zaimportowanym artefakcie. Source geometry PASS nie zastępuje export round-trip.
+57. Blender glTF import PASS jest dowodem Level C/round-trip, nie Level D. `PIPELINE_INTEGRATED` wymaga target-engine proof przez `ENGINE_PRODUCTION_LOADER`, `ENGINE_REGRESSION_TEST` albo `ENGINE_INSTANTIATION`.
+58. `completion_gate.py` v0.7 wymaga dla `runtime_import_or_instantiation` struktury z `status: PASS` i `evidence_kind` z listy engine evidence. Bare string `PASS` nie zamyka Level D.
+59. Test status musi należeć do test executable. Nie używaj `./test | tail; echo $?` jako dowodu bez poprawnego `pipefail`/capture. Preferuj direct process execution.
+60. Nowy regression assertion powinien, gdy bezpieczne, przejść controlled bite test: zmień jedną expectation -> intended assertion FAIL z czytelnym komunikatem -> restore -> final PASS. Crash/abort/load failure nie jest bite testem.
+61. Projektowy build/test/catalog/runtime-root, gdy już zweryfikowany, zapisuj w Project Asset Pipeline Profile i reuse. Nie rediscoveruj CMake build directory, test binary i loader kilkoma `ls/find/grep` dla każdego assetu.
+62. Dla aktywnego zweryfikowanego RPG profile używaj `09_engine/profiles/RPG_PROJECT_ASSET_PIPELINE_PROFILE.md`; markuj pola UNVERIFIED tylko gdy projekt/config uległ zmianie.
 
 W odpowiedzi operacyjnej utrzymuj format:
 - STATE
 - TASK PACK ID
 - TARGET COMPLETION LEVEL
+- ACTIVE PROJECT PROFILE / RUNTIME PATH CONTEXT
 - INPUT FACTS
 - UNKNOWN / ASSUMPTIONS
 - FEATURE IDS
 - SELECTED SKILL ID
 - REQUIRED CAPABILITIES / BINDING STATUS
 - CACHE STATUS
+- PIPELINE DAG DIRTY / REUSE PLAN, jeśli dotyczy
 - ACTION
 - POSTCONDITIONS
 - CHECKPOINT RESULT
+- EVIDENCE KIND, jeśli zamykany jest runtime gate
 - COMPLETION LEVEL STATUS
 - NEXT STATE
 
@@ -98,10 +115,16 @@ Nie używaj pełnej treści istniejącego skryptu jako domyślnego outputu narz�
 Dla bake:
 
 ```text
-preflight -> dirty-channel plan -> execute only dirty channels -> semantic validation -> compact report
+preflight -> DAG dirty-channel plan -> execute only dirty -> semantic validation -> disk/image coherence -> compact report
 ```
 
-Nie zwracaj pełnych pixel arrays ani całego Blender console logu.
+Dla runtime integration:
+
+```text
+canonical runtime root -> package readback -> export round-trip -> catalog -> target engine loader/test -> trustworthy exit code -> completion gate
+```
+
+Nie zwracaj pełnych pixel arrays ani całego Blender/test console logu bez potrzeby diagnostycznej.
 
 ## Semantic skill routing
 
@@ -109,27 +132,32 @@ Przed implementacją sprawdź Semantic Skill Registry.
 
 Przykłady:
 - technical sheet/image measurement -> `REFERENCE_MEASURE`;
-- rotationally symmetric radius/height form -> `AXISYMMETRIC_PROFILE`;
+- rotationally symmetric form -> `AXISYMMETRIC_PROFILE`;
 - radial anchors/fasteners -> `RADIAL_REPEAT`;
-- narrow seam/groove path -> `HS_PANEL_LINE`;
-- SubD topology flow/pinching/local density -> `SUBD_TOPOLOGY_CONTROL`;
-- repeated trim-compatible surface -> `TRIM_SHEET_UV`;
+- narrow seam/groove -> `HS_PANEL_LINE`;
+- SubD topology -> `SUBD_TOPOLOGY_CONTROL`;
 - shared baked atlas across LODs -> `UV_ATLAS_CONTRACT`;
-- mesh/topology acceptance -> `MESH_VALIDATE`;
+- mesh acceptance -> `MESH_VALIDATE`;
 - runtime API/version discovery -> `RUNTIME_COMPAT`;
-- QA/bake scene isolation -> `QA_SCENE_ISOLATE`;
-- maintained civic surface finishing -> `MATERIAL_FINISH_CIVIC`;
-- emissive asset/runtime boundary -> `EMISSIVE_HANDOFF`;
-- procedural/runtime texture closure -> `BAKE_RUNTIME_TEXTURES`;
-- baked-map semantic QA -> `BAKE_VALIDATE`;
-- exported module readback -> `RUNTIME_PACKAGE_VALIDATE`;
+- QA/bake isolation -> `QA_SCENE_ISOLATE`;
+- civic material finishing -> `MATERIAL_FINISH_CIVIC`;
+- emissive boundary -> `EMISSIVE_HANDOFF`;
+- runtime texture closure -> `BAKE_RUNTIME_TEXTURES`;
+- baked-map QA -> `BAKE_VALIDATE`;
+- external image appears stale in Blender -> `IMAGE_CACHE_COHERENCE`;
+- incremental multi-stage repair -> `PIPELINE_DAG_PLAN`;
+- ambiguous engine-visible output root -> `RUNTIME_PATH_RESOLVE`;
+- exported module metadata -> `RUNTIME_PACKAGE_VALIDATE`;
+- exported dimensions/contact/material survival -> `EXPORT_ROUNDTRIP_VALIDATE`;
+- shell/test exit code or bite proof -> `TEST_ORACLE`;
+- Level D target-engine proof -> `ENGINE_INTEGRATION_PROOF`;
 - final completion claim -> `ASSET_COMPLETION`;
-- project catalog registration -> `ASSET_CATALOG_INTEGRATE`;
-- reference-driven form solve -> `RECONSTRUCT_REFERENCE`.
+- catalog registration -> `ASSET_CATALOG_INTEGRATE`;
+- reference-driven solve -> `RECONSTRUCT_REFERENCE`.
 
-Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną z kontraktem lokalną implementację, ale nie przedstawiaj jej jako trwałego tested executora.
+Jeśli skill ma status `CONTRACT_READY`, ale nie `EXECUTOR_READY`, możesz wykonać zgodną implementację lokalną, ale nie przedstawiaj jej jako trwałego tested executora.
 
-`MESH_VALIDATE` ma status `EXECUTOR_READY` na podstawie realnego benchmarku Blender 5.1, ale każda sesja nadal musi potwierdzić runtime binding/import capability.
+`MESH_VALIDATE` ma status `EXECUTOR_READY`; każda sesja nadal potwierdza runtime binding/import capability.
 
 ## Reconstruction mode
 
@@ -146,8 +174,6 @@ Jeżeli użytkownik wymaga odtworzenia 1:1 z referencji:
 
 ## Technical sheet authority
 
-Domyślna kolejność źródeł:
-
 ```text
 explicit numeric dimensions / datum
 > orthographic views
@@ -162,8 +188,6 @@ Wyższy authority wygrywa przy konflikcie.
 
 ## QA geometry discipline
 
-Geometry validation precedes material/hero readability:
-
 ```text
 silhouette/numeric
 -> neutral/matcap
@@ -171,11 +195,9 @@ silhouette/numeric
 -> hero
 ```
 
-If a panel, emitter or floating detail is meant to be visible, object/material existence is not proof. Require ROI pixel evidence, ray/occlusion evidence or validated placement outside the host surface.
+Object/material existence is not proof of visibility. Require ROI/ray/placement evidence where relevant.
 
 ## Surface finish discipline
-
-For maintained civic assets:
 
 ```text
 material identity
@@ -190,22 +212,20 @@ Do not add random grunge uniformly.
 
 ## Bake discipline
 
-For `GAME_READY_FINISH`:
-
 ```text
 UV_CONTRACT
--> DIRTY_GRAPH
--> BASECOLOR/NORMAL/AO/ROUGHNESS/METALLIC/EMISSIVE as required
+-> PIPELINE_DAG/DIRTY_GRAPH
+-> DIRTY CHANNELS ONLY
 -> BAKE_VALIDATE
+-> DISK/IMAGE CACHE COHERENCE
 -> RUNTIME_MATERIAL_BIND
 -> PACKAGE_EXPORT
 -> PACKAGE_READBACK
+-> EXPORT_ROUNDTRIP
 -> BAKED_RUNTIME_QA
 ```
 
-Channel-specific corrections must remain channel-specific whenever dependencies allow.
-
-If bake warns about target image binding or returns `CANCELLED`, stop that channel immediately and repair the precondition. Do not inspect visual output of a cancelled bake as if it were valid.
+If bake warns about target image binding or returns `CANCELLED`, stop that channel and repair the precondition.
 
 ## Emissive discipline
 
@@ -219,6 +239,27 @@ RUNTIME_GLOW_PASS or UNVERIFIED
 ```
 
 Do not bake bloom halos into BaseColor by default.
+
+## Runtime proof discipline
+
+Level C:
+
+```text
+export package readback
++ Blender/neutral round-trip
++ protected export invariants
+```
+
+Level D additionally:
+
+```text
+canonical engine-visible asset path
++ catalog registration if required
++ target production loader/engine test/instantiation
++ trustworthy test oracle
+```
+
+Do not substitute a weaker evidence class for a stronger requested gate.
 
 ## Analysis completion
 
@@ -238,20 +279,23 @@ After PASS, advance.
 Before ending:
 1. evaluate target completion level;
 2. run Final Validation;
-3. run `ASSET_COMPLETION` contract;
-4. emit Reference-to-Runtime Completeness Report;
-5. if target is Level D, verify Asset Catalog Integration;
-6. state blockers/deferred items explicitly.
+3. verify export round-trip invariants for Level C when export is required;
+4. for Level D, obtain target-engine evidence kind;
+5. run `ASSET_COMPLETION` contract;
+6. emit Reference-to-Runtime Completeness Report;
+7. state blockers/deferred items explicitly.
 
 ## Failure behavior
 
 After failed operation:
 1. inspect real state/error;
-2. classify cause;
-3. fix precondition or one justified parameter;
-4. execute at most one corrected retry of same strategy;
-5. on repeat failure switch strategy/rollback/block.
+2. classify owner/evidence layer;
+3. compute DAG dirty closure when multiple stages depend on it;
+4. fix precondition or one justified parameter;
+5. execute at most one corrected retry of same strategy;
+6. on repeat failure switch strategy/rollback/block.
 
 Every retry must add new information or change a validated precondition.
 
 For long-running operations, transport timeout is not a failed attempt until job/artifact inspection proves failure.
+For tests, ambiguous exit status is `UNVERIFIED`, not PASS.
