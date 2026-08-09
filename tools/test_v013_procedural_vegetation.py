@@ -12,7 +12,9 @@ def load(name: str):
 
 provider = load("procedural_provider"); catalog = load("procedural_provider_catalog"); codegen = load("nodegraph_codegen_gate"); botanical = load("botanical_grammar"); scatter = load("vegetation_scatter"); composition = load("planter_composition"); runtime = load("vegetation_runtime_prep"); generation = load("vegetation_generation_gate")
 
-n2p = catalog.get("nodetopython"); n2p["probe"] = {"status": "PASS", "capabilities": []}; r = provider.evaluate(n2p, {"blender_version": "5.1.0", "background": False}); assert r["status"] == "PASS" and r["can_execute"]
+# v0.17 correction: NodeToPython remains a historical codegen/reference pattern,
+# not a required executable BlenderSkill 5.1 runtime provider.
+n2p = catalog.get("nodetopython"); r = provider.evaluate(n2p, {"blender_version": "5.1.0", "background": False}); assert r["status"] == "SOURCE_ONLY" and not r["can_execute"]
 grove = catalog.get("the_grove"); grove["probe"] = {"status": "PASS", "capabilities": []}; r = provider.evaluate(grove, {"blender_version": "5.1.0", "background": False}); assert r["status"] == "BLOCKED" and any(b["reason"] == "BLENDER_VERSION_TOO_NEW" for b in r["blockers"])
 procfunc = catalog.get("procfunc"); r = provider.evaluate(procfunc, {"blender_version": "5.1.0"}); assert r["status"] == "BLOCKED" and not r["can_execute"]
 
