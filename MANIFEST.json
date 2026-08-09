@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -20,9 +20,10 @@
     "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
     "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
     "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
-    "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md"
+    "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md",
+    "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 315,
+  "module_count": 326,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -338,10 +339,22 @@
     "14_design_system/412_BLENDER_ASSET_LIBRARY_PACKAGING.md",
     "14_design_system/413_ASSET_CONSUMPTION_AND_REUSE_PROTOCOL.md",
     "14_design_system/414_DESIGN_SYSTEM_CONFORMANCE_GATE.md",
-    "14_design_system/415_DESIGN_SYSTEM_VERSIONING_AND_CHANGE_PROPAGATION.md"
+    "14_design_system/415_DESIGN_SYSTEM_VERSIONING_AND_CHANGE_PROPAGATION.md",
+    "00_governance/13_PROVIDER_DISCOVERY_EXTENSION_V017.md",
+    "00_governance/14_PROVIDER_DISCOVERY_SKILL_REGISTRY_V017.md",
+    "06_prompts/72_PROVIDER_DISCOVERY_AND_SELECTION_PROMPT.md",
+    "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md",
+    "12_procedural_generation/230_INSTALLED_PROVIDER_INVENTORY.md",
+    "12_procedural_generation/231_PROVIDER_CLASSIFICATION_TAXONOMY.md",
+    "12_procedural_generation/232_RUNTIME_ADDON_DISCOVERY.md",
+    "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+    "12_procedural_generation/234_PROVIDER_SELECTION_REPORT.md",
+    "12_procedural_generation/235_DISCOVERY_MISMATCH_AND_EXPECTED_PROVIDER_GATE.md",
+    "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository",
   "environment_assembly_layer": "13_environment_assembly",
-  "design_system_layer": "14_design_system"
+  "design_system_layer": "14_design_system",
+  "provider_discovery_version": "0.17.0"
 }

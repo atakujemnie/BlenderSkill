@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.16.0 — Full compiled snapshot
+# Blender AI Agent Library v0.17.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -371,6 +371,25 @@ Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześ
 ## FILE: `00_governance/04_KNOWLEDGE_ROUTER.md`
 
 # Knowledge Router
+
+## v0.17 installed-provider discovery precedence
+
+Before procedural/environment provider selection:
+
+```text
+BLENDER_RUNTIME_ADDON_DISCOVERY
+-> INSTALLED_PROVIDER_DISCOVERY
+-> EXPECTED_PROVIDER_GATE when expected installations are known
+-> provider capability probes
+-> PROVIDER_SELECTION_REPORT
+-> provider quality/route selection
+```
+
+Do not route `Asset Library empty` to `no provider`. Keep ready assets, generators, external services, utilities and built-ins as separate evidence buckets.
+
+If an expected installed provider is missing from normalized discovery, stop on `DISCOVERY_MISMATCH`; do not silently fall back to a custom generator.
+
+---
 
 ## v0.16 persistent design-system routing override
 
@@ -977,6 +996,20 @@ Do not return raw arrays/full logs/full generated scripts unless diagnostic need
 ## FILE: `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
 
 # Semantic Skill Registry
+
+## v0.17 provider-discovery registry precedence
+
+The detailed v0.17 registry is `00_governance/14_PROVIDER_DISCOVERY_SKILL_REGISTRY_V017.md`.
+
+| Skill ID | Executor | Maturity |
+|---|---|---|
+| `INSTALLED_PROVIDER_DISCOVERY` | `executors/blender_addon_inventory.py` + `executors/installed_provider_inventory.py` | EXECUTOR_READY |
+| `EXPECTED_PROVIDER_GATE` | `executors/expected_provider_gate.py` | EXECUTOR_READY |
+| `PROVIDER_SELECTION_REPORT` | `executors/provider_selection_report.py` | EXECUTOR_READY |
+| `PROVIDER_CAPABILITY_PROBE_MATRIX` | provider-specific adapters + `12_procedural_generation/233` | CONTRACT_READY |
+| `VEGETATION_PROVIDER_ROUTE` | `12_procedural_generation/236` | CONTRACT_READY |
+
+For procedural/environment content, these precede v0.14 provider-quality selection and any custom fallback.
 
 ## v0.16 persistent design-system registry precedence
 
@@ -13388,11 +13421,23 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset and Location Agent v0.16
+# System Prompt — Blender Asset and Location Agent v0.17
 
 Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1, reference reconstruction, procedural content and runtime game environments.
 
 Nie masz po prostu „wygenerować modelu”. Masz przeprowadzić kontrolowany pipeline od dowodów referencyjnych do zwalidowanego assetu albo kompletnej lokacji.
+
+## 0.17 provider-discovery precedence
+
+For procedural/environment work where installed providers may help:
+- inspect the active Blender runtime; do not infer installed add-ons from an empty Asset Library directory;
+- separate ready asset sources, procedural generators, external generators, utilities and built-in backends;
+- if the user/project names installed providers, treat that list as expected evidence and run `EXPECTED_PROVIDER_GATE`;
+- missing expected providers are `DISCOVERY_MISMATCH`, not permission to fall back;
+- discovered-but-untested providers are `PROBE_REQUIRED`, not `UNAVAILABLE`;
+- produce `PROVIDER_SELECTION_REPORT` before custom/native fallback, including relevant rejected providers and reasons.
+
+`READY_ASSET_SOURCE: NONE` must never be summarized as `NO_PROVIDERS` when generators/backends are present.
 
 ## 0.16 design-system precedence
 
@@ -27696,6 +27741,23 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.17.0
+
+v0.17.0 is the **Runtime Provider Discovery + Capability Inventory + Selection Transparency** release.
+
+Key changes:
+- added Blender-side discovery of enabled/discoverable add-ons/extensions plus registered Asset Libraries;
+- separated ready Asset Libraries from procedural generators, external generators, utilities and built-in backends;
+- added normalized identity/classification for Sapling, IvyGen, A.N.T. Landscape, Sverchok, MPFB, Meshy, Geo Nodes Guide and MCP;
+- added `EXPECTED_PROVIDER_GATE`: user/project-declared installed providers cannot silently disappear from discovery;
+- added explicit discovery/probe/domain/quality/selection state separation;
+- added mandatory `PROVIDER_SELECTION_REPORT` showing relevant rejected providers and reasons;
+- added vegetation routing that keeps Sapling/IvyGen/Sverchok visible even when no ready vegetation library exists;
+- changed NodeToPython policy to optional reference/development tool rather than BlenderSkill 5.1 runtime dependency;
+- added Benchmark 86 and adversarial provider-discovery regression tests.
+
+Canonical benchmark: **86 — Lafar Provider Discovery v0.17 Regression**.
+
 ## 0.16.0
 
 v0.16.0 is the **Persistent Location Design System + Reusable Visual Language** release.
@@ -28184,10 +28246,29 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.16.0 — persistent location design systems, reusable visual language and canonical asset libraries.**
+**v0.17.0 — runtime provider discovery, capability inventory and selection transparency.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.17 runtime provider discovery and selection transparency
+
+v0.17 fixes the provider-discovery failure exposed by the Lafar planter workflow. BlenderSkill no longer treats an empty ready-made vegetation Asset Library as proof that no procedural providers are installed.
+
+```text
+active Blender runtime
+-> installed/enabled add-on + Asset Library discovery
+-> normalized source buckets
+-> expected-provider mismatch gate when user/project supplied known installations
+-> provider-specific execution probe
+-> requested-domain + quality suitability
+-> mandatory provider selection report
+-> selected backend or explicit BLOCKED
+```
+
+The inventory distinguishes `READY_ASSET_SOURCE`, `PROCEDURAL_GENERATOR`, `EXTERNAL_GENERATOR`, `UTILITY` and `BUILTIN_BACKEND`. Relevant discovered providers remain visible even when rejected. A custom fallback is illegal when an expected installed provider disappeared from discovery.
+
+Canonical regression: **Benchmark 86 — Lafar Provider Discovery v0.17**.
 
 ## v0.16 persistent Location Design Systems
 
@@ -28325,7 +28406,7 @@ Documentation alone never authorizes a production call.
 ### Primary
 
 - Blender 5.1 Geometry Nodes — primary built-in procedural backend.
-- NodeToPython — preferred node-graph-to-Python compiler when installed and probed; generated Python should normally remove the runtime compiler dependency.
+- NodeToPython — optional reference/development tool only; it is not a required BlenderSkill 5.1 runtime dependency.
 
 ### Optional after probe
 
@@ -30550,13 +30631,25 @@ discover
 
 ## Purpose
 
-Bind documented provider claims to the actual Blender 5.1 runtime before production use.
+Bind provider identity and documented claims to the actual Blender 5.1 runtime before production use.
+
+v0.17 separates ready Asset Libraries from procedural generators. An empty Asset Library inventory must never be interpreted as an empty provider inventory.
+
+## Mandatory pre-probe discovery
+
+```text
+BLENDER_RUNTIME_ADDON_DISCOVERY
+-> INSTALLED_PROVIDER_DISCOVERY
+-> EXPECTED_PROVIDER_GATE when user/project supplied expected providers
+-> provider-specific capability probes
+-> PROVIDER_SELECTION_REPORT
+```
 
 ## Probe sequence
 
 ```text
-module/extension present?
--> exact version/readback
+module/extension discovered?
+-> enabled state + exact version/readback where available
 -> expected operator/API symbol present?
 -> operator poll/context requirements
 -> minimal disposable generation
@@ -30570,28 +30663,31 @@ module/extension present?
 
 - `PASS` — compatible and capability-complete for the requested route.
 - `BLOCKED` — known incompatible version, missing capability, failed probe, license policy failure.
-- `PROBE_REQUIRED` — documentation suggests compatibility but current runtime was not tested.
+- `PROBE_REQUIRED` — discovered/documented but current execution capability was not tested.
 - `SOURCE_ONLY` — study/reference only; never called as a BlenderSkill runtime dependency.
+- `DISCOVERY_MISMATCH` — user/project says a provider is installed but normalized runtime discovery omitted it; fix discovery before fallback.
 
-## v0.13 provider policy
+## Provider policy
 
-- NodeToPython: documented Blender 4.2–5.1 support; still probe the installed version.
-- Sverchok: project README declares Blender 5.1; still probe requested nodes/API.
-- Sapling, IvyGen, A.N.T. Landscape and Archimesh: discoverable Blender extensions; exact 5.1 call surface is probe-required.
-- engon/botaniq: code compatibility is not an asset license; use only user-provided licensed packs and probe Blender 5.1.
-- The Grove: current documentation lists Blender 4.2/4.3/4.4, therefore 5.1 is blocked until new evidence overrides this record.
-- ProcFunc: current package pins `bpy==4.2.0`/Python 3.11; source pattern only for the 5.1 runtime.
-- BlenderProc 2.8.0: based on Blender 4.2.1; source/external-worker pattern, not in-process 5.1 dependency.
-- Infinigen: algorithm/reference source; do not import the full framework merely to obtain one generator.
+- Blender Geometry Nodes: built-in procedural backend; still validate requested nodes/API where version-sensitive.
+- Sapling Tree Gen: tree/woody-plant generator; discover and probe explicitly.
+- IvyGen: vine/surface-growth generator; discover and probe explicitly.
+- A.N.T. Landscape: terrain generator, not a vegetation asset library.
+- Sverchok: parametric/generic procedural generator; discover and probe requested API.
+- MPFB: character generator; report it but do not route it as vegetation.
+- Meshy official plugin: external 3D generator/service adapter; report separately from local asset libraries.
+- Geo Nodes Guide and MCP: utilities/integration tools; keep visible in inventory without pretending they are content libraries.
+- engon/botaniq: ready asset/scatter source only when actually installed/licensed and discovered; code and asset licenses are separate.
+- NodeToPython: optional reference/development tool, not a required BlenderSkill 5.1 runtime dependency.
+- The Grove, ProcFunc, BlenderProc and Infinigen retain their version/license/source-only restrictions from the provider catalog.
 
 ## License gate
 
-Record code license and, separately, generated/asset-pack license. Unknown license blocks vendoring/copying. Merely calling a locally installed provider may be allowed by project policy, but redistribution is a separate decision.
+Record code license and, separately, generated/asset-pack/service-output license. Unknown redistribution rights block vendoring/copying. Merely calling a locally installed provider and redistributing its assets are separate decisions.
 
 ## Catalog
 
-`executors/procedural_provider_catalog.py` stores dated discovery hints. They are not a substitute for runtime probe.
-
+`executors/procedural_provider_catalog.py` stores dated identity/capability hints. They are not a substitute for runtime discovery or execution probe.
 
 ---
 
@@ -33919,3 +34015,551 @@ Examples:
 ## No silent mutation
 
 Do not overwrite a canonical resource file with materially different content while keeping the same version/evidence as if nothing changed. Hash conflicts are design-system changes.
+
+
+---
+
+## FILE: `00_governance/13_PROVIDER_DISCOVERY_EXTENSION_V017.md`
+
+# v0.17 Installed Provider Discovery and Capability Inventory
+
+## Purpose
+
+v0.17 closes a production failure exposed by the Lafar planter workflow: the agent reported "no vegetation libraries" and silently fell back to a custom generator even though multiple relevant Blender add-ons were installed.
+
+The root problem was category collapse. A missing ready-made asset library was treated as if no procedural provider existed.
+
+## Non-negotiable laws
+
+```text
+ASSET_LIBRARY_NONE
+!=
+PROCEDURAL_PROVIDER_NONE
+```
+
+```text
+user/runtime says provider is installed
++
+provider absent from discovery report
+=
+DISCOVERY_MISMATCH -> no silent fallback
+```
+
+```text
+provider discovered
+!=
+provider execution probe PASS
+```
+
+```text
+provider execution probe PASS
+!=
+provider suitable for requested domain/quality tier
+```
+
+Before a procedural/environment route can select a backend, the agent must produce a compact inventory separating:
+
+1. ready asset sources;
+2. procedural generators;
+3. external generators/services;
+4. utilities/integration tools;
+5. built-in Blender backends.
+
+Every discovered relevant provider must appear in the selection report even when rejected for domain mismatch, failed probe, quality tier, determinism, license, or context requirements.
+
+## Required workflow
+
+```text
+active Blender runtime
+-> INSTALLED_PROVIDER_DISCOVERY
+-> EXPECTED_PROVIDER_GATE when user/project supplied expected providers
+-> PROVIDER_CAPABILITY_PROBE_MATRIX
+-> requested-domain suitability
+-> provider quality policy
+-> PROVIDER_SELECTION_REPORT
+-> selected backend or explicit BLOCKED
+```
+
+A statement such as "no vegetation library" is legal only when explicitly scoped to `READY_ASSET_SOURCE`. It must not hide installed generators such as Sapling, IvyGen or Sverchok.
+
+
+---
+
+## FILE: `00_governance/14_PROVIDER_DISCOVERY_SKILL_REGISTRY_V017.md`
+
+# v0.17 Provider Discovery Skill Registry
+
+| Skill ID | Purpose | Canonical implementation | Maturity |
+|---|---|---|---|
+| `INSTALLED_PROVIDER_DISCOVERY` | collect installed/enabled Blender add-ons, registered Asset Libraries and built-in backends | `12_procedural_generation/230`; `executors/blender_addon_inventory.py`; `executors/installed_provider_inventory.py` | EXECUTOR_READY |
+| `PROVIDER_CLASSIFY` | normalize discovered add-ons into asset source/generator/external/utility/backend classes and domains | `12_procedural_generation/231`; `executors/installed_provider_inventory.py` | EXECUTOR_READY |
+| `EXPECTED_PROVIDER_GATE` | block silent fallback when a user/project-declared installed provider disappears from discovery | `12_procedural_generation/235`; `executors/expected_provider_gate.py` | EXECUTOR_READY |
+| `PROVIDER_CAPABILITY_PROBE_MATRIX` | keep discovery, executable probe and requested-domain support separate | `12_procedural_generation/233` | CONTRACT_READY |
+| `PROVIDER_SELECTION_REPORT` | report all relevant candidates, rejection reasons and selected backend | `12_procedural_generation/234`; `executors/provider_selection_report.py` | EXECUTOR_READY |
+| `VEGETATION_PROVIDER_ROUTE` | select vegetation source without conflating missing asset libraries with missing generators | `12_procedural_generation/236` | CONTRACT_READY |
+
+For procedural/environment tasks, `INSTALLED_PROVIDER_DISCOVERY` precedes provider selection. If the user explicitly supplies an installed add-on list, `EXPECTED_PROVIDER_GATE` is mandatory for that run.
+
+---
+
+## FILE: `06_prompts/72_PROVIDER_DISCOVERY_AND_SELECTION_PROMPT.md`
+
+# Provider Discovery and Selection Prompt v0.17
+
+Use this prompt before procedural/environment generation when third-party or built-in providers may apply.
+
+## Required sequence
+
+1. Run `BLENDER_RUNTIME_ADDON_DISCOVERY` inside the active Blender process.
+2. Normalize with `INSTALLED_PROVIDER_DISCOVERY`.
+3. If the user/project supplied an installed-provider list, run `EXPECTED_PROVIDER_GATE`.
+4. Separate source buckets: ready asset sources, procedural generators, external generators, utilities, built-in backends.
+5. For each broadly relevant provider, resolve runtime probe state and domain suitability.
+6. Produce `PROVIDER_SELECTION_REPORT` before selecting custom/native fallback.
+
+## Output discipline
+
+Never write:
+
+```text
+no vegetation libraries/providers
+```
+
+when the evidence only proves the ready Asset Library bucket is empty.
+
+Instead report the distinction, for example:
+
+```text
+READY_ASSET_SOURCE: NONE
+PROCEDURAL_GENERATORS: Sapling Tree Gen, IvyGen, Sverchok
+BUILTIN_BACKENDS: Blender Geometry Nodes
+REQUESTED_DOMAIN: GRASS
+SPECIALIZED_MATCH: NONE
+SELECTED: Blender Geometry Nodes
+```
+
+If an expected installed provider is absent from discovery, stop with `DISCOVERY_MISMATCH`. Do not silently fall back.
+
+A discovered provider that has not passed its execution probe is `PROBE_REQUIRED`, not `UNAVAILABLE`.
+
+---
+
+## FILE: `07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md`
+
+# Benchmark 86 — Lafar Provider Discovery v0.17 Regression
+
+## Failure being prevented
+
+A Lafar planter run reported no vegetation libraries and selected a custom procedural fallback while the active Blender 5.1 environment was known to contain multiple relevant add-ons. The report failed to distinguish ready-made vegetation asset libraries from procedural generators.
+
+## Declared Blender environment fixture
+
+```text
+Blender 5.1
+MPFB (MakeHuman for Blender) 2.0.15 — enabled
+A.N.T. Landscape 0.2.0
+Geo Nodes Guide 0.1.0
+IvyGen 0.1.5
+MCP 1.0.0 — enabled
+Meshy official plugin 0.6.0
+Sapling Tree Gen 0.3.7
+Sverchok 1.4.0
+```
+
+The regression fixture intentionally contains no registered ready vegetation Asset Library.
+
+## Required inventory result
+
+The normalized inventory must contain canonical IDs:
+
+```text
+mpfb
+ant_landscape
+geo_nodes_guide
+ivygen
+mcp
+meshy
+sapling_tree_gen
+sverchok
+builtin_geometry_nodes
+```
+
+`ready_asset_sources_count` may be zero. `procedural_generators_count` must not therefore be zero.
+
+## Vegetation routing check
+
+For `requested_domain=GRASS`:
+- Sapling must remain visible and be rejected as domain mismatch, not omitted;
+- IvyGen must remain visible and be rejected as domain mismatch, not omitted;
+- Sverchok must remain visible as a generic procedural candidate;
+- Blender Geometry Nodes must remain visible as a generic built-in candidate;
+- an empty Asset Library bucket must not produce the phrase/semantic state `NO_VEGETATION_PROVIDER`.
+
+## Negative controls
+
+1. Remove Sapling from discovery while keeping it in the expected-provider fixture -> `EXPECTED_PROVIDER_GATE FAIL` with `DISCOVERY_MISMATCH`.
+2. Select Sapling for GRASS without an explicit capability override -> `PROVIDER_SELECTION_REPORT BLOCKED`.
+3. Empty Asset Library + present procedural generators -> inventory PASS and generators remain reported.
+
+## Acceptance
+
+v0.17 passes only when discovery completeness is independently validated before fallback selection.
+
+---
+
+## FILE: `12_procedural_generation/230_INSTALLED_PROVIDER_INVENTORY.md`
+
+# Installed Provider Inventory
+
+## Purpose
+
+Inventory the active Blender environment before selecting a procedural provider.
+
+The inventory is runtime evidence, not a documentation guess.
+
+## Required source buckets
+
+```text
+READY_ASSET_SOURCE
+PROCEDURAL_GENERATOR
+EXTERNAL_GENERATOR
+UTILITY
+BUILTIN_BACKEND
+```
+
+A registered Blender Asset Library is a `READY_ASSET_SOURCE` candidate. Sapling/IvyGen/Sverchok are not asset libraries; they remain visible as procedural generators.
+
+## Required provider fields
+
+```yaml
+provider_id: sapling_tree_gen
+display_name: Sapling Tree Gen
+module_name: ...
+version: 0.3.7
+source_kind: PROCEDURAL_GENERATOR
+enabled: true
+discovered: true
+runtime_probe_status: PROBE_REQUIRED
+domains: [TREE, WOODY_PLANT]
+```
+
+## Required inventory summary
+
+```yaml
+ready_asset_sources_count: 0
+procedural_generators_count: 4
+external_generators_count: 1
+utilities_count: 3
+builtin_backends_count: 1
+```
+
+The summary must never compress these counts into a generic statement such as `no libraries/providers`.
+
+## Runtime sources
+
+The Blender-side collector should inspect at least:
+- enabled add-on module IDs in Blender Preferences;
+- discoverable add-on/extension modules and their metadata where available;
+- registered Asset Library names and paths;
+- built-in Blender procedural backends relevant to the task.
+
+Missing metadata is `UNKNOWN`, not proof of absence.
+
+---
+
+## FILE: `12_procedural_generation/231_PROVIDER_CLASSIFICATION_TAXONOMY.md`
+
+# Provider Classification Taxonomy
+
+## Source kind is not domain
+
+Classify every discovered provider by both `source_kind` and `domains`.
+
+### Source kinds
+
+- `READY_ASSET_SOURCE` — library of reusable ready-made assets/materials.
+- `PROCEDURAL_GENERATOR` — creates geometry/content algorithmically in Blender.
+- `EXTERNAL_GENERATOR` — external service/process that can return generated assets.
+- `UTILITY` — workflow/integration/helper tool, not a direct content source for the requested domain.
+- `BUILTIN_BACKEND` — built-in Blender capability such as Geometry Nodes.
+
+### Canonical domain examples
+
+```text
+TREE
+WOODY_PLANT
+GRASS
+GROUNDCOVER
+VINE
+SURFACE_GROWTH
+TERRAIN
+PARAMETRIC_GEOMETRY
+GEOMETRY_NODES
+CHARACTER
+EXTERNAL_3D_GENERATION
+INTEGRATION
+```
+
+## Known v0.17 classifications
+
+| Provider | Source kind | Domains |
+|---|---|---|
+| Blender Geometry Nodes | BUILTIN_BACKEND | GEOMETRY_NODES, PARAMETRIC_GEOMETRY, GENERIC_PROCEDURAL |
+| Sapling Tree Gen | PROCEDURAL_GENERATOR | TREE, WOODY_PLANT |
+| IvyGen | PROCEDURAL_GENERATOR | VINE, SURFACE_GROWTH |
+| A.N.T. Landscape | PROCEDURAL_GENERATOR | TERRAIN |
+| Sverchok | PROCEDURAL_GENERATOR | PARAMETRIC_GEOMETRY, GENERIC_PROCEDURAL |
+| Meshy official plugin | EXTERNAL_GENERATOR | EXTERNAL_3D_GENERATION |
+| MPFB / MakeHuman for Blender | PROCEDURAL_GENERATOR | CHARACTER |
+| Geo Nodes Guide | UTILITY | GEOMETRY_NODES |
+| MCP | UTILITY | INTEGRATION |
+
+These classifications describe role, not runtime availability. Availability comes only from active runtime discovery/probe.
+
+A provider may be visible in the report and still be rejected for the requested domain.
+
+---
+
+## FILE: `12_procedural_generation/232_RUNTIME_ADDON_DISCOVERY.md`
+
+# Blender Runtime Add-on Discovery
+
+## Purpose
+
+Discover what the active Blender process can actually see before provider selection.
+
+## Evidence order
+
+```text
+Blender version
+-> enabled add-on module IDs
+-> discoverable add-on/extension modules
+-> imported module metadata
+-> registered Asset Libraries
+-> known built-in backends
+-> normalized provider inventory
+```
+
+Use Blender preferences as runtime evidence. Extension module names may differ from display names, so matching must use normalized module ID + display name + aliases rather than one hard-coded package string.
+
+## Required states
+
+- `DISCOVERED_ENABLED`
+- `DISCOVERED_DISABLED`
+- `NOT_DISCOVERED`
+- `METADATA_PARTIAL`
+
+Discovery is not an execution probe. A discovered provider still routes to its capability probe before production use.
+
+## Mandatory mismatch behavior
+
+If the user/project supplied an expected installed provider list and runtime discovery does not contain one of those providers:
+
+```text
+EXPECTED_PROVIDER_GATE = FAIL
+```
+
+Do not silently interpret that mismatch as `provider unavailable` and fall back. Report the mismatch because it usually means discovery logic, extension namespace handling, or the wrong Blender profile/process is being inspected.
+
+## Asset Libraries
+
+Registered Asset Libraries are inventoried separately from add-ons. An empty Asset Library list means only `READY_ASSET_SOURCE` is empty. It says nothing about Sapling, IvyGen, Sverchok, Geometry Nodes, external generators, or utilities.
+
+---
+
+## FILE: `12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md`
+
+# Provider Capability Probe Matrix
+
+## Separation
+
+For every relevant provider keep these states independent:
+
+```text
+discovered/enabled
+runtime execution probe
+requested-domain support
+quality tier
+license/use policy
+selection result
+```
+
+A provider may therefore be:
+
+```yaml
+provider_id: sapling_tree_gen
+discovered: true
+enabled: true
+runtime_probe_status: PASS
+domain_match: false
+quality_tier: B
+selection: REJECTED
+reason: REQUESTED_DOMAIN_GRASS_NOT_SUPPORTED
+```
+
+That provider still appears in the final report.
+
+## Probe requirements
+
+A production-capable probe should verify, where applicable:
+- expected Python module/operator/API symbol exists;
+- required context can be satisfied;
+- minimal disposable operation can execute;
+- output type is valid;
+- deterministic seed behavior when claimed;
+- cleanup succeeds.
+
+If a specialized adapter does not yet exist, use `PROBE_REQUIRED`, not `UNAVAILABLE`.
+
+## Failure semantics
+
+- discovery miss: `NOT_DISCOVERED`;
+- discovered but untested: `PROBE_REQUIRED`;
+- probe executed and failed: `FAIL`;
+- probe passed but wrong domain: `DOMAIN_MISMATCH`;
+- correct domain but insufficient quality: `QUALITY_REJECTED`;
+- usable candidate: `ELIGIBLE`.
+
+Do not collapse these states into a single boolean.
+
+---
+
+## FILE: `12_procedural_generation/234_PROVIDER_SELECTION_REPORT.md`
+
+# Provider Selection Report
+
+## Purpose
+
+Make provider selection auditable. The report is required before a fallback generator is accepted for procedural/environment content.
+
+## Required report sections
+
+```text
+RUNTIME
+READY ASSET SOURCES
+PROCEDURAL GENERATORS
+EXTERNAL GENERATORS
+UTILITIES
+BUILT-IN BACKENDS
+REQUESTED DOMAIN
+CANDIDATES / REJECTIONS
+SELECTED BACKEND
+FALLBACK REASON
+```
+
+## Mandatory candidate visibility
+
+Every discovered provider relevant to the broad task family must be present, even if rejected.
+
+For a vegetation request with installed Sapling, IvyGen and Sverchok, a legal report can say:
+
+```text
+Sapling Tree Gen 0.3.7   DISCOVERED  TREE             REJECTED: domain mismatch (GRASS)
+IvyGen 0.1.5             DISCOVERED  VINE/GROWTH      REJECTED: domain mismatch (GRASS)
+Sverchok 1.4.0           DISCOVERED  GENERIC_PROC     ELIGIBLE/PROBE_REQUIRED
+Geometry Nodes 5.1       BUILTIN     GENERIC_PROC     ELIGIBLE
+```
+
+It cannot omit them and report only `no vegetation library`.
+
+## Fallback proof
+
+Custom/native generation is legal only after the report proves why stronger specialized or ready-asset sources were not selected.
+
+If discovery mismatches user/project-declared installed providers, selection is `BLOCKED`, not fallback.
+
+---
+
+## FILE: `12_procedural_generation/235_DISCOVERY_MISMATCH_AND_EXPECTED_PROVIDER_GATE.md`
+
+# Discovery Mismatch and Expected Provider Gate
+
+## Purpose
+
+Turn explicit user/project knowledge about installed providers into a verification oracle for runtime discovery.
+
+## Input
+
+```yaml
+expected_providers:
+  - provider_id: sapling_tree_gen
+    version: 0.3.7
+  - provider_id: ivygen
+    version: 0.1.5
+  - provider_id: sverchok
+    version: 1.4.0
+```
+
+Versions may be advisory unless `require_exact_version=true`.
+
+## Gate
+
+PASS requires every expected provider to occur in normalized discovery output.
+
+Failures include:
+- expected provider completely missing;
+- provider discovered under an unclassified/unknown identity when a canonical mapping is required;
+- exact version mismatch when exact matching was requested.
+
+## Required behavior
+
+```text
+EXPECTED list supplied
++
+missing provider
+=
+FAIL DISCOVERY_MISMATCH
+```
+
+This is not equivalent to a failed runtime capability probe. A mismatch means the inventory itself cannot yet be trusted.
+
+The agent must not proceed to custom fallback until the mismatch is resolved or the user explicitly retracts/corrects the expected-provider evidence.
+
+---
+
+## FILE: `12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md`
+
+# Vegetation Provider Routing v0.17
+
+## Source hierarchy
+
+```text
+approved project/Asset Library vegetation
+-> specialized generator matching requested plant domain
+-> general procedural backend
+-> custom native generator
+```
+
+The hierarchy is evaluated only after installed-provider discovery.
+
+## Domain routing examples
+
+- `TREE`, `WOODY_PLANT` -> ready asset source, then Sapling if probed/suitable.
+- `VINE`, `SURFACE_GROWTH` -> ready asset source, then IvyGen if probed/suitable.
+- `GRASS`, `GROUNDCOVER`, ornamental broadleaf -> ready asset source; if no specialized provider exists, evaluate Geometry Nodes/Sverchok/general procedural route.
+- `TERRAIN` -> A.N.T. Landscape or another terrain provider; it is not a vegetation source.
+
+## Reporting law
+
+When a ready vegetation Asset Library is absent but generators are installed, report exactly that distinction.
+
+Example:
+
+```text
+READY_ASSET_SOURCE: NONE
+PROCEDURAL_GENERATORS: Sapling, IvyGen, Sverchok, Geometry Nodes
+REQUESTED_DOMAIN: GRASS
+SPECIALIZED_MATCH: NONE
+SELECTED_GENERAL_BACKEND: Geometry Nodes
+```
+
+Do not say `no vegetation providers`.
+
+## Custom generator fallback
+
+A custom generator requires:
+- complete discovery inventory;
+- expected-provider gate PASS when applicable;
+- visible rejection reason for every stronger candidate;
+- provider selection report;
+- existing v0.14 quality-tier gate.

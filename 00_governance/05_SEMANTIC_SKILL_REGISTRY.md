@@ -1,5 +1,19 @@
 # Semantic Skill Registry
 
+## v0.17 provider-discovery registry precedence
+
+The detailed v0.17 registry is `00_governance/14_PROVIDER_DISCOVERY_SKILL_REGISTRY_V017.md`.
+
+| Skill ID | Executor | Maturity |
+|---|---|---|
+| `INSTALLED_PROVIDER_DISCOVERY` | `executors/blender_addon_inventory.py` + `executors/installed_provider_inventory.py` | EXECUTOR_READY |
+| `EXPECTED_PROVIDER_GATE` | `executors/expected_provider_gate.py` | EXECUTOR_READY |
+| `PROVIDER_SELECTION_REPORT` | `executors/provider_selection_report.py` | EXECUTOR_READY |
+| `PROVIDER_CAPABILITY_PROBE_MATRIX` | provider-specific adapters + `12_procedural_generation/233` | CONTRACT_READY |
+| `VEGETATION_PROVIDER_ROUTE` | `12_procedural_generation/236` | CONTRACT_READY |
+
+For procedural/environment content, these precede v0.14 provider-quality selection and any custom fallback.
+
 ## v0.16 persistent design-system registry precedence
 
 The detailed v0.16 registry is `00_governance/12_LOCATION_DESIGN_SYSTEM_SKILL_REGISTRY_V016.md`.

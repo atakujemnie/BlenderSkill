@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.17.0
+
+v0.17.0 is the **Runtime Provider Discovery + Capability Inventory + Selection Transparency** release.
+
+Key changes:
+- added Blender-side discovery of enabled/discoverable add-ons/extensions plus registered Asset Libraries;
+- separated ready Asset Libraries from procedural generators, external generators, utilities and built-in backends;
+- added normalized identity/classification for Sapling, IvyGen, A.N.T. Landscape, Sverchok, MPFB, Meshy, Geo Nodes Guide and MCP;
+- added `EXPECTED_PROVIDER_GATE`: user/project-declared installed providers cannot silently disappear from discovery;
+- added explicit discovery/probe/domain/quality/selection state separation;
+- added mandatory `PROVIDER_SELECTION_REPORT` showing relevant rejected providers and reasons;
+- added vegetation routing that keeps Sapling/IvyGen/Sverchok visible even when no ready vegetation library exists;
+- changed NodeToPython policy to optional reference/development tool rather than BlenderSkill 5.1 runtime dependency;
+- added Benchmark 86 and adversarial provider-discovery regression tests.
+
+Canonical benchmark: **86 — Lafar Provider Discovery v0.17 Regression**.
+
 ## 0.16.0
 
 v0.16.0 is the **Persistent Location Design System + Reusable Visual Language** release.

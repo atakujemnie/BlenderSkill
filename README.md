@@ -4,10 +4,29 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.16.0 — persistent location design systems, reusable visual language and canonical asset libraries.**
+**v0.17.0 — runtime provider discovery, capability inventory and selection transparency.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.17 runtime provider discovery and selection transparency
+
+v0.17 fixes the provider-discovery failure exposed by the Lafar planter workflow. BlenderSkill no longer treats an empty ready-made vegetation Asset Library as proof that no procedural providers are installed.
+
+```text
+active Blender runtime
+-> installed/enabled add-on + Asset Library discovery
+-> normalized source buckets
+-> expected-provider mismatch gate when user/project supplied known installations
+-> provider-specific execution probe
+-> requested-domain + quality suitability
+-> mandatory provider selection report
+-> selected backend or explicit BLOCKED
+```
+
+The inventory distinguishes `READY_ASSET_SOURCE`, `PROCEDURAL_GENERATOR`, `EXTERNAL_GENERATOR`, `UTILITY` and `BUILTIN_BACKEND`. Relevant discovered providers remain visible even when rejected. A custom fallback is illegal when an expected installed provider disappeared from discovery.
+
+Canonical regression: **Benchmark 86 — Lafar Provider Discovery v0.17**.
 
 ## v0.16 persistent Location Design Systems
 
@@ -145,7 +164,7 @@ Documentation alone never authorizes a production call.
 ### Primary
 
 - Blender 5.1 Geometry Nodes — primary built-in procedural backend.
-- NodeToPython — preferred node-graph-to-Python compiler when installed and probed; generated Python should normally remove the runtime compiler dependency.
+- NodeToPython — optional reference/development tool only; it is not a required BlenderSkill 5.1 runtime dependency.
 
 ### Optional after probe
 

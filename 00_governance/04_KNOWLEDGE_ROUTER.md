@@ -1,5 +1,24 @@
 # Knowledge Router
 
+## v0.17 installed-provider discovery precedence
+
+Before procedural/environment provider selection:
+
+```text
+BLENDER_RUNTIME_ADDON_DISCOVERY
+-> INSTALLED_PROVIDER_DISCOVERY
+-> EXPECTED_PROVIDER_GATE when expected installations are known
+-> provider capability probes
+-> PROVIDER_SELECTION_REPORT
+-> provider quality/route selection
+```
+
+Do not route `Asset Library empty` to `no provider`. Keep ready assets, generators, external services, utilities and built-ins as separate evidence buckets.
+
+If an expected installed provider is missing from normalized discovery, stop on `DISCOVERY_MISMATCH`; do not silently fall back to a custom generator.
+
+---
+
 ## v0.16 persistent design-system routing override
 
 For an asset or location assigned to a known location/faction/family, resolve reusable visual language before final appearance:
