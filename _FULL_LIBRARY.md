@@ -27703,6 +27703,70 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.13.0
+
+v0.13.0 is the **deterministic procedural vegetation + generator-provider + planter-composition** release. It is intentionally narrower than a generic environment-generator release: the next real Blender 5.1 benchmark is a Lafar planter containing hard-surface container geometry and procedural vegetation.
+
+The release follows a critical separation:
+
+```text
+procedural geometry generation
+!= botanical/structural acceptance
+!= deterministic reproducibility
+!= game-ready vegetation
+```
+
+### Procedural Generator Provider
+- added `00_governance/08_PROCEDURAL_GENERATION_EXTENSION.md` and new `12_procedural_generation/` domain;
+- added `PROCEDURAL_GENERATOR_PROVIDER` so third-party tools remain adapters behind stable semantic specs;
+- provider records Blender compatibility, execution type, background/UI requirements, deterministic seed support, capabilities, license boundary and isolated runtime probe;
+- documentation compatibility is discovery evidence only; active Blender 5.1 probe owns runtime availability;
+- added curated provider catalog with executable, probe-required, version-blocked and source-only roles.
+
+### Node graph compilation
+- added `NODEGRAPH_TO_PYTHON` contract and `executors/nodegraph_codegen_gate.py`;
+- preferred workflow is vetted node graph -> compiler probe -> generated import-safe Python -> clean-scene graph reconstruction -> structural round-trip proof;
+- NodeToPython is the preferred compiler candidate when installed and probed;
+- generated code should normally remove the compiler add-on as a runtime dependency;
+- `geonodes` is tracked as an optional Python-first Geometry Nodes authoring route.
+
+### Botanical grammar and generation
+- added `VEGETATION_BOTANICAL_GRAMMAR` with stem/branch hierarchy, internodes, phyllotaxis, crown envelope/density, apical dominance, tropism, age/season and root/contact semantics;
+- form classes include tree, shrub, herbaceous, grass, rosette, reed, vine, ground cover and alien branching;
+- added `VEGETATION_GENERATION_GATE` requiring provider proof, botanical proof, semantic parts, generation metadata and a fixed-seed reproduction probe;
+- procedural assets persist provider/version, seed, parameter hash, geometry signature and semantic part IDs.
+
+### Vegetation placement and composition
+- added deterministic `VEGETATION_SCATTER` over pre-sampled candidates with slope, biome weight, exclusion and minimum-spacing constraints;
+- morphology seed and placement seed are separated by policy;
+- added `PLANTER_VEGETATION_COMPOSITION` to validate rootball/soil/wall/stem relationships;
+- initial composition validator supports rectangular and circular usable soil footprints;
+- host/container repair remains compatible with v0.12 dependency invalidation semantics.
+
+### Vegetation runtime preparation
+- added `VEGETATION_RUNTIME_PREP` as a separate gate from generation;
+- runtime planning covers LOD budgets, leaf-card/impostor recommendation, semantic-part preservation, material-slot limits, instancing and wind attributes;
+- benchmark MID defaults begin at 30k / 14k / 5k / 1.2k triangles for LOD0–LOD3 unless project profile overrides them;
+- raw high-poly generator success can never claim game-ready completion.
+
+### Tool policy
+- built-in Blender 5.1 Geometry Nodes is the primary runtime-safe backend;
+- Sapling Tree Gen, IvyGen, A.N.T. Landscape, Archimesh, Sverchok and engon/botaniq are optional providers after local capability/license probe;
+- Infinigen, ProcFunc and BlenderProc are treated primarily as architecture/algorithm sources for this release rather than mandatory in-process dependencies;
+- The Grove remains version-blocked for BlenderSkill 5.1 until compatible runtime evidence replaces the currently documented Blender 4.2–4.4 range.
+
+### Benchmark and tests
+- added `07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md`;
+- added `11_playbooks/121_LAFAR_PLANTER_AND_VEGETATION.md`;
+- added `08_scripts/100_PROCEDURAL_PROVIDER_AND_VEGETATION_VALIDATION_PATTERN.md`;
+- added eight v0.13 pure-Python decision/catalog executors;
+- added `tools/test_v013_procedural_vegetation.py` and wired it into CI;
+- v0.9, v0.10, v0.11 and v0.12 regression suites remain active.
+
+Canonical manifest version: **0.13.0**.
+Canonical module count: **263**.
+Canonical benchmark: **82 — Lafar Planter + Vegetation v0.13**.
+
 ## 0.12.0
 
 v0.12.0 is the **geometric integrity + mutation postcondition + adversarial validation** release, driven by the Lafar Street Lamp v0.11 repair benchmark.
