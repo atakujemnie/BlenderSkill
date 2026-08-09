@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.16.0
+
+v0.16.0 is the **Persistent Location Design System + Reusable Visual Language** release.
+
+Key changes:
+- operationalized the thin v0.15 design-system gate as a persistent source-side layer under `14_design_system/`;
+- added find-or-create `LOCATION_DESIGN_SYSTEM_RESOLVE` returning canonical MD/JSON/material/branding/component/Asset-Library paths;
+- added machine-readable design-system manifest readiness validation;
+- added deterministic Universe/Location/Organization/Family/Asset inheritance with locked-token protection and provenance;
+- added hash-deduplicated promotion of reusable logos, textures, decals, profiles and source resources;
+- separated source design-system root from the v0.14 runtime location material library;
+- added canonical material, branding, component/nodegroup, form/edge/detail, weathering and lighting languages;
+- added Blender Asset Library packaging contract for API-driven reuse through `.blend` libraries;
+- added asset consumption protocol and non-compensating `DESIGN_SYSTEM_CONFORMANCE_GATE`;
+- added design-system version/change propagation semantics;
+- fixed the v0.15 CI import-path failure so the location-assembly regression runs from GitHub Actions;
+- added Benchmark 85 and pure-Python v0.16 regression tests.
+
+Canonical benchmark: **85 — Lafar Location Design System v0.16 Regression**.
+
 ## 0.15.0
 
 v0.15.0 is the **Location Reconstruction + Environment Assembly** release, driven by the failed v0.14 Lafar Restaurant full-location build.

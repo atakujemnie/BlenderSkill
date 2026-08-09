@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.15.0 — Full compiled snapshot
+# Blender AI Agent Library v0.16.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -371,6 +371,26 @@ Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześ
 ## FILE: `00_governance/04_KNOWLEDGE_ROUTER.md`
 
 # Knowledge Router
+
+## v0.16 persistent design-system routing override
+
+For an asset or location assigned to a known location/faction/family, resolve reusable visual language before final appearance:
+
+```text
+location identity
+-> LOCATION_DESIGN_SYSTEM_RESOLVE
+-> bootstrap only if missing
+-> DESIGN_SYSTEM_INHERITANCE_RESOLVE
+-> compact resolved design context
+-> asset/location authoring
+-> DESIGN_SYSTEM_CONFORMANCE_GATE
+```
+
+Load `14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md` and only the relevant domain modules. Do not reload raw logos/textures/reference packs when stable canonical IDs and paths already exist.
+
+Asset-specific technical dimensions remain owned by authoritative asset references. Locked location/organization identity (canonical logo, brand color, material identity etc.) cannot be silently overridden by an asset-local approximation.
+
+---
 
 ## v0.14 visual-quality routing override
 
@@ -957,6 +977,22 @@ Do not return raw arrays/full logs/full generated scripts unless diagnostic need
 ## FILE: `00_governance/05_SEMANTIC_SKILL_REGISTRY.md`
 
 # Semantic Skill Registry
+
+## v0.16 persistent design-system registry precedence
+
+The detailed v0.16 registry is `00_governance/12_LOCATION_DESIGN_SYSTEM_SKILL_REGISTRY_V016.md`.
+
+Canonical new executable skills:
+
+| Skill ID | Executor | Maturity |
+|---|---|---|
+| `LOCATION_DESIGN_SYSTEM_RESOLVE` | `executors/design_system_resolver.py` | EXECUTOR_READY |
+| `LOCATION_DESIGN_SYSTEM_MANIFEST` | `executors/design_system_manifest.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_INHERITANCE_RESOLVE` | `executors/design_system_inheritance.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_RESOURCE_PROMOTE` | `executors/design_system_resource_registry.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_CONFORMANCE_GATE` | `executors/design_system_conformance.py` | EXECUTOR_READY |
+
+For known-location L4/L5/final art-direction work, the resolved design system and conformance gate are upstream of runtime completion.
 
 ## Execution maturity
 
@@ -13352,11 +13388,24 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset and Location Agent v0.15
+# System Prompt — Blender Asset and Location Agent v0.16
 
 Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1, reference reconstruction, procedural content and runtime game environments.
 
 Nie masz po prostu „wygenerować modelu”. Masz przeprowadzić kontrolowany pipeline od dowodów referencyjnych do zwalidowanego assetu albo kompletnej lokacji.
+
+## 0.16 design-system precedence
+
+For any known-location/faction asset before final appearance:
+- resolve `14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md`;
+- call `LOCATION_DESIGN_SYSTEM_RESOLVE`;
+- reuse the existing canonical system when present;
+- if missing and creation is authorized, bootstrap one canonical root and populate it from authoritative references/accepted assets;
+- resolve Location -> Organization -> Family -> Asset inheritance;
+- consume canonical material/branding/component/form/light/weathering IDs;
+- run `DESIGN_SYSTEM_CONFORMANCE_GATE` before final appearance/runtime closure.
+
+Never redraw a canonical logo or generate another generic equivalent of an existing approved material/component merely because the current asset folder does not contain it.
 
 ## 0.15 precedence
 
@@ -27647,6 +27696,26 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.16.0
+
+v0.16.0 is the **Persistent Location Design System + Reusable Visual Language** release.
+
+Key changes:
+- operationalized the thin v0.15 design-system gate as a persistent source-side layer under `14_design_system/`;
+- added find-or-create `LOCATION_DESIGN_SYSTEM_RESOLVE` returning canonical MD/JSON/material/branding/component/Asset-Library paths;
+- added machine-readable design-system manifest readiness validation;
+- added deterministic Universe/Location/Organization/Family/Asset inheritance with locked-token protection and provenance;
+- added hash-deduplicated promotion of reusable logos, textures, decals, profiles and source resources;
+- separated source design-system root from the v0.14 runtime location material library;
+- added canonical material, branding, component/nodegroup, form/edge/detail, weathering and lighting languages;
+- added Blender Asset Library packaging contract for API-driven reuse through `.blend` libraries;
+- added asset consumption protocol and non-compensating `DESIGN_SYSTEM_CONFORMANCE_GATE`;
+- added design-system version/change propagation semantics;
+- fixed the v0.15 CI import-path failure so the location-assembly regression runs from GitHub Actions;
+- added Benchmark 85 and pure-Python v0.16 regression tests.
+
+Canonical benchmark: **85 — Lafar Location Design System v0.16 Regression**.
+
 ## 0.15.0
 
 v0.15.0 is the **Location Reconstruction + Environment Assembly** release, driven by the failed v0.14 Lafar Restaurant full-location build.
@@ -28115,10 +28184,29 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.15.0 — full-location reconstruction, environment assembly, spatial relations and completeness gates.**
+**v0.16.0 — persistent location design systems, reusable visual language and canonical asset libraries.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.16 persistent Location Design Systems
+
+v0.16 promotes the thin v0.15 Location Design System requirement into a persistent reusable authoring layer. Future assets resolve one canonical location/faction/family language before final appearance instead of recreating materials, logos, components and style rules per asset.
+
+```text
+<repo>/Blender/DesignSystems/<location_id>/
+-> LOCATION_DESIGN_SYSTEM.md + design_system.json
+-> source/provenance registry
+-> materials + branding + components + decals + profiles + nodegroups
+-> optional canonical Blender Asset Library .blend
+-> inheritance: LOCATION -> ORGANIZATION -> FAMILY -> ASSET
+-> asset consumption
+-> DESIGN_SYSTEM_CONFORMANCE_GATE
+```
+
+The v0.14 runtime material library remains linked but separate under `Assets/GameAssets/Materials/Locations/<location_id>`. Canonical resources can be hash-deduplicated/promoted from accepted assets, and future asset prompts receive exact reusable paths rather than regenerating the same visual language.
+
+Canonical regression: **Benchmark 85 — Lafar Location Design System v0.16**.
 
 ## v0.15 location reconstruction and environment assembly
 
@@ -32450,3 +32538,1384 @@ C + runtime partitioning, source-asset LOD/collision, runtime material/texture/e
 D + canonical runtime path/catalog and target-engine load/instantiation evidence.
 
 The first failing level is the real status. Do not report `DONE` without the named highest passed level.
+
+
+---
+
+## FILE: `00_governance/11_LOCATION_DESIGN_SYSTEM_EXTENSION.md`
+
+# v0.16 Persistent Location Design System Extension
+
+## Purpose
+
+v0.15 introduced complete-location assembly and already required a thin Location Design System gate. v0.16 makes that design system a first-class persistent source of truth that can be built once, versioned, reused by future assets and validated for conformance.
+
+The core change is:
+
+```text
+reference -> asset
+```
+
+becomes:
+
+```text
+location/corporation references
+-> persistent Location Design System
+-> resolved inheritance layer
+-> asset family
+-> asset reference reconstruction
+-> Design System Conformance Gate
+```
+
+## Mandatory behavior
+
+For any asset assigned to a known location:
+
+```text
+LOCATION_DESIGN_SYSTEM_RESOLVE
+-> existing system found: reuse it
+-> missing system: bootstrap canonical folder and manifest
+-> populate/approve from available authoritative references before final appearance
+-> return exact source path to the user/parent task
+```
+
+Do not silently invent a second local material/branding/component language inside an asset folder when an approved location system exists.
+
+## Canonical ownership
+
+The design system owns reusable visual language, not individual asset geometry.
+
+It may own:
+- location and organization design tokens;
+- material families and texture sources;
+- logos, symbols, wordmarks, signage icons and decals;
+- reusable Blender components and node groups;
+- trim/profile families;
+- shape, edge, gap, seam and detail language;
+- lighting/emissive language;
+- weathering and environmental-response language;
+- asset-family overrides;
+- provenance and license metadata;
+- the canonical Blender Asset Library path.
+
+Individual assets own only asset-specific geometry, dimensions, reference exceptions and approved one-off additions.
+
+## Hierarchy and inheritance
+
+```text
+UNIVERSE
+-> LOCATION
+-> ORGANIZATION / FACTION / BRAND
+-> ASSET FAMILY
+-> ASSET
+```
+
+Lower layers may override only unlocked tokens. Locked location/organization identity cannot be silently changed by an asset.
+
+## Source layout
+
+Default project pattern:
+
+```text
+<repo>/Blender/DesignSystems/<location_id>/
+    LOCATION_DESIGN_SYSTEM.md
+    design_system.json
+    sources.json
+    asset_library_manifest.json
+    <LOCATION>_ASSET_LIBRARY.blend
+    materials/
+    branding/
+    components/
+    decals/
+    profiles/
+    nodegroups/
+    references/
+    previews/
+    families/
+    organizations/
+```
+
+The v0.14 runtime material library remains separate and linked from `design_system.json`:
+
+```text
+<repo>/Assets/GameAssets/Materials/Locations/<location_id>/
+```
+
+Source design-system files and runtime-ready material payloads must not be conflated.
+
+## Final appearance lock
+
+For a known location, strict L4/L5 or final location art direction requires:
+
+```text
+resolved design system READY
++ DESIGN_SYSTEM_CONFORMANCE_GATE PASS
+```
+
+before final appearance/runtime completion.
+
+A technically valid asset that uses an unregistered one-off material, wrong logo variant, foreign edge family or incompatible lighting language remains visually unresolved.
+
+## Promotion law
+
+If an asset introduces a genuinely reusable new material/component/decal:
+
+```text
+asset-local candidate
+-> source/provenance check
+-> design-system promotion
+-> canonical resource ID/path
+-> subsequent assets reuse canonical resource
+```
+
+Do not leave repeated resources trapped in the first asset that introduced them.
+
+
+---
+
+## FILE: `00_governance/12_LOCATION_DESIGN_SYSTEM_SKILL_REGISTRY_V016.md`
+
+# v0.16 Location Design System Skill Registry
+
+This registry has precedence over the thin v0.15 `LOCATION_DESIGN_SYSTEM_GATE` semantics when v0.16 is active.
+
+| Skill ID | Purpose | Canonical implementation | Maturity |
+|---|---|---|---|
+| `LOCATION_DESIGN_SYSTEM_BUILD` | create/populate a persistent design system from location/organization references and accepted assets | `14_design_system/401`; prompt 71 | CONTRACT_READY |
+| `LOCATION_DESIGN_SYSTEM_RESOLVE` | find existing system or bootstrap its canonical path/layout and return paths | `14_design_system/402`; `executors/design_system_resolver.py` | EXECUTOR_READY |
+| `LOCATION_DESIGN_SYSTEM_MANIFEST` | validate the machine-readable design-system contract | `14_design_system/403`; `executors/design_system_manifest.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_INHERITANCE_RESOLVE` | resolve Universe→Location→Organization→Family→Asset overrides with locked-token protection | `14_design_system/404`; `executors/design_system_inheritance.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_RESOURCE_PROMOTE` | hash-dedupe and promote reusable textures/logos/decals/components into canonical ownership | `14_design_system/405`; `executors/design_system_resource_registry.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_MATERIAL_LANGUAGE` | own material families, texture sets and surface-response rules | `14_design_system/406` | CONTRACT_READY |
+| `DESIGN_SYSTEM_BRANDING_LIBRARY` | own logo/symbol/wordmark/signage/decal sources and usage rules | `14_design_system/407` | CONTRACT_READY |
+| `DESIGN_SYSTEM_COMPONENT_LIBRARY` | own reusable geometry, trim profiles, panels, node groups and Blender assets | `14_design_system/408` | CONTRACT_READY |
+| `DESIGN_SYSTEM_FORM_LANGUAGE` | own shape/edge/gap/seam/detail grammar and forbidden forms | `14_design_system/409` | CONTRACT_READY |
+| `DESIGN_SYSTEM_ENVIRONMENT_RESPONSE` | own weathering, dirt, wetness and maintenance language | `14_design_system/410` | CONTRACT_READY |
+| `DESIGN_SYSTEM_LIGHTING_LANGUAGE` | own emissive/lighting families and semantic roles | `14_design_system/411` | CONTRACT_READY |
+| `DESIGN_SYSTEM_ASSET_LIBRARY_BUILD` | package approved resources into a Blender Asset Library `.blend` | `14_design_system/412` | CONTRACT_READY |
+| `DESIGN_SYSTEM_CONSUME` | bind one asset task to the resolved location/family resources before surface authoring | `14_design_system/413` | CONTRACT_READY |
+| `DESIGN_SYSTEM_CONFORMANCE_GATE` | reject unregistered materials/components/branding/lighting or incompatible form language | `14_design_system/414`; `executors/design_system_conformance.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_CHANGE_CONTROL` | version tokens/resources and propagate invalidation to dependent assets | `14_design_system/415` | CONTRACT_READY |
+
+## Routing law
+
+```text
+known location
+-> LOCATION_DESIGN_SYSTEM_RESOLVE
+-> DESIGN_SYSTEM_INHERITANCE_RESOLVE
+-> consume canonical resources
+-> asset construction/reconstruction
+-> DESIGN_SYSTEM_CONFORMANCE_GATE
+```
+
+If the system is missing, `LOCATION_DESIGN_SYSTEM_BUILD` bootstraps and populates it before final appearance. Blockout geometry may proceed while the system is `BOOTSTRAPPED`; final appearance may not claim closure until the relevant design-system domains are `READY`.
+
+
+---
+
+## FILE: `06_prompts/71_LOCATION_DESIGN_SYSTEM_BUILDER_PROMPT.md`
+
+# Location Design System Builder Prompt
+
+Use when the user asks to build/refresh a reusable design system for a location, organization/faction or asset family.
+
+## Role
+
+You are not building one prop. You are extracting and packaging reusable visual/product language so future Blender tasks stop reinventing the same materials, logos, components and style rules.
+
+## Procedure
+
+1. Resolve `location_id`, project root and optional organization/family scope.
+2. Run `LOCATION_DESIGN_SYSTEM_RESOLVE` with `create_if_missing=true`.
+3. Return/retain the canonical path immediately; do not create a second design-system root later.
+4. Inventory authoritative references and accepted existing assets.
+5. Separate reusable system rules from asset-specific dimensions.
+6. Populate `LOCATION_DESIGN_SYSTEM.md` and `design_system.json`.
+7. Promote canonical source resources with provenance/hash deduplication:
+   - material/texture sources;
+   - logos/symbols/wordmarks/icons;
+   - decals;
+   - reusable components/profiles/nodegroups.
+8. Link the v0.14 runtime material library path.
+9. Define shape/edge/seam/detail, lighting/emissive and weathering languages.
+10. Create organization and asset-family overrides rather than duplicating the whole base system.
+11. Build/update the Blender Asset Library `.blend` through Blender Python when reusable Blender datablocks exist.
+12. Validate manifest final readiness and run `DESIGN_SYSTEM_CONFORMANCE_GATE` on at least one known accepted asset as a regression fixture.
+13. Report exact reusable paths.
+
+## Evidence discipline
+
+Label rules as EXPLICIT / REPEATED / INFERRED / PROPOSED. Do not universalize a one-off modeling accident.
+
+## Reuse discipline
+
+Existing canonical resource wins over a visually similar new local resource unless the reference requires a true exception.
+
+## Output contract
+
+Compact final report:
+
+```text
+DESIGN_SYSTEM: READY | BOOTSTRAPPED | BLOCKED
+location_id: ...
+design_system_version: ...
+MD: ...
+manifest: ...
+material_library: ...
+branding: ...
+components: ...
+asset_library_blend: ...
+new_promoted_resources: N
+reused_resources: N
+blockers: ...
+```
+
+Do not dump full manifests or generated scripts unless diagnostics require them.
+
+
+---
+
+## FILE: `07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md`
+
+# Benchmark 85 — Lafar Location Design System v0.16 Regression
+
+## Why this benchmark exists
+
+Repeated Lafar/Astera asset work showed that even improved individual reconstruction can drift because every task recreates materials, branding, emissive treatment and reusable subcomponents. The benchmark tests whether BlenderSkill can externalize that shared language once and reuse it.
+
+## Fixture
+
+Use existing accepted/known Lafar/Astera evidence from civic assets such as bench, planter, lamp, recycler/wayfinding where available. The benchmark does not require rebuilding all geometry.
+
+## Required output structure
+
+```text
+<project>/Blender/DesignSystems/lafar/
+    LOCATION_DESIGN_SYSTEM.md
+    design_system.json
+    sources.json
+    asset_library_manifest.json
+    LAFAR_ASSET_LIBRARY.blend   # when Blender resource packaging is exercised
+    materials/
+    branding/
+    components/
+    decals/
+    profiles/
+    nodegroups/
+    families/
+    organizations/astera_civic_systems/
+```
+
+The manifest links the v0.14 runtime material library:
+
+```text
+<project>/Assets/GameAssets/Materials/Locations/lafar/
+```
+
+## Minimum Lafar/Astera semantic fixture
+
+At least these conceptual IDs must be representable:
+
+```text
+MAT_ASTERA_GRAPHITE_COMPOSITE_A
+MAT_ASTERA_BRUSHED_ALUMINIUM_A
+BRAND_ASTERA_PRIMARY
+BRAND_ASTERA_SYMBOL
+EDGE_ASTERA_CIVIC_OUTER_A
+LIGHT_ASTERA_CIVIC_BLUE_A
+WEATHER_LAFAR_MAINTAINED_WET_A
+```
+
+A reusable component such as an Astera utility/service panel should be registered when a valid source exists; absence of a real reusable source must not be filled with invented geometry solely to satisfy the benchmark.
+
+## Pure-Python regression requirements
+
+1. Missing design-system path + `create_if_missing=true` creates one canonical root and returns it.
+2. Second resolve reuses exactly the same root.
+3. Manifest final validation rejects a merely bootstrapped/empty system.
+4. A populated READY Lafar manifest passes.
+5. Inheritance resolves `LOCATION -> ORGANIZATION -> FAMILY` deterministically.
+6. Locked Astera identity token override fails.
+7. Hash-identical promoted resource is reused rather than duplicated.
+8. Same resource ID with different hash fails.
+9. Bench-like usage of canonical material/branding/lighting/weathering families passes conformance.
+10. An unregistered one-off "almost equivalent" material fails without waiver.
+11. Existing v0.9–v0.15 regression suites remain green.
+
+## Blender runtime benchmark requirements
+
+When run in the real Blender/RPG environment:
+- create/update `LAFAR_ASSET_LIBRARY.blend` through Python;
+- package only reusable approved datablocks;
+- load at least one canonical Material and one reusable Object/NodeGroup through `bpy.data.libraries.load`;
+- verify readback names against `asset_library_manifest.json`;
+- prove a subsequent asset can consume resources without regenerating them.
+
+## Success criterion
+
+The benchmark succeeds when a future prompt can state only the location/organization/family plus its asset-specific references and receive the same canonical material/branding/form language without reconstructing that shared context from scratch.
+
+
+---
+
+## FILE: `08_scripts/101_LOCATION_DESIGN_SYSTEM_VALIDATION_PATTERN.md`
+
+# Location Design System Validation Pattern
+
+## Pure-Python sequence
+
+```python
+from executors.design_system_resolver import resolve
+from executors.design_system_manifest import evaluate as validate_manifest
+from executors.design_system_inheritance import resolve as resolve_inheritance
+from executors.design_system_conformance import evaluate as validate_conformance
+```
+
+Recommended flow:
+
+```text
+resolve/bootstrap path
+-> read/populate manifest
+-> validate manifest
+-> resolve inheritance for current organization/family
+-> construct compact usage record
+-> conformance gate
+```
+
+## Negative controls
+
+A useful regression must include:
+- empty bootstrapped manifest fails final readiness;
+- locked identity override fails inheritance;
+- unregistered one-off material fails conformance;
+- resource ID hash collision fails promotion;
+- same-content resource deduplicates.
+
+## Blender bridge
+
+Runtime scripts may then:
+- open/update canonical Asset Library `.blend`;
+- load canonical resources through `bpy.data.libraries.load`;
+- bind semantic IDs to actual datablocks;
+- read back names/paths and compare against `asset_library_manifest.json`.
+
+Pure-Python PASS does not prove Blender Asset Library packaging. That remains a Blender runtime proof.
+
+
+---
+
+## FILE: `14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md`
+
+# Location Design System Layer Index
+
+## Purpose
+
+`14_design_system/` owns persistent reusable visual language above individual assets and alongside v0.15 location assembly.
+
+It does not replace:
+- `10_reconstruction/` — fidelity of one reference-driven asset;
+- `12_procedural_generation/` — procedural generation domains;
+- `13_environment_assembly/` — spatial assembly of complete locations.
+
+It supplies all three with reusable location/faction/family resources.
+
+## Canonical flow
+
+```text
+LOCATION_DESIGN_SYSTEM_RESOLVE
+-> BUILD if missing / LOAD if present
+-> ingest authoritative location + organization references
+-> design tokens + form language
+-> material language
+-> branding/graphics
+-> reusable components/profiles/nodegroups
+-> lighting + weathering language
+-> Blender Asset Library packaging
+-> inheritance resolution for current asset family
+-> asset consumes canonical resources
+-> DESIGN_SYSTEM_CONFORMANCE_GATE
+-> promote approved reusable additions back into system
+```
+
+## Modules
+
+- `401` Build/Bootstrap from references and accepted assets
+- `402` Directory/path/source-of-truth contract
+- `403` Machine-readable manifest contract
+- `404` Inheritance and override semantics
+- `405` Resource provenance, promotion and deduplication
+- `406` Material and texture language
+- `407` Branding, graphics and signage library
+- `408` Reusable components, profiles and node groups
+- `409` Shape, edge, seam and detail language
+- `410` Weathering/environment-response language
+- `411` Lighting and emissive language
+- `412` Blender Asset Library packaging/API contract
+- `413` Asset consumption/reuse protocol
+- `414` Design System Conformance Gate
+- `415` Versioning/change propagation
+
+
+---
+
+## FILE: `14_design_system/401_DESIGN_SYSTEM_BUILD_AND_BOOTSTRAP.md`
+
+# Design System Build and Bootstrap
+
+## Intent
+
+Use when the user asks to create a reusable visual/design system for a location, district, corporation/faction or asset family instead of immediately building another isolated asset.
+
+## Inputs
+
+At minimum:
+- `location_id`;
+- project/source root;
+- available canonical references;
+- known accepted assets or material/branding sources when they exist.
+
+Optional:
+- `organization_id` / faction / brand;
+- parent design system;
+- asset-family references;
+- existing runtime material library;
+- existing Blender Asset Library.
+
+## Build sequence
+
+```text
+resolve canonical path
+-> if absent: bootstrap folder + MD + JSON + registries
+-> inventory references and accepted existing assets
+-> classify evidence by domain
+-> extract stable cross-asset rules, not one-off geometry
+-> build design tokens
+-> build shape/edge/detail language
+-> build material families and source texture registry
+-> build branding/graphics registry
+-> identify reusable components/profiles/nodegroups
+-> define lighting/emissive and weathering language
+-> create family/organization overrides
+-> package approved Blender resources
+-> validate final manifest
+-> return canonical paths
+```
+
+## Evidence rule
+
+A design system is not invented from aesthetic prose alone if stronger source evidence exists.
+
+Classify every promoted rule as:
+- `EXPLICIT` — dimensions/specification/source file;
+- `REPEATED` — observed consistently across multiple accepted assets/references;
+- `INFERRED` — plausible shared rule with provenance and confidence;
+- `PROPOSED` — new design decision requiring explicit design-system ownership.
+
+Do not promote a one-off accident from a single asset into a universal rule without evidence.
+
+## Existing-assets mining
+
+Accepted assets may be mined for repeated:
+- material IDs/textures;
+- edge radii/chamfers;
+- trim profiles;
+- LED treatment;
+- panel gaps/seams;
+- branding placement;
+- utility modules;
+- fasteners;
+- decals/signage;
+- weathering intensity.
+
+The source asset remains valid evidence, but promoted resources receive canonical design-system IDs and paths.
+
+## Bootstrap vs Ready
+
+`BOOTSTRAPPED` means folder/schema exists. It is not design approval.
+
+`READY` requires relevant domains to be populated from evidence and pass `LOCATION_DESIGN_SYSTEM_MANIFEST final=True`.
+
+## Required user-facing result
+
+Always report exact paths:
+
+```text
+Design system MD: <...>/LOCATION_DESIGN_SYSTEM.md
+Manifest: <...>/design_system.json
+Materials: <runtime/material/path>
+Branding: <...>/branding
+Components: <...>/components
+Blender Asset Library: <...>/<LOCATION>_ASSET_LIBRARY.blend
+```
+
+Those paths become reusable inputs for future prompts.
+
+
+---
+
+## FILE: `14_design_system/402_DESIGN_SYSTEM_DIRECTORY_AND_PATH_CONTRACT.md`
+
+# Design System Directory and Path Contract
+
+## Source-side root
+
+Default RPG/project convention:
+
+```text
+<repo>/Blender/DesignSystems/<location_id>/
+```
+
+This is a source-authoring location. It may contain Markdown, JSON, source textures, logos and `.blend` authoring libraries that should not be copied blindly into runtime packages.
+
+## Required files
+
+```text
+LOCATION_DESIGN_SYSTEM.md
+ design_system.json
+ sources.json
+ asset_library_manifest.json
+```
+
+## Standard directories
+
+```text
+materials/
+branding/
+components/
+decals/
+profiles/
+nodegroups/
+references/
+previews/
+families/
+organizations/
+```
+
+## Runtime material boundary
+
+The v0.14 runtime material library remains:
+
+```text
+<repo>/Assets/GameAssets/Materials/Locations/<location_id>/
+```
+
+`design_system.json.resource_paths.material_library` points to it.
+
+The design-system source root may contain high-resolution/source material assets, while the runtime material library owns approved game-ready payloads.
+
+## Find-or-create behavior
+
+```text
+known design_system_root
+-> <root>/<location_id>
+else known project_root
+-> <project_root>/Blender/DesignSystems/<location_id>
+else BLOCKED
+```
+
+If missing and creation is authorized, bootstrap canonical directories and schemas. Never create multiple sibling roots because of capitalization, spaces or spelling variants; normalize the stable `location_id` first.
+
+## No silent relocation
+
+Changing the design-system root is a migration. Update:
+- `design_system.json`;
+- project profile;
+- dependent asset records;
+- Blender Asset Library registration;
+- runtime material link when affected.
+
+Do not leave old and new roots both authoritative.
+
+Canonical resolver: `executors/design_system_resolver.py`.
+
+
+---
+
+## FILE: `14_design_system/403_DESIGN_SYSTEM_MANIFEST_CONTRACT.md`
+
+# Design System Manifest Contract
+
+`design_system.json` is the machine-readable source of truth. `LOCATION_DESIGN_SYSTEM.md` explains intent and evidence; the JSON drives resolution and validation.
+
+## Required top-level domains
+
+```json
+{
+  "schema_version": "1.0",
+  "location_id": "lafar",
+  "design_system_version": 1,
+  "status": "READY",
+  "extends": null,
+  "locked_tokens": [],
+  "design_tokens": {},
+  "shape_language": {},
+  "edge_language": {},
+  "detail_language": {},
+  "material_families": {},
+  "branding": {},
+  "component_families": {},
+  "lighting": {},
+  "weathering": {},
+  "resource_paths": {}
+}
+```
+
+## Recommended resource IDs
+
+Use stable semantic IDs rather than filenames:
+
+```text
+MAT_ASTERA_GRAPHITE_COMPOSITE_A
+MAT_ASTERA_BRUSHED_ALUMINIUM_A
+BRAND_ASTERA_PRIMARY
+BRAND_ASTERA_SYMBOL
+CMP_ASTERA_UTILITY_PANEL_A
+CMP_ASTERA_LED_RECESSED_A
+EDGE_ASTERA_CIVIC_OUTER_A
+WEATHER_LAFAR_MAINTAINED_WET_A
+LIGHT_ASTERA_CIVIC_BLUE_A
+```
+
+A filename may change without changing the semantic resource ID.
+
+## Provenance
+
+Rules and resources should carry:
+- source reference(s);
+- evidence type;
+- confidence where inferred;
+- authoring/version origin;
+- license/ownership for imported resources.
+
+## Final readiness
+
+`status=READY|APPROVED` is not sufficient by itself. The final validator requires populated design-token, shape, edge, material, lighting and weathering domains, plus branding assets when branding is applicable.
+
+Canonical validator: `executors/design_system_manifest.py`.
+
+
+---
+
+## FILE: `14_design_system/404_DESIGN_SYSTEM_INHERITANCE_AND_OVERRIDES.md`
+
+# Design System Inheritance and Overrides
+
+## Hierarchy
+
+```text
+UNIVERSE
+-> LOCATION
+-> ORGANIZATION / FACTION / BRAND
+-> ASSET FAMILY
+-> ASSET
+```
+
+Example:
+
+```text
+RPG
+-> LAFAR
+-> ASTERA_CIVIC_SYSTEMS
+-> STREET_FURNITURE
+-> STREET_BENCH
+```
+
+## Resolution
+
+Higher layers establish defaults. Lower layers may override only where permitted.
+
+Typical split:
+- Location: climate response, city palette, environmental materials, wetness/maintenance baseline.
+- Organization: brand palette, logo, civic-blue emissive, industrial form language, recurring components.
+- Family: dimensions/rules shared by benches, planters, lamps, kiosks etc.
+- Asset: source-specific exceptions and dimensions.
+
+## Locked tokens
+
+Identity-critical paths can be locked, for example:
+
+```text
+branding.primary_symbol
+lighting.families.ASTERA_CIVIC_BLUE.color
+material_families.MAT_ASTERA_GRAPHITE_COMPOSITE_A.identity
+```
+
+An asset cannot silently override a locked token. It must either reuse it or receive an explicit design-system revision/waiver.
+
+## Merge semantics
+
+- dictionaries deep-merge;
+- scalar/list values replace at the lower layer;
+- provenance is retained per resolved leaf path;
+- scope order may not move backward;
+- conflicting locked values fail resolution.
+
+Canonical pure-Python resolver: `executors/design_system_inheritance.py`.
+
+
+---
+
+## FILE: `14_design_system/405_RESOURCE_PROVENANCE_PROMOTION_AND_DEDUPLICATION.md`
+
+# Resource Provenance, Promotion and Deduplication
+
+## Problem
+
+Without canonical ownership, every asset tends to create another logo PNG, another graphite texture, another blue LED material and another service panel. Visual drift and token/tool cost grow with every object.
+
+## Promotion route
+
+```text
+asset/local/reference resource
+-> identify reusable semantic role
+-> verify ownership/license/provenance
+-> hash content
+-> compare design-system registry
+-> reuse identical existing resource OR promote new canonical resource
+-> assign stable resource ID
+-> update design-system manifest/library manifest
+-> future assets reference canonical ID/path
+```
+
+## Categories
+
+- `MATERIAL` / `TEXTURE`;
+- `BRANDING`;
+- `DECAL`;
+- `COMPONENT`;
+- `PROFILE`;
+- `NODEGROUP`;
+- `REFERENCE`.
+
+## Hash rules
+
+- identical content under a different asset-local name should normally deduplicate;
+- one semantic `resource_id` may not silently point to two different hashes;
+- replacing content under an existing stable ID is a design-system version change;
+- original source paths remain in provenance even after copying into canonical ownership.
+
+## Non-destructive migration
+
+Promotion copies/registers; it does not delete the original source asset. Source deletion is a separate cleanup decision after dependency audit.
+
+Canonical executor: `executors/design_system_resource_registry.py`.
+
+
+---
+
+## FILE: `14_design_system/406_MATERIAL_AND_TEXTURE_LANGUAGE.md`
+
+# Material and Texture Language
+
+## Ownership
+
+The design system owns material identity. The v0.14 location material library owns runtime-ready texture payloads. Individual assets consume and adapt approved families; they do not recreate generic equivalents from scratch.
+
+## Material family record
+
+Recommended fields:
+
+```yaml
+material_id: MAT_ASTERA_GRAPHITE_COMPOSITE_A
+role: structural_dark
+source_family: composite
+runtime_path: <location material library>/...
+channels:
+  basecolor: ...
+  normal: ...
+  roughness: ...
+  metallic: ...
+  ao: ...
+physical_scale_mm: 1000
+roughness_range: [0.48, 0.72]
+weathering_profile: WEATHER_LAFAR_MAINTAINED_WET_A
+allowed_for:
+  - housings
+  - service_panels
+  - civic_furniture
+forbidden_for:
+  - optical_glass
+```
+
+## Surface hierarchy
+
+Each approved family defines:
+
+```text
+identity
+-> macro variation
+-> meso defects/manufacturing response
+-> microstructure
+-> environmental response
+-> local/contact wear
+```
+
+A generic Noise texture is not a material identity.
+
+## Reuse-first route
+
+```text
+required semantic role
+-> search resolved design-system families
+-> compatible family found: reuse/adapt via allowed masks/parameters
+-> no compatible family: author candidate
+-> validate candidate
+-> promote reusable candidate to design system
+```
+
+## Location consistency
+
+Assets from the same location/organization should normally share canonical base families. Variation should come from masks, wear state, wetness and instance parameters, not duplicated base textures.
+
+## Source/runtime split
+
+High-resolution/source textures may live under the source design system. Runtime texture sets remain under the project location material library. The manifest records both.
+
+
+---
+
+## FILE: `14_design_system/407_BRANDING_GRAPHICS_AND_SIGNAGE_LIBRARY.md`
+
+# Branding, Graphics and Signage Library
+
+## Purpose
+
+Branding must be loaded from canonical source assets, not regenerated from text or approximated per object.
+
+## Canonical resource classes
+
+```text
+PRIMARY_LOGO
+SYMBOL
+WORDMARK
+SUBBRAND_MARK
+SIGNAGE_ICON
+UTILITY_ICON
+WARNING_MARK
+DECAL_SHEET
+TYPE_LAYOUT_REFERENCE
+```
+
+Recommended source formats preserve vector authority when available (`SVG`, source design files) plus approved raster/runtime derivatives.
+
+## Branding record
+
+```yaml
+resource_id: BRAND_ASTERA_PRIMARY
+role: PRIMARY_LOGO
+source_path: branding/astera_primary.svg
+runtime_derivatives:
+  - branding/astera_primary_1024.png
+allowed_colors:
+  - neutral_light
+  - neutral_dark
+  - astera_blue
+minimum_width_mm: 45
+clear_space_ratio: 0.25
+allowed_treatments:
+  - decal
+  - print
+  - engraving
+  - low_intensity_emissive
+forbidden:
+  - non_uniform_scale
+  - arbitrary_recolor
+  - redraw_from_text
+```
+
+## Consumption law
+
+If `branding.applicable=true`, asset branding must reference registered resource IDs. A locally redrawn/retyped approximation is a conformance failure.
+
+## Graphics consistency
+
+Shared utility symbols, power icons, service marks and wayfinding glyphs belong here when they recur across assets. This prevents every bench, kiosk and terminal from receiving a different visual icon set.
+
+## Promotion
+
+A new approved graphic introduced by one asset should be promoted through `DESIGN_SYSTEM_RESOURCE_PROMOTE` before reuse elsewhere.
+
+
+---
+
+## FILE: `14_design_system/408_REUSABLE_COMPONENT_PROFILE_AND_NODEGROUP_LIBRARY.md`
+
+# Reusable Component, Profile and Node-Group Library
+
+## Purpose
+
+Repeated product language should be physically reused where appropriate, not reconstructed as lookalikes on every asset.
+
+## Candidate reusable classes
+
+- utility/power/payment panels;
+- service hatches and fasteners;
+- recessed LED modules/diffusers;
+- feet/plinth interfaces;
+- trim/extrusion profiles;
+- handles, hinges and standardized access hardware;
+- planter/bench/lamp civic submodules;
+- Geometry Nodes groups;
+- material node groups;
+- decal carriers;
+- profile curves.
+
+## Component record
+
+```yaml
+component_id: CMP_ASTERA_UTILITY_PANEL_A
+source_blend: LAFAR_ASSET_LIBRARY.blend
+asset_name: ACS_UtilityPanel_A
+role: civic_utility_panel
+interface:
+  mount_plane: BACK
+  nominal_size_mm: [100, 45, 120]
+allowed_variants:
+  - power_only
+  - power_and_id
+usage:
+  - bench
+  - kiosk
+  - terminal
+```
+
+## Reuse vs copy
+
+Use linked/asset-library source during authoring when stable. Make local only when asset-specific destructive modification is required. Even then preserve `source_component_id` metadata.
+
+## Do not over-generalize
+
+A component becomes canonical because its form/interface is intentionally shared, not merely because two objects happen to look similar.
+
+## Blender ownership
+
+Approved reusable Blender datablocks are packaged by `DESIGN_SYSTEM_ASSET_LIBRARY_BUILD` into the canonical location `.blend` library and registered in `asset_library_manifest.json`.
+
+
+---
+
+## FILE: `14_design_system/409_SHAPE_EDGE_SEAM_AND_DETAIL_LANGUAGE.md`
+
+# Shape, Edge, Seam and Detail Language
+
+## Why this exists
+
+Shared materials alone do not create a coherent product family. Assets must also share recurring form logic.
+
+## Shape language
+
+Record preferred and forbidden tendencies, for example:
+
+```yaml
+shape_language:
+  families:
+    ASTERA_CIVIC_HARDSURFACE:
+      preferred:
+        - broad planar surfaces
+        - controlled faceted/chamfered transitions
+        - modular service segmentation
+        - visible mechanical part boundaries
+      avoid:
+        - capsule_everything
+        - decorative_freeform_without_function
+        - excessive_global_bevel
+```
+
+## Edge families
+
+Stable edge-family IDs define ranges/roles rather than one radius for every object:
+
+```yaml
+edge_language:
+  families:
+    EDGE_ASTERA_OUTER_A:
+      role: main exposed housing
+      radius_mm: [12, 24]
+    EDGE_ASTERA_PANEL_A:
+      role: service panel
+      radius_mm: [3, 8]
+```
+
+## Seam/gap language
+
+Define recurring:
+- panel gaps;
+- shadow gaps;
+- trim widths;
+- service seams;
+- recess depth families;
+- junction types.
+
+The Assembly Relation Contract still validates physical correctness per asset; the design system defines stylistic families.
+
+## Detail language
+
+Record repeated mezo-detail density and vocabulary:
+- fastener families;
+- panel-line rhythm;
+- vent/perforation grammar;
+- indicator strips;
+- handle/port framing;
+- service segmentation.
+
+## Conformance
+
+A new asset may introduce a source-required exception, but a generic family asset should not invent a foreign edge/seam vocabulary when a canonical family exists.
+
+
+---
+
+## FILE: `14_design_system/410_WEATHERING_AND_ENVIRONMENT_RESPONSE_LANGUAGE.md`
+
+# Weathering and Environment-Response Language
+
+## Purpose
+
+Environment response is a location-level visual rule. Without it, each asset receives unrelated dirt/wetness/wear and the scene loses material continuity.
+
+## Profile record
+
+```yaml
+weathering:
+  profiles:
+    WEATHER_LAFAR_MAINTAINED_WET_A:
+      maintenance: HIGH
+      humidity: HIGH
+      rainfall: HIGH
+      ground_grime: MEDIUM
+      water_streaks: MEDIUM
+      mineral_residue: LOW
+      edge_wear: LOW
+      usage_polish: LOW_TO_MEDIUM
+      rust: VERY_LOW
+```
+
+## Semantic masks
+
+Prefer physically meaningful masks:
+- distance from ground;
+- upward-facing surfaces;
+- recess/concavity;
+- contact zones;
+- water-flow paths;
+- frequently touched surfaces;
+- sheltered vs exposed zones.
+
+Do not replace all weathering with uniform global grunge.
+
+## Maintenance state
+
+Location/corporation identity may specify that infrastructure is maintained. Weathering then means subtle accumulated use, wetness and local dirt—not abandoned/apocalyptic damage.
+
+## Asset variation
+
+Assets can carry per-instance wear seeds/intensity, but the underlying profile remains canonical.
+
+## Runtime
+
+Source weathering language may drive material masks and bake parameters. Runtime textures should preserve the same semantic hierarchy at the available resolution.
+
+
+---
+
+## FILE: `14_design_system/411_LIGHTING_AND_EMISSIVE_LANGUAGE.md`
+
+# Lighting and Emissive Language
+
+## Purpose
+
+Integrated lights and environmental lighting communicate system identity and function. They must use shared roles rather than arbitrary per-asset glow.
+
+## Family record
+
+```yaml
+lighting:
+  families:
+    LIGHT_ASTERA_CIVIC_BLUE_A:
+      role:
+        - status
+        - orientation
+        - safety
+      color_linear: [0.06, 0.45, 1.0]
+      intensity_class: LOW
+      preferred_placement:
+        - recessed_strip
+        - underside
+        - edge_guidance
+      forbidden:
+        - large_decorative_glowing_surface
+        - exposed_neon_tube_as_structure
+```
+
+## Separation of concerns
+
+Design system owns semantic family and visual range.
+
+Asset owns exact fixture geometry/placement required by its reference.
+
+Runtime owns bloom/exposure response.
+
+## Environmental lighting
+
+Location-level ambient/task/accent families may also live here. v0.15 `LOCATION_MATERIAL_LIGHTING_LANGUAGE` consumes these resolved families during full-location art direction.
+
+## Conformance
+
+A new asset with a different accent color/intensity hierarchy requires an explicit family override or design-system update. It cannot silently introduce another "almost Astera blue".
+
+
+---
+
+## FILE: `14_design_system/412_BLENDER_ASSET_LIBRARY_PACKAGING.md`
+
+# Blender Asset Library Packaging
+
+## Output
+
+Each mature location design system may own one canonical authoring library:
+
+```text
+<design-system>/<LOCATION>_ASSET_LIBRARY.blend
+```
+
+The `.blend` is an executable resource cache, not the semantic source of truth. `design_system.json`, `asset_library_manifest.json` and resource provenance remain authoritative.
+
+## Eligible datablocks
+
+- approved Materials;
+- reusable Objects/Collections;
+- Geometry Node groups;
+- shader node groups;
+- reusable profile Curves;
+- decal carriers/templates.
+
+## API-first rules
+
+Agent operations must be scriptable through Blender Python. Prefer direct datablock access and `bpy.data.libraries.load(...)` for library ingestion over UI-only Asset Browser interaction.
+
+When creating/updating the library:
+
+```text
+open/construct isolated design-system library scene
+-> add only approved canonical datablocks
+-> use stable names matching semantic resource IDs
+-> mark reusable datablocks as assets when supported by the runtime
+-> assign catalog/category metadata when available
+-> save canonical .blend
+-> reopen/readback
+-> compare asset_library_manifest.json with actual datablocks
+```
+
+## Append/link policy
+
+- stable reusable source may be linked/appended for authoring;
+- destructive asset-specific edits require a local copy;
+- local copy preserves `source_component_id` or equivalent provenance;
+- future generic improvements should be promoted back to the canonical component instead of replicated asset by asset.
+
+## Do not package
+
+Do not put whole finished unrelated production assets into the design-system library merely because they use the same style. Package reusable resources/components, not the entire project.
+
+## Runtime boundary
+
+The design-system `.blend` is an authoring dependency. Game runtime export still follows existing glTF/material/runtime contracts.
+
+
+---
+
+## FILE: `14_design_system/413_ASSET_CONSUMPTION_AND_REUSE_PROTOCOL.md`
+
+# Asset Consumption and Reuse Protocol
+
+## Preflight for any known-location asset
+
+Before final appearance authoring:
+
+```text
+location_id / organization_id / family_id
+-> LOCATION_DESIGN_SYSTEM_RESOLVE
+-> load design_system.json
+-> resolve inheritance layers
+-> produce compact RESOLVED_DESIGN_CONTEXT
+-> bind canonical materials/branding/components/form families
+-> then construct/reconstruct asset
+```
+
+Do not load every source texture/reference into context. The compact resolved context should contain semantic IDs, paths and rules relevant to the current asset class.
+
+## Resolved Design Context
+
+Recommended payload:
+
+```yaml
+location: lafar
+organization: astera_civic_systems
+family: street_furniture
+design_system_version: 3
+materials:
+  structural_dark: MAT_ASTERA_GRAPHITE_COMPOSITE_A
+  trim_metal: MAT_ASTERA_BRUSHED_ALUMINIUM_A
+branding:
+  primary: BRAND_ASTERA_PRIMARY
+components:
+  utility_panel: CMP_ASTERA_UTILITY_PANEL_A
+edge_family: EDGE_ASTERA_CIVIC_OUTER_A
+lighting_family: LIGHT_ASTERA_CIVIC_BLUE_A
+weathering_profile: WEATHER_LAFAR_MAINTAINED_WET_A
+source_root: ...
+asset_library_blend: ...
+```
+
+## Reference priority
+
+The design system supplies shared language. Asset-specific authoritative technical drawings still own exact dimensions/assembly details for the asset.
+
+Therefore:
+
+```text
+asset hard dimension/reference
+> generic family proportion
+```
+
+but:
+
+```text
+canonical logo/material identity/locked brand color
+> arbitrary asset-local approximation
+```
+
+## New reusable discovery
+
+If the asset reveals a new repeated component/material/detail that belongs to the system:
+
+```text
+candidate
+-> validate against reference
+-> DESIGN_SYSTEM_RESOURCE_PROMOTE
+-> update manifest/library
+-> use canonical ID in current asset
+```
+
+## Output
+
+Asset records should persist:
+- design-system path;
+- design-system version;
+- resolved organization/family layers;
+- canonical resource IDs used;
+- waivers/exceptions;
+- conformance result.
+
+
+---
+
+## FILE: `14_design_system/414_DESIGN_SYSTEM_CONFORMANCE_GATE.md`
+
+# Design System Conformance Gate
+
+## Purpose
+
+Prove that an asset belongs to the resolved location/organization/family language. This gate is separate from reference fidelity: an asset can match its concept while still fragmenting the wider location system.
+
+## Required evidence
+
+Depending on the asset:
+- material family IDs;
+- component source IDs;
+- branding resource IDs;
+- lighting/emissive family IDs;
+- weathering profile ID;
+- shape/edge family IDs;
+- declared one-off additions and waivers.
+
+## Hard failures
+
+```text
+unregistered one-off material without waiver
+unregistered shared component without waiver
+redrawn/unregistered branding when canonical branding applies
+foreign lighting/accent family
+foreign locked shape/edge identity
+reuse ratio below an explicit family target
+```
+
+## Non-compensating
+
+A correct logo cannot compensate for wrong materials. High geometric fidelity cannot compensate for a foreign brand color or unregistered material family.
+
+## Reuse ratio
+
+Diagnostic metric:
+
+```text
+canonical referenced resources / all design-system resource references
+```
+
+It is not a universal quality score. Use a minimum only when the asset family is expected to reuse standardized resources.
+
+## Waivers
+
+Waivers are explicit semantic keys, for example:
+
+```text
+material:MAT_SPECIAL_MEDICAL_GLASS
+component:CMP_UNIQUE_HERO_SCANNER
+```
+
+A waiver documents a legitimate exception; it does not automatically promote the resource into the shared system.
+
+Canonical executor: `executors/design_system_conformance.py`.
+
+
+---
+
+## FILE: `14_design_system/415_DESIGN_SYSTEM_VERSIONING_AND_CHANGE_PROPAGATION.md`
+
+# Design System Versioning and Change Propagation
+
+## Version ownership
+
+`design_system_version` is independent from BlenderSkill version and individual asset version.
+
+Increment it when canonical identity/resources change in a way that may affect dependent assets, for example:
+- replacing a material family's source textures;
+- changing a locked brand color;
+- changing primary logo geometry;
+- changing canonical component dimensions/interface;
+- changing edge/seam family rules;
+- changing weathering/lighting identity.
+
+Adding a purely new unused optional resource can remain compatible when explicitly classified additive.
+
+## Dependency record
+
+Every consuming asset should record:
+
+```text
+design_system_path
+design_system_version
+resolved_layers
+resource_ids
+waivers
+```
+
+## Change impact
+
+```text
+design-system change
+-> identify changed semantic IDs/paths
+-> find dependent assets/locations
+-> classify impact: NONE / REVALIDATE / REBAKE / REBUILD
+-> invalidate only affected evidence/runtime stages
+```
+
+Examples:
+- new logo bitmap for same geometry/color: revalidate branding/bake;
+- changed trim profile dimensions: dependent geometry may require rebuild;
+- changed roughness texture: retexture/rebake, geometry remains valid;
+- changed weathering profile: appearance revalidation, not Shape Graph rebuild.
+
+## No silent mutation
+
+Do not overwrite a canonical resource file with materially different content while keeping the same version/evidence as if nothing changed. Hash conflicts are design-system changes.

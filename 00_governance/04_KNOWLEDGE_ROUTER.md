@@ -1,5 +1,25 @@
 # Knowledge Router
 
+## v0.16 persistent design-system routing override
+
+For an asset or location assigned to a known location/faction/family, resolve reusable visual language before final appearance:
+
+```text
+location identity
+-> LOCATION_DESIGN_SYSTEM_RESOLVE
+-> bootstrap only if missing
+-> DESIGN_SYSTEM_INHERITANCE_RESOLVE
+-> compact resolved design context
+-> asset/location authoring
+-> DESIGN_SYSTEM_CONFORMANCE_GATE
+```
+
+Load `14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md` and only the relevant domain modules. Do not reload raw logos/textures/reference packs when stable canonical IDs and paths already exist.
+
+Asset-specific technical dimensions remain owned by authoritative asset references. Locked location/organization identity (canonical logo, brand color, material identity etc.) cannot be silently overridden by an asset-local approximation.
+
+---
+
 ## v0.14 visual-quality routing override
 
 This section has precedence for final environment/vegetation/material authoring while preserving v0.12 physical-integrity rules.

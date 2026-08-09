@@ -1,5 +1,21 @@
 # Semantic Skill Registry
 
+## v0.16 persistent design-system registry precedence
+
+The detailed v0.16 registry is `00_governance/12_LOCATION_DESIGN_SYSTEM_SKILL_REGISTRY_V016.md`.
+
+Canonical new executable skills:
+
+| Skill ID | Executor | Maturity |
+|---|---|---|
+| `LOCATION_DESIGN_SYSTEM_RESOLVE` | `executors/design_system_resolver.py` | EXECUTOR_READY |
+| `LOCATION_DESIGN_SYSTEM_MANIFEST` | `executors/design_system_manifest.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_INHERITANCE_RESOLVE` | `executors/design_system_inheritance.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_RESOURCE_PROMOTE` | `executors/design_system_resource_registry.py` | EXECUTOR_READY |
+| `DESIGN_SYSTEM_CONFORMANCE_GATE` | `executors/design_system_conformance.py` | EXECUTOR_READY |
+
+For known-location L4/L5/final art-direction work, the resolved design system and conformance gate are upstream of runtime completion.
+
 ## Execution maturity
 
 - `KNOWLEDGE_ONLY` — guidance exists, no stable execution contract.

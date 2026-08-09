@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -19,9 +19,10 @@
     "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
     "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
     "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
-    "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md"
+    "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
+    "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 294,
+  "module_count": 315,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -316,9 +317,31 @@
     "13_environment_assembly/315_REFERENCE_COMPOSITION_FIDELITY.md",
     "13_environment_assembly/316_LOCATION_COMPLETENESS_GATE.md",
     "13_environment_assembly/317_GAME_READY_LOCATION_PARTITIONING_AND_INSTANCING.md",
-    "13_environment_assembly/318_LOCATION_DEFINITION_OF_DONE.md"
+    "13_environment_assembly/318_LOCATION_DEFINITION_OF_DONE.md",
+    "00_governance/11_LOCATION_DESIGN_SYSTEM_EXTENSION.md",
+    "00_governance/12_LOCATION_DESIGN_SYSTEM_SKILL_REGISTRY_V016.md",
+    "06_prompts/71_LOCATION_DESIGN_SYSTEM_BUILDER_PROMPT.md",
+    "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md",
+    "08_scripts/101_LOCATION_DESIGN_SYSTEM_VALIDATION_PATTERN.md",
+    "14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md",
+    "14_design_system/401_DESIGN_SYSTEM_BUILD_AND_BOOTSTRAP.md",
+    "14_design_system/402_DESIGN_SYSTEM_DIRECTORY_AND_PATH_CONTRACT.md",
+    "14_design_system/403_DESIGN_SYSTEM_MANIFEST_CONTRACT.md",
+    "14_design_system/404_DESIGN_SYSTEM_INHERITANCE_AND_OVERRIDES.md",
+    "14_design_system/405_RESOURCE_PROVENANCE_PROMOTION_AND_DEDUPLICATION.md",
+    "14_design_system/406_MATERIAL_AND_TEXTURE_LANGUAGE.md",
+    "14_design_system/407_BRANDING_GRAPHICS_AND_SIGNAGE_LIBRARY.md",
+    "14_design_system/408_REUSABLE_COMPONENT_PROFILE_AND_NODEGROUP_LIBRARY.md",
+    "14_design_system/409_SHAPE_EDGE_SEAM_AND_DETAIL_LANGUAGE.md",
+    "14_design_system/410_WEATHERING_AND_ENVIRONMENT_RESPONSE_LANGUAGE.md",
+    "14_design_system/411_LIGHTING_AND_EMISSIVE_LANGUAGE.md",
+    "14_design_system/412_BLENDER_ASSET_LIBRARY_PACKAGING.md",
+    "14_design_system/413_ASSET_CONSUMPTION_AND_REUSE_PROTOCOL.md",
+    "14_design_system/414_DESIGN_SYSTEM_CONFORMANCE_GATE.md",
+    "14_design_system/415_DESIGN_SYSTEM_VERSIONING_AND_CHANGE_PROPAGATION.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository",
-  "environment_assembly_layer": "13_environment_assembly"
+  "environment_assembly_layer": "13_environment_assembly",
+  "design_system_layer": "14_design_system"
 }

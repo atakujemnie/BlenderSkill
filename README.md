@@ -4,10 +4,29 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.15.0 — full-location reconstruction, environment assembly, spatial relations and completeness gates.**
+**v0.16.0 — persistent location design systems, reusable visual language and canonical asset libraries.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.16 persistent Location Design Systems
+
+v0.16 promotes the thin v0.15 Location Design System requirement into a persistent reusable authoring layer. Future assets resolve one canonical location/faction/family language before final appearance instead of recreating materials, logos, components and style rules per asset.
+
+```text
+<repo>/Blender/DesignSystems/<location_id>/
+-> LOCATION_DESIGN_SYSTEM.md + design_system.json
+-> source/provenance registry
+-> materials + branding + components + decals + profiles + nodegroups
+-> optional canonical Blender Asset Library .blend
+-> inheritance: LOCATION -> ORGANIZATION -> FAMILY -> ASSET
+-> asset consumption
+-> DESIGN_SYSTEM_CONFORMANCE_GATE
+```
+
+The v0.14 runtime material library remains linked but separate under `Assets/GameAssets/Materials/Locations/<location_id>`. Canonical resources can be hash-deduplicated/promoted from accepted assets, and future asset prompts receive exact reusable paths rather than regenerating the same visual language.
+
+Canonical regression: **Benchmark 85 — Lafar Location Design System v0.16**.
 
 ## v0.15 location reconstruction and environment assembly
 
