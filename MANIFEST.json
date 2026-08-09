@@ -17,7 +17,7 @@
     "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
     "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 242,
+  "module_count": 243,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -260,7 +260,8 @@
     "10_reconstruction/189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md",
     "10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md",
     "10_reconstruction/191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md",
-    "11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md"
+    "11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md",
+    "05_execution/78_GEOMETRIC_INTEGRITY_GATE.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository"
