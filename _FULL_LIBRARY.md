@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.11.0 — Full compiled snapshot
+# Blender AI Agent Library v0.12.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -29528,3 +29528,582 @@ Do not build sensor, LED array or emissive strips before all required G1 nodes p
 ## Detail closure
 
 Before RDL5 acceptance inventory all visible head/base cuts, hatches, fasteners, vents, branding and emissive terminations. Missing MUST head cuts are not cosmetic TODOs.
+
+
+---
+
+## FILE: `05_execution/76_MUTATION_POSTCONDITION_GATE.md`
+
+# Mutation Postcondition Gate
+
+## Purpose
+
+v0.11 proved that an authorized one-node transaction can still produce the wrong geometry while every execution-state rule is obeyed.
+
+The Lafar Street Lamp v0.11 benchmark exposed multiple silent mutation failures:
+- a Boolean modifier could be applied without producing the intended recess;
+- transform/context state could differ from the active-object assumption;
+- lofted geometry could carry incorrect volume orientation;
+- a builder could return `PASS` because Python completed, not because geometry changed as intended.
+
+v0.12 inserts a mandatory postcondition between mutation and `BUILT_UNVERIFIED`.
+
+## Canonical order
+
+```text
+READY_TO_BUILD
+-> authorized mutation
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
+-> FAIL: persist FAIL / repair current node
+```
+
+`LOCAL_BUILDER: PASS` means only that the builder transaction returned normally. It is not geometric proof.
+
+## Required evidence
+
+Capture compact before/after metrics for the mutated owner:
+- object existence;
+- vertex/face counts;
+- geometry signature;
+- bounds;
+- volume when meaningful;
+- signed volume for closed solids when meaningful;
+- transform identity where Apply is expected;
+- modifier list;
+- cutter/helper existence;
+- feature-probe result;
+- operation kind and stable operation ID.
+
+## Boolean rule
+
+A Boolean is not successful because the modifier disappeared.
+
+For `BOOLEAN_CUT`, `BOOLEAN_UNION` or `BOOLEAN_INTERSECT`, require evidence that the target actually changed: topology delta, volume delta or geometry-signature delta, plus an operation-specific feature probe when declared.
+
+```text
+modifier applied
++ target unchanged
+= BOOLEAN_NO_OP
+= FAIL
+```
+
+## Transform rule
+
+When a mutation depends on transform application:
+- active/selected context is explicit;
+- expected object matrix is identity after Apply;
+- depsgraph update/readback is recorded;
+- unrelated selected objects must not change accidentally.
+
+## Loft / closed-volume rule
+
+For closed section-loft geometry, the postcondition may require positive signed volume. Inverted closed volume is a build failure even when the viewport render looks plausible.
+
+## Material-only rule
+
+A material-only mutation should keep geometry signature stable while material response/signature changes. Geometry drift during RDL5 lookdev is a regression.
+
+## Canonical executor
+
+`executors/mutation_postcondition_gate.py`
+
+Skill ID: `MUTATION_POSTCONDITION_GATE`.
+
+
+---
+
+## FILE: `05_execution/77_REPAIR_INVALIDATION_AND_EVIDENCE_SUPERSESSION.md`
+
+# Repair Invalidation and Evidence Supersession
+
+## Purpose
+
+A repair to an accepted host invalidates more than that host's mesh.
+
+The v0.11 lamp repair changed the `ARM` / `SENSOR_MODULE` junction after the asset had already accumulated green node, appearance and final fidelity evidence. Without dependency invalidation, old evidence can remain green for geometry that no longer exists.
+
+## Fundamental rule
+
+```text
+accepted geometry changes
+-> old node revision is no longer canonical
+-> downstream geometry/evidence depending on it cannot stay ACCEPTED/PASS silently
+```
+
+## Canonical propagation
+
+For a changed Shape Node:
+1. increment the node revision;
+2. mark the changed node `DIRTY`;
+3. walk child + `depends_on` reverse edges;
+4. mark already-built downstream nodes `DIRTY`;
+5. mark not-yet-built downstream nodes `BLOCKED`;
+6. invalidate Appearance Owners hosted by any affected node;
+7. mark evidence records tied to affected node/owner revisions `SUPERSEDED`;
+8. invalidate RDL/fidelity barriers that depended on superseded evidence;
+9. preserve unrelated accepted branches.
+
+## Example
+
+```text
+ARM repair
+├── SENSOR_MODULE         -> DIRTY
+│   └── SENSOR_LENS       -> BLOCKED/DIRTY
+├── HEAD_ACCENT_CHANNEL   -> DIRTY
+├── EDGE_LANGUAGE         -> DIRTY
+└── SURFACE_FINISH        -> DIRTY
+
+BASE                     -> remains ACCEPTED
+```
+
+## Evidence lifecycle
+
+Never delete old evidence. Mark it:
+
+```yaml
+status: SUPERSEDED
+superseded_by: repair:arm_sensor_seam
+```
+
+This preserves traceability and prevents stale green reports from being reused.
+
+## Replay
+
+A deterministic replay may rebuild affected nodes from frozen inputs, but it must generate new revision-bound evidence. Replaying a build does not reactivate superseded proof.
+
+## Canonical executor
+
+`executors/dependency_invalidator.py`
+
+Skill ID: `DEPENDENCY_INVALIDATOR`.
+
+
+---
+
+## FILE: `07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md`
+
+# Benchmark 81 — Lafar Street Lamp v0.11 Geometric Integrity Regression
+
+## Purpose
+
+Canonical regression driver for BlenderSkill v0.12.0.
+
+Source asset: Astera Civic Systems / LAFAR 3470 Civic Lighting Module.
+
+v0.11 delivered the strongest process discipline so far: runtime pinning, conflict arbitration, persistent node state, authorized one-node mutation, `BUILT_UNVERIFIED` branch stops, source-anchored node QA, 23/23 Shape Nodes accepted, 32/32 Appearance Owners accounted, and final appearance/reconstruction gates passed.
+
+Human review still found a severe geometric defect after the green pipeline: the sensor housing and arm interpenetrated and the head lost visible detail.
+
+## Critical finding
+
+A fully green evidence chain can still be wrong if the validators test the wrong physical property.
+
+The broken head had approximately coincident/interpenetrating skins. Initial containment-style checking returned PASS because the defect was not one object fully buried in another; it was surface interpenetration. The first guard therefore did not bite.
+
+After repair:
+- arm tip ended at approximately Y=482 mm;
+- sensor housing began at approximately Y=485 mm;
+- the intended shadow-gap junction was restored;
+- unintended interpenetration findings dropped to zero.
+
+The old junction validator then failed because it had encoded the wrong semantic rule: it expected overlap. It had to be rewritten to validate a shadow gap plus housing lip instead.
+
+## Failure classes protected by v0.12
+
+### V12-01 — assembly interpenetration blind spot
+Separate parts can physically intersect while node/view/fidelity gates remain green.
+
+### V12-02 — wrong junction semantics
+A validator can reward the defect if it checks generic overlap instead of the declared assembly relation.
+
+### V12-03 — silent Boolean no-op
+Modifier application is not proof that the target mesh changed.
+
+### V12-04 — transform/context hazard
+Active object, selected objects and evaluated transforms can diverge from builder assumptions.
+
+### V12-05 — inverted volume/orientation hazard
+A loft can render plausibly but carry a wrong closed-volume orientation that breaks downstream operations.
+
+### V12-06 — toothless validator
+The first containment probe returned PASS on the known-broken fixture. A validator that cannot reject the defect is not acceptance evidence.
+
+### V12-07 — topology classification gap
+The repaired `SensorShell` still contained three n-gons with more than six vertices. N-gons are not automatically wrong, but planarity/concavity/shading risk must be classified.
+
+### V12-08 — contaminated reference mask
+Dimension lines/leaders on the concept sheet changed contour metrics materially. Product and annotation masks must be separated.
+
+### V12-09 — stale evidence after repair
+`ACCEPTED -> DIRTY` exists, but downstream Shape/Appearance/Evidence invalidation must be automatic and revision-aware.
+
+### V12-10 — asset-local integrity validator invention
+Interpenetration logic was invented only after the human found the defect. Assembly integrity belongs in the canonical executor layer.
+
+## v0.12 regression fixtures
+
+```text
+BROKEN_SENSOR_ASSEMBLY
+-> ASSEMBLY_INTEGRITY_GATE FAIL
+
+FIXED_SENSOR_ASSEMBLY
+-> ASSEMBLY_INTEGRITY_GATE PASS
+
+BOOLEAN_TARGET_UNCHANGED
+-> MUTATION_POSTCONDITION_GATE FAIL
+
+TOOTHLESS_NEGATIVE_CONTROL
+-> VALIDATOR_NEGATIVE_CONTROL FAIL
+
+ARM_REPAIR
+-> descendants DIRTY/BLOCKED
+-> affected Appearance Owners UNVERIFIED
+-> stale evidence SUPERSEDED
+```
+
+## Acceptance target
+
+```text
+zero unauthorized mutations
+zero silent mutation no-ops
+zero undefined MUST assembly relations
+zero unintended interpenetrations on forbidden relations
+zero stale green evidence after repair
+100% MUST integrity validators proven by negative control
+0 non-manifold closed solids
+no unclassified non-planar high-order n-gons in MUST visible regions
+```
+
+Reference/appearance fidelity remains required; geometric integrity is non-compensating and cannot be averaged away by a good visual score.
+
+
+---
+
+## FILE: `08_scripts/99_GEOMETRIC_INTEGRITY_VALIDATION_PATTERN.md`
+
+# Geometric Integrity Validation Pattern
+
+## Purpose
+
+Reusable Blender-side measurement pattern consumed by v0.12 pure decision executors.
+
+Canonical gates own acceptance logic. Asset-local Blender code only measures geometry and returns compact records.
+
+## Mutation snapshot
+
+Before and after a risky mutation record:
+
+```python
+{
+  "object_exists": True,
+  "vertices": len(mesh.vertices),
+  "faces": len(mesh.polygons),
+  "volume_mm3": measured_volume,
+  "signed_volume_mm3": signed_volume,
+  "geometry_signature": stable_hash,
+  "matrix_identity": matrix_is_identity,
+  "modifiers": [m.name for m in obj.modifiers],
+}
+```
+
+Feed the pair into `MUTATION_POSTCONDITION_GATE`.
+
+## Assembly relation measurement
+
+For each declared relation pair, measure only metrics required by the relation contract:
+- penetration surface area / estimated volume;
+- minimum/mean gap;
+- contact area;
+- embedding depth;
+- clearance;
+- host containment where explicitly intended.
+
+Feed measured metrics into `ASSEMBLY_INTEGRITY_GATE`.
+
+Do not let the measurement helper decide whether overlap is correct. It does not know the semantic relation.
+
+## Surface interpenetration
+
+AABB overlap is only broad phase. It is not proof of collision.
+
+Containment ratio alone is also insufficient: the lamp defect was a surface intersection, not complete burial.
+
+Preferred pipeline:
+1. broad-phase bounding overlap;
+2. narrow-phase surface/triangle intersection or robust sampled surface penetration;
+3. relation-specific tolerance;
+4. compact area/volume/gap metrics;
+5. canonical assembly decision gate.
+
+## Boolean bite test
+
+For a Boolean expected to create a recess:
+- capture target signature/face-count/volume before;
+- apply operation;
+- force evaluated readback;
+- capture after;
+- verify non-zero intended change;
+- verify cutter/modifier lifecycle;
+- run a feature probe anchored to the predeclared feature ROI/volume.
+
+## Negative control
+
+Every new MUST integrity validator needs:
+- a known-good fixture -> PASS;
+- at least one known-broken fixture -> FAIL.
+
+Use `VALIDATOR_NEGATIVE_CONTROL` to record the proof.
+
+
+---
+
+## FILE: `10_reconstruction/189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`
+
+# Assembly Relation and Interpenetration Contract
+
+## Purpose
+
+Object overlap has no meaning without assembly semantics.
+
+The v0.11 lamp initially validated `J_SENSOR_ARM` by checking that the sensor shell overlapped the arm. Human inspection revealed that the overlap itself was the defect. The intended design was a separate housing meeting the arm across a small shadow gap and overhanging it slightly.
+
+v0.12 requires every important multi-part junction to declare a relation type before geometry validation.
+
+## Canonical relation types
+
+```text
+BUTT_JOINT
+SHADOW_GAP
+RECESSED_INSERT
+OVERLAP_ALLOWED
+FLUSH_MATE
+CLEARANCE
+EMBEDDED
+WELDED
+FREE
+```
+
+## Semantics
+
+- `BUTT_JOINT` — parts meet at a boundary; unintended penetration forbidden.
+- `SHADOW_GAP` — parts remain separate by a visible controlled gap; penetration forbidden.
+- `RECESSED_INSERT` — child intentionally seats inside a host recess; embedding is required and bounded.
+- `OVERLAP_ALLOWED` — overlap intentional, still bounded when MUST.
+- `FLUSH_MATE` — surfaces align within tolerance; deep penetration/visible gap fail.
+- `CLEARANCE` — minimum free space required.
+- `EMBEDDED` — intentional penetration/embedding depth required and bounded.
+- `WELDED` — contact required; controlled overlap may be allowed.
+- `FREE` — no geometric relation asserted; not a shortcut for unknown intent.
+
+## Relation schema
+
+```yaml
+relation_id: J_SENSOR_ARM
+a: ARM
+b: SENSOR_MODULE
+relation_type: SHADOW_GAP
+importance: MUST
+constraints:
+  min_gap_mm: 2.0
+  max_gap_mm: 4.0
+  max_penetration_area_mm2: 0.5
+metrics:
+  min_gap_mm: 3.0
+  mean_gap_mm: 3.0
+  penetration_area_mm2: 0.0
+```
+
+## Required policy
+
+A generic `objects overlap` or `objects do not overlap` test cannot certify a junction. The declared relation owns interpretation of measured geometry.
+
+For target L4/L5, every MUST `JUNCTION` Appearance Owner must map to an Assembly Relation record or an explicit authority waiver.
+
+## Canonical executor
+
+`executors/assembly_integrity_gate.py`
+
+Skill ID: `ASSEMBLY_INTEGRITY_GATE`.
+
+
+---
+
+## FILE: `10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md`
+
+# Adversarial Validation and Negative Controls
+
+## Purpose
+
+A validator is not trustworthy because it returns PASS on the current asset.
+
+The v0.11 lamp produced a toothless guard: an initial containment-based interpenetration check returned PASS on the known-broken sensor/arm assembly. The defect was a surface intersection, not complete burial.
+
+v0.12 therefore requires bite tests for acceptance validators.
+
+## Rule
+
+Before a validator can provide MUST acceptance evidence, prove at least:
+
+```text
+KNOWN_GOOD fixture   -> PASS
+KNOWN_BROKEN fixture -> FAIL
+```
+
+If the broken fixture returns PASS, the validator is rejected regardless of how plausible its algorithm sounds.
+
+## Negative-control classes
+
+Choose a mutation that represents the failure class the validator claims to detect.
+
+Examples:
+- assembly integrity: inject forbidden overlap;
+- Boolean postcondition: remove the cutter effect while preserving modifier lifecycle;
+- gap validator: collapse the gap to zero;
+- trim path validator: shift centerline outside tolerance;
+- layer-stack validator: bury visible layer behind host;
+- overlay validator: shift silhouette by a known pixel offset;
+- runtime package validator: remove `TEXCOORD_0`.
+
+## Anti-cheat rule
+
+The negative fixture must differ in the measured property, not by an unrelated easy-to-detect marker. Do not add `broken=True` and then test that flag.
+
+## Control record
+
+```yaml
+validator_id_under_test: ASSEMBLY_INTEGRITY_GATE
+positive_controls:
+  - case_id: sensor_arm_shadow_gap_good
+    actual_status: PASS
+negative_controls:
+  - case_id: sensor_arm_5mm_overlap
+    actual_status: FAIL
+```
+
+## Maturity implication
+
+A validator without a negative-control fixture cannot be promoted to `EXECUTOR_READY` for MUST acceptance.
+
+## Canonical executor
+
+`executors/validator_negative_control.py`
+
+Skill ID: `VALIDATOR_NEGATIVE_CONTROL`.
+
+
+---
+
+## FILE: `10_reconstruction/191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md`
+
+# Reference Mask Contamination and Annotation Exclusion
+
+## Purpose
+
+Technical sheets contain product pixels and annotation pixels in the same raster.
+
+The v0.11 lamp showed that dimension lines and leaders materially changed contour deviation. A registered overlay can therefore fail or pass for the wrong reason if it treats annotations as product silhouette.
+
+## Mask classes
+
+Where relevant distinguish:
+
+```text
+PRODUCT_MASK
+DIMENSION_LINE_MASK
+LEADER_MASK
+TEXT_MASK
+ARROWHEAD_MASK
+DECORATIVE_GRAPHIC_MASK
+```
+
+Only PRODUCT_MASK participates in outer-silhouette metrics unless a specific annotation is itself the measured source.
+
+## Canonical cleanup sequence
+
+1. use the registered view ROI;
+2. apply explicit exclusion rectangles for known labels/leaders where available;
+3. select the product connected component by seed or largest-component policy;
+4. preserve bright/chromatic product materials with the reference contrast model;
+5. calculate silhouette metrics on the cleaned product mask;
+6. report mask policy and exclusions as evidence provenance.
+
+## Connected-component policy
+
+`largest component` is appropriate only when the product is one connected silhouette in that view. For separated feet, floating parts or intentional gaps, use a seeded/declared component set instead.
+
+Never silently erase small components merely because they are small; they may be real trim or detached structure.
+
+## Executor integration
+
+`executors/reference_overlay_validate.py` supports mask exclusions and connected-component filtering. Registration remains global; mask cleanup must not locally warp or translate the candidate to improve score.
+
+
+---
+
+## FILE: `11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md`
+
+# Industrial Assembly Integrity Playbook
+
+## Scope
+
+Hard-surface civic/product assets composed from multiple shells, panels, trims, inserts, lamps, sensors and service modules.
+
+## Before building child parts
+
+For every important child-host pair declare:
+- host Shape Node;
+- child Shape Node;
+- assembly relation type;
+- expected gap/contact/embedding behavior;
+- whether interpenetration is forbidden or bounded;
+- source evidence for the junction.
+
+Do not use generic overlap as a proxy for `connected`.
+
+## During one-node mutation
+
+Immediately after the authorized mutation:
+1. run `MUTATION_POSTCONDITION_GATE`;
+2. verify Boolean/transform/loft outcomes;
+3. only then persist `BUILT_UNVERIFIED`;
+4. run reference QA;
+5. run `ASSEMBLY_INTEGRITY_GATE` for every relation touched by the node;
+6. only canonical node acceptance unlocks dependants.
+
+## High-risk operations
+
+### Boolean recesses
+Require before/after geometry evidence. Modifier disappearance alone is insufficient.
+
+### Layered housings
+Check front-to-back layer order and assembly relation. Two coincident skins are not a layered assembly.
+
+### Sensor / cap modules
+Prefer a declared butt/shadow-gap/recess relation. Verify the host does not poke through the child shell.
+
+### Trim in channels
+Some overlap is intentional. Use `RECESSED_INSERT` or `EMBEDDED` with bounded embedding instead of globally disabling interpenetration checks.
+
+### Service doors
+Use `SHADOW_GAP`, `FLUSH_MATE` or `RECESSED_INSERT` according to reference/manufacturing logic.
+
+## Repair
+
+When a host is repaired:
+- run `DEPENDENCY_INVALIDATOR`;
+- dirty/block affected descendants;
+- invalidate hosted Appearance Owners;
+- supersede old evidence;
+- rebuild only affected closure;
+- rerun integrity + reference gates.
+
+## Final pre-runtime integrity sweep
+
+For L4/L5 industrial assets require:
+- zero failed MUST assembly relations;
+- zero silent mutation postcondition failures;
+- closed-solid topology appropriate to contract;
+- no unclassified risky n-gons in critical visible regions;
+- all MUST validators proven with negative controls;
+- no stale evidence after repair.
