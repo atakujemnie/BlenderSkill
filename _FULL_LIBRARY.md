@@ -132,6 +132,29 @@ Wyjątek: wymaganie runtime lub jawna decyzja projektowa.
 
 # Agent State Machine
 
+## v0.12 geometric-integrity amendment
+
+This amendment has precedence over v0.11 where the rules differ.
+
+Canonical production-node transition is now:
+
+```text
+DECLARED -> CONSTRAINED
+CONSTRAINED -> READY_TO_BUILD          only via EXECUTION_AUTHORIZATION_GATE
+READY_TO_BUILD -> authorized mutation
+mutation -> MUTATION_POSTCONDITION_GATE
+MUTATION_POSTCONDITION_GATE PASS -> BUILT_UNVERIFIED
+BUILT_UNVERIFIED -> source QA + ASSEMBLY_INTEGRITY_GATE
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | UNVERIFIED | FAIL
+```
+
+`LOCAL_BUILDER: PASS` is never enough to reach `BUILT_UNVERIFIED`. An authorized mutation must prove that its intended geometric postcondition actually occurred. For assembly nodes, semantic relation integrity is non-compensating: unintended interpenetration, invalid gap/contact/embedding or a missing relation contract blocks acceptance.
+
+When an accepted host is repaired, run `DEPENDENCY_INVALIDATOR` before new work: affected descendants become `DIRTY/BLOCKED`, hosted Appearance Owners become `UNVERIFIED`, and revision-bound evidence becomes `SUPERSEDED`. Stale green evidence cannot survive a geometry revision.
+
+---
+
 ## v0.11 execution-enforcement amendment
 
 This amendment supersedes any weaker execution wording below while preserving the full v0.10 state-machine knowledge.
