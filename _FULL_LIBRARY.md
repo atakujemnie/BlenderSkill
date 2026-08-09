@@ -1008,11 +1008,14 @@ Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST 
 | `LAYER_STACK_VALIDATE` | layered assembly visibility/order | `172`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
 | `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 visible-product gate | `05_execution/72`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | boundaries, trim, junction, edge, material, detail |
 | `RECON_FIDELITY_GATE` | final proof-bearing Level A reconstruction gate | `05_execution/69`; `executors/fidelity_gate.py` | CONTRACT_READY | source-anchored evidence, canonical views, MUST features, geometric integrity |
+| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148`, `178`, `180`–`183`, `191` | CONTRACT_READY | node/stage/final evidence, appearance owners, cleaned product masks |
 | `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
 | `RADIAL_REPEAT` | repeated radial details | playbook 110; `executors/radial_repeat.py` | CONTRACT_READY | count, phase, annulus |
 | `HS_PANEL_LINE` | narrow seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | path/profile/topology |
 | `SUBD_TOPOLOGY_CONTROL` | Catmull-Clark cage design/repair | `blender-agent-subdivision-topology-control.md` | CONTRACT_READY | evaluated surface, pinching, continuity |
+| `TRIM_SHEET_UV` | trim-sheet UV strategy | `03_modeling/40_TRIM_SHEETS.md` | CONTRACT_READY | region/density/orientation |
 | `MESH_VALIDATE` | contract-aware mesh/topology integrity audit | `08_scripts/92`; `executors/mesh_validate.py` | EXECUTOR_READY | manifold, volume orientation, n-gon risk, UV/tris |
+| `RUNTIME_COMPAT` | Blender/runtime API discovery | `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md`; `executors/runtime_compat.py` | CONTRACT_READY | discovered enums/properties/paths |
 | `QA_SCENE_ISOLATE` | non-destructive QA/bake isolation | `08_scripts/83`; `executors/qa_scene_isolation.py` | CONTRACT_READY | state restoration, contamination prevention |
 | `CANONICAL_SKILL_RUNTIME_PIN` | version/commit/single-root preflight | `188`; `executors/runtime_source_pin.py` | CONTRACT_READY | exact runtime source |
 | `MATERIAL_FINISH_CIVIC` | civic product material finish | playbook 114 | CONTRACT_READY | macro/meso/micro response |
@@ -1028,6 +1031,8 @@ Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST 
 | `TEST_ORACLE` | trustworthy exit status and bite tests | `05_execution/66`; `executors/test_oracle.py` | CONTRACT_READY | direct assertion/negative mutation |
 | `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96` | CONTRACT_READY | production loader/instantiation |
 | `ASSET_COMPLETION` | determine true A/B/C/D completion | `00_governance/07`; `executors/completion_gate.py` | CONTRACT_READY | hierarchical completion gates including geometric integrity |
+| `ASSET_CATALOG_INTEGRATE` | project catalog registration | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | readback/unique ID/import |
+| `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md` | KNOWLEDGE_ONLY | runtime contract |
 
 ## Routing laws
 
@@ -1075,6 +1080,58 @@ RECON_FIDELITY_GATE != PASS
 -> runtime LOD/UV/bake/export FORBIDDEN
 ```
 
+## Packaged executor status
+
+```text
+REFERENCE_MEASURE           -> executors/reference_measure.py               CONTRACT_READY
+REFERENCE_OVERLAY_VALIDATE  -> executors/reference_overlay_validate.py      CONTRACT_READY
+SHAPE_GRAPH                 -> executors/shape_graph.py                     CONTRACT_READY
+EXECUTION_AUTHORIZATION_GATE-> executors/execution_authorization_gate.py    CONTRACT_READY
+NODE_STATE_STORE            -> executors/node_state_store.py                CONTRACT_READY
+MUTATION_POSTCONDITION_GATE -> executors/mutation_postcondition_gate.py     CONTRACT_READY
+ASSEMBLY_INTEGRITY_GATE     -> executors/assembly_integrity_gate.py         CONTRACT_READY
+DEPENDENCY_INVALIDATOR      -> executors/dependency_invalidator.py          CONTRACT_READY
+VALIDATOR_NEGATIVE_CONTROL  -> executors/validator_negative_control.py      CONTRACT_READY
+GEOMETRIC_INTEGRITY_GATE    -> executors/geometric_integrity_gate.py        CONTRACT_READY
+RECONSTRUCTION_NODE_GATE    -> executors/reconstruction_node_gate.py        CONTRACT_READY
+SECTION_LOFT_HARD_SURFACE   -> executors/section_loft.py                    CONTRACT_READY
+LAYER_STACK_VALIDATE        -> executors/layer_stack_validate.py            CONTRACT_READY
+APPEARANCE_FIDELITY_GATE    -> executors/appearance_fidelity_gate.py        CONTRACT_READY
+RECON_FIDELITY_GATE         -> executors/fidelity_gate.py                   CONTRACT_READY
+AXISYMMETRIC_PROFILE        -> executors/axisymmetric_profile.py            CONTRACT_READY
+RADIAL_REPEAT               -> executors/radial_repeat.py                   CONTRACT_READY
+MESH_VALIDATE               -> executors/mesh_validate.py                   EXECUTOR_READY
+RUNTIME_COMPAT              -> executors/runtime_compat.py                  CONTRACT_READY
+QA_SCENE_ISOLATE            -> executors/qa_scene_isolation.py              CONTRACT_READY
+ASSET_COMPLETION            -> executors/completion_gate.py                 CONTRACT_READY
+UV_ATLAS_CONTRACT           -> executors/uv_atlas_contract.py               CONTRACT_READY
+BAKE_RUNTIME_TEXTURES       -> executors/bake_runtime_textures.py           CONTRACT_READY
+BAKE_VALIDATE               -> executors/bake_validate.py                   CONTRACT_READY
+IMAGE_CACHE_COHERENCE       -> executors/image_cache_coherence.py           CONTRACT_READY
+PIPELINE_DAG_PLAN           -> executors/pipeline_dag.py                    CONTRACT_READY
+RUNTIME_PACKAGE_VALIDATE    -> executors/gltf_package_validate.py           CONTRACT_READY
+EXPORT_ROUNDTRIP_VALIDATE   -> executors/export_roundtrip_validate.py       CONTRACT_READY
+RUNTIME_PATH_RESOLVE        -> executors/runtime_path_resolver.py           CONTRACT_READY
+TEST_ORACLE                 -> executors/test_oracle.py                     CONTRACT_READY
+```
+
+## Reuse before generation
+
+Before generating helpers search this registry and `executors/`.
+
+Do not locally rewrite compatible implementations of:
+- Shape Graph validation/readiness/stage barriers;
+- node acceptance aggregation;
+- mutation postcondition semantics;
+- assembly relation acceptance;
+- dependency invalidation/evidence supersession;
+- validator bite-test aggregation;
+- appearance/reconstruction/geometric fidelity aggregation;
+- reference measurement/overlay;
+- layered visibility validation;
+- multi-section loft ring/bridge generation;
+- mesh/bake/cache/package/path/test validators.
+
 ## Registry update rule
 
 A new production skill requires:
@@ -1086,7 +1143,7 @@ A new production skill requires:
 6. Knowledge Router route;
 7. MANIFEST inclusion when canonical Markdown is added.
 
-Registry, Router, State Machine and Manifest must agree.
+Registry, Router, Task Packs and Manifest must agree.
 
 
 ---
