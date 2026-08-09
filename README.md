@@ -4,10 +4,31 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.14.0 — visual quality, library-first asset selection, persistent location material language and context efficiency.**
+**v0.15.0 — full-location reconstruction, environment assembly, spatial relations and completeness gates.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.15 location reconstruction and environment assembly
+
+v0.15 introduces the hierarchy above single-asset reconstruction. Complete authored interiors/exteriors are now planned and validated as spatial systems rather than as independent object builds.
+
+```text
+location references
+-> Location Design System
+-> Location Scene Graph + Asset Manifest
+-> architecture
+-> HERO anchors
+-> fixed assets
+-> furniture clusters
+-> spatial relations + circulation/clearance
+-> lighting/vegetation/props
+-> reference composition fidelity
+-> Location Completeness Gate
+-> runtime partitioning/instancing
+```
+
+Hard final blockers include missing required HERO assets, final proxies, unintended interpenetration, blocked required circulation and failed reference composition. The canonical v0.15 regression is **Benchmark 84 — Lafar Restaurant Full Location Reconstruction**.
 
 ## v0.14 quality/material additions
 

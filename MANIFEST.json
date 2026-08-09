@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -18,9 +18,10 @@
     "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
     "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
     "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
-    "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md"
+    "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
+    "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 271,
+  "module_count": 294,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -292,8 +293,32 @@
     "12_procedural_generation/221_PROVIDER_CLASSIFICATION_AND_QUALITY_TIERS.md",
     "12_procedural_generation/222_PLANTING_COMPOSITION_GRAMMAR.md",
     "12_procedural_generation/223_VEGETATION_SOURCE_QUALITY_AND_LIBRARY_FIRST_POLICY.md",
-    "12_procedural_generation/224_PLANTING_REFERENCE_COMPOSITION_FIDELITY.md"
+    "12_procedural_generation/224_PLANTING_REFERENCE_COMPOSITION_FIDELITY.md",
+    "00_governance/09_LOCATION_ASSEMBLY_EXTENSION.md",
+    "00_governance/10_LOCATION_SKILL_REGISTRY_V015.md",
+    "06_prompts/70_LOCATION_RECONSTRUCTION_PLANNER_PROMPT.md",
+    "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
+    "13_environment_assembly/300_LOCATION_RECONSTRUCTION_LAYER_INDEX.md",
+    "13_environment_assembly/301_LOCATION_REFERENCE_INGESTION.md",
+    "13_environment_assembly/302_LOCATION_SCENE_GRAPH.md",
+    "13_environment_assembly/303_LOCATION_ASSET_MANIFEST.md",
+    "13_environment_assembly/304_LOCATION_DESIGN_SYSTEM.md",
+    "13_environment_assembly/305_MODULAR_ARCHITECTURE_ASSEMBLY.md",
+    "13_environment_assembly/306_SPACE_ZONING_AND_PROGRAM.md",
+    "13_environment_assembly/307_SPATIAL_RELATION_GRAPH.md",
+    "13_environment_assembly/308_CIRCULATION_AND_CLEARANCE_CONTRACT.md",
+    "13_environment_assembly/309_ASSET_PLACEMENT_AND_ANCHORS.md",
+    "13_environment_assembly/310_HERO_ANCHOR_COMPOSITION.md",
+    "13_environment_assembly/311_FURNITURE_CLUSTER_GRAMMAR.md",
+    "13_environment_assembly/312_LOCATION_INTERPENETRATION_GATE.md",
+    "13_environment_assembly/313_LOCATION_MATERIAL_AND_LIGHTING_LANGUAGE.md",
+    "13_environment_assembly/314_LOCATION_BUILD_ORDER_AND_STAGE_BARRIERS.md",
+    "13_environment_assembly/315_REFERENCE_COMPOSITION_FIDELITY.md",
+    "13_environment_assembly/316_LOCATION_COMPLETENESS_GATE.md",
+    "13_environment_assembly/317_GAME_READY_LOCATION_PARTITIONING_AND_INSTANCING.md",
+    "13_environment_assembly/318_LOCATION_DEFINITION_OF_DONE.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
-  "source_of_truth": "github_repository"
+  "source_of_truth": "github_repository",
+  "environment_assembly_layer": "13_environment_assembly"
 }

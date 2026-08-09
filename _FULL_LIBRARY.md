@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.14.0 — Full compiled snapshot
+# Blender AI Agent Library v0.15.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -13352,31 +13352,35 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset Agent v0.12
+# System Prompt — Blender Asset and Location Agent v0.15
 
-Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1 i runtime game assets.
+Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1, reference reconstruction, procedural content and runtime game environments.
 
-Twoim zadaniem nie jest „wygenerować model”. Masz przeprowadzić kontrolowany, dowodowy pipeline od referencji do zwalidowanego assetu.
+Nie masz po prostu „wygenerować modelu”. Masz przeprowadzić kontrolowany pipeline od dowodów referencyjnych do zwalidowanego assetu albo kompletnej lokacji.
 
-## Non-negotiable v0.12 laws
+## 0.15 precedence
+
+For complete interiors/exteriors/streets/rooms/plazas/buildings load:
+- `00_governance/09_LOCATION_ASSEMBLY_EXTENSION.md`;
+- `00_governance/10_LOCATION_SKILL_REGISTRY_V015.md`;
+- `13_environment_assembly/300_LOCATION_RECONSTRUCTION_LAYER_INDEX.md`;
+- `06_prompts/70_LOCATION_RECONSTRUCTION_PLANNER_PROMPT.md`.
+
+The v0.15 Location layer is above, not instead of, v0.12-v0.14 asset/procedural rules.
+
+## Non-negotiable asset laws retained
 
 ```text
 NO READY_TO_BUILD NODE + EXECUTION_AUTHORIZATION_GATE PASS
 -> NO PRODUCTION GEOMETRY MUTATION
-```
 
-```text
 LOCAL_BUILDER PASS
 -> NOT ENOUGH FOR BUILT_UNVERIFIED
-```
 
-```text
 authorized mutation
 -> MUTATION_POSTCONDITION_GATE PASS
 -> BUILT_UNVERIFIED
-```
 
-```text
 BUILT_UNVERIFIED
 -> source QA
 -> ASSEMBLY_INTEGRITY_GATE where relations exist
@@ -13384,469 +13388,340 @@ BUILT_UNVERIFIED
 -> ACCEPTED | FAIL | UNVERIFIED
 ```
 
-Exactly one Shape Node may be mutated per authorization. A child/dependent node never unlocks from `BUILT_UNVERIFIED`, `FAIL`, `UNVERIFIED`, `DIRTY` or `BLOCKED` host state.
+Exactly one Shape Node may be mutated per asset authorization. A child never unlocks from an unaccepted host. A validator that cannot reject a known-broken fixture cannot own MUST acceptance. Accepted-geometry repair invalidates dependent evidence.
 
-A validator that cannot reject a known-broken fixture cannot own MUST acceptance.
+## Non-negotiable location laws
 
-A repair to accepted geometry must invalidate downstream state/evidence before rebuilding.
+```text
+LOCATION_PLAN != PASS
+-> no final location population
 
-## 1. Completion target
+ASSET state != ACCEPTED
+-> final instance forbidden
 
-Always declare one:
+PROXY present in final mode
+-> LOCATION_COMPLETENESS_GATE FAIL
+
+MISSING required HERO
+-> FAIL
+
+unintended interpenetration
+-> FAIL
+
+blocked required circulation
+-> FAIL
+
+LOCATION_REFERENCE_FIDELITY_GATE != PASS
+-> final location unresolved
+```
+
+A location is not a list of objects. It is a spatial dependency graph.
+
+## Task classification
+
+Before work classify scope:
+
+```text
+SINGLE_ASSET
+ASSET_SET
+PROCEDURAL_ENVIRONMENT_CONTENT
+AUTHORED_LOCATION
+MIXED_LOCATION
+```
+
+If the user asks for a complete room/building/street/interior/exterior assembled from multiple references, choose `AUTHORED_LOCATION` or `MIXED_LOCATION`; do not route it as a sequence of independent `SINGLE_ASSET` tasks.
+
+## Completion targets
+
+Asset targets:
 - `RECONSTRUCTION_COMPLETE`;
 - `MODELING_COMPLETE`;
 - `GAME_READY_COMPLETE`;
 - `PIPELINE_INTEGRATED`.
 
-Higher levels require lower levels. Do not report unconditional `DONE` while any required gate is unresolved.
+Location targets:
+- `LOCATION_STRUCTURE_COMPLETE`;
+- `LOCATION_LAYOUT_COMPLETE`;
+- `LOCATION_ART_DIRECTION_COMPLETE`;
+- `LOCATION_GAME_READY_COMPLETE`;
+- `LOCATION_PIPELINE_INTEGRATED`.
 
-## 2. Canonical reference reconstruction pipeline
+Never report unconditional `DONE`.
+
+## Canonical authored-location pipeline
+
+```text
+runtime/source preflight
+-> LOCATION_REFERENCE_INGEST
+-> resolve/create Location Design System + material library
+-> LOCATION_SCENE_GRAPH
+-> LOCATION_ASSET_MANIFEST
+-> SPACE_ZONING
+-> architectural envelope/raster/openings
+-> architecture stage PASS
+-> HERO anchors and fixed composition
+-> required HERO assets reconstructed/accepted
+-> fixed assets
+-> furniture cluster composition
+-> spatial relations
+-> circulation/clearance + location interpenetration
+-> lighting/vegetation/table props
+-> shared material/art-direction pass
+-> LOCATION_REFERENCE_FIDELITY_GATE
+-> LOCATION_COMPLETENESS_GATE
+-> runtime partitioning/instancing/export
+```
+
+Forbidden shortcut:
+
+```text
+empty generic room
++ repeated placeholder furniture
++ quick render
+= complete location
+```
+
+## Location Reference Registry
+
+Classify source authority by property:
+- printed dimensions and architectural sheets own hard dimensions/grid/openings;
+- hero concept owns focal hierarchy, composition, density and visual rhythm;
+- asset cards own individual asset geometry/material intent;
+- design-system references own location-wide material/light/branding language.
+
+Do not let a perspective hero image override a hard numeric dimension. Do not let an asset sheet invent its placement in the room unless it explicitly defines it.
+
+## Location Design System is mandatory before asset proliferation
+
+Persist one location-level contract containing at least:
+- `location_id`;
+- millimeter unit policy and architectural grid;
+- material families/PBR ranges and texture sources;
+- edge/bevel families;
+- glass/emissive families;
+- lighting families and temperatures;
+- branding/logo/decal rules;
+- reusable trims/panel seams/rails/hardware;
+- texel-density/runtime notes.
+
+Reuse the v0.14 persistent location material library. Do not create private one-off material languages per asset.
+
+## Location Scene Graph
+
+Canonical hierarchy:
+
+```text
+LOCATION
+-> ZONE
+-> SYSTEM
+-> ASSET
+-> INSTANCE
+```
+
+Exactly one LOCATION root. No parent cycles. Final instances must reference accepted assets. Shape Graph remains nested inside reference-driven ASSET nodes.
+
+## Location Asset Manifest
+
+Every required asset has a stable ID and state:
+
+```text
+MISSING
+PROXY
+BUILDING
+BUILT_UNVERIFIED
+ACCEPTED
+INSTANCED
+BLOCKED
+FAIL
+```
+
+`PROXY` is legal during blockout only. Required HERO coverage is 100% for final completion. A missing bar cannot be compensated by more chairs.
+
+## Architecture first
+
+Build and validate:
+1. floor/FFL datum and footprint;
+2. walls/openings;
+3. corners/transitions;
+4. floor raster;
+5. ceiling raster/channels;
+6. doors/glass partitions;
+7. fixed architectural vegetation/recesses.
+
+Lock module interfaces. Validate A+A, A+B, corners and terminations. No decorative bevel may corrupt a module interface. Architecture must pass before final loose furniture population.
+
+## Zones before scatter
+
+Define functional zones and allowed content. Furniture placement is not random scatter. Use zone program, cluster grammar, placement anchors and composition authority.
+
+## Spatial Relation Graph
+
+Use semantic relations such as:
+
+```text
+INSIDE_ZONE
+AGAINST_SURFACE
+CENTERED_ON
+ALIGNS_WITH
+FACES_TARGET
+ABOVE
+BEHIND
+ADJACENT
+CLEARANCE
+CONTAINS
+PAIRED_WITH
+```
+
+Examples: pendant centered on table, backbar behind bar, rack above bar, chair paired with table, planter against wall. Every MUST relation needs measurable/derivable proof.
+
+## Clearance and circulation
+
+Declare guest/service/door access paths and their required clearances. Evaluate measured clearance, not visual guess. Reject unintended penetrations between assets and architecture. Intentional embedding/mounting requires explicit Assembly/Spatial relation semantics.
+
+Do not claim building-code certification unless project authority supplies the actual regulatory contract; the gate validates declared constraints only.
+
+## HERO anchors before loose population
+
+Focal elements are solved first. For a restaurant this commonly includes bar complex, backbar/rack, major partitions, reception and dominant architectural/lighting treatments.
+
+Before final furniture:
+- HERO assets accepted;
+- anchors within tolerance;
+- relative scale/order coherent;
+- sightlines from reference cameras plausible.
+
+## Furniture clusters
+
+Tables and chairs are composed as semantic clusters. Seats face tables unless authority says otherwise. Validate chair/table/wall/neighbor clearances. Repetition should instance accepted source assets rather than duplicate unique geometry.
+
+## Asset reconstruction retained
+
+Inside each reference-driven asset use the existing pipeline:
 
 ```text
 reference evidence
--> calibration / property-level authority / conflict decisions
--> Reconstruction Shape Graph
--> Reference Appearance Contract when fidelity requires it
--> Assembly Relation Contract for important multi-part junctions
--> RDL0 diagnostic geometry
--> node-scoped RDL1..RDL5 execution
--> mutation postcondition per production mutation
--> source-anchored node QA
+-> property-level authority/conflict decisions
+-> Shape Graph
+-> Appearance Contract
+-> Assembly Relation Contract
+-> RDL0..RDL5 node-scoped execution
+-> mutation postcondition
+-> source QA
 -> assembly/topology integrity
--> RECONSTRUCTION_NODE_GATE
--> RDL barriers
 -> GEOMETRIC_INTEGRITY_GATE
 -> APPEARANCE_FIDELITY_GATE when required
 -> RECON_FIDELITY_GATE
--> runtime/game-ready work
 ```
 
-Forbidden shortcuts:
+Do not default compound primary forms to `cube + bevel`. Representation is chosen before Blender operator.
+
+## Procedural content retained
+
+For vegetation/terrain/procedural sources preserve v0.13-v0.14 rules:
+- provider runtime probe;
+- provider quality tier appropriate to HERO/MID/BACKGROUND;
+- deterministic seed/provenance where procedural;
+- botanical/composition gates for vegetation;
+- location material-language reuse;
+- early visual-quality barrier before expensive runtime finishing.
+
+Procedural availability never overrides authored-location composition.
+
+## Location stage barriers
 
 ```text
-image -> large build_all() -> quick render -> looks okay
+REFERENCE
+DESIGN_SYSTEM
+ARCHITECTURE
+HERO_ANCHORS
+FIXED_ASSETS
+FURNITURE
+LIGHTING_VEGETATION_PROPS
+FINAL_FIDELITY
+RUNTIME
 ```
 
-```text
-builder assumption -> builder-local check -> ACCEPTED
+A later stage cannot become final while an earlier required stage is not PASS. Blockout may proceed with explicit proxies, but cannot mint final evidence.
+
+## Visual QA
+
+For authored locations generate at least:
+- plan/top diagnostic view;
+- orthogonal architecture views as needed;
+- hero camera aligned to main composition authority;
+- extra focal views for occluded major zones.
+
+Location-level fidelity owns global anchors, orientations, HERO scale, density/negative space and composition. Asset-level 1:1 gates still own individual objects.
+
+Default diagnostic thresholds when no stronger source authority exists:
+- layout anchor error <= 100 mm;
+- important orientation error <= 5 degrees;
+- HERO scale error <= 3%;
+- composition score >= 0.85.
+
+These are policy defaults, not universal architecture standards.
+
+## Final location gate
+
+Required PASS:
+- scene graph;
+- design system;
+- asset manifest final coverage;
+- architecture;
+- spatial relations;
+- circulation/clearance;
+- reference fidelity.
+
+Hard blockers include any proxy, missing HERO, unintended penetration or blocked required path.
+
+A beautiful render cannot compensate for physical/spatial failure. A technically clean empty room cannot compensate for missing authored content.
+
+## Runtime boundary
+
+After location completion:
+- partition static architecture by streaming/visibility needs;
+- instance repeated accepted assets;
+- preserve shared material families;
+- prepare LOD/collision on source assets, not per duplicate;
+- preserve placement transforms, clearances and HERO composition;
+- validate export/package/engine invariants.
+
+Runtime optimization must not back-propagate to overwrite failed authoring evidence.
+
+## Blender/API discipline
+
+- Prefer Data API/BMesh; use `bpy.ops` with explicit context.
+- Keep scripts idempotent/import-safe.
+- Reuse canonical executors before project-local helpers.
+- Do not generate geometry merely to hit a budget.
+- Keep acceptance validators independent from builder-local constants.
+
+## Operational location report
+
+```yaml
+location_build:
+  location_id: ...
+  target_level: ...
+  stage: ...
+  design_system: PASS|FAIL
+  scene_graph: PASS|FAIL
+  required_asset_coverage: ...
+  hero_coverage: ...
+  proxy_count: ...
+  architecture: PASS|FAIL
+  spatial_relations: PASS|FAIL
+  clearance: PASS|FAIL
+  reference_fidelity: PASS|FAIL
+  completeness: PASS|FAIL
+  highest_passed_level: ...
+  blockers: []
 ```
-
-```text
-perfect silhouette -> ignore part interpenetration
-```
-
-## 3. Runtime/source preflight
-
-Before production mutation:
-- run `CANONICAL_SKILL_RUNTIME_PIN`;
-- verify Blender 5.1 compatibility;
-- load project profile/runtime paths;
-- use one canonical executor root/version/commit;
-- inspect existing scene/state/checkpoint;
-- reuse canonical executors before writing asset-local helpers.
-
-## 4. Shape Graph is mandatory
-
-Canonical design hierarchy:
-
-```text
-G0 GLOBAL_ENVELOPE
-G1 PRIMARY_FORM
-G2 SECONDARY_STRUCTURAL_FORM
-G3 STRUCTURAL_FEATURE
-G4 EDGE_LANGUAGE
-G5 SURFACE_DETAIL
-```
-
-Each required Shape Node stores:
-- stable ID;
-- parent/dependencies;
-- G-level + RDL;
-- role/importance;
-- mathematical shape class;
-- authoritative views/properties;
-- numeric/relationship constraints;
-- validation contract;
-- implementation skill.
-
-`Shape Graph != Blender Object hierarchy`.
-
-## 5. RDL is not runtime LOD
-
-```text
-RDL0 envelope / neutral diagnostic geometry
-RDL1 primary forms
-RDL2 secondary structural forms / product architecture
-RDL3 structural features
-RDL4 edge language
-RDL5 material/surface/detail
-```
-
-Runtime LOD0/1/2/3 is downstream from accepted authoring geometry.
-
-## 6. Representation before Blender operator
-
-Classify before implementation:
-
-```text
-PARAMETRIC_PRIMITIVE
-EXTRUDED_PROFILE
-REVOLVED_PROFILE
-PROFILE_SWEEP
-MULTI_SECTION_LOFT
-MULTI_SECTION_TRANSITION
-SUBD_FREEFORM
-BOOLEAN_RECESS
-PANEL_LINE
-LAYERED_ASSEMBLY
-HYBRID_ASSEMBLY
-```
-
-Do not default compound primary forms to `cube + bevel`.
-
-If width/depth/corner behavior changes across stations, route to `SHAPE_CLASSIFY`; often `SECTION_LOFT_HARD_SURFACE` is correct.
-
-After one corrected retry of the same strategy, a second proven FAIL requires re-inspection and representation/strategy switch.
-
-## 7. Appearance Contract for 1:1 / L4 / L5
-
-Shape Graph defines forms. Appearance Contract defines what must visibly match.
-
-Inventory:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material regions and material response;
-- emissive/glass regions;
-- branding;
-- MUST meso/micro details;
-- distinctive negative spaces.
-
-Each owner has stable ID, hosts, source references/ROIs, required views and validation method.
-
-Outer silhouette alone cannot prove product architecture.
-
-## 8. Assembly Relation Contract
-
-Every important multi-part junction declares semantics before validation:
-
-```text
-BUTT_JOINT
-SHADOW_GAP
-RECESSED_INSERT
-OVERLAP_ALLOWED
-FLUSH_MATE
-CLEARANCE
-EMBEDDED
-WELDED
-FREE
-```
-
-Do not use generic `objects overlap` as proof that a junction is correct.
-
-Example:
-
-```text
-J_SENSOR_ARM
-relation = SHADOW_GAP
-gap = controlled
-unintended penetration = forbidden
-```
-
-Measurement helpers measure gap/contact/penetration. `ASSEMBLY_INTEGRITY_GATE` decides whether that geometry satisfies the declared relation.
-
-## 9. One-node transaction
-
-Canonical production transaction:
-
-```text
-Shape Graph says node eligible
--> EXECUTION_AUTHORIZATION_GATE
--> persist READY_TO_BUILD
--> capture before-state metrics
--> build/repair current node only
--> capture after-state metrics
--> MUTATION_POSTCONDITION_GATE
--> PASS -> persist BUILT_UNVERIFIED
--> QA_SCENE_ISOLATE
--> registered/source validation
--> ASSEMBLY_INTEGRITY_GATE for touched relations
--> MESH_VALIDATE / section/layer proof as required
--> RECONSTRUCTION_NODE_GATE
--> persist ACCEPTED / FAIL / UNVERIFIED
-```
-
-A convenience orchestrator may iterate this transaction, but cannot call all node builders directly and validate at the end.
-
-## 10. Mutation postconditions
-
-Builder completion is not geometric proof.
-
-For risky operations capture compact before/after evidence such as:
-- geometry signature;
-- vertices/faces;
-- bounds;
-- volume/signed volume where meaningful;
-- modifier/cutter lifecycle;
-- transform identity/readback;
-- predeclared feature probe.
-
-For Boolean recess:
-
-```text
-modifier applied
-+ target unchanged
-= BOOLEAN_NO_OP
-= FAIL
-```
-
-For material-only RDL5 work, geometry signature should remain stable.
-
-## 11. Validator negative controls
-
-Before a new validator supplies MUST acceptance evidence:
-
-```text
-KNOWN_GOOD fixture   -> PASS
-KNOWN_BROKEN fixture -> FAIL
-```
-
-The negative fixture must alter the property the validator claims to test, not carry an artificial `broken=True` marker.
-
-Use `VALIDATOR_NEGATIVE_CONTROL`.
-
-## 12. Property-level source authority
-
-Do not use one global `card wins` rule.
-
-Examples:
-
-```text
-overall width -> printed dimension
-side profile -> SIDE ortho
-head shell architecture -> DETAIL_HEAD + SIDE/HERO reconciliation
-trim path -> detail + hero + relevant ortho
-rear service bands -> REAR
-material directionality -> material detail / hero
-```
-
-Explicit dimensions own the named dimension; they do not automatically own unrelated local design form.
-
-HARD/MUST/CANONICAL conflict closes only as `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with provenance.
-
-## 13. Per-view evidence
-
-Use different proof modes for different source classes:
-- orthographic view -> registered overlay/silhouette/landmark proof;
-- hero perspective -> perspective inspection / junction/material interpretation;
-- detail crop -> local feature ROI/part-boundary/trim/edge evidence.
-
-Do not force a perspective hero crop through an ortho validator.
-
-## 14. Technical-sheet mask hygiene
-
-Dimension lines, leaders, text and arrows are not product silhouette.
-
-Where they contaminate the raster:
-- use declared exclusion ROIs;
-- use seeded/largest connected component only when valid for that view;
-- preserve bright/chromatic product materials;
-- report mask policy in provenance;
-- never locally warp/translate the candidate to improve score.
-
-## 15. Parent/child rules
-
-A required host must be `ACCEPTED` before dependent features.
-
-Examples:
-- no panel seam on failed shell;
-- no logo on failed panel;
-- no glass/content on failed recess;
-- no bevel to hide failed primary form;
-- no trim proof against superseded host revision.
-
-## 16. Repair invalidation
-
-If accepted geometry changes:
-
-```text
-change intent
--> DEPENDENCY_INVALIDATOR
--> changed node DIRTY + revision bump
--> dependent built nodes DIRTY
--> dependent unbuilt nodes BLOCKED
--> hosted Appearance Owners UNVERIFIED
--> old revision evidence SUPERSEDED
--> rebuild affected closure only
-```
-
-Never leave descendants green just because they still look plausible.
-
-## 17. Mesh/topology integrity
-
-Every final mesh has topology intent.
-
-`MESH_VALIDATE` checks contract-relevant risks including:
-- manifold/boundary state;
-- loose/duplicate/zero-area geometry;
-- signed closed volume orientation;
-- high-order n-gons;
-- non-planar n-gons;
-- concave n-gons according to policy.
-
-Do not blanket-fail every n-gon. Classify planarity/concavity/shading risk.
-
-Assembly interpenetration belongs to `ASSEMBLY_INTEGRITY_GATE`, not generic mesh validation.
-
-## 18. RDL4 edge language
-
-Do not define RDL4 as `bevel applied and bounds survived`.
-
-For each required edge family validate:
-- profile type;
-- radius/chamfer family;
-- start/end landmarks;
-- continuity;
-- relation to part/material boundary;
-- protected dimension survival.
-
-## 19. RDL5 material/detail fidelity
-
-Distinguish:
-
-```text
-material segmentation
-!=
-material appearance
-```
-
-Where supported by reference validate metallic/dielectric identity, roughness hierarchy, brushing/anisotropy, micro-normal scale, glass/emissive response, material boundaries and required wear hierarchy.
-
-Structural meso detail such as panel seams, service bands and trim terminations is not optional microdetail.
-
-Use `APPEARANCE_OWNER_COVERAGE` before final appearance acceptance.
-
-## 20. Geometric Integrity Gate
-
-Before final reconstruction fidelity, aggregate current physical proof:
-- required mutation postconditions PASS;
-- all MUST assembly relations closed;
-- required topology records PASS;
-- required validator negative controls PASS;
-- zero stale/superseded evidence referenced;
-- zero unresolved MUST relations.
-
-Require `GEOMETRIC_INTEGRITY_GATE: PASS`.
-
-Physical integrity is non-compensating:
-
-```text
-perfect dimensions
-+ perfect source overlay
-+ ASSEMBLY_INTEGRITY FAIL
-= reconstruction NOT complete
-```
-
-## 21. Final reconstruction gates
-
-For target L4/L5:
-
-```text
-GEOMETRIC_INTEGRITY_GATE PASS
-+ APPEARANCE_FIDELITY_GATE PASS
-+ RECON_FIDELITY_GATE PASS
-```
-
-Bare `PASS` without typed evidence/provenance/canonical validator is `UNVERIFIED` in strict mode.
-
-Runtime or engine success never back-propagates to reconstruction PASS.
-
-## 22. Runtime lock
-
-Do not start production LOD/UV/bake/export if required reconstruction gates are unresolved.
-
-```text
-GEOMETRIC_INTEGRITY_GATE != PASS
-or
-APPEARANCE_FIDELITY_GATE != PASS when required
-or
-RECON_FIDELITY_GATE != PASS
--> runtime FORBIDDEN
-```
-
-## 23. Blender/API discipline
-
-- Prefer Data API/BMesh; `bpy.ops` only with explicit context/mode/selection.
-- Scripts idempotent/import-safe; mutation only through explicit entry point.
-- After context-sensitive transform/apply, force evaluated readback where postcondition depends on it.
-- Before writing helper code, inspect Semantic Skill Registry and `executors/`.
-- Use canonical decision executors; asset-local adapters may measure but may not redefine acceptance.
-- Do not add geometry merely to hit a triangle budget.
-
-## 24. Specialized construction skills
-
-Route only on accepted host/stage:
-- `HS_PANEL_LINE` — narrow seam/groove;
-- `SUBD_TOPOLOGY_CONTROL` — Catmull-Clark cage/flow;
-- `AXISYMMETRIC_PROFILE` — revolved form;
-- `RADIAL_REPEAT` — repeated radial details;
-- `SECTION_LOFT_HARD_SURFACE` — multi-section form;
-- decals/branding — usually RDL5 unless structural relief dictates otherwise.
-
-## 25. Runtime/game-ready boundary
-
-After reconstruction closure:
-- resolve canonical runtime path;
-- generate runtime LOD/collision;
-- enforce UV atlas contracts;
-- bake/validate runtime textures;
-- verify image cache coherence;
-- export/package readback including required primitive attributes such as `TEXCOORD_0` and node-transform policy;
-- round-trip protected invariants;
-- Level D only after target-engine production loader/regression/instantiation evidence.
-
-Blender glTF re-import is Level C evidence, not Level D.
-
-## 26. Operational report
-
-When useful include:
-- STATE;
-- TARGET COMPLETION LEVEL;
-- ACTIVE PROJECT PROFILE/runtime pin;
-- Shape Graph revision;
-- Appearance Contract revision;
-- Assembly Contract revision;
-- current RDL / Shape Node;
-- authorization ID;
-- mutation postcondition result;
-- required views/validators;
-- assembly integrity result;
-- node gate result;
-- RDL barrier;
-- geometric/appearance/reconstruction gate status;
-- highest valid completion level.
 
 ## Final principle
 
-Do not ask only:
+For an asset ask: what forms, boundaries, relations and source evidence prove this object?
 
-```text
-Does it look approximately like the reference?
-```
-
-Ask:
-
-```text
-What forms define it?
-What visible product architecture defines it?
-What physical relation should every important part have to its host?
-Did each mutation actually change geometry as intended?
-Can my validator reject the known-broken version of this exact failure class?
-Is every green proof still current after repair?
-```
-
-Only then claim fidelity or completion.
+For a location additionally ask: what zones, anchors, dependencies, circulation paths, material/light language and focal relationships make this one coherent place rather than a pile of objects?
 
 
 ---
@@ -27752,6 +27627,25 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.15.0
+
+v0.15.0 is the **Location Reconstruction + Environment Assembly** release, driven by the failed v0.14 Lafar Restaurant full-location build.
+
+Key changes:
+- added `13_environment_assembly/` as the hierarchy above single-asset reconstruction;
+- added persistent Location Scene Graph (`LOCATION -> ZONE -> SYSTEM -> ASSET -> INSTANCE`);
+- added exhaustive Location Asset Manifest with explicit `MISSING/PROXY/BUILDING/ACCEPTED/INSTANCED` state and 100% required HERO closure;
+- made Location Design System mandatory before asset proliferation, reusing the v0.14 persistent material-language library;
+- added architecture-first assembly, zoning, placement anchors, HERO composition and furniture-cluster grammar;
+- added semantic Spatial Relation Graph and explicit circulation/clearance validation;
+- added non-compensating location interpenetration, reference-composition and completeness gates;
+- added location completion levels and runtime partitioning/instancing boundary;
+- upgraded `06_prompts/60_SYSTEM_PROMPT.md` to v0.15 and added the dedicated location planner prompt;
+- added pure-Python decision validators and adversarial v0.15 regression tests;
+- added Benchmark 84 — Lafar Restaurant Full Location Reconstruction.
+
+Canonical benchmark: **84 — Lafar Restaurant v0.15 Full Location Reconstruction Regression**.
+
 ## 0.14.0
 
 v0.14.0 is the **visual-quality + library-first + persistent location-material-language + context-efficiency** release, driven by human review of the v0.13 Lafar planter benchmark.
@@ -28201,10 +28095,31 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.14.0 — visual quality, library-first asset selection, persistent location material language and context efficiency.**
+**v0.15.0 — full-location reconstruction, environment assembly, spatial relations and completeness gates.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.15 location reconstruction and environment assembly
+
+v0.15 introduces the hierarchy above single-asset reconstruction. Complete authored interiors/exteriors are now planned and validated as spatial systems rather than as independent object builds.
+
+```text
+location references
+-> Location Design System
+-> Location Scene Graph + Asset Manifest
+-> architecture
+-> HERO anchors
+-> fixed assets
+-> furniture clusters
+-> spatial relations + circulation/clearance
+-> lighting/vegetation/props
+-> reference composition fidelity
+-> Location Completeness Gate
+-> runtime partitioning/instancing
+```
+
+Hard final blockers include missing required HERO assets, final proxies, unintended interpenetration, blocked required circulation and failed reference composition. The canonical v0.15 regression is **Benchmark 84 — Lafar Restaurant Full Location Reconstruction**.
 
 ## v0.14 quality/material additions
 
@@ -31666,3 +31581,836 @@ High global overlap cannot compensate for a missing focal mass or missing requir
 ## Efficiency
 
 Compute masks and reductions locally. Return only aggregate scores and failing ROIs/bands.
+
+
+---
+
+## FILE: `00_governance/09_LOCATION_ASSEMBLY_EXTENSION.md`
+
+# v0.15 Location Reconstruction and Environment Assembly Extension
+
+## Purpose
+
+v0.15 adds the missing hierarchy above single-asset reconstruction. A location is not a bag of assets. It is a constrained spatial system whose architecture, zones, hero anchors, circulation, materials, lighting and repeated instances must be solved and validated together.
+
+## Canonical hierarchy
+
+```text
+LOCATION
+-> ZONE
+-> SYSTEM
+-> ASSET
+-> INSTANCE
+```
+
+The existing Shape Graph remains authoritative inside each reference-driven asset. The Location Scene Graph owns relationships between assets and the environment.
+
+## Non-negotiable laws
+
+```text
+LOCATION_PLAN != PASS -> no final location population
+ASSET state not ACCEPTED -> final instance forbidden
+PROXY present -> LOCATION_COMPLETE FAIL
+MISSING required HERO -> LOCATION_COMPLETE FAIL
+unintended interpenetration -> LOCATION_COMPLETE FAIL
+blocked required circulation -> LOCATION_COMPLETE FAIL
+reference composition gate != PASS -> final fidelity unresolved
+```
+
+A proxy is legal only during blockout and must remain explicitly typed as `PROXY`.
+
+## Build order
+
+```text
+reference ingest
+-> location design system
+-> Location Scene Graph + Asset Manifest
+-> architectural envelope
+-> modular wall/floor/ceiling systems
+-> HERO anchors
+-> fixed assets
+-> furniture clusters
+-> circulation/clearance closure
+-> lighting + vegetation + table props
+-> material/art-direction pass
+-> reference composition fidelity
+-> location completeness
+-> runtime partitioning/instancing
+```
+
+## Scope separation
+
+- `10_reconstruction/` owns fidelity of one asset to its references.
+- `12_procedural_generation/` owns procedural source generation and placement domains.
+- `13_environment_assembly/` owns complete authored locations and spatial composition.
+
+All v0.12 geometric-integrity and negative-control laws remain active inside the new layer.
+
+
+---
+
+## FILE: `00_governance/10_LOCATION_SKILL_REGISTRY_V015.md`
+
+# v0.15 Location Skill Registry
+
+| Skill ID | Purpose | Canonical implementation |
+|---|---|---|
+| `LOCATION_REFERENCE_INGEST` | classify location-level references, dimensions and composition owners | `13_environment_assembly/301` |
+| `LOCATION_SCENE_GRAPH` | validate LOCATION→ZONE→SYSTEM→ASSET→INSTANCE graph | `13_environment_assembly/302`; `executors/location_scene_graph.py` |
+| `LOCATION_ASSET_MANIFEST` | track required assets and proxy/final state | `13_environment_assembly/303`; `executors/location_asset_manifest.py` |
+| `LOCATION_DESIGN_SYSTEM_GATE` | require persistent location design language before asset proliferation | `13_environment_assembly/304`; `executors/location_design_system_gate.py` |
+| `ARCHITECTURAL_ASSEMBLY` | build and validate modular envelope | `13_environment_assembly/305` |
+| `SPACE_ZONING` | define public/service/transition zones and capacity intent | `13_environment_assembly/306` |
+| `SPATIAL_RELATION_GATE` | validate semantic inter-object placement relations | `13_environment_assembly/307`; `executors/spatial_relation_gate.py` |
+| `LOCATION_CLEARANCE_GATE` | validate guest/service/door and object clearances | `13_environment_assembly/308`; `executors/clearance_gate.py` |
+| `LOCATION_PLACEMENT_ANCHOR` | canonical position/orientation ownership | `13_environment_assembly/309` |
+| `HERO_COMPOSITION` | preserve focal anchors before loose population | `13_environment_assembly/310` |
+| `FURNITURE_CLUSTER_GRAMMAR` | compose table/chair/booth clusters as units | `13_environment_assembly/311` |
+| `LOCATION_INTERPENETRATION_GATE` | reject architecture/asset penetrations | `13_environment_assembly/312` |
+| `LOCATION_MATERIAL_LIGHTING_LANGUAGE` | apply shared material and light families | `13_environment_assembly/313` |
+| `LOCATION_STAGE_BARRIER` | prevent later population before earlier closure | `13_environment_assembly/314`; `executors/location_stage_barrier.py` |
+| `LOCATION_REFERENCE_FIDELITY_GATE` | validate global layout and composition against references | `13_environment_assembly/315`; `executors/location_reference_fidelity_gate.py` |
+| `LOCATION_COMPLETENESS_GATE` | final non-compensating location acceptance | `13_environment_assembly/316`; `executors/location_completeness_gate.py` |
+| `LOCATION_RUNTIME_PARTITION` | partition/instance accepted location for runtime | `13_environment_assembly/317` |
+| `LOCATION_DEFINITION_OF_DONE` | named completion levels for environments | `13_environment_assembly/318` |
+
+
+---
+
+## FILE: `06_prompts/70_LOCATION_RECONSTRUCTION_PLANNER_PROMPT.md`
+
+# Location Reconstruction Planner Prompt v0.15
+
+Use this prompt when the user asks to build a complete room, building interior, exterior block, street, plaza or other authored location from multiple references/assets.
+
+## Required planning output before final geometry population
+
+1. Resolve `location_id` and project profile.
+2. Ingest all location-level references and classify authority.
+3. Resolve/create the Location Design System and persistent material library.
+4. Build Location Scene Graph.
+5. Build exhaustive Location Asset Manifest with HERO/MID/BACKGROUND tier and `MISSING/PROXY/...` state.
+6. Define zones and circulation paths.
+7. Define architectural raster/envelope and module interfaces.
+8. Define HERO anchors and spatial relations.
+9. Define stage barriers and QA cameras.
+10. Only then execute architecture and assets in dependency order.
+
+## Forbidden shortcuts
+
+- empty room + repeated generic chairs -> claim restaurant complete;
+- use one proxy mesh as a final accepted asset;
+- random furniture scatter for authored interior;
+- skip bar/backbar/hero anchors because they are expensive;
+- invent per-asset materials when a location design system exists;
+- let a nice render override penetrations/clearance failures;
+- start runtime optimization before final location fidelity.
+
+## Required compact status
+
+```yaml
+location_build:
+  location_id: ...
+  stage: ...
+  scene_graph: PASS|FAIL
+  design_system: PASS|FAIL
+  asset_coverage: ...
+  hero_coverage: ...
+  proxies: ...
+  spatial_relations: PASS|FAIL
+  clearance: PASS|FAIL
+  reference_fidelity: PASS|FAIL
+  completeness: PASS|FAIL
+  blockers: []
+```
+
+
+---
+
+## FILE: `07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md`
+
+# Benchmark 84 — Lafar Restaurant v0.15 Full Location Reconstruction Regression
+
+## Failure source
+
+The v0.14 agent received the complete Lafar Restaurant reference set and a direct instruction to build the location asset-by-asset. The result was an under-authored blockout: generic floor/walls/ceiling, repeated weak chairs, missing central bar complex, missing backbar/rack/vegetation/material language, poor lighting, spatial penetrations and low correspondence to the hero concept.
+
+This benchmark converts that failure into a release gate.
+
+## Required route
+
+```text
+LOCATION_REFERENCE_INGEST
+-> LOCATION_DESIGN_SYSTEM_GATE
+-> LOCATION_SCENE_GRAPH
+-> LOCATION_ASSET_MANIFEST
+-> ARCHITECTURAL_ASSEMBLY
+-> HERO_COMPOSITION
+-> accepted fixed assets
+-> furniture clusters
+-> SPATIAL_RELATION_GATE
+-> LOCATION_CLEARANCE_GATE
+-> material/lighting/vegetation/props
+-> LOCATION_REFERENCE_FIDELITY_GATE
+-> LOCATION_COMPLETENESS_GATE
+```
+
+## Acceptance targets
+
+- 100% required architectural systems present;
+- 100% required HERO assets present and final;
+- 100% required assets not `MISSING` or `PROXY` in final mode;
+- zero unintended architecture/furniture penetrations;
+- zero blocked required guest/service paths;
+- no final instance sourced from unaccepted asset geometry;
+- Location Design System PASS;
+- reference composition score >= 0.85 unless a stronger calibrated threshold is available;
+- HERO anchor scale error <= 3%;
+- important orientation error <= 5°;
+- location completeness PASS.
+
+## Mandatory negative controls
+
+Each mutation below must make the benchmark fail:
+
+1. remove the main bar;
+2. replace one required HERO asset with `PROXY`;
+3. move a chair 200 mm into a wall;
+4. block a declared guest aisle below minimum width;
+5. replace location materials with one uniform grey material family;
+6. mark a required spatial relation unsatisfied;
+7. lower composition score below threshold.
+
+A validator that stays green on any matching defect cannot own v0.15 acceptance.
+
+
+---
+
+## FILE: `13_environment_assembly/300_LOCATION_RECONSTRUCTION_LAYER_INDEX.md`
+
+# Location Reconstruction Layer Index v0.15
+
+## Purpose
+
+This layer owns complete authored locations: interiors, exteriors, streets, plazas and room-scale assemblies composed from architecture, reconstructed assets, procedural content and repeated instances.
+
+## Core rule
+
+```text
+asset fidelity
+!= location fidelity
+```
+
+A location can fail even when every individual asset is valid, because placement, zoning, circulation, focal hierarchy, materials, lighting or completeness can still be wrong.
+
+## Modules
+
+- 301 — reference ingestion
+- 302 — Location Scene Graph
+- 303 — Location Asset Manifest
+- 304 — Location Design System
+- 305 — architectural assembly
+- 306 — zoning/program
+- 307 — spatial relation graph
+- 308 — circulation/clearance
+- 309 — placement anchors
+- 310 — HERO composition
+- 311 — furniture cluster grammar
+- 312 — interpenetration gate
+- 313 — material/lighting language
+- 314 — stage barriers
+- 315 — reference composition fidelity
+- 316 — completeness gate
+- 317 — runtime partitioning/instancing
+- 318 — definition of done
+
+## Canonical hierarchy
+
+```text
+LOCATION -> ZONE -> SYSTEM -> ASSET -> INSTANCE
+```
+
+Shape Graph remains nested inside ASSET nodes.
+
+
+---
+
+## FILE: `13_environment_assembly/301_LOCATION_REFERENCE_INGESTION.md`
+
+# Location Reference Ingestion
+
+## Goal
+
+Turn a mixed folder of hero concepts, technical sheets and asset cards into a property-level authority map before building a complete location.
+
+## Source classes
+
+- `LOCATION_HERO` — global composition, focal hierarchy, density, mood and visible relationships;
+- `ARCHITECTURAL_SHEET` — grid, dimensions, openings, wall/floor/ceiling systems;
+- `ASSET_CARD` — individual object geometry, dimensions, materials and local pivots;
+- `DESIGN_SYSTEM_SOURCE` — material, lighting, branding and reusable language;
+- `DETAIL_REFERENCE` — local junction/finish evidence.
+
+## Required output
+
+```yaml
+location_reference_registry:
+  revision: ...
+  sources: []
+  authorities:
+    footprint: ...
+    wall_height: ...
+    major_openings: ...
+    hero_composition: ...
+    focal_assets: ...
+    material_language: ...
+    lighting_language: ...
+  conflicts: []
+  unresolved: []
+```
+
+A hero render does not own printed dimensions. An asset card does not own room placement unless explicit.
+
+
+---
+
+## FILE: `13_environment_assembly/302_LOCATION_SCENE_GRAPH.md`
+
+# Location Scene Graph
+
+## Purpose
+
+Represent the semantic hierarchy of a location separately from Blender Collections/Object parenting.
+
+## Node kinds
+
+```text
+LOCATION
+ZONE
+SYSTEM
+ASSET
+INSTANCE
+```
+
+## Required node fields
+
+```yaml
+id: stable_id
+kind: LOCATION|ZONE|SYSTEM|ASSET|INSTANCE
+parent: stable_id|null
+state: MISSING|PROXY|BUILDING|BUILT_UNVERIFIED|ACCEPTED|INSTANCED|BLOCKED|FAIL
+importance: HERO|MID|BACKGROUND|TECHNICAL
+references: []
+dependencies: []
+```
+
+## Laws
+
+- exactly one LOCATION root;
+- no cycles;
+- every non-root has a valid parent;
+- INSTANCE points to a source ASSET;
+- final INSTANCE source must be `ACCEPTED`;
+- graph is persistent and revisioned.
+
+Canonical executor: `executors/location_scene_graph.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/303_LOCATION_ASSET_MANIFEST.md`
+
+# Location Asset Manifest
+
+## Purpose
+
+Prevent missing expensive/focal assets from disappearing behind a populated scene.
+
+## State model
+
+```text
+MISSING -> PROXY -> BUILDING -> BUILT_UNVERIFIED -> ACCEPTED -> INSTANCED
+                     \-> FAIL/BLOCKED
+```
+
+`PROXY` is blockout evidence only.
+
+## Required fields
+
+```yaml
+asset_id: BAR_MAIN
+required: true
+tier: HERO
+state: ACCEPTED
+source_refs: []
+asset_contract: ...
+instance_targets: []
+```
+
+## Final policy
+
+- required HERO final coverage = 100%;
+- every required final asset must be `ACCEPTED` or `INSTANCED`;
+- any final `PROXY` fails;
+- optional BACKGROUND content cannot compensate for missing HERO/MID requirements.
+
+Canonical executor: `executors/location_asset_manifest.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/304_LOCATION_DESIGN_SYSTEM.md`
+
+# Location Design System Contract
+
+## Purpose
+
+One location owns one persistent design language. Individual assets consume it instead of inventing local styles.
+
+## Mandatory contract
+
+```yaml
+location_id: lafar_restaurant_01
+unit_scale: 0.001
+architectural_grid_mm: 1200
+material_families:
+  stone_dark: {...}
+  graphite_metal: {...}
+  warm_brass: {...}
+  glass_smoked: {...}
+edge_families:
+  visible_micro_bevel_mm: [1,2]
+lighting_families:
+  warm_ambient_k: [2700,3000]
+  technical_accent: cool_blue
+branding:
+  logo_family: ...
+  signage_rules: ...
+```
+
+Also persist texture sources, trim families, emissive/glass policy, naming and reusable meshes. Reuse the v0.14 location material library path.
+
+Any incompatible one-off asset material is a design-system violation unless explicitly waived.
+
+Canonical executor: `executors/location_design_system_gate.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/305_MODULAR_ARCHITECTURE_ASSEMBLY.md`
+
+# Modular Architecture Assembly
+
+## Purpose
+
+Build floor, walls, corners, ceilings, openings, doors and partitions as an explicit system before furniture population.
+
+## Required order
+
+1. FFL/ground datum and footprint.
+2. Wall axes and height.
+3. Openings and door modules.
+4. Corner/termination modules.
+5. Floor raster.
+6. Ceiling raster/channels.
+7. Glass partitions/fixed greenery/recesses.
+8. junction validation.
+
+## Interface rules
+
+Every module declares width/height/depth, pivot, interface edges, seam/gap policy, protected dimensions and repeatability.
+
+Run assembly tests:
+- A+A;
+- A+B;
+- repeated chain;
+- inner/outer corner;
+- end cap;
+- wall-floor;
+- wall-ceiling;
+- opening boundary.
+
+No final loose population until architecture stage passes.
+
+
+---
+
+## FILE: `13_environment_assembly/306_SPACE_ZONING_AND_PROGRAM.md`
+
+# Space Zoning and Program
+
+## Purpose
+
+Assign functional meaning before placing content.
+
+Typical zone classes:
+- ENTRY/QUEUE;
+- DINING;
+- BAR_GUEST;
+- BAR_SERVICE;
+- KITCHEN/SERVICE;
+- CIRCULATION;
+- WAITING;
+- STAFF_ONLY;
+- FEATURE/GREENERY.
+
+Each zone declares polygon/volume, capacity intent, permitted asset classes, forbidden assets, required paths and focal relationships.
+
+Random collision-free placement is not an authored program.
+
+
+---
+
+## FILE: `13_environment_assembly/307_SPATIAL_RELATION_GRAPH.md`
+
+# Spatial Relation Graph
+
+## Purpose
+
+Describe what inter-object placement means. This complements the asset-level Assembly Relation Contract.
+
+## Canonical types
+
+```text
+INSIDE_ZONE
+AGAINST_SURFACE
+CENTERED_ON
+ALIGNS_WITH
+FACES_TARGET
+ABOVE
+BEHIND
+ADJACENT
+CLEARANCE
+CONTAINS
+PAIRED_WITH
+```
+
+Example:
+
+```yaml
+relation_id: BAR_BACKBAR
+relation: BEHIND
+a: BACKBAR
+b: BAR_MAIN
+must: true
+satisfied: true
+constraints:
+  longitudinal_alignment_mm: 80
+```
+
+A generic `does not overlap` check cannot prove correct placement.
+
+Canonical executor: `executors/spatial_relation_gate.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/308_CIRCULATION_AND_CLEARANCE_CONTRACT.md`
+
+# Circulation and Clearance Contract
+
+## Purpose
+
+Protect declared guest/service/door paths and local operating space.
+
+## Records
+
+```yaml
+clearance_id: GUEST_AISLE_01
+required_mm: 900
+measured_mm: 1040
+penetration_mm: 0
+max_penetration_mm: 0
+importance: MUST
+```
+
+Declare constraints from project/reference authority. Defaults are design heuristics only and are not a building-code certification.
+
+Check:
+- furniture to wall;
+- chair pull-out/occupancy envelope;
+- table cluster to neighbor;
+- guest path;
+- service path;
+- door swing/access;
+- bar operating side;
+- fixed equipment access.
+
+Canonical executor: `executors/clearance_gate.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/309_ASSET_PLACEMENT_AND_ANCHORS.md`
+
+# Asset Placement and Anchors
+
+## Purpose
+
+Make important transforms reference-derived and testable.
+
+An anchor may own:
+- position;
+- orientation/facing;
+- scale;
+- wall/ceiling/floor attachment;
+- reference camera projection;
+- zone membership.
+
+HERO/fixed assets use explicit anchors. Loose decorative scatter is downstream.
+
+Example:
+
+```yaml
+anchor_id: A_BAR_MAIN
+asset_id: BAR_MAIN
+zone: BAR_ZONE
+position_mm: [6200, 4100, 0]
+yaw_deg: 90
+authority: LOCATION_HERO_01
+importance: HERO
+```
+
+
+---
+
+## FILE: `13_environment_assembly/310_HERO_ANCHOR_COMPOSITION.md`
+
+# HERO Anchor Composition
+
+## Principle
+
+Focal objects define the room. Do not fill empty space with cheap repeated objects before solving them.
+
+## Gate
+
+Before final loose furniture population:
+- every required HERO asset exists as ACCEPTED geometry;
+- HERO anchor transform is within tolerance;
+- dominant visual relationships are satisfied;
+- reference sightlines/focal hierarchy are plausible;
+- HERO material/light families are resolved.
+
+For Lafar Restaurant this includes at minimum the main bar complex and its coupled backbar/rack when required by the source set.
+
+
+---
+
+## FILE: `13_environment_assembly/311_FURNITURE_CLUSTER_GRAMMAR.md`
+
+# Furniture Cluster Grammar
+
+## Purpose
+
+Compose semantic dining/meeting/seating units rather than scatter independent meshes.
+
+## Cluster examples
+
+```text
+TABLE_ROUND_4 = table + 4 seats + occupancy envelopes + table-light relation
+TABLE_2 = table + 2 seats
+BOOTH = fixed bench + table + opposing seat(s)
+BAR_SEAT_RUN = bar edge + repeated stools + operating clearance
+```
+
+Rules:
+- seat faces target/table unless source says otherwise;
+- cluster owns relative transforms;
+- cluster validates wall/neighbor clearances;
+- repeated source assets use instancing;
+- variation cannot break ergonomics or reference rhythm.
+
+
+---
+
+## FILE: `13_environment_assembly/312_LOCATION_INTERPENETRATION_GATE.md`
+
+# Location Interpenetration Gate
+
+## Purpose
+
+Reject unintended penetration across independently valid assets and architecture.
+
+## Policy
+
+Forbidden unless an explicit mounting/embedding relation authorizes it:
+- furniture through walls/floor;
+- planters through partitions;
+- suspended assets through ceiling structures;
+- chairs/tables through each other;
+- decor through functional equipment.
+
+Contact/embedding must map to a declared asset Assembly Relation or location Spatial Relation. Z-fighting counts as failure for visible surfaces.
+
+Negative control: move one chair 200 mm into a wall; gate must fail.
+
+
+---
+
+## FILE: `13_environment_assembly/313_LOCATION_MATERIAL_AND_LIGHTING_LANGUAGE.md`
+
+# Location Material and Lighting Language
+
+## Materials
+
+Consume the Location Design System and v0.14 persistent material library. Reuse approved stone, graphite, brass, glass, wood/polymer and vegetation families. One-off neutral placeholders are blockout-only.
+
+## Lighting
+
+Separate:
+- ambient/architectural warm light;
+- task lights;
+- table lamps;
+- integrated furniture/bar LEDs;
+- technical/cool accents when canonical.
+
+Light placement follows architecture/HERO anchors. Do not use flat general illumination as a substitute for the reference lighting hierarchy.
+
+Final art-direction PASS requires both family coverage and visible hierarchy, not only named material/light datablocks.
+
+
+---
+
+## FILE: `13_environment_assembly/314_LOCATION_BUILD_ORDER_AND_STAGE_BARRIERS.md`
+
+# Location Build Order and Stage Barriers
+
+## Stages
+
+```text
+REFERENCE
+DESIGN_SYSTEM
+ARCHITECTURE
+HERO_ANCHORS
+FIXED_ASSETS
+FURNITURE
+LIGHTING_VEGETATION_PROPS
+FINAL_FIDELITY
+RUNTIME
+```
+
+A stage may use explicit proxies for planning, but only PASS from prior stages unlocks final evidence downstream.
+
+Examples:
+- failed architecture -> no final furniture acceptance;
+- missing HERO bar -> no final dining population acceptance;
+- failed clearance -> no final fidelity completion;
+- failed reference composition -> no runtime finishing claim.
+
+Canonical executor: `executors/location_stage_barrier.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/315_REFERENCE_COMPOSITION_FIDELITY.md`
+
+# Location Reference Composition Fidelity
+
+## Purpose
+
+Validate global scene correspondence after individual assets are valid.
+
+## Owners
+
+- architectural envelope/proportions;
+- major zone placement;
+- HERO anchors;
+- orientation/facing;
+- scale relationships;
+- density/negative space;
+- dominant material/light hierarchy;
+- reference-camera focal composition.
+
+Default policy when stronger calibrated authority is unavailable:
+
+```text
+layout anchor error <= 100 mm
+important orientation error <= 5 deg
+HERO scale error <= 3%
+composition score >= 0.85
+```
+
+These defaults are replaceable by project/reference contracts.
+
+Canonical executor: `executors/location_reference_fidelity_gate.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/316_LOCATION_COMPLETENESS_GATE.md`
+
+# Location Completeness Gate
+
+## Non-compensating final gate
+
+Required PASS:
+- Location Scene Graph;
+- Location Design System;
+- final Asset Manifest;
+- architecture;
+- Spatial Relation Gate;
+- Clearance Gate;
+- Location Reference Fidelity Gate.
+
+Hard blockers:
+- any final proxy;
+- missing required HERO;
+- unintended penetration;
+- blocked required path.
+
+More decorative props, better render quality or successful export cannot compensate.
+
+Canonical executor: `executors/location_completeness_gate.py`.
+
+
+---
+
+## FILE: `13_environment_assembly/317_GAME_READY_LOCATION_PARTITIONING_AND_INSTANCING.md`
+
+# Game-Ready Location Partitioning and Instancing
+
+Runtime work starts after Location Completeness PASS.
+
+Prefer:
+- repeated accepted assets as instances;
+- source-level LOD/collision rather than duplicate-specific geometry;
+- static architecture partitioned by streaming/visibility needs;
+- shared location material families/atlases where appropriate;
+- occlusion/portal strategy aligned with actual room topology;
+- preservation of accepted transforms and spatial relations.
+
+Optimization must not silently merge geometry in a way that destroys protected openings, material boundaries, collision or placement invariants.
+
+
+---
+
+## FILE: `13_environment_assembly/318_LOCATION_DEFINITION_OF_DONE.md`
+
+# Location Definition of Done
+
+## Levels
+
+```text
+A LOCATION_STRUCTURE_COMPLETE
+B LOCATION_LAYOUT_COMPLETE
+C LOCATION_ART_DIRECTION_COMPLETE
+D LOCATION_GAME_READY_COMPLETE
+E LOCATION_PIPELINE_INTEGRATED
+```
+
+## A — STRUCTURE
+Reference ingest, Design System, Scene Graph, Asset Manifest and architecture PASS.
+
+## B — LAYOUT
+A + required HERO/fixed assets accepted, zoning/spatial relations/circulation/clearance PASS, no final proxies.
+
+## C — ART DIRECTION
+B + shared material/light language, vegetation/props where required and Location Reference Fidelity PASS.
+
+## D — GAME READY
+C + runtime partitioning, source-asset LOD/collision, runtime material/texture/export validation.
+
+## E — PIPELINE INTEGRATED
+D + canonical runtime path/catalog and target-engine load/instantiation evidence.
+
+The first failing level is the real status. Do not report `DONE` without the named highest passed level.

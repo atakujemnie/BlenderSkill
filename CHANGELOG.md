@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.15.0
+
+v0.15.0 is the **Location Reconstruction + Environment Assembly** release, driven by the failed v0.14 Lafar Restaurant full-location build.
+
+Key changes:
+- added `13_environment_assembly/` as the hierarchy above single-asset reconstruction;
+- added persistent Location Scene Graph (`LOCATION -> ZONE -> SYSTEM -> ASSET -> INSTANCE`);
+- added exhaustive Location Asset Manifest with explicit `MISSING/PROXY/BUILDING/ACCEPTED/INSTANCED` state and 100% required HERO closure;
+- made Location Design System mandatory before asset proliferation, reusing the v0.14 persistent material-language library;
+- added architecture-first assembly, zoning, placement anchors, HERO composition and furniture-cluster grammar;
+- added semantic Spatial Relation Graph and explicit circulation/clearance validation;
+- added non-compensating location interpenetration, reference-composition and completeness gates;
+- added location completion levels and runtime partitioning/instancing boundary;
+- upgraded `06_prompts/60_SYSTEM_PROMPT.md` to v0.15 and added the dedicated location planner prompt;
+- added pure-Python decision validators and adversarial v0.15 regression tests;
+- added Benchmark 84 — Lafar Restaurant Full Location Reconstruction.
+
+Canonical benchmark: **84 — Lafar Restaurant v0.15 Full Location Reconstruction Regression**.
+
 ## 0.14.0
 
 v0.14.0 is the **visual-quality + library-first + persistent location-material-language + context-efficiency** release, driven by human review of the v0.13 Lafar planter benchmark.
