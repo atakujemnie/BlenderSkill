@@ -1,159 +1,169 @@
 # Reconstruction Node Execution Protocol
 
-## v0.11 hard-enforcement amendment
+## Purpose
 
-v0.10/v0.9 described the correct node loop, but the Lafar Street Lamp benchmark proved that an asset-local `main()` could still call all node functions in sequence. v0.11 makes the loop executable.
+Replace monolithic asset builds with one authorized, postcondition-verified Shape Node transaction at a time.
 
-Before mutation require `EXECUTION_AUTHORIZATION_GATE.can_mutate == PASS`, persisted `READY_TO_BUILD`, accepted parent/dependencies and prior RDL barriers. Immediately after one node mutation persist `BUILT_UNVERIFIED` and stop that branch until source-anchored QA plus `RECONSTRUCTION_NODE_GATE` returns `ACCEPTED`.
-
-Node-by-node function names are not sufficient. A monolithic function calling RDL0..RDL5 without persisted gates is a regression. See `73_EXECUTION_AUTHORIZATION_GATE.md`, `74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md` and `75_NODE_SCOPED_ORCHESTRATION.md`.
-
----
-
-## Cel
-
-Zastąpić monolityczny `build_asset()` kontrolowanym wykonywaniem Shape Graph node po node.
-
-v0.9 execution unit:
+Canonical v0.12 unit:
 
 ```text
 ONE SHAPE NODE
+-> ONE AUTHORIZATION
 -> ONE MUTATION SCOPE
--> ONE VALIDATION PACKAGE
--> ACCEPT / FAIL
+-> ONE MUTATION POSTCONDITION
+-> ONE SOURCE/INTEGRITY VALIDATION PACKAGE
+-> ACCEPT / FAIL / UNVERIFIED
 ```
-
----
 
 ## Preconditions
 
-Przed budową node'a:
-- Shape Graph revision istnieje;
-- node ma `CONSTRAINED` lub `READY_TO_BUILD`;
-- parent/dependencies wymagane do geometrii są `ACCEPTED`;
-- shape class jest wybrana;
-- required views + controls są zapisane;
-- implementation skill jest zidentyfikowany;
-- expected-change scope jest jawny;
-- QA scene isolation capability jest dostępne dla required render checks.
+Before production mutation:
+- current Shape Graph revision exists;
+- node is eligible and can receive canonical authorization;
+- parent/dependencies are `ACCEPTED`;
+- prior RDL barriers pass;
+- shape class is selected;
+- required views/controls are declared;
+- expected-change scope is explicit;
+- touched Assembly Relations are declared;
+- QA isolation and required canonical validators are available.
 
-Brak dowolnego required precondition = `BLOCKED`, nie improwizacja.
-
----
+Missing required precondition = `BLOCKED`, not improvisation.
 
 ## Transaction
 
-### 1. Inspect
-Sprawdź current owner objects/helpers i node revision.
+### 1. Authorize
 
-### 2. Build/repair
-Modyfikuj tylko:
+```text
+CONSTRAINED
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+```
+
+### 2. Capture before state
+
+Record compact mutation metrics appropriate to the operation: signature/topology/bounds/volume/transforms/modifiers/helpers.
+
+### 3. Build/repair current node only
+
+Modify only:
 - node owner;
-- jawne helper objects;
+- explicit helpers/cutters;
 - expected-change region.
 
-### 3. Mark `BUILT_UNVERIFIED`
-Samo utworzenie obiektu nie jest PASS.
+### 4. Capture after state + postcondition
 
-### 4. Validate
-Uruchom:
+```text
+before + after
+-> MUTATION_POSTCONDITION_GATE
+```
+
+A builder return or applied modifier is not sufficient. A silent Boolean no-op is FAIL.
+
+Only postcondition PASS permits:
+
+```text
+READY_TO_BUILD -> BUILT_UNVERIFIED
+```
+
+### 5. Source and integrity validation
+
+Run as required:
 - numeric checks;
-- required canonical view registered QA;
-- section/profile validator, jeśli dotyczy;
-- parent/sibling regression;
-- topology sanity odpowiednią dla tego etapu.
+- registered canonical views / local reference ROI;
+- section/profile/layer validators;
+- `ASSEMBLY_INTEGRITY_GATE` for touched relations;
+- `MESH_VALIDATE`;
+- parent/sibling/global regression.
 
-### 5. Gate
-`RECONSTRUCTION_NODE_GATE` zwraca:
+### 6. Canonical node gate
+
+`RECONSTRUCTION_NODE_GATE` returns:
 - `ACCEPTED`;
 - `FAIL`;
 - `BLOCKED`;
 - `UNVERIFIED`.
 
-### 6. Persist
-Zapisz compact node acceptance record i graph revision.
+Only `ACCEPTED` unlocks dependants.
 
----
+### 7. Persist
+
+Persist current revisions, evidence provenance and transition history before resolving next node.
 
 ## No bulk-add rule
 
-Jedna transakcja nie może tworzyć 20 niezależnych form, a potem wykonywać jednego wspólnego renderu.
+One transaction cannot create many independent forms and validate afterwards.
 
-Jeżeli node jest assembly:
-- assembly node może organizować dzieci;
-- geometry mutation nadal odbywa się na leaf/structural child nodes zgodnie z RDL.
+If an assembly node organizes children, production geometry still closes at the appropriate structural/leaf nodes unless a justified `atomic_group_id` makes separation impossible.
 
-Wyjątek: atomowa geometria, której rozdzielenie uniemożliwia sensowne QA, musi mieć jawny `atomic_group_id`.
+## Builder architecture
 
----
-
-## Node script architecture
-
-Asset-specific builder powinien mieć cienkie funkcje:
+Preferred interface:
 
 ```python
-build_primary_body(spec, context)
-build_base_plinth(spec, context)
-build_lower_shoulder(spec, context)
-build_side_frame(spec, context)
+BUILDERS = {
+    'PRIMARY_BODY': build_primary_body,
+    'BASE_PLINTH': build_base_plinth,
+    'LOWER_SHOULDER': build_lower_shoulder,
+}
 ```
 
 Orchestrator:
 
 ```text
-resolve ready node
--> invoke registered implementation
--> validate node
+resolve eligible node
+-> authorize
+-> capture before
+-> invoke one builder
+-> capture after
+-> mutation postcondition
+-> source/integrity validation
+-> canonical node gate
 -> persist
--> resolve next ready node
+-> resolve next node
 ```
 
-Nie preferuj jednej funkcji `build_all()`.
-
-Jeżeli convenience `build_all()` istnieje dla manualnego replayu, musi wewnętrznie respektować node gates i nie może ominąć FAIL.
-
----
+A convenience full replay may iterate this protocol, but may not mint new acceptance proof merely because replay succeeded.
 
 ## Repair semantics
 
-Node repair:
-- nie resetuje całego assetu;
-- oznacza dependent children `DIRTY`, jeśli zmiana może je naruszyć;
-- niezależne accepted nodes pozostają reusable;
-- nie wykonuje późniejszych RDL stages przed ponownym node PASS.
+Before mutating an accepted host:
 
----
+```text
+repair/change intent
+-> DEPENDENCY_INVALIDATOR
+-> new revisions/states persisted
+-> affected closure rebuilt node-by-node
+```
 
-## Retry and representation switch
+Do not repair first and invalidate descendants later. Old evidence is `SUPERSEDED`, not deleted or silently reused.
 
-Po pierwszym FAIL:
-- diagnoza;
-- jedna poprawiona próba tej samej strategii.
+## Retry and strategy switch
 
-Po drugim udowodnionym FAIL:
+After first FAIL:
+- diagnose the actual failed owner/property;
+- one corrected retry of the same strategy.
+
+After second proven FAIL:
 - re-inspect evidence;
-- rozważ registration/parameter/representation error;
-- jeśli representation jest niewystarczająca, route do `SHAPE_CLASSIFY` i zmień strategy.
+- consider registration/parameter/representation error;
+- route to `SHAPE_CLASSIFY` if representation is inadequate.
 
-Nie wykonuj serii `tweak -> render -> tweak -> render` bez zmiany modelu problemu.
+Do not loop `tweak -> render` without changing the model of the problem.
 
----
-
-## Output budget
-
-Każdy node execution zwraca compact summary:
+## Compact output
 
 ```yaml
 node_execution:
-  node_id: BASE_PLINTH
-  revision: n_006
-  skill_id: SECTION_LOFT_HARD_SURFACE
-  mutation_objects: [ACS_WP_BASE]
-  state: ACCEPTED
-  view_results: {FRONT: PASS, SIDE: PASS, TOP: PASS}
-  numeric: PASS
+  node_id: SENSOR_MODULE
+  node_revision: sensor_007
+  authorization_id: auth:sg_020:SENSOR_MODULE:sensor_007:REPAIR
+  mutation_postcondition: PASS
+  source_views: {FRONT: PASS, SIDE: PASS}
+  assembly_relations: {J_SENSOR_ARM: PASS}
+  topology: PASS
+  node_gate: ACCEPTED
   blockers: []
-  dirtied_children: [LOWER_LIGHT_SLOT]
 ```
 
-Nie echoj całego skryptu ani raw pixel arrays.
+Do not echo full scripts/raw mesh arrays unless required for a concrete diagnostic.
