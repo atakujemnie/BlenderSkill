@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.12.0 — Full compiled snapshot
+# Blender AI Agent Library v0.13.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -29899,3 +29899,1126 @@ A human-visible geometric defect cannot be averaged away by an appearance score.
 `executors/geometric_integrity_gate.py`
 
 Skill ID: `GEOMETRIC_INTEGRITY_GATE`.
+
+
+---
+
+## FILE: `00_governance/08_PROCEDURAL_GENERATION_EXTENSION.md`
+
+# v0.13 Procedural Generation Extension
+
+## Purpose
+
+v0.13 extends BlenderSkill from reference-driven hard-surface production into deterministic procedural vegetation and environment authoring without weakening the v0.12 reconstruction/integrity gates.
+
+This file is the canonical v0.13 registry/routing amendment. It has precedence for procedural-generation tasks while the existing Shape Graph, mutation, assembly, fidelity and runtime rules remain authoritative for hard-surface owners.
+
+## Fundamental split
+
+A planter with vegetation is not one undifferentiated asset:
+
+```text
+PLANTER_CONTAINER
+-> existing reconstruction / hard-surface pipeline
+
+VEGETATION_ASSEMBLY
+-> procedural provider + botanical grammar + deterministic generation
+
+COMPOSITION
+-> soil/root/stem/canopy fit and placement relations
+
+RUNTIME
+-> vegetation-specific LOD/cards/attributes + existing game-ready pipeline
+```
+
+A correct planter does not prove correct vegetation. A beautiful plant does not prove that it fits the soil volume or is game-ready.
+
+## v0.13 semantic skills
+
+| Skill ID | Purpose | Canonical knowledge | Executor | Maturity |
+|---|---|---|---|---|
+| `PROCEDURAL_GENERATOR_PROVIDER` | provider compatibility, capability and execution gate | `12_procedural_generation/200`–`201` | `procedural_provider.py` | CONTRACT_READY |
+| `NODEGRAPH_TO_PYTHON` | compile a vetted node graph into reproducible Python authoring code | `202` | `nodegraph_codegen_gate.py` | CONTRACT_READY |
+| `VEGETATION_BOTANICAL_GRAMMAR` | structural plant specification independent of backend | `211` | `botanical_grammar.py` | CONTRACT_READY |
+| `VEGETATION_GENERATE` | deterministic generation acceptance | `210`, `212`, `213` | `vegetation_generation_gate.py` | CONTRACT_READY |
+| `VEGETATION_SURFACE_GROWTH` | vines/roots/creepers on host surfaces | `214` | provider-specific adapter | KNOWLEDGE_ONLY |
+| `VEGETATION_SCATTER` | deterministic ecological placement over sampled candidates | `215` | `vegetation_scatter.py` | CONTRACT_READY |
+| `PLANTER_VEGETATION_COMPOSITION` | rootball/soil/wall/stem fit between vegetation and container | `216` | `planter_composition.py` | CONTRACT_READY |
+| `VEGETATION_RUNTIME_PREP` | bridge rich generated plants into runtime budgets | `217`–`219` | `vegetation_runtime_prep.py` | CONTRACT_READY |
+
+## Canonical state flow
+
+```text
+PROCEDURAL_REQUEST
+-> PROVIDER_DISCOVERY
+-> PROVIDER_CAPABILITY_PROBE
+-> SPEC_CONSTRAINED
+-> GENERATION_READY
+-> GENERATED_UNVERIFIED
+-> botanical / placement / composition proof
+-> VEGETATION_GENERATION_GATE
+-> AUTHORING_ACCEPTED
+-> VEGETATION_RUNTIME_PREP
+-> existing UV/bake/package/export/runtime gates
+```
+
+No provider probe means no production call to a third-party generator.
+
+## Provider law
+
+Third-party generators are adapters, not the semantic API. Agent-facing requests use stable specs such as `PlantSpec`, `ScatterSpec` and `RuntimeVegetationSpec`. Backend names never become the asset contract.
+
+Every provider records:
+- provider/version;
+- Blender min/max known compatibility;
+- execution type;
+- background/UI requirements;
+- deterministic seed support;
+- input/output schema;
+- license and asset-license boundary;
+- probe artifact;
+- cleanup/postcondition contract.
+
+`AVAILABLE` is a runtime fact, not a documentation assumption.
+
+## Preferred v0.13 providers
+
+1. Built-in Blender 5.1 Geometry Nodes — primary runtime-safe procedural backend.
+2. NodeToPython — preferred node-graph compiler when installed and probed; generated code should not require it at runtime.
+3. Python-authored Geometry Nodes (`geonodes`) — optional provider after capability/license probe.
+4. Sapling / IvyGen — optional domain providers after Blender 5.1 operator probe.
+5. Sverchok — optional parametric provider after local probe.
+6. engon/botaniq — optional licensed asset/scatter provider; asset-pack license remains external.
+7. Infinigen / ProcFunc / BlenderProc — source/reference patterns unless current runtime compatibility is independently proven.
+8. The Grove — version-blocked for Blender 5.1 under the currently documented Blender 4.2–4.4 support window.
+
+## Reproducibility law
+
+A procedural asset must preserve:
+
+```text
+provider_id
+provider_version
+seed
+parameters_hash
+source/nodegraph hash when applicable
+generation geometry signature
+semantic part IDs
+```
+
+Fixed seed + fixed parameters must reproduce the same structural signature within the declared tolerance. Otherwise the asset is `UNVERIFIED`.
+
+## Game-ready law
+
+High-quality generated geometry may be an authoring artifact only.
+
+```text
+VEGETATION_GENERATE PASS
+!=
+VEGETATION_RUNTIME_PREP PASS
+```
+
+Runtime prep owns LOD budgets, leaf cards/impostors, instancing, material-slot budget, collision policy, wind attributes and export survival.
+
+## Benchmark
+
+Canonical v0.13 benchmark: `07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md`.
+
+
+---
+
+## FILE: `06_prompts/69_PROCEDURAL_ENVIRONMENT_PLANNER_PROMPT.md`
+
+# Procedural Environment Planner Prompt
+
+Use this prompt for vegetation/terrain/environment authoring requests.
+
+## Required reasoning output
+
+1. Split hard-surface/reference owners from procedural owners.
+2. Declare target completion level and runtime usage class.
+3. Build semantic specs before selecting a generator.
+4. Discover/probe provider compatibility for active Blender 5.1.
+5. Prefer built-in Geometry Nodes or committed generated Python when they satisfy the requirement.
+6. Record seed, provider/version, parameters hash and expected semantic parts.
+7. Generate one disposable candidate before production population.
+8. Validate botanical structure and fixed-seed reproducibility.
+9. For placement, declare masks/slope/spacing/exclusion before scatter.
+10. For planters, validate rootball/soil/wall/stem composition.
+11. Run vegetation runtime prep before existing UV/bake/export/runtime gates.
+
+## Forbidden shortcuts
+
+- provider documentation -> assume installed/working;
+- random scatter without explicit seed/constraints;
+- beautiful generated tree -> claim game ready;
+- manually tweak a random output while claiming reproducibility;
+- use paid asset pack without explicit local availability/license;
+- full Infinigen/BlenderProc dependency when one extracted algorithm/contract is sufficient;
+- use a version-blocked provider because its output quality is attractive.
+
+## Preferred result format
+
+```yaml
+procedural_task:
+  owner: ...
+  provider: ...
+  provider_probe: PASS|BLOCKED
+  semantic_spec: ...
+  seed: ...
+  generation_gate: ...
+  placement_gate: ...
+  composition_gate: ...
+  runtime_prep: ...
+  blockers: []
+```
+
+
+---
+
+## FILE: `07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md`
+
+# Benchmark 82 — Lafar Planter + Vegetation v0.13
+
+## Purpose
+
+First end-to-end benchmark for the procedural-generation layer. The target combines an exact/controlled hard-surface civic planter with procedural vegetation and therefore exercises the boundary between v0.12 reconstruction integrity and v0.13 organic generation.
+
+## Required scenario
+
+Create one Lafar planter composition containing:
+- one hard-surface planter/container;
+- soil insert;
+- at least two accepted vegetation source variants;
+- deterministic placement/variation seeds;
+- runtime LOD plan;
+- exportable game-ready assembly.
+
+## Acceptance gates
+
+### A. Container
+- existing Shape/Appearance/Geometric Integrity gates pass when reference-driven;
+- interior soil footprint/depth measured and persisted;
+- no invalid wall/soil interpenetration.
+
+### B. Provider
+- active Blender 5.1 provider probe is recorded;
+- no use of a provider solely because documentation claims compatibility;
+- version-blocked providers remain blocked.
+
+### C. Botanical generation
+- `VEGETATION_BOTANICAL_GRAMMAR: PASS`;
+- integer seed and parameter hash recorded;
+- semantic parts recorded;
+- fixed-seed reproduction signature stable;
+- `VEGETATION_GENERATION_GATE: PASS`.
+
+### D. Placement/composition
+- deterministic scatter/anchor result;
+- exclusions and minimum spacing respected;
+- zero rootballs outside usable soil;
+- zero stems intersecting planter wall;
+- root depth <= soil depth;
+- intentional canopy overlap allowed but visible clone repetition is reviewed.
+
+### E. Runtime
+For benchmark MID vegetation, initial target:
+- authoring geometry may exceed runtime budget;
+- LOD0 <= 30k triangles per source plant;
+- LOD1 <= 14k;
+- LOD2 <= 5k;
+- LOD3 <= 1.2k;
+- <= 3 material slots per source plant unless project profile overrides;
+- leaf cards recommended when dense foliage exceeds LOD1 budget;
+- impostor recommendation evaluated for background use;
+- wind semantic attributes present before engine handoff;
+- source variants are instanced where possible.
+
+### F. Regression targets
+
+```text
+0 guessed third-party operator signatures
+0 unseeded procedural production assets
+0 fixed-seed reproduction mismatches
+0 planter-wall/root/stem physical violations
+0 runtime claims from raw high-poly generator output
+0 lost provider/seed/provenance metadata
+```
+
+## Expected lesson
+
+v0.13 passes only if BlenderSkill can create and control a vegetation system, not merely invoke a tree generator.
+
+
+---
+
+## FILE: `08_scripts/100_PROCEDURAL_PROVIDER_AND_VEGETATION_VALIDATION_PATTERN.md`
+
+# Procedural Provider and Vegetation Validation Pattern
+
+## Adapter/decision split
+
+Blender-side adapters collect facts and execute the actual generator. Pure-Python executors decide whether the evidence satisfies the contract.
+
+```text
+Blender adapter
+-> provider discovery + minimal probe artifact
+-> PROCEDURAL_GENERATOR_PROVIDER
+
+Blender/GN surface sampler
+-> candidate points + masks/slope values
+-> VEGETATION_SCATTER
+
+Generator
+-> semantic geometry + metadata
+-> botanical/reproduction evidence
+-> VEGETATION_GENERATION_GATE
+
+Planter/soil measurement adapter
+-> interior/rootball compact metrics
+-> PLANTER_VEGETATION_COMPOSITION
+```
+
+## Probe fixture
+
+Never probe a third-party operator on the production asset. Create a disposable collection/scene, execute the smallest representative request, inspect output and remove all created data.
+
+## Negative controls
+
+Required examples:
+- provider beyond documented Blender max -> BLOCKED;
+- missing seed -> vegetation FAIL;
+- fixed seed produces two different signatures -> FAIL;
+- excluded/high-slope scatter candidate selected -> test failure;
+- rootball outside usable planter soil -> FAIL;
+- LOD budgets increase at a lower-detail level -> FAIL.
+
+## CI
+
+`tools/test_v013_procedural_vegetation.py` covers the pure decision layer without requiring Blender or third-party add-ons.
+
+
+---
+
+## FILE: `11_playbooks/121_LAFAR_PLANTER_AND_VEGETATION.md`
+
+# Lafar Planter and Vegetation Playbook
+
+## Asset architecture
+
+```text
+LAFAR_PLANTER_ASSEMBLY
+├── PLANTER_CONTAINER   existing hard-surface/reconstruction owner
+├── SOIL_INSERT         container-dependent owner
+├── VEGETATION_FAMILY   procedural owner
+└── COMPOSITION         cross-owner fit/placement contract
+```
+
+## Phase 1 — planter
+
+If driven by concept/technical art, run the existing v0.12 reconstruction pipeline through `GEOMETRIC_INTEGRITY_GATE` and required fidelity gate. Explicitly expose the interior soil footprint/depth as composition data.
+
+## Phase 2 — vegetation specification
+
+For every required plant family define:
+- form class;
+- target height/crown range;
+- stem/leaf language;
+- branching/internode/phyllotaxis rules;
+- season/color/material family;
+- variation count;
+- deterministic seeds.
+
+Lafar flora may be alien but must be internally coherent.
+
+## Phase 3 — provider
+
+Probe built-in GN first for custom flora. Optional routes: NodeToPython for graph compilation, Sapling for trees, IvyGen for surface growth, compatible asset providers for licensed source plants.
+
+## Phase 4 — variation family
+
+Generate a small set of accepted source members, not every scene instance as unique heavy geometry. Preserve semantic parts and provenance.
+
+## Phase 5 — planter composition
+
+Create plant anchors inside the usable soil volume. Validate rootball depth/footprint and wall clearance. Then apply canopy composition and visual density.
+
+## Phase 6 — runtime
+
+Run `VEGETATION_RUNTIME_PREP` per source member. Prefer instancing of accepted source variants in the planter and across Lafar. Add wind attributes before export; use existing package/round-trip/runtime gates afterward.
+
+## QA views
+
+Use neutral hero, top and side views to check:
+- planter silhouette;
+- soil level;
+- plant anchoring;
+- density/negative space;
+- wall penetration;
+- excessive clone repetition;
+- crown envelope.
+
+## Do not
+
+- realize every leaf/instance early;
+- use one plant seed repeated identically around a plaza;
+- hide wall/root penetration under soil material;
+- accept a 100k+ triangle authoring plant as runtime-ready without an explicit budget plan.
+
+
+---
+
+## FILE: `12_procedural_generation/200_PROCEDURAL_GENERATOR_PROVIDER_CONTRACT.md`
+
+# Procedural Generator Provider Contract
+
+## Goal
+
+Expose external or built-in generators through one stable semantic contract instead of teaching the agent separate ad-hoc call patterns for Sapling, IvyGen, Sverchok, engon, Geometry Nodes or future tools.
+
+## Provider schema
+
+```yaml
+provider_id: stable-id
+provider_version: exact-or-probed
+blender_min: 5.1.0
+blender_max: 5.1.x
+execution_type: DIRECT_PYTHON | BPY_OPERATOR | GEOMETRY_NODES | EXTERNAL_PROCESS | SOURCE_ONLY
+supports_background: true|false
+requires_ui_context: true|false
+deterministic: true|false
+supports_seed: true|false
+input_schema: {...}
+output_schema: {...}
+license: SPDX-or-explicit-policy
+asset_license_policy: optional
+probe_required: true
+required_capabilities: [...]
+```
+
+## Canonical lifecycle
+
+```text
+discover
+-> version check
+-> license check
+-> isolated capability probe
+-> output/postcondition validation
+-> AVAILABLE | BLOCKED | SOURCE_ONLY
+-> execute production request
+-> validate generated artifact
+-> cleanup temporary state
+```
+
+## Rules
+
+- Provider may translate a semantic spec into tool-specific parameters; it may not redefine acceptance semantics.
+- A successful operator return is not sufficient. Generated geometry needs a postcondition/signature.
+- Missing provider is a routing event, not permission to improvise another API with guessed parameters.
+- Asset libraries and code licenses are separate concerns. Never treat paid/third-party vegetation assets as redistributable because adapter code is open source.
+- Runtime version claims are evidence, not memory. Probe the active Blender session.
+
+## Executor
+
+`executors/procedural_provider.py`.
+
+
+---
+
+## FILE: `12_procedural_generation/201_GENERATOR_DISCOVERY_CAPABILITY_AND_LICENSE_GATE.md`
+
+# Generator Discovery, Capability and License Gate
+
+## Purpose
+
+Bind documented provider claims to the actual Blender 5.1 runtime before production use.
+
+## Probe sequence
+
+```text
+module/extension present?
+-> exact version/readback
+-> expected operator/API symbol present?
+-> operator poll/context requirements
+-> minimal disposable generation
+-> deterministic seed smoke test where applicable
+-> output type/semantic parts
+-> cleanup succeeds
+-> compact probe artifact
+```
+
+## Statuses
+
+- `PASS` — compatible and capability-complete for the requested route.
+- `BLOCKED` — known incompatible version, missing capability, failed probe, license policy failure.
+- `PROBE_REQUIRED` — documentation suggests compatibility but current runtime was not tested.
+- `SOURCE_ONLY` — study/reference only; never called as a BlenderSkill runtime dependency.
+
+## v0.13 provider policy
+
+- NodeToPython: documented Blender 4.2–5.1 support; still probe the installed version.
+- Sverchok: project README declares Blender 5.1; still probe requested nodes/API.
+- Sapling, IvyGen, A.N.T. Landscape and Archimesh: discoverable Blender extensions; exact 5.1 call surface is probe-required.
+- engon/botaniq: code compatibility is not an asset license; use only user-provided licensed packs and probe Blender 5.1.
+- The Grove: current documentation lists Blender 4.2/4.3/4.4, therefore 5.1 is blocked until new evidence overrides this record.
+- ProcFunc: current package pins `bpy==4.2.0`/Python 3.11; source pattern only for the 5.1 runtime.
+- BlenderProc 2.8.0: based on Blender 4.2.1; source/external-worker pattern, not in-process 5.1 dependency.
+- Infinigen: algorithm/reference source; do not import the full framework merely to obtain one generator.
+
+## License gate
+
+Record code license and, separately, generated/asset-pack license. Unknown license blocks vendoring/copying. Merely calling a locally installed provider may be allowed by project policy, but redistribution is a separate decision.
+
+## Catalog
+
+`executors/procedural_provider_catalog.py` stores dated discovery hints. They are not a substitute for runtime probe.
+
+
+---
+
+## FILE: `12_procedural_generation/202_NODEGRAPH_TO_PYTHON_AND_CODEGEN.md`
+
+# Node Graph to Python Codegen
+
+## Purpose
+
+Turn a vetted Geometry Nodes/Shader/Compositor graph into deterministic, reviewable Python authoring code without making the compiler a runtime dependency.
+
+Preferred v0.13 compiler when available: NodeToPython. Python-first Geometry Nodes libraries may be used as an alternative authoring route after provider probe.
+
+## Canonical flow
+
+```text
+approved node graph
+-> freeze source tree ID + hash
+-> provider capability probe
+-> compile/export Python
+-> import-safe cleanup
+-> regenerate node tree in clean scene
+-> structural round-trip comparison
+-> NODEGRAPH_TO_PYTHON gate
+-> store generated Python + provenance
+```
+
+## Required provenance
+
+```yaml
+source_node_tree_id: GN_LAFAR_GROUND_COVER
+source_node_tree_hash: ...
+compiler_provider_id: nodetopython
+compiler_provider_version: ...
+blender_version: 5.1.x
+generated_script_hash: ...
+compiler_probe_status: PASS
+roundtrip_probe_status: PASS
+requires_runtime_compiler_dependency: false
+provenance_id: codegen:...
+```
+
+## Anti-lock-in rule
+
+The asset contract is the semantic inputs/outputs and generated graph behavior, not the compiler add-on. Prefer committed generated code that can reconstruct the graph with Blender Python alone.
+
+## Recompile trigger
+
+Recompile when source node tree hash changes, Blender/node API changes, or a round-trip probe fails. Do not hand-edit generated code and then pretend it still corresponds to the old source hash.
+
+## Executor
+
+`executors/nodegraph_codegen_gate.py`.
+
+
+---
+
+## FILE: `12_procedural_generation/203_PROCEDURAL_REPRODUCIBILITY_AND_PROVENANCE.md`
+
+# Procedural Reproducibility and Provenance
+
+## Rule
+
+Procedural variation is allowed; uncontrolled variation is not.
+
+Every generated asset stores at least:
+
+```yaml
+generator: builtin_geometry_nodes
+generator_version: 5.1.x
+seed: 347013
+parameters_hash: ...
+geometry_signature: ...
+semantic_parts: [stem, branches, leaves]
+generated_triangle_count: 180000
+source_graph_hash: optional
+provider_probe_id: ...
+```
+
+## Reproduction probe
+
+For a frozen provider version, Blender version, semantic spec and seed:
+
+```text
+generate A
+-> compact structural signature A
+reset disposable generation scope
+generate B
+-> compact structural signature B
+A == B within declared tolerance
+```
+
+The signature should not depend on object names or transient datablock IDs. Use topology counts, semantic part counts, bounds, stable sampled landmarks and parameter hashes.
+
+## Variation families
+
+A family uses one semantic base spec and many explicit seeds. Store family ID + member seed. Do not duplicate a random output and lose its generating parameters.
+
+## Manual edits
+
+Manual sculpt/repair after generation changes ownership:
+- either promote to a frozen authored asset and record the generator only as provenance;
+- or encode the edit back into the procedural spec/generator.
+
+Do not keep editing a random output while claiming it remains reproducible.
+
+
+---
+
+## FILE: `12_procedural_generation/210_VEGETATION_GENERATION_CONTRACT.md`
+
+# Vegetation Generation Contract
+
+## Separation
+
+```text
+PlantSpec
+-> provider selection
+-> generated authoring geometry
+-> botanical validation
+-> deterministic reproduction proof
+-> VEGETATION_GENERATION_GATE
+-> runtime prep
+```
+
+Generation and runtime preparation are separate gates.
+
+## PlantSpec minimum
+
+```yaml
+form_class: TREE | SHRUB | HERBACEOUS | GRASS | ROSETTE | REED | VINE | GROUND_COVER | ALIEN_BRANCHING
+height_m: ...
+crown_radius_m: ...
+stem_radius_m: ...
+branching_orders: ...
+internode_length_m: ...
+phyllotaxis_deg: ...
+apical_dominance: 0..1
+crown_density: 0..1
+tropism: [x,y,z]
+age_class: ...
+season: ...
+seed: integer
+```
+
+Alien flora may use non-terrestrial values but still requires a coherent declared grammar.
+
+## Output contract
+
+Generated authoring output records:
+- stable semantic parts;
+- bounds and contact/root datum;
+- geometry signature;
+- generator/provider provenance;
+- seed and parameter hash;
+- authoring triangle count;
+- material region inventory.
+
+## Semantic parts
+
+Use the narrowest sensible set:
+- `stem` / `trunk`;
+- `branches`;
+- `leaves`;
+- `flowers`;
+- `fruit`;
+- `roots_visible`;
+- `support_or_stake` when authored.
+
+Do not merge everything before runtime decisions are made.
+
+## Acceptance
+
+`executors/vegetation_generation_gate.py` requires provider proof, botanical grammar proof, nonempty semantic geometry and a fixed-seed reproduction probe.
+
+
+---
+
+## FILE: `12_procedural_generation/211_BOTANICAL_STRUCTURE_AND_GROWTH_MODEL.md`
+
+# Botanical Structure and Growth Model
+
+## Purpose
+
+Give the agent a plant-language layer independent of Sapling, Geometry Nodes, assets or any specific generator.
+
+## Structural vocabulary
+
+- stem/trunk and axis hierarchy;
+- internodes and nodes;
+- branching order;
+- branch angle and taper;
+- phyllotaxis / leaf attachment;
+- crown envelope and density;
+- apical dominance;
+- tropism/gravity/light direction;
+- pruning/termination;
+- age class;
+- season/leaf state;
+- root/contact datum.
+
+## Plant form classes
+
+`TREE`, `SHRUB`, `HERBACEOUS`, `GRASS`, `ROSETTE`, `REED`, `VINE`, `GROUND_COVER`, `ALIEN_BRANCHING`.
+
+The form class controls which structural fields are meaningful. Example: a rosette may have near-zero visible internode length; a tree normally may not.
+
+## Coherence checks
+
+- positive height/stem dimensions;
+- bounded branching orders;
+- phyllotaxis angle in `[0,360)`;
+- normalized density/apical-dominance fields;
+- nonzero seed for reproducibility;
+- plausible crown/height ratio or explicit stylized/alien waiver;
+- stable root/contact datum.
+
+## What this does not do
+
+This contract does not claim biological simulation. It provides enough structural semantics to prevent procedural vegetation from degenerating into arbitrary noise while still supporting stylized Lafar flora.
+
+## Executor
+
+`executors/botanical_grammar.py`.
+
+
+---
+
+## FILE: `12_procedural_generation/212_TREE_SHRUB_AND_PLANT_GENERATION.md`
+
+# Tree, Shrub and Plant Generation
+
+## Routing
+
+Preferred backend order is capability-driven, not brand-driven:
+
+```text
+semantic PlantSpec
+-> provider registry
+-> compatible deterministic backend
+-> generate disposable candidate
+-> botanical + geometry proof
+-> accepted authoring plant
+```
+
+## Tree/shrub requirements
+
+- explicit trunk/stem datum;
+- branch hierarchy and taper;
+- crown envelope;
+- leaf/needle semantic separation when runtime cards are expected;
+- no zero-area branch tubes or disconnected floating foliage unless design says so;
+- seed/reproducibility record.
+
+## Sapling route
+
+Sapling is an optional tree backend. Adapter translates `PlantSpec` into discovered operator parameters. Never hardcode remembered operator signatures; inspect the installed extension and run a minimal probe.
+
+## Geometry Nodes route
+
+For shrubs and alien flora, Geometry Nodes is often preferred because it allows explicit semantic inputs and better control over instancing, leaf clusters and runtime attributes.
+
+## Asset-library route
+
+A third-party plant asset may be used as a source member in a variation family, but record its asset identity/license separately from procedural placement. Asset selection is not botanical generation.
+
+
+---
+
+## FILE: `12_procedural_generation/213_GRASS_GROUND_COVER_AND_SMALL_PLANTS.md`
+
+# Grass, Ground Cover and Small Plants
+
+## Target classes
+
+Grass blades, sedges, reeds, flowers, weeds, moss clumps, succulent/rosette clusters, small Lafar alien plants and decorative planter fill.
+
+## Authoring hierarchy
+
+```text
+blade/leaf primitive
+-> plant clump
+-> variation family
+-> scatter population
+```
+
+Do not jump directly from one mesh to millions of realized blades.
+
+## Geometry Nodes principles
+
+- instance-first;
+- expose density, height, width, bend, seed and variation selector;
+- keep plant/clump variation separate from spatial scatter seed;
+- realize only at the stage that requires mesh-level operations;
+- provide exclusion/mask inputs;
+- use semantic attributes for wind and variation.
+
+## Density
+
+Density is expressed as an ecological/visual contract, not as `Random Value` with an arbitrary count. Define target count or density per area, minimum spacing, cluster behavior and exclusion zones.
+
+## Runtime
+
+Small plants should preferentially share atlas/material families and instanced source meshes. Dense background fields may route to cards/impostors; hero planter plants may retain real leaf geometry longer.
+
+
+---
+
+## FILE: `12_procedural_generation/214_IVY_VINES_AND_SURFACE_GROWTH.md`
+
+# Ivy, Vines and Surface Growth
+
+## Scope
+
+Ivy, vines, roots, creepers, fungal cords, alien tendrils and cable-like organic growth that follows host geometry.
+
+## Host contract
+
+Surface growth requires:
+- accepted host revision;
+- seed point(s);
+- gravity/tropism;
+- adhesion distance;
+- branching probability;
+- growth length/budget;
+- exclusion masks;
+- terminal/leaf policy.
+
+Host repair invalidates attached growth through the existing dependency invalidation rules.
+
+## Provider options
+
+IvyGen is an optional operator backend after runtime probe. A curve/Geometry-Nodes backend is preferred for reusable Lafar-specific organic systems because its inputs and semantic attributes can be versioned directly.
+
+## Validation
+
+- roots/tendrils remain within adhesion tolerance unless intentionally bridging gaps;
+- no unexplained penetration through the host;
+- branch count/length respects budget;
+- seed produces reproducible path signature;
+- terminal leaves/meshes are instanced when possible.
+
+
+---
+
+## FILE: `12_procedural_generation/215_VEGETATION_SCATTER_AND_BIOME_PLACEMENT.md`
+
+# Vegetation Scatter and Biome Placement
+
+## Rule
+
+Scatter is constrained placement, not random duplication.
+
+## Inputs
+
+```yaml
+seed: integer
+target_count: ...
+min_spacing_m: ...
+max_slope_deg: ...
+min_biome_weight: ...
+exclusion_regions: ...
+proximity_fields: ...
+cluster_policy: ...
+variant_family: ...
+```
+
+Surface sampling may be performed by Blender/Geometry Nodes. Semantic selection must remain reproducible.
+
+## Constraints
+
+- slope;
+- altitude/height band when relevant;
+- surface/material/biome mask;
+- wall/path/door exclusion;
+- planter interior containment;
+- minimum spacing;
+- clustering or patchiness;
+- proximity to water/architecture/lighting if the design specifies it.
+
+## Two seeds
+
+Prefer separate seeds for:
+1. plant morphology/variant;
+2. spatial placement.
+
+This lets layout change without silently regenerating every plant shape.
+
+## Validation
+
+Persist selected candidate IDs/positions or a stable placement signature. Re-running with the same candidate set/spec/seed must yield the same placement signature.
+
+## Executor
+
+`executors/vegetation_scatter.py` performs deterministic semantic selection over pre-sampled candidates.
+
+
+---
+
+## FILE: `12_procedural_generation/216_PLANTER_CONTAINER_AND_VEGETATION_COMPOSITION.md`
+
+# Planter Container and Vegetation Composition
+
+## Why this is a separate owner
+
+The planter is hard-surface geometry; vegetation is procedural organic geometry. Their composition introduces independent physical constraints that neither sub-pipeline can prove alone.
+
+## Container contract
+
+Record:
+- interior soil footprint;
+- soil depth/top datum;
+- wall thickness and forbidden wall volume;
+- drainage/insert volumes if they reduce usable soil;
+- visible soil surface;
+- composition/exclusion zones.
+
+## Plant contract
+
+Each planted member records:
+- root/stem anchor position;
+- rootball radius/depth approximation;
+- stem radius/contact;
+- crown radius/height envelope;
+- variant/seed.
+
+## Hard constraints
+
+```text
+rootball inside usable soil footprint
+rootball depth <= usable soil depth
+stem does not penetrate planter wall
+plant root/contact datum meets soil surface
+required plant spacing satisfied
+```
+
+Canopy overlap may be allowed and often desirable; rootball overlap is warning/policy unless physically impossible.
+
+## Composition validation
+
+Run after both the planter interior and plant anchor specs exist, before claiming the combined prop accepted.
+
+## Executor
+
+`executors/planter_composition.py` currently supports rectangular and circular interior footprints. Blender adapters may later add arbitrary signed-distance/mesh-volume probes.
+
+
+---
+
+## FILE: `12_procedural_generation/217_VEGETATION_RUNTIME_PREPARATION.md`
+
+# Vegetation Runtime Preparation
+
+## Boundary
+
+Generated authoring vegetation can be intentionally dense. Runtime vegetation must satisfy engine budgets.
+
+```text
+VEGETATION_GENERATION_GATE PASS
+-> semantic separation
+-> runtime budget plan
+-> LOD/card/impostor strategy
+-> material/atlas strategy
+-> wind attributes
+-> collision policy
+-> existing UV/bake/export/package gates
+```
+
+## Required metadata
+
+- generator provenance and seed;
+- authoring triangle count;
+- semantic parts;
+- material slots;
+- leaf count/leaf geometry class;
+- usage class: `HERO`, `MID`, `BACKGROUND`;
+- target LOD budgets.
+
+## Defaults in v0.13 executor
+
+Defaults are initial policy, not universal engine truth:
+
+| Usage | LOD0 | LOD1 | LOD2 | LOD3 |
+|---|---:|---:|---:|---:|
+| HERO | 60k | 30k | 12k | 2.5k |
+| MID | 30k | 14k | 5k | 1.2k |
+| BACKGROUND | 12k | 5k | 1.8k | 0.5k |
+
+Project profile may override them.
+
+## Materials
+
+Prefer semantic/shared material families rather than one unique material per plant. Vegetation draw-call budget is often limited by material fragmentation before raw triangle count.
+
+## Executor
+
+`executors/vegetation_runtime_prep.py` produces/validates a compact budget plan; actual decimation/card generation remains Blender-side implementation.
+
+
+---
+
+## FILE: `12_procedural_generation/218_VEGETATION_LOD_LEAF_CARDS_AND_IMPOSTORS.md`
+
+# Vegetation LOD, Leaf Cards and Impostors
+
+## Principle
+
+Do not use the same reduction method for trunk, branches and foliage.
+
+## Woody plants
+
+- preserve trunk silhouette longest;
+- simplify branch hierarchy by screen importance;
+- merge/remove twigs before primary branches;
+- transition dense leaf geometry to clustered cards;
+- background may use whole-plant impostor/billboard if engine policy supports it.
+
+## Small plants
+
+- source leaf/grass meshes remain instanced through authoring;
+- reduce clump variation count before realizing millions of primitives;
+- share card atlas where possible.
+
+## LOD invariants
+
+Across LODs preserve:
+- ground/root contact point;
+- major crown envelope;
+- species/variant identity;
+- wind attribute semantics;
+- material family/atlas contract;
+- pivot/orientation.
+
+## Validation
+
+Check triangle/material budgets, silhouette drift from representative views and runtime package attributes. LOD success never repairs a failed botanical/composition gate.
+
+
+---
+
+## FILE: `12_procedural_generation/219_VEGETATION_WIND_AND_RUNTIME_ATTRIBUTES.md`
+
+# Vegetation Wind and Runtime Attributes
+
+## Goal
+
+Separate authored vegetation structure from engine-specific wind simulation while preserving enough semantic data for runtime animation.
+
+## Canonical attributes
+
+At authoring/runtime handoff use stable semantics such as:
+- `wind_weight` — normalized flexibility/influence;
+- `wind_phase` — variation phase;
+- `semantic_part_id` — trunk/branch/leaf/etc.;
+- optional branch hierarchy/depth;
+- optional stiffness or anchor distance.
+
+Exact attribute names may be mapped by engine profile, but semantics remain stable.
+
+## Weight policy
+
+Typical gradient:
+
+```text
+root/trunk base -> near 0
+upper trunk/primary branch -> low
+small branches -> medium
+leaves/tips -> high
+```
+
+Alien flora may invert or stylize this, but must declare the rule.
+
+## Runtime boundary
+
+Authoring proof requires attributes to exist and be coherent. Actual shader deformation, gust fields or physics are Level C/D runtime concerns and require engine-side proof.
+
+
+---
+
+## FILE: `99_sources/PROCEDURAL_GENERATION_SOURCES.md`
+
+# Procedural Generation Sources — v0.13
+
+Research snapshot: 2026-08-09. Runtime probe always overrides this document.
+
+## Directly relevant Blender 5.1-capable tools
+
+### NodeToPython
+- Repository: https://github.com/BrendanParmer/NodeToPython
+- Release line 4.1.x states support for Blender 4.2–5.1.
+- License: GPL-3.0 from v3.5.0 onward.
+- v0.13 role: node-graph compiler/tooling provider; generated Python should preferably remove runtime dependency.
+
+### Sverchok
+- Repository: https://github.com/nortikin/sverchok
+- README explicitly lists Blender 5.1 among supported versions.
+- License: GPL-3.0.
+- v0.13 role: optional parametric/computational-geometry provider, never mandatory for vegetation.
+
+### geonodes
+- Repository: https://github.com/al1brn/geonodes
+- Project states Blender 5.1 support.
+- v0.13 role: optional Python-first Geometry Nodes authoring provider after license/capability probe.
+
+## Blender Extensions to probe
+
+Blender Extensions lists Sapling Tree Gen, IvyGen, A.N.T. Landscape and Archimesh. Their presence is not treated as proof of the exact operator/API surface in the active Blender 5.1 session.
+
+- https://extensions.blender.org/
+- Sapling: optional tree provider.
+- IvyGen: optional surface-growth provider.
+- A.N.T. Landscape: future terrain provider.
+- Archimesh: future architectural-blockout provider.
+
+## Optional asset/scatter provider
+
+### engon / botaniq
+- Repository: https://github.com/polygoniq/engon
+- extension manifest currently declares Blender minimum 4.2.0; recent releases include Blender 5.0 fixes, but 5.1 must be locally probed.
+- code license: GPL-3.0-or-later; commercial asset-pack licenses remain separate.
+
+## Source/reference systems, not v0.13 runtime dependencies
+
+### Infinigen
+- Repository: https://github.com/princeton-vl/infinigen
+- BSD-3-Clause.
+- Includes procedural natural-world generation and node-transpiler tooling.
+- v0.13 policy: study/extract architecture and algorithms; do not import the whole framework for one asset generator.
+
+### ProcFunc
+- Repository: https://github.com/princeton-vl/procfunc
+- BSD-3-Clause.
+- Current installation requires `bpy==4.2.0` and Python 3.11; 5.1 support is a stated future direction.
+- v0.13 policy: function-oriented procedural design reference only.
+
+### BlenderProc
+- Repository: https://github.com/DLR-RM/BlenderProc
+- GPL-3.0.
+- Release 2.8.0 upgraded its managed Blender runtime to 4.2.1.
+- Useful source for physics-aware placement patterns; not an in-process Blender 5.1 dependency.
+
+### The Grove
+- Documentation: https://www.thegrove3d.com/learn/
+- Grove Core exposes Python-driven growth; Blender add-on documentation currently lists Blender 4.2 LTS, 4.3 and 4.4.
+- v0.13 policy: `VERSION_BLOCKED` on Blender 5.1 until newer compatibility is proven.
+
+## Licensing rule
+
+Never copy third-party source, node graphs or commercial asset packs into BlenderSkill merely because they can be called from Python. Study, adapter invocation and redistribution are distinct legal/technical actions.
