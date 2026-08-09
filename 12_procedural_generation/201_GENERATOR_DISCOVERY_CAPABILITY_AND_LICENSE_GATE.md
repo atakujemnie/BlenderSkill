@@ -2,13 +2,25 @@
 
 ## Purpose
 
-Bind documented provider claims to the actual Blender 5.1 runtime before production use.
+Bind provider identity and documented claims to the actual Blender 5.1 runtime before production use.
+
+v0.17 separates ready Asset Libraries from procedural generators. An empty Asset Library inventory must never be interpreted as an empty provider inventory.
+
+## Mandatory pre-probe discovery
+
+```text
+BLENDER_RUNTIME_ADDON_DISCOVERY
+-> INSTALLED_PROVIDER_DISCOVERY
+-> EXPECTED_PROVIDER_GATE when user/project supplied expected providers
+-> provider-specific capability probes
+-> PROVIDER_SELECTION_REPORT
+```
 
 ## Probe sequence
 
 ```text
-module/extension present?
--> exact version/readback
+module/extension discovered?
+-> enabled state + exact version/readback where available
 -> expected operator/API symbol present?
 -> operator poll/context requirements
 -> minimal disposable generation
@@ -22,24 +34,28 @@ module/extension present?
 
 - `PASS` — compatible and capability-complete for the requested route.
 - `BLOCKED` — known incompatible version, missing capability, failed probe, license policy failure.
-- `PROBE_REQUIRED` — documentation suggests compatibility but current runtime was not tested.
+- `PROBE_REQUIRED` — discovered/documented but current execution capability was not tested.
 - `SOURCE_ONLY` — study/reference only; never called as a BlenderSkill runtime dependency.
+- `DISCOVERY_MISMATCH` — user/project says a provider is installed but normalized runtime discovery omitted it; fix discovery before fallback.
 
-## v0.13 provider policy
+## Provider policy
 
-- NodeToPython: documented Blender 4.2–5.1 support; still probe the installed version.
-- Sverchok: project README declares Blender 5.1; still probe requested nodes/API.
-- Sapling, IvyGen, A.N.T. Landscape and Archimesh: discoverable Blender extensions; exact 5.1 call surface is probe-required.
-- engon/botaniq: code compatibility is not an asset license; use only user-provided licensed packs and probe Blender 5.1.
-- The Grove: current documentation lists Blender 4.2/4.3/4.4, therefore 5.1 is blocked until new evidence overrides this record.
-- ProcFunc: current package pins `bpy==4.2.0`/Python 3.11; source pattern only for the 5.1 runtime.
-- BlenderProc 2.8.0: based on Blender 4.2.1; source/external-worker pattern, not in-process 5.1 dependency.
-- Infinigen: algorithm/reference source; do not import the full framework merely to obtain one generator.
+- Blender Geometry Nodes: built-in procedural backend; still validate requested nodes/API where version-sensitive.
+- Sapling Tree Gen: tree/woody-plant generator; discover and probe explicitly.
+- IvyGen: vine/surface-growth generator; discover and probe explicitly.
+- A.N.T. Landscape: terrain generator, not a vegetation asset library.
+- Sverchok: parametric/generic procedural generator; discover and probe requested API.
+- MPFB: character generator; report it but do not route it as vegetation.
+- Meshy official plugin: external 3D generator/service adapter; report separately from local asset libraries.
+- Geo Nodes Guide and MCP: utilities/integration tools; keep visible in inventory without pretending they are content libraries.
+- engon/botaniq: ready asset/scatter source only when actually installed/licensed and discovered; code and asset licenses are separate.
+- NodeToPython: optional reference/development tool, not a required BlenderSkill 5.1 runtime dependency.
+- The Grove, ProcFunc, BlenderProc and Infinigen retain their version/license/source-only restrictions from the provider catalog.
 
 ## License gate
 
-Record code license and, separately, generated/asset-pack license. Unknown license blocks vendoring/copying. Merely calling a locally installed provider may be allowed by project policy, but redistribution is a separate decision.
+Record code license and, separately, generated/asset-pack/service-output license. Unknown redistribution rights block vendoring/copying. Merely calling a locally installed provider and redistributing its assets are separate decisions.
 
 ## Catalog
 
-`executors/procedural_provider_catalog.py` stores dated discovery hints. They are not a substitute for runtime probe.
+`executors/procedural_provider_catalog.py` stores dated identity/capability hints. They are not a substitute for runtime discovery or execution probe.
