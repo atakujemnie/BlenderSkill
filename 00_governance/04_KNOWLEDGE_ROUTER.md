@@ -1,6 +1,78 @@
 # Knowledge Router
 
-Agent loads the smallest Task Pack needed for current state, failing evidence and Shape/Appearance owner.
+## v0.12 geometric-integrity routing override
+
+This section has precedence over v0.11/v0.10 sequences later in this document while preserving their specialized routes.
+
+```text
+runtime pin
+-> reference evidence/calibration/conflict arbitration
+-> Shape Graph + Appearance Contract + Assembly Relation Contract
+-> eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> capture before metrics
+-> mutate exactly one node
+-> capture after metrics
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
+-> per-view source proof
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> topology/section/layer proof as required
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> RDL barrier
+```
+
+After required nodes close:
+
+```text
+current mutation postconditions
++ Assembly Relation closure
++ topology records
++ required validator negative controls
++ zero stale/superseded evidence in current bundle
+-> GEOMETRIC_INTEGRITY_GATE
+-> APPEARANCE_FIDELITY_GATE when required
+-> RECON_FIDELITY_GATE
+-> runtime
+```
+
+Hard v0.12 routes:
+- builder returns normally but intended geometry did not change -> `MUTATION_POSTCONDITION_GATE`;
+- parts pierce/z-fight or gap/contact is wrong -> semantic Assembly Relation + `ASSEMBLY_INTEGRITY_GATE`;
+- validator returns PASS on known-broken fixture -> `VALIDATOR_NEGATIVE_CONTROL`, validator cannot own MUST acceptance;
+- accepted host repair -> `DEPENDENCY_INVALIDATOR` before rebuild; old proof becomes `SUPERSEDED`;
+- technical-sheet annotations contaminate silhouette -> `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md` + reference mask controls;
+- final physical closure -> `GEOMETRIC_INTEGRITY_GATE`; visual/reference success cannot compensate for physical failure.
+
+---
+
+## v0.11 routing override
+
+This section has precedence over the v0.10 execution routing later in the document.
+
+```text
+runtime pin
+-> reference evidence/calibration
+-> REFERENCE_CONFLICT_RESOLVER for incompatible property interpretations
+-> Shape Graph + Appearance Contract
+-> eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> NODE_STATE_STORE persists READY_TO_BUILD
+-> build exactly one node
+-> persist BUILT_UNVERIFIED
+-> per-view source proof
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> RDL barrier
+```
+
+View evidence is typed per view: ORTHO uses registered overlay/numeric evidence, HERO uses supporting `PERSPECTIVE_INSPECTION`, DETAIL uses `LOCAL_FEATURE_ROI`. Before L4/L5 closure run `APPEARANCE_OWNER_COVERAGE`. Missing authorization or `ready_nodes=[]` blocks geometry mutation.
+
+---
+
+Agent nie ładuje całej biblioteki. Router wybiera najmniejszy Task Pack dla current state, failing evidence i Shape/Appearance ownera.
 
 Canonical rule:
 
@@ -10,372 +82,469 @@ intent/current state
 -> semantic skill
 -> executor/tool binding
 -> compact evidence
--> decision
 ```
-
-## v0.12 canonical reconstruction route
-
-This route has precedence over older execution sequences.
-
-```text
-runtime pin
--> reference ingest / calibration / conflict arbitration
--> Shape Graph + Appearance Contract + Assembly Relation Contract
--> eligible Shape Node
--> EXECUTION_AUTHORIZATION_GATE
--> persist READY_TO_BUILD
--> mutate exactly one node
--> MUTATION_POSTCONDITION_GATE
--> PASS: persist BUILT_UNVERIFIED
--> source-anchored per-view QA
--> ASSEMBLY_INTEGRITY_GATE for touched relations
--> topology / section / layer checks as required
--> RECONSTRUCTION_NODE_GATE
--> persist ACCEPTED / FAIL / UNVERIFIED
--> RDL stage barrier
-```
-
-After all required reconstruction nodes close:
-
-```text
-GEOMETRIC_INTEGRITY_GATE
--> APPEARANCE_FIDELITY_GATE when target requires it
--> RECON_FIDELITY_GATE
--> runtime
-```
-
-Hard laws:
-- no authorization -> no production geometry mutation;
-- builder returned normally -> not proof that geometry changed correctly;
-- `BUILT_UNVERIFIED` -> no child unlock;
-- assembly semantics must be declared before overlap/gap/contact is judged;
-- validator that cannot reject its known-broken fixture cannot own MUST acceptance;
-- accepted host repair -> `DEPENDENCY_INVALIDATOR` before further work;
-- stale revision evidence becomes `SUPERSEDED`;
-- final reference fidelity cannot override failed physical geometry.
 
 ## SESSION_PREFLIGHT
 
 Load:
 - Agent Charter;
-- State Machine;
 - Semantic Skill Registry;
 - Tool Discovery/Profile;
 - Blender 5.1 Compatibility Matrix;
 - Scene Inspection;
 - matching Project Asset Pipeline Profile.
 
-Run `CANONICAL_SKILL_RUNTIME_PIN` and persist Blender version, project profile, runtime path context, source root and commit.
+Persist Tool Registry, Blender version, project profile, runtime path context.
 
-Do not rediscover stable project facts per asset.
+Nie rediscoveruj stable project facts per asset.
 
-## 1. Technical sheet / concept analysis
+---
 
-Use reference ingestion/classification/authority/measurement modules.
+# Reference reconstruction v0.10
+
+## 1. Technical-sheet / concept analyze
+
+Use `RECON_TECHNICAL_SHEET_ANALYZE`:
+- Evidence Model;
+- ingestion/view classification/authority;
+- measurement/calibration;
+- Reference Analysis Cache.
 
 Preferred skills:
 - `REFERENCE_MEASURE`;
-- `REFERENCE_CONFLICT_RESOLVER` for incompatible property interpretations;
 - `REFERENCE_OVERLAY_VALIDATE` only after registration exists.
 
 Required outputs:
-- source-set revision and reference IDs;
-- calibrated canonical views;
+- source-set revision;
+- reference IDs;
 - property-level authority decisions;
 - conflicts/unknowns;
-- annotation/exclusion policy for technical-sheet masks.
+- calibrated canonical views.
 
-If dimension lines/leaders contaminate a silhouette, route through `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md`; do not compensate by moving or locally warping the candidate.
+Po `ANALYZE: PASS` nie wracaj do broad exploration bez konkretnego conflict/ROI/source update.
 
-## 2. Shape understanding before geometry
+v0.12 additionally routes incompatible property interpretations through `REFERENCE_CONFLICT_RESOLVER` and contaminated technical-sheet masks through annotation/component cleanup before overlay metrics.
 
-Use:
+## 2. Shape understanding — mandatory before production geometry
+
+Use `RECON_SHAPE_GRAPH_PLAN`.
+
+Load:
 - `128_RECONSTRUCTION_OBJECT_DECOMPOSITION.md`;
 - `174_RECONSTRUCTION_SHAPE_GRAPH.md`;
 - `176_RECONSTRUCTION_NODE_CONTRACT.md`;
-- `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`.
+- `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`;
+- prompt 68;
+- script pattern 95.
 
 Preferred skills:
 - `SHAPE_GRAPH`;
 - `SHAPE_CLASSIFY`.
 
-Persistent output:
-- G0–G5 Shape Graph revision;
-- parent/dependencies;
+Required persistent output:
+- Shape Graph revision;
+- G0–G5 hierarchy;
 - RDL0–RDL5 assignment;
-- mathematical shape class;
-- authoritative views/properties;
-- validation contract.
+- node parent/dependencies;
+- shape class;
+- authoritative views + controlled properties;
+- node validation contract.
 
 `SHAPE_GRAPH != PASS` blocks production geometry except diagnostic RDL0.
 
-## 3. Appearance and assembly understanding
+## 3. Appearance understanding — mandatory for 1:1 / L4 / L5
 
-For target 1:1/L4/L5 build a Reference Appearance Contract before product detail work.
+Use `RECON_APPEARANCE_CONTRACT_PLAN`.
 
-Use:
+Load:
 - `180_REFERENCE_APPEARANCE_CONTRACT.md`;
 - `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
 - `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
 - `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
-- `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`.
+- v0.12 `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`.
 
-Required outputs:
-- MUST/SHOULD appearance owners;
-- part boundaries and trim paths;
+Required output:
+- Appearance Contract revision;
+- MUST/SHOULD visible owners;
+- part-boundary graph;
+- major trim paths;
 - junction owners;
 - edge families;
-- material/emissive/branding regions;
-- detail inventory;
+- material/emissive regions;
+- detail inventory by region;
 - source reference/ROI per owner;
-- semantic assembly relation for important part pairs.
+- semantic Assembly Relation for important multi-part junctions.
 
-Example:
+Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette. Do not encode `junction = overlap` without source/manufacturing authority.
 
-```text
-J_SENSOR_ARM
--> relation = SHADOW_GAP
--> expected gap/tolerance
--> penetration forbidden
-```
+## 4. RDL0 envelope
 
-Do not encode `junction = parts overlap` unless reference/manufacturing evidence explicitly calls for an overlap relation.
-
-## 4. RDL0 diagnostic geometry
+Use `RECON_RDL0`.
 
 Only:
-- global envelope;
-- ground/contact datum;
+- global bounds;
 - axes;
-- major negative space.
+- ground/contact;
+- minimal envelope carrier.
 
-Neutral shading only. Validate authoritative FRONT/SIDE/TOP. No detail/lookdev.
+Validate FRONT/SIDE/TOP where authoritative.
 
-## 5. RDL1–RDL3 node loop
+No detail skills.
 
-For every Shape Node:
+## 5. RDL1 primary forms
+
+Use `RECON_NODE_BUILD` **one Shape Node at a time**.
+
+Canonical v0.12 loop amends the preserved shape route:
 
 ```text
-SHAPE_GRAPH eligible
+SHAPE_GRAPH eligible node
 -> choose representation skill
 -> EXECUTION_AUTHORIZATION_GATE
--> READY_TO_BUILD persisted
--> capture mutation-before snapshot
+-> READY_TO_BUILD
+-> capture before
 -> build/repair current node only
--> capture mutation-after snapshot
+-> capture after
 -> MUTATION_POSTCONDITION_GATE
--> PASS -> BUILT_UNVERIFIED
+-> BUILT_UNVERIFIED
 -> QA_SCENE_ISOLATE
--> source/reference validation
--> ASSEMBLY_INTEGRITY_GATE for every touched MUST relation
--> MESH_VALIDATE / section / layer proof where applicable
+-> canonical registered required-view validation
+-> numeric/section checks
+-> ASSEMBLY_INTEGRITY_GATE where touched
 -> RECONSTRUCTION_NODE_GATE
 -> ACCEPTED | FAIL | UNVERIFIED
 ```
 
-A failed postcondition returns to the current mutation owner before reference QA. Do not try to hide a silent Boolean no-op with later detail.
+Strict node acceptance requires canonical validator records. A builder-local `Gate.accept()` is not equivalent.
 
-### Shape representation routing
+After all required G1 nodes:
+`SHAPE_GRAPH.evaluate_stage_barrier(RDL1)`.
+
+Do not load G2–G5 implementation skills on RDL1 FAIL.
+
+## 6. Shape representation routing
 
 ```text
-axisymmetric profile -> AXISYMMETRIC_PROFILE
-width/depth/corner changes across stations -> SECTION_LOFT_HARD_SURFACE
-structural transition -> SECTION_LOFT_HARD_SURFACE
-stable 2D profile + depth -> EXTRUDED_PROFILE / direct mesh
-path-driven profile -> PROFILE_SWEEP / curves
-smooth freeform without stable sections -> SUBD_TOPOLOGY_CONTROL
+axisymmetric profile
+-> AXISYMMETRIC_PROFILE
+
+width/depth/corner treatment change across stations
+-> SECTION_LOFT_HARD_SURFACE
+
+structural transition between sections
+-> SECTION_LOFT_HARD_SURFACE
+
+stable 2D profile + depth
+-> EXTRUDED_PROFILE / direct mesh strategy
+
+path-driven profile
+-> PROFILE_SWEEP / curves
+
+smooth compound freeform without stable sections
+-> SUBD_TOPOLOGY_CONTROL
 ```
 
-Compound primary forms do not default to `PARAMETRIC_BOX + BEVEL`.
+### Box-abuse trigger
 
-### RDL2 product architecture
+If primary form changes width + depth + corner treatment along an axis:
 
-Major panels, housings, trims and junctions instantiate their Appearance/Assembly owners here. Outer silhouette PASS does not close internal product architecture.
+```text
+PARAMETRIC_BOX + BEVEL
+-> not default
+-> SHAPE_CLASSIFY
+-> MULTI_SECTION_LOFT or SUBD_FREEFORM candidate
+```
 
-### RDL3 leaf features
+## 7. RDL2 secondary structural forms + product architecture
 
-Leaf skills run only on accepted hosts:
-- seam/groove -> `HS_PANEL_LINE`;
-- recess -> Boolean/direct recess + `MUTATION_POSTCONDITION_GATE`;
-- layered glass/content -> `LAYER_STACK_VALIDATE`;
-- radial holes/fasteners -> `RADIAL_REPEAT`.
+Same node-by-node loop.
 
-## 6. RDL4 edge language
+Typical:
+- side frames;
+- display housing;
+- utility modules;
+- large service panels;
+- major trims;
+- backrest/end-cap transitions.
 
-Shape first, then reference edge-family contract, then implementation, then source proof.
+At this stage also instantiate/validate Appearance Contract owners for:
+- major part boundaries;
+- trim paths;
+- junctions.
 
-Use:
+Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence and `ASSEMBLY_INTEGRITY_GATE` for physical relation semantics.
+
+Required G2 stage barrier before RDL3.
+
+## 8. RDL3 structural features
+
+Leaf skills become available only on `ACCEPTED` hosts:
+
+```text
+narrow seam/groove -> HS_PANEL_LINE
+recess -> boolean/direct recess playbook
+layered glass/content -> LAYER_STACK_VALIDATE
+radial holes/fasteners -> RADIAL_REPEAT
+```
+
+For reference reconstruction, visible structural detail must also close its Appearance Contract owner.
+
+No host acceptance -> feature `BLOCKED`.
+
+Under v0.12 destructive recess/Boolean mutations additionally require `MUTATION_POSTCONDITION_GATE: PASS` before `BUILT_UNVERIFIED`.
+
+## 9. RDL4 edge language
+
+Load:
 - `164_EDGE_LANGUAGE_SYSTEM.md`;
 - `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
-- `MESH_VALIDATE` after destructive edge/Boolean work.
+- bevel/continuity/SubD support only as implementation details.
 
-RDL4 does not pass merely because global dimensions survived bevel.
-
-## 7. RDL5 surface/detail
-
-After structural barriers:
-- materials;
-- branding;
-- decals;
-- emissive;
-- micro/meso detail required by the contract.
-
-Use `APPEARANCE_OWNER_COVERAGE`. Material segmentation alone is not material appearance proof.
-
-Material-only mutation should preserve geometry signature; otherwise route back to geometry owner.
-
-## 8. Validator trust route
-
-Before a new validator provides MUST evidence:
+Rule:
 
 ```text
-validator implementation
--> known-good fixture
--> known-broken fixture representing claimed failure class
--> VALIDATOR_NEGATIVE_CONTROL
--> PASS
+shape first
+-> reference edge-family contract
+-> edge implementation
+-> reference-anchored edge proof
 ```
 
-If the broken fixture passes, the validator is toothless. Rework the measurement/algorithm before using its green output.
+Do not pass RDL4 only because protected dimensions survived bevel. Re-run topology integrity after destructive edge work.
 
-Use `190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md`.
+## 10. RDL5 surface/detail
 
-## 9. Repair after acceptance
+Load branding, materials, decals, emissive, civic finish after structural barriers.
 
-When accepted geometry changes:
+For target L4/L5:
+- material segmentation alone is insufficient;
+- require material appearance owners;
+- require emissive region behavior where present;
+- L5 requires complete MUST detail inventory / zero silent omissions.
+
+Use:
+- `APPEARANCE_REFERENCE_VALIDATE`;
+- `MATERIAL_FINISH_CIVIC`;
+- `LAYER_STACK_VALIDATE`;
+- branding/decal validators.
+
+Material-only mutations should preserve geometry signature.
+
+## 11. Appearance final gate
+
+For target >= L4 use `APPEARANCE_FIDELITY_GATE`.
+
+Required categories:
+- part boundaries;
+- trim paths;
+- junctions;
+- edge families;
+- material response;
+- final matched/registered appearance views;
+- emissive/branding when present;
+- detail coverage for L5.
+
+A high global score cannot compensate for a MUST category failure.
+
+## 12. Reconstruction final gate
+
+Under v0.12 first aggregate current physical proof through `GEOMETRIC_INTEGRITY_GATE`, then use:
+- `QA_SCENE_ISOLATE`;
+- `REFERENCE_OVERLAY_VALIDATE`;
+- `APPEARANCE_REFERENCE_VALIDATE`;
+- `RECONSTRUCTION_NODE_GATE` records;
+- RDL barriers;
+- `APPEARANCE_FIDELITY_GATE` for L4/L5;
+- `RECON_FIDELITY_GATE`.
+
+Runtime is forbidden while any required geometric/appearance/reconstruction gate is FAIL/UNVERIFIED.
+
+---
+
+# Anti-circular validation route
+
+If an agent locally derives a radius/angle/station/path:
 
 ```text
-change/repair intent
--> DEPENDENCY_INVALIDATOR
--> changed node DIRTY + revision bump
--> dependent built nodes DIRTY
--> dependent unbuilt nodes BLOCKED
--> hosted Appearance Owners UNVERIFIED
--> revision-bound evidence SUPERSEDED
--> rebuild only affected closure
+derived parameter
+-> builder-consistency check
+-> source-fit/registered reference evidence
+-> canonical validator
+-> canonical gate
 ```
 
-Unrelated accepted branches remain reusable.
-
-Do not manually keep a child green because it still looks plausible after host repair.
-
-## 10. Topology integrity route
-
-Use `MESH_VALIDATE` with explicit topology intent.
-
-For closed solids inspect:
-- manifold/boundary state;
-- signed volume orientation;
-- zero-area/duplicate/loose geometry;
-- high-order n-gons;
-- non-planar n-gons;
-- concave n-gons according to policy.
-
-N-gon existence alone is not failure. Non-planarity, unstable triangulation/shading or contract-specific risk is.
-
-Assembly interpenetration is owned by `ASSEMBLY_INTEGRITY_GATE`, not by generic mesh topology validation.
-
-## 11. Geometric, appearance and final reconstruction gates
-
-Before Level A closure aggregate current physical proof:
+Do not route:
 
 ```text
-current mutation postconditions
-+ current Assembly Relation closure
-+ current topology records
-+ required validator negative controls
-+ zero stale evidence
--> GEOMETRIC_INTEGRITY_GATE
+local builder constant
+-> local Gate compares mesh to same constant
+-> ACCEPTED
 ```
 
-Then for target >= L4:
+Strict reference-derived evidence requires:
+- `validator_id`;
+- `provenance_id`;
+- `source_reference_id(s)`;
+- `registration_id` for projected evidence.
+
+v0.12 adds: new MUST validators require a known-good PASS and known-broken FAIL through `VALIDATOR_NEGATIVE_CONTROL`.
+
+---
+
+# Existing specialized routes
+
+## Panel line
+`HS_PANEL_LINE`; add SubD skill only if evaluated cage/flow requires it.
+
+## SubD topology
+`SUBD_TOPOLOGY_CONTROL` + topology/normals rules.
+
+## Mesh validation
+`MESH_VALIDATE`. Every mesh declares topology intent. v0.12 additionally classifies signed volume, non-planar/concave/high-order n-gon risk; assembly interpenetration remains owned by `ASSEMBLY_INTEGRITY_GATE`.
+
+## Civic material finish
+`MATERIAL_FINISH_CIVIC`; no uniform global grunge.
+
+## Emissive
+`EMISSIVE_HANDOFF`; authored emitter and engine bloom are separate gates.
+
+## UV atlas / runtime bake
+`UV_ATLAS_CONTRACT` -> `BAKE_RUNTIME_TEXTURES` -> `BAKE_VALIDATE`.
+
+Use stable semantic part IDs. Missing atlas assignment = FAIL.
+
+## QA/bake contamination
+`QA_SCENE_ISOLATE`. `hide_viewport` is not render proof.
+
+## Stale external image in Blender
+`IMAGE_CACHE_COHERENCE` before rebake/UV changes.
+
+## Local repair after accepted runtime stages
+`PIPELINE_DAG_PLAN` before replaying build/bake/export. Execute dirty dependency closure only.
+
+For reconstruction repairs, first use `DEPENDENCY_INVALIDATOR` to supersede stale Shape/Appearance/Evidence proof.
+
+---
+
+# Game-ready finishing
+
+Use `GAME_READY_FINISH` only after:
 
 ```text
 GEOMETRIC_INTEGRITY_GATE PASS
-+ APPEARANCE_OWNER_COVERAGE
-+ APPEARANCE_FIDELITY_GATE
-+ all required Shape Nodes ACCEPTED
-+ no stale/superseded proof referenced by current revisions
--> RECON_FIDELITY_GATE
-```
-
-MUST categories are non-compensating. A high visual score cannot override physical integrity failure.
-
-## 12. Runtime/game-ready route
-
-Start only after reconstruction closure.
-
-Preferred order:
-
-```text
-runtime path
--> LOD/collision
--> UV contract
--> bake stages
--> bake validation/cache coherence
--> runtime material
--> export/package readback
--> round-trip invariants
--> target-engine proof if Level D
--> completion gate
+and
+Shape/RDL proof PASS
+and
+APPEARANCE_FIDELITY_GATE PASS when required
+and
+RECON_FIDELITY_GATE PASS
 ```
 
 Preferred skills:
-- `RUNTIME_PATH_RESOLVE`;
 - `MESH_VALIDATE`;
 - `UV_ATLAS_CONTRACT`;
 - `BAKE_RUNTIME_TEXTURES`;
 - `BAKE_VALIDATE`;
 - `IMAGE_CACHE_COHERENCE`;
+- `PIPELINE_DAG_PLAN`;
+- `RUNTIME_PATH_RESOLVE`;
 - `RUNTIME_PACKAGE_VALIDATE`;
 - `EXPORT_ROUNDTRIP_VALIDATE`;
-- `TEST_ORACLE`;
 - `ASSET_COMPLETION`.
 
-Blender glTF re-import remains Level C evidence, not Level D engine proof.
-
-## Failure routing
+Order:
 
 ```text
-builder runs but recess/feature absent
+runtime path
+-> LOD/collision
+-> UV contract
+-> dirty bake stages
+-> bake validation/cache coherence
+-> runtime material
+-> export/package readback
+-> round-trip invariants
+-> baked runtime QA
+-> completion gate
+```
+
+Runtime LOD is downstream from RDL and must not be used as reconstruction progression state.
+
+---
+
+# Pipeline integration
+
+Use `PIPELINE_INTEGRATION` only when target is Level D.
+
+Load verified Project Profile, runtime-root, package, catalog, Engine Smoke Test, Test Oracle.
+
+For current RPG profile reuse:
+- `<repo>/Assets/GameAssets`;
+- one glTF multi-node LOD packaging;
+- current MIRROR_X contract while valid;
+- `Source/Engine/AssetCatalog.cpp`;
+- `Engine::Model::Load`;
+- `Tests/ModelTests.cpp`;
+- `Build/windows-debug` / `ModelTests`;
+- direct executable exit status.
+
+Blender glTF import = Level C round-trip evidence, not Level D.
+
+---
+
+# Failure routing principles
+
+```text
+builder runs but intended recess/feature absent
 -> MUTATION_POSTCONDITION_GATE
 
-parts visually fight / z-fight / pierce each other
--> ASSEMBLY_RELATION contract + ASSEMBLY_INTEGRITY_GATE
+parts pierce/z-fight / gap-contact wrong
+-> Assembly Relation + ASSEMBLY_INTEGRITY_GATE
 
-validator says PASS on obvious known defect
+validator passes known-broken fixture
 -> VALIDATOR_NEGATIVE_CONTROL
 
-repair changes accepted host
--> DEPENDENCY_INVALIDATOR before rebuild
+accepted host repaired
+-> DEPENDENCY_INVALIDATOR
 
-outer silhouette passes but product reads wrong
--> Appearance Contract / internal architecture
+outer silhouette passes but product still looks wrong
+-> Appearance Contract / part boundaries / edge/material/detail owners
 
-FRONT pass + SIDE/TOP compound form fail
--> SHAPE_CLASSIFY before parameter thrashing
+looks wrong in one view
+-> registration/parameters/shape representation
 
-technical-sheet contour polluted by leaders/text
--> reference mask contamination route
+FRONT pass + SIDE/TOP compound-form fail
+-> SHAPE_CLASSIFY before random parameter tweaking
 
-correct Blender geometry + exported dimension fail
+child feature fails because host contour wrong
+-> parent Shape Node owner
+
+trim exists but looks like a highlight / wrong path
+-> PART_BOUNDARY_TRIM_JUNCTION + APPEARANCE_REFERENCE_VALIDATE
+
+technical-sheet leader/text contaminates product mask
+-> annotation exclusion/component filter
+
+correct source geometry + exported dimension fail
 -> EXPORT_ROUNDTRIP_VALIDATE
 
 parseable glTF + missing TEXCOORD_0
 -> RUNTIME_PACKAGE_VALIDATE
 
-ambiguous automated test success
--> TEST_ORACLE / bite test
+ambiguous test success
+-> TEST_ORACLE
 ```
 
-After one corrected retry of the same strategy, a second proven failure requires re-inspection and strategy switch.
+After one corrected retry of same strategy, second proven failure requires re-inspection + strategy switch.
 
-## Output budget
+---
+
+# Output budget
+
+Use:
 
 ```text
 compute locally
--> compact node/assembly/appearance/stage report
+-> compact node/appearance/assembly/stage report
 -> decision
 ```
 
-Do not dump raw mesh arrays/full logs/scripts into reasoning unless required for a concrete diagnostic.
+Do not return raw arrays/full logs/full generated scripts unless diagnostic need requires them.
