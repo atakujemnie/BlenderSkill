@@ -19,12 +19,14 @@ These skills have precedence over weaker v0.11/v0.10 execution routes:
 | `ASSEMBLY_INTEGRITY_GATE` | relation-aware gap/contact/embedding/interpenetration validation | `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`; `executors/assembly_integrity_gate.py` | CONTRACT_READY |
 | `DEPENDENCY_INVALIDATOR` | propagate repair impact across Shape/Appearance/Evidence revisions | `05_execution/77`; `executors/dependency_invalidator.py` | CONTRACT_READY |
 | `VALIDATOR_NEGATIVE_CONTROL` | prove that a MUST validator rejects its known-broken failure fixture | `190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md`; `executors/validator_negative_control.py` | CONTRACT_READY |
+| `GEOMETRIC_INTEGRITY_GATE` | final non-compensating physical-geometry closure before fidelity/runtime | `05_execution/78`; `executors/geometric_integrity_gate.py` | CONTRACT_READY |
 
 Strengthened in v0.12:
 - `NODE_STATE_STORE` — requires mutation-postcondition proof before `BUILT_UNVERIFIED`;
 - `RECONSTRUCTION_NODE_GATE` — requires geometric integrity evidence for authorized production nodes;
 - `MESH_VALIDATE` — classifies non-planar/concave/high-order n-gons and signed closed volume;
-- `REFERENCE_OVERLAY_VALIDATE` — supports annotation exclusion/component filtering.
+- `REFERENCE_OVERLAY_VALIDATE` — supports annotation exclusion/component filtering;
+- `RECON_FIDELITY_GATE` and `ASSET_COMPLETION` — require final geometric-integrity proof for L4/L5/Level A closure.
 
 Canonical production order:
 
@@ -40,6 +42,16 @@ eligible node
 -> MESH_VALIDATE / section/layer evidence as required
 -> RECONSTRUCTION_NODE_GATE
 -> ACCEPTED
+```
+
+Before final fidelity/runtime:
+
+```text
+all required nodes/relations current
+-> GEOMETRIC_INTEGRITY_GATE
+-> APPEARANCE_FIDELITY_GATE when required
+-> RECON_FIDELITY_GATE
+-> runtime
 ```
 
 Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST acceptance validators must have `VALIDATOR_NEGATIVE_CONTROL` proof before promotion to `EXECUTOR_READY`.
@@ -60,13 +72,14 @@ Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST 
 | `ASSEMBLY_INTEGRITY_GATE` | physical relation integrity between product parts | `189`; `executors/assembly_integrity_gate.py` | CONTRACT_READY | semantic relation + gap/contact/embedding/interpenetration metrics |
 | `DEPENDENCY_INVALIDATOR` | invalidate downstream state/evidence after repair | `05_execution/77`; `executors/dependency_invalidator.py` | CONTRACT_READY | descendants, owners, revisions, supersession |
 | `VALIDATOR_NEGATIVE_CONTROL` | adversarial bite test for validators | `190`; `executors/validator_negative_control.py` | CONTRACT_READY | known-good PASS + known-broken FAIL |
+| `GEOMETRIC_INTEGRITY_GATE` | aggregate mutation/assembly/topology/control freshness before final fidelity | `05_execution/78`; `executors/geometric_integrity_gate.py` | CONTRACT_READY | postconditions, relations, topology, negative controls, stale evidence |
 | `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176`, `178`, `181`, `189`, `190`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, authorization, postcondition, assembly integrity, source proof |
 | `APPEARANCE_REFERENCE_VALIDATE` | internal boundary/trim/edge/material/detail validation | `180`–`183` | CONTRACT_READY | source reference + registration + owner-class metrics |
 | `APPEARANCE_OWNER_COVERAGE` | MUST Appearance Owner inventory closure | `186`; `executors/appearance_owner_coverage.py` | CONTRACT_READY | no missing/unverified MUST owners |
 | `SECTION_LOFT_HARD_SURFACE` | deterministic multi-section hard-surface construction | `179`; `executors/section_loft.py` | CONTRACT_READY | station order, correspondence, section proof |
 | `LAYER_STACK_VALIDATE` | layered assembly visibility/order | `172`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
 | `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 visible-product gate | `05_execution/72`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | boundaries, trim, junction, edge, material, detail |
-| `RECON_FIDELITY_GATE` | final proof-bearing Level A reconstruction gate | `05_execution/69`; `executors/fidelity_gate.py` | CONTRACT_READY | source-anchored evidence, canonical views, MUST features |
+| `RECON_FIDELITY_GATE` | final proof-bearing Level A reconstruction gate | `05_execution/69`; `executors/fidelity_gate.py` | CONTRACT_READY | source-anchored evidence, canonical views, MUST features, geometric integrity |
 | `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
 | `RADIAL_REPEAT` | repeated radial details | playbook 110; `executors/radial_repeat.py` | CONTRACT_READY | count, phase, annulus |
 | `HS_PANEL_LINE` | narrow seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | path/profile/topology |
@@ -86,7 +99,7 @@ Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST 
 | `EXPORT_ROUNDTRIP_VALIDATE` | re-import export and compare invariants | `05_execution/67`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | dimensions/contact/material survival |
 | `TEST_ORACLE` | trustworthy exit status and bite tests | `05_execution/66`; `executors/test_oracle.py` | CONTRACT_READY | direct assertion/negative mutation |
 | `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96` | CONTRACT_READY | production loader/instantiation |
-| `ASSET_COMPLETION` | determine true A/B/C/D completion | `00_governance/07`; `executors/completion_gate.py` | CONTRACT_READY | hierarchical completion gates |
+| `ASSET_COMPLETION` | determine true A/B/C/D completion | `00_governance/07`; `executors/completion_gate.py` | CONTRACT_READY | hierarchical completion gates including geometric integrity |
 
 ## Routing laws
 
@@ -126,7 +139,7 @@ For MUST acceptance, a new validator requires a negative-control fixture represe
 For L4/L5:
 
 ```text
-geometric integrity FAIL/UNVERIFIED
+GEOMETRIC_INTEGRITY_GATE != PASS
 or
 APPEARANCE_FIDELITY_GATE != PASS
 or
