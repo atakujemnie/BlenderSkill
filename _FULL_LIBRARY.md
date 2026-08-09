@@ -407,6 +407,15 @@ runtime pin
 -> RDL stage barrier
 ```
 
+After all required reconstruction nodes close:
+
+```text
+GEOMETRIC_INTEGRITY_GATE
+-> APPEARANCE_FIDELITY_GATE when target requires it
+-> RECON_FIDELITY_GATE
+-> runtime
+```
+
 Hard laws:
 - no authorization -> no production geometry mutation;
 - builder returned normally -> not proof that geometry changed correctly;
@@ -414,7 +423,8 @@ Hard laws:
 - assembly semantics must be declared before overlap/gap/contact is judged;
 - validator that cannot reject its known-broken fixture cannot own MUST acceptance;
 - accepted host repair -> `DEPENDENCY_INVALIDATOR` before further work;
-- stale revision evidence becomes `SUPERSEDED`.
+- stale revision evidence becomes `SUPERSEDED`;
+- final reference fidelity cannot override failed physical geometry.
 
 ## SESSION_PREFLIGHT
 
@@ -637,17 +647,28 @@ N-gon existence alone is not failure. Non-planarity, unstable triangulation/shad
 
 Assembly interpenetration is owned by `ASSEMBLY_INTEGRITY_GATE`, not by generic mesh topology validation.
 
-## 11. Appearance/final reconstruction gates
+## 11. Geometric, appearance and final reconstruction gates
 
-For target >= L4:
+Before Level A closure aggregate current physical proof:
 
 ```text
-APPEARANCE_OWNER_COVERAGE
+current mutation postconditions
++ current Assembly Relation closure
++ current topology records
++ required validator negative controls
++ zero stale evidence
+-> GEOMETRIC_INTEGRITY_GATE
+```
+
+Then for target >= L4:
+
+```text
+GEOMETRIC_INTEGRITY_GATE PASS
++ APPEARANCE_OWNER_COVERAGE
 + APPEARANCE_FIDELITY_GATE
 + all required Shape Nodes ACCEPTED
-+ all required Assembly Relations PASS
 + no stale/superseded proof referenced by current revisions
-+ RECON_FIDELITY_GATE
+-> RECON_FIDELITY_GATE
 ```
 
 MUST categories are non-compensating. A high visual score cannot override physical integrity failure.
