@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.13.0 — Full compiled snapshot
+# Blender AI Agent Library v0.14.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -371,6 +371,36 @@ Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześ
 ## FILE: `00_governance/04_KNOWLEDGE_ROUTER.md`
 
 # Knowledge Router
+
+## v0.14 visual-quality routing override
+
+This section has precedence for final environment/vegetation/material authoring while preserving v0.12 physical-integrity rules.
+
+```text
+project/location preflight
+-> LOCATION_MATERIAL_LIBRARY find-or-create and persist returned path
+-> discover installed providers/asset libraries
+-> PROCEDURAL_GENERATOR_PROVIDER runtime probe where executable
+-> PROVIDER_QUALITY_SELECT for HERO/MID/BACKGROUND usage
+-> source/variation generation
+-> PLANTER_VEGETATION_COMPOSITION physical gate when applicable
+-> PLANTING_COMPOSITION_QUALITY
+-> reference composition fidelity when reference-driven
+-> location material-language reuse/adaptation
+-> early visual-quality barrier
+-> only then LOD/bake/export/runtime
+-> CONTEXT_BUDGET_GATE
+```
+
+Hard rules:
+- do not regenerate a private material language when the location library exists;
+- if the location library is absent, create its canonical skeleton/manifest and report the exact path;
+- runtime compatibility never implies hero-quality suitability;
+- physical placement PASS never implies planting-composition PASS;
+- visually unresolved final assets do not proceed to expensive runtime finishing;
+- reusable provider/material/composition infrastructure belongs in `executors/`, not repeated project-local scripts.
+
+---
 
 ## v0.12 geometric-integrity routing override
 
@@ -936,6 +966,21 @@ Do not return raw arrays/full logs/full generated scripts unless diagnostic need
 - `RUNTIME_BOUND` — executor mapped to current runtime tools.
 
 Do not claim higher maturity without evidence.
+
+
+## v0.14 registry additions
+
+| Skill ID | Purpose | Canonical implementation | Maturity |
+|---|---|---|---|
+| `LOCATION_MATERIAL_LIBRARY` | resolve/create persistent material language per location and return its path | `12_procedural_generation/220`; `executors/location_material_library.py` | EXECUTOR_READY |
+| `PROVIDER_QUALITY_SELECT` | choose visually suitable provider independently of runtime compatibility | `12_procedural_generation/221`; `executors/provider_quality.py` | EXECUTOR_READY |
+| `PLANTING_COMPOSITION_QUALITY` | validate masses/layers/coverage/periodicity/clone repetition | `12_procedural_generation/222`; `executors/planting_composition_quality.py` | EXECUTOR_READY |
+| `VEGETATION_SOURCE_QUALITY` | enforce library-first quality by usage class | `12_procedural_generation/223` | CONTRACT_READY |
+| `PLANTING_REFERENCE_FIDELITY` | compact reference-vs-candidate planting massing proof | `12_procedural_generation/224` | CONTRACT_READY |
+| `LOCATION_MATERIAL_AUTHORING` | reuse/adapt shared location material families before creating new ones | `03_modeling/46` | CONTRACT_READY |
+| `CONTEXT_BUDGET_GATE` | block excessive context/code churn and reusable-executor misses | `05_execution/79`; `executors/context_budget_gate.py` | EXECUTOR_READY |
+
+v0.13 procedural skills remain canonical and are now explicitly downstream of provider-quality selection when final visual quality matters.
 
 ## v0.12 registry additions and precedence
 
@@ -18777,6 +18822,8 @@ project_asset_pipeline:
 
   city_asset_layout:
     first_planet_road_modules: <repo>/Assets/GameAssets/City/first_planet/road_kit/modules
+    location_material_library_root: <repo>/Assets/GameAssets/Materials/Locations
+    location_material_library_pattern: <repo>/Assets/GameAssets/Materials/Locations/<location_id>
 
   runtime_packaging:
     export_format: GLTF_SEPARATE
@@ -18830,6 +18877,8 @@ project_asset_pipeline:
 ## Required use
 
 When this profile matches the active project:
+- resolve/create the location material library under `<repo>/Assets/GameAssets/Materials/Locations/<location_id>` and return that path to the user;
+- reuse compatible location material families before generating new texture sets;
 - do not rediscover the runtime root with `ls/find` before every asset;
 - do not write to `<repo>/GameAssets`;
 - inject the resolved runtime root into bake/decal/export stages;
@@ -27703,6 +27752,24 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.14.0
+
+v0.14.0 is the **visual-quality + library-first + persistent location-material-language + context-efficiency** release, driven by human review of the v0.13 Lafar planter benchmark.
+
+Key changes:
+- runtime provider compatibility is separated from visual quality tier and usage suitability;
+- final vegetation is library-first: project/licensed quality sources outrank generic procedural fallback when compatible;
+- planting composition now owns masses, height layers, rhythm, negative space, periodicity and clone visibility in addition to physical root/stem/container fit;
+- reference-driven planting gains compact occupancy/height/mass composition fidelity;
+- every location resolves or bootstraps one persistent material-language library and returns its exact path for subsequent prompts;
+- material authoring reuses/adapts location families before generating new textures and adds semantic wetness/dirt/contact/wear breakup;
+- early visual-quality barrier blocks expensive runtime finishing for visually unresolved assets;
+- context-budget gate targets <=30k tokens for the three-planter regression (stretch <=20k) and promotes repeated helpers into canonical executors;
+- fixed `PROCEDURAL_GENERATOR_PROVIDER` to emit its canonical `validator_id` directly;
+- added benchmark 83 and v0.14 regression tests.
+
+Canonical benchmark: **83 — Lafar Planter v0.14 Visual Quality and Efficiency Regression**.
+
 ## 0.13.0
 
 v0.13.0 is the **deterministic procedural vegetation + generator-provider + planter-composition** release. It is intentionally narrower than a generic environment-generator release: the next real Blender 5.1 benchmark is a Lafar planter containing hard-surface container geometry and procedural vegetation.
@@ -28134,9 +28201,36 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.13.0 — deterministic procedural vegetation, generator providers and planter composition.**
+**v0.14.0 — visual quality, library-first asset selection, persistent location material language and context efficiency.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
+
+
+## v0.14 quality/material additions
+
+v0.14 keeps the v0.13 deterministic vegetation contracts but adds a production-quality barrier before runtime finishing:
+
+```text
+location material library find-or-create
+-> installed asset/provider discovery
+-> runtime probe
+-> quality-tier selection
+-> physical composition
+-> planting massing/composition quality
+-> reference composition fidelity when applicable
+-> shared material-language reuse/adaptation
+-> early visual-quality barrier
+-> runtime finishing
+-> context-budget gate
+```
+
+For the RPG profile, location material language defaults to:
+`<repo>/Assets/GameAssets/Materials/Locations/<location_id>/`.
+Every material task must return the resolved path. Existing compatible families are reused before any new texture generation; new approved families are written back to the same location library.
+
+Provider compatibility and provider quality are separate. A runtime-safe C-tier procedural generator cannot displace an installed A-tier source for a HERO asset merely because it is available first.
+
+The v0.14 Lafar regression target reduces the previous approximately 80k-token three-planter run to <=30k tokens (stretch <=20k) by moving reusable probing, selection, material-library and composition logic into canonical executors.
 
 The new boundary is:
 
@@ -31124,3 +31218,451 @@ Blender Extensions lists Sapling Tree Gen, IvyGen, A.N.T. Landscape and Archimes
 ## Licensing rule
 
 Never copy third-party source, node graphs or commercial asset packs into BlenderSkill merely because they can be called from Python. Study, adapter invocation and redistribution are distinct legal/technical actions.
+
+
+---
+
+## FILE: `03_modeling/46_LOCATION_MATERIAL_LANGUAGE_AND_LIBRARY_FIRST_AUTHORING.md`
+
+# Location Material Language and Library-First Authoring
+
+## Rule
+
+Materials belong first to a location/art-direction system, then to an individual asset.
+
+Before generating textures:
+1. resolve `location_id`;
+2. resolve/create the persistent location material library;
+3. inspect compatible material families and texture sets;
+4. reuse or adapt them;
+5. create a new family only when existing language cannot represent the target;
+6. write new approved material data back into the same location library.
+
+## Material language hierarchy
+
+```text
+location identity
+-> material family
+-> manufacturing/process response
+-> macro variation
+-> meso defects
+-> microstructure
+-> environmental response
+-> local wear/contact/wetness
+```
+
+Noise alone is not a material identity.
+
+## Surface breakup
+
+Avoid globally uniform grunge. Use evidence/semantics:
+- seams/recesses: dirt/AO accumulation;
+- lower street-facing zones: road grime/splash;
+- horizontal surfaces: rain/water response;
+- contact zones: darkening/wear;
+- exposed corners: restrained edge wear;
+- protected centers: cleaner response.
+
+## Periodicity
+
+Reject obvious repeating waves, stripes, checker rhythms or procedural fingerprints unless the manufactured material explicitly requires them. Directional materials require plausible direction and scale, not arbitrary sinusoidal texture.
+
+## Runtime
+
+Location libraries store authoring sources and approved runtime texture sets. Procedural effects must be baked/recreated/removed according to the engine contract.
+
+
+---
+
+## FILE: `05_execution/79_VISUAL_QUALITY_AND_CONTEXT_BUDGET_GATE.md`
+
+# Visual Quality and Context Budget Gate
+
+## Purpose
+
+A technically valid asset can still be visually below production quality or consume excessive agent context. v0.14 treats both as explicit completion constraints.
+
+## Visual stage barrier
+
+Before expensive runtime work (LOD/bake/export/catalog/engine integration), require an early visual-quality decision for final assets.
+
+For vegetation/planters this includes:
+- source-asset quality tier suitable for usage class;
+- planting composition grammar PASS;
+- reference composition fidelity PASS when reference-driven;
+- location material library resolved;
+- material-language consistency reviewed;
+- no obvious procedural periodicity/sterility blockers.
+
+If the asset will be rebuilt visually, runtime finishing is blocked.
+
+## Context budget
+
+Default v0.14 benchmark targets:
+- total agent context for the Lafar three-planter regression: <= 30k tokens;
+- stretch target: <= 20k tokens;
+- no full-source echo after a script is persisted;
+- default diagnostics: SUMMARY;
+- unchanged sources are not reread without a specific missing fact;
+- reusable executor search is mandatory before generating non-trivial per-asset infrastructure.
+
+## Reusable-executor law
+
+Before creating a new project-local script, classify it:
+
+```text
+asset-specific data/spec
+-> project file allowed
+
+reusable generator/validator/material resolver/provider probe
+-> BlenderSkill executor/tool first
+```
+
+A repeated local helper is technical debt and should be promoted to the canonical library.
+
+## Reporting
+
+Return compact metrics:
+- `visual_quality_status`;
+- failing quality owners/ROIs;
+- `context_tokens_estimated` or available tool usage metric;
+- scripts/files generated this run;
+- reusable-executor misses;
+- runtime stage authorization.
+
+
+---
+
+## FILE: `07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md`
+
+# Benchmark 83 — Lafar Planter v0.14 Visual Quality and Efficiency Regression
+
+## Purpose
+
+Re-run the same three Lafar planter targets that exposed v0.13 weaknesses. v0.14 must preserve technical correctness while raising visible quality and reducing context/code churn.
+
+## Regression source
+
+Human review of the v0.13 result identified:
+- generic/even planting with weak massing and rhythm;
+- medium/low-quality vegetation sources;
+- sterile/procedural material response;
+- no persistent shared material language for the location;
+- approximately 80k tokens spent on three planters, including repeated project-local infrastructure.
+
+## Required v0.14 route
+
+```text
+location/project preflight
+-> LOCATION_MATERIAL_LIBRARY find-or-create
+-> installed provider/library discovery + runtime probe
+-> PROVIDER_QUALITY_SELECT for requested usage class
+-> library-first vegetation source selection
+-> physical planter composition gate
+-> PLANTING_COMPOSITION_QUALITY
+-> reference composition fidelity when reference-driven
+-> location material-language reuse/adaptation
+-> EARLY VISUAL QUALITY BARRIER
+-> only then runtime LOD/bake/export/integration
+-> CONTEXT_BUDGET_GATE
+```
+
+## Material-language acceptance
+
+For each location run:
+- resolve one stable `location_id`;
+- return exact material-library path;
+- reuse existing compatible material families before creating new textures;
+- if no library exists, bootstrap it under the project profile and persist `material_language.json`;
+- all new approved material families/texture sets are added to the same library.
+
+Default RPG target:
+
+`<repo>/Assets/GameAssets/Materials/Locations/<location_id>/`
+
+## Vegetation quality acceptance
+
+- HERO source: quality tier A unless explicitly waived;
+- MID source: A or B;
+- BACKGROUND: A/B/C;
+- runtime compatibility alone cannot authorize a lower-quality provider;
+- visible clone repetition and periodic placement are gated;
+- composition uses masses/patches/height layers rather than only individual collision-free anchors;
+- physical root/stem/wall constraints from v0.13 remain mandatory.
+
+## Material acceptance
+
+Reject:
+- obvious procedural waves/periodicity unless materially justified;
+- globally uniform grunge;
+- one-off per-asset texture language when a location library exists;
+- sterile constant roughness where the reference implies wetness, dirt, seam accumulation or contact variation.
+
+## Efficiency acceptance
+
+Target for the complete three-planter regression:
+- context <= 30k tokens;
+- stretch target <= 20k;
+- no full persisted source echo;
+- no unchanged-source reread without a concrete missing fact;
+- project-local generated logic <= 400 lines where reusable executors cover the infrastructure;
+- zero reusable-executor misses for provider probing, material-library resolution, quality selection and composition gating.
+
+## Regression targets
+
+```text
+v0.13 runtime correctness retained
++ source quality suitable for usage class
++ composition quality PASS
++ shared location material language resolved
++ early visual gate PASS before runtime finishing
++ context budget PASS
+```
+
+A technically correct but visually generic planter remains a regression failure.
+
+
+---
+
+## FILE: `12_procedural_generation/220_LOCATION_MATERIAL_LANGUAGE_LIBRARY.md`
+
+# Location Material Language Library
+
+## Purpose
+
+A location must reuse one persistent material language instead of regenerating unrelated textures per asset.
+
+## Canonical behavior
+
+Before authoring materials for an asset:
+
+```text
+resolve location_id
+-> resolve project game_asset_root
+-> look for <game_asset_root>/Materials/Locations/<location_id>
+-> if present: read and reuse material_language.json
+-> if missing: create the library skeleton and manifest
+-> report the exact library path to the user
+-> only then add/reuse/adapt texture sets
+```
+
+Default RPG layout:
+
+```text
+<repo>/Assets/GameAssets/Materials/Locations/<location_id>/
+  material_language.json
+  textures/
+  atlases/
+  masks/
+  references/
+  previews/
+  source/
+```
+
+The path is persistent project state. Subsequent prompts should point to this folder instead of rebuilding materials from scratch.
+
+## Manifest contract
+
+`material_language.json` stores at minimum:
+- `schema_version`;
+- `location_id`;
+- `library_version`;
+- `material_families`;
+- `surface_rules`;
+- `texture_sets`.
+
+Material families define visual language such as graphite composite, brushed metal, wet soil, bark, leaf, concrete, painted polymer or glass. Surface rules define shared responses such as wetness, road grime, seam dirt, edge wear and contact darkening.
+
+## Reuse-first rule
+
+```text
+existing compatible family
+-> reuse
+
+existing family needs local variation
+-> adapt/tint/mask/weather
+
+no compatible family
+-> create new family inside the same location library
+```
+
+Do not create a private texture root beside one asset when a location library exists.
+
+## Completion output
+
+Every material-authoring task returns:
+- `location_id`;
+- material-library path;
+- manifest path;
+- reused families;
+- new families/texture sets added.
+
+
+---
+
+## FILE: `12_procedural_generation/221_PROVIDER_CLASSIFICATION_AND_QUALITY_TIERS.md`
+
+# Provider Classification and Quality Tiers
+
+## Separation
+
+Runtime compatibility and visual suitability are independent.
+
+```text
+runtime_status: PASS
+quality_tier: A | B | C | D | UNRATED
+```
+
+A provider may execute correctly and still be unsuitable for hero assets.
+
+## Provider classes
+
+- `GENERATOR_BACKEND` — Geometry Nodes, Sapling, Sverchok-like procedural systems;
+- `ASSET_LIBRARY` — curated reusable vegetation/material/prop sources;
+- `MATERIAL_LIBRARY` — reusable PBR families;
+- `SCATTER_BACKEND` — placement/distribution systems;
+- `SOURCE_REFERENCE` — algorithm/reference only, never runtime dependency.
+
+## Quality tiers
+
+- `A` — hero/close-up production quality;
+- `B` — normal gameplay / mid-distance production quality;
+- `C` — background, blockout or stylized fallback;
+- `D` — diagnostic only;
+- `UNRATED` — probe required before production selection.
+
+Quality rating records evidence such as source resolution, material completeness, silhouette richness, variant depth, botanical plausibility and close-up review.
+
+## Selection law
+
+For a requested usage class choose the highest-quality compatible provider that satisfies license/runtime constraints. Built-in procedural generation is not automatically preferred merely because it is available.
+
+
+---
+
+## FILE: `12_procedural_generation/222_PLANTING_COMPOSITION_GRAMMAR.md`
+
+# Planting Composition Grammar
+
+## Purpose
+
+A valid planter is not a list of collision-free plant coordinates. Composition must describe masses, layers, rhythm, asymmetry and negative space.
+
+## CompositionSpec
+
+Record as applicable:
+- focal masses and secondary masses;
+- height layers;
+- dominant/secondary/fill species shares;
+- patch/cluster size ranges;
+- canopy-overlap policy;
+- exposed-soil target range;
+- ground-cover target;
+- asymmetry target;
+- focal offset;
+- rhythm/regularity policy;
+- height-profile mode;
+- intentional gaps/negative-space regions.
+
+## Default visual laws
+
+- prefer patches/masses over evenly spaced individual specimens;
+- avoid visible periodic spacing unless the reference explicitly specifies it;
+- repeated source variants require rotation/scale/morphology variation;
+- canopy overlap may be deliberate even when rootball overlap is not;
+- one dominant layer should not erase all secondary structure;
+- composition must read as one planted system at gameplay distance.
+
+## Validation
+
+Physical `PLANTER_VEGETATION_COMPOSITION` remains mandatory. This grammar adds a separate visual/compositional owner; physical PASS cannot imply composition PASS.
+
+
+---
+
+## FILE: `12_procedural_generation/223_VEGETATION_SOURCE_QUALITY_AND_LIBRARY_FIRST_POLICY.md`
+
+# Vegetation Source Quality and Library-First Policy
+
+## Production selection order
+
+For final vegetation:
+
+```text
+project/location vegetation library
+-> licensed high-quality asset library
+-> compatible specialist generator
+-> hybrid source + procedural variation
+-> full procedural generation
+-> primitive/card fallback
+```
+
+This is a quality order, not a runtime-capability order.
+
+## Usage classes
+
+- `HERO`: require quality tier A or explicit user waiver;
+- `MID`: require A/B;
+- `BACKGROUND`: A/B/C allowed;
+- `BLOCKOUT`: any runtime-compatible source allowed.
+
+A built-in generator that is runtime-safe but visually generic must not displace a better installed library.
+
+## Source-quality review
+
+Assess:
+- silhouette richness;
+- close-up leaf/branch quality;
+- botanical coherence;
+- material completeness;
+- source variation depth;
+- clone visibility;
+- LOD/runtime adaptability;
+- license provenance.
+
+Persist `source_quality_tier`, `usage_suitability`, and evidence. `RUNTIME PASS` never implies `QUALITY PASS`.
+
+
+---
+
+## FILE: `12_procedural_generation/224_PLANTING_REFERENCE_COMPOSITION_FIDELITY.md`
+
+# Planting Reference Composition Fidelity
+
+## Purpose
+
+When concept/reference art exists, planter vegetation must be validated as a massing/composition problem, not only as valid object placement.
+
+## Reference representation
+
+Derive compact reference descriptors from canonical views:
+- vegetation occupancy mask;
+- height profile across the planter;
+- focal-mass centroid;
+- number/width of major masses;
+- low/mid/tall occupancy bands;
+- exposed-soil ratio;
+- negative-space regions;
+- optional semantic masks for focal, tall, mid and ground-cover layers.
+
+Prefer compact grids such as 32x16 or 64x32 rather than raw pixel dumps.
+
+## Candidate representation
+
+Render neutral vegetation-only QA views with the same framing/registration. Compute the same descriptors locally.
+
+## Gate
+
+A strict reference-driven planter cannot claim visual completion from physical placement alone. The composition gate checks declared tolerances for:
+- occupancy overlap/IoU;
+- height-profile error;
+- focal centroid error;
+- exposed-soil difference;
+- mass-count/continuity mismatch;
+- required semantic-layer coverage.
+
+High global overlap cannot compensate for a missing focal mass or missing required height layer.
+
+## Efficiency
+
+Compute masks and reductions locally. Return only aggregate scores and failing ROIs/bands.

@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
+  "benchmark": "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -17,9 +17,10 @@
     "07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md",
     "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
     "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
-    "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md"
+    "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
+    "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 263,
+  "module_count": 271,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -283,7 +284,15 @@
     "12_procedural_generation/217_VEGETATION_RUNTIME_PREPARATION.md",
     "12_procedural_generation/218_VEGETATION_LOD_LEAF_CARDS_AND_IMPOSTORS.md",
     "12_procedural_generation/219_VEGETATION_WIND_AND_RUNTIME_ATTRIBUTES.md",
-    "99_sources/PROCEDURAL_GENERATION_SOURCES.md"
+    "99_sources/PROCEDURAL_GENERATION_SOURCES.md",
+    "03_modeling/46_LOCATION_MATERIAL_LANGUAGE_AND_LIBRARY_FIRST_AUTHORING.md",
+    "05_execution/79_VISUAL_QUALITY_AND_CONTEXT_BUDGET_GATE.md",
+    "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
+    "12_procedural_generation/220_LOCATION_MATERIAL_LANGUAGE_LIBRARY.md",
+    "12_procedural_generation/221_PROVIDER_CLASSIFICATION_AND_QUALITY_TIERS.md",
+    "12_procedural_generation/222_PLANTING_COMPOSITION_GRAMMAR.md",
+    "12_procedural_generation/223_VEGETATION_SOURCE_QUALITY_AND_LIBRARY_FIRST_POLICY.md",
+    "12_procedural_generation/224_PLANTING_REFERENCE_COMPOSITION_FIDELITY.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository"

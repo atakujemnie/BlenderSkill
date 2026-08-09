@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.14.0
+
+v0.14.0 is the **visual-quality + library-first + persistent location-material-language + context-efficiency** release, driven by human review of the v0.13 Lafar planter benchmark.
+
+Key changes:
+- runtime provider compatibility is separated from visual quality tier and usage suitability;
+- final vegetation is library-first: project/licensed quality sources outrank generic procedural fallback when compatible;
+- planting composition now owns masses, height layers, rhythm, negative space, periodicity and clone visibility in addition to physical root/stem/container fit;
+- reference-driven planting gains compact occupancy/height/mass composition fidelity;
+- every location resolves or bootstraps one persistent material-language library and returns its exact path for subsequent prompts;
+- material authoring reuses/adapts location families before generating new textures and adds semantic wetness/dirt/contact/wear breakup;
+- early visual-quality barrier blocks expensive runtime finishing for visually unresolved assets;
+- context-budget gate targets <=30k tokens for the three-planter regression (stretch <=20k) and promotes repeated helpers into canonical executors;
+- fixed `PROCEDURAL_GENERATOR_PROVIDER` to emit its canonical `validator_id` directly;
+- added benchmark 83 and v0.14 regression tests.
+
+Canonical benchmark: **83 — Lafar Planter v0.14 Visual Quality and Efficiency Regression**.
+
 ## 0.13.0
 
 v0.13.0 is the **deterministic procedural vegetation + generator-provider + planter-composition** release. It is intentionally narrower than a generic environment-generator release: the next real Blender 5.1 benchmark is a Lafar planter containing hard-surface container geometry and procedural vegetation.

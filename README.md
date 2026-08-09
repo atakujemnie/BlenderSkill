@@ -4,9 +4,36 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.13.0 — deterministic procedural vegetation, generator providers and planter composition.**
+**v0.14.0 — visual quality, library-first asset selection, persistent location material language and context efficiency.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
+
+
+## v0.14 quality/material additions
+
+v0.14 keeps the v0.13 deterministic vegetation contracts but adds a production-quality barrier before runtime finishing:
+
+```text
+location material library find-or-create
+-> installed asset/provider discovery
+-> runtime probe
+-> quality-tier selection
+-> physical composition
+-> planting massing/composition quality
+-> reference composition fidelity when applicable
+-> shared material-language reuse/adaptation
+-> early visual-quality barrier
+-> runtime finishing
+-> context-budget gate
+```
+
+For the RPG profile, location material language defaults to:
+`<repo>/Assets/GameAssets/Materials/Locations/<location_id>/`.
+Every material task must return the resolved path. Existing compatible families are reused before any new texture generation; new approved families are written back to the same location library.
+
+Provider compatibility and provider quality are separate. A runtime-safe C-tier procedural generator cannot displace an installed A-tier source for a HERO asset merely because it is available first.
+
+The v0.14 Lafar regression target reduces the previous approximately 80k-token three-planter run to <=30k tokens (stretch <=20k) by moving reusable probing, selection, material-library and composition logic into canonical executors.
 
 The new boundary is:
 

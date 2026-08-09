@@ -1,5 +1,35 @@
 # Knowledge Router
 
+## v0.14 visual-quality routing override
+
+This section has precedence for final environment/vegetation/material authoring while preserving v0.12 physical-integrity rules.
+
+```text
+project/location preflight
+-> LOCATION_MATERIAL_LIBRARY find-or-create and persist returned path
+-> discover installed providers/asset libraries
+-> PROCEDURAL_GENERATOR_PROVIDER runtime probe where executable
+-> PROVIDER_QUALITY_SELECT for HERO/MID/BACKGROUND usage
+-> source/variation generation
+-> PLANTER_VEGETATION_COMPOSITION physical gate when applicable
+-> PLANTING_COMPOSITION_QUALITY
+-> reference composition fidelity when reference-driven
+-> location material-language reuse/adaptation
+-> early visual-quality barrier
+-> only then LOD/bake/export/runtime
+-> CONTEXT_BUDGET_GATE
+```
+
+Hard rules:
+- do not regenerate a private material language when the location library exists;
+- if the location library is absent, create its canonical skeleton/manifest and report the exact path;
+- runtime compatibility never implies hero-quality suitability;
+- physical placement PASS never implies planting-composition PASS;
+- visually unresolved final assets do not proceed to expensive runtime finishing;
+- reusable provider/material/composition infrastructure belongs in `executors/`, not repeated project-local scripts.
+
+---
+
 ## v0.12 geometric-integrity routing override
 
 This section has precedence over v0.11/v0.10 sequences later in this document while preserving their specialized routes.

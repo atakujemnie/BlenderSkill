@@ -25,6 +25,8 @@ project_asset_pipeline:
 
   city_asset_layout:
     first_planet_road_modules: <repo>/Assets/GameAssets/City/first_planet/road_kit/modules
+    location_material_library_root: <repo>/Assets/GameAssets/Materials/Locations
+    location_material_library_pattern: <repo>/Assets/GameAssets/Materials/Locations/<location_id>
 
   runtime_packaging:
     export_format: GLTF_SEPARATE
@@ -78,6 +80,8 @@ project_asset_pipeline:
 ## Required use
 
 When this profile matches the active project:
+- resolve/create the location material library under `<repo>/Assets/GameAssets/Materials/Locations/<location_id>` and return that path to the user;
+- reuse compatible location material families before generating new texture sets;
 - do not rediscover the runtime root with `ls/find` before every asset;
 - do not write to `<repo>/GameAssets`;
 - inject the resolved runtime root into bake/decal/export stages;

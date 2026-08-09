@@ -9,6 +9,21 @@
 
 Do not claim higher maturity without evidence.
 
+
+## v0.14 registry additions
+
+| Skill ID | Purpose | Canonical implementation | Maturity |
+|---|---|---|---|
+| `LOCATION_MATERIAL_LIBRARY` | resolve/create persistent material language per location and return its path | `12_procedural_generation/220`; `executors/location_material_library.py` | EXECUTOR_READY |
+| `PROVIDER_QUALITY_SELECT` | choose visually suitable provider independently of runtime compatibility | `12_procedural_generation/221`; `executors/provider_quality.py` | EXECUTOR_READY |
+| `PLANTING_COMPOSITION_QUALITY` | validate masses/layers/coverage/periodicity/clone repetition | `12_procedural_generation/222`; `executors/planting_composition_quality.py` | EXECUTOR_READY |
+| `VEGETATION_SOURCE_QUALITY` | enforce library-first quality by usage class | `12_procedural_generation/223` | CONTRACT_READY |
+| `PLANTING_REFERENCE_FIDELITY` | compact reference-vs-candidate planting massing proof | `12_procedural_generation/224` | CONTRACT_READY |
+| `LOCATION_MATERIAL_AUTHORING` | reuse/adapt shared location material families before creating new ones | `03_modeling/46` | CONTRACT_READY |
+| `CONTEXT_BUDGET_GATE` | block excessive context/code churn and reusable-executor misses | `05_execution/79`; `executors/context_budget_gate.py` | EXECUTOR_READY |
+
+v0.13 procedural skills remain canonical and are now explicitly downstream of provider-quality selection when final visual quality matters.
+
 ## v0.12 registry additions and precedence
 
 These skills have precedence over weaker v0.11/v0.10 execution routes:
