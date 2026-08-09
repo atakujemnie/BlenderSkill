@@ -2,19 +2,7 @@
 
 ## Purpose
 
-v0.11 makes Shape Graph state executable rather than advisory.
-
-The Lafar Street Lamp v0.10 benchmark exposed a hard loophole:
-
-```text
-SHAPE_GRAPH = PASS
-ready_nodes = []
--> asset-local builder still created RDL0..RDL5 in one run
-```
-
-That is forbidden in v0.11.
-
-## Fundamental rule
+Shape Graph state is executable rather than advisory.
 
 Production geometry mutation requires all of:
 
@@ -31,16 +19,9 @@ No `READY_TO_BUILD` node means no production geometry mutation.
 
 ## Eligibility is not authorization
 
-`SHAPE_GRAPH` may report a node as `eligible_nodes` when:
-- its contract is complete;
-- parent/dependencies are accepted;
-- prior RDL barriers are closed.
-
-Eligibility means only that an authorization may be requested.
-
 ```text
 CONSTRAINED
--> eligible
+-> Shape Graph eligible
 -> EXECUTION_AUTHORIZATION_GATE
 -> persist READY_TO_BUILD
 -> can_mutate
@@ -48,21 +29,22 @@ CONSTRAINED
 
 Do not treat `CONSTRAINED`, `DIRTY`, `FAIL` or `UNVERIFIED` as build permission.
 
-## BUILT_UNVERIFIED hard barrier
+## v0.12 post-mutation boundary
 
-After mutation:
+Authorization permits the mutation; it does not prove its result.
 
 ```text
 READY_TO_BUILD
 -> build/repair current node only
--> BUILT_UNVERIFIED
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: BUILT_UNVERIFIED
 -> STOP branch
--> QA + source-anchored proof
+-> source QA + ASSEMBLY_INTEGRITY_GATE where required
 -> RECONSTRUCTION_NODE_GATE
 -> ACCEPTED | UNVERIFIED | FAIL
 ```
 
-A `BUILT_UNVERIFIED` parent never unlocks children.
+A Boolean/transform/loft operation that returns normally but fails its geometric postcondition cannot reach `BUILT_UNVERIFIED`.
 
 ## Required authorization record
 
@@ -81,15 +63,18 @@ The asset-local builder may not fabricate this record.
 
 ## Mutation wrapper
 
-Every builder entry point must conceptually perform:
+Every builder entry point conceptually performs:
 
 ```text
 can_mutate(node_id, authorization)
 -> FAIL: return before bpy/BMesh mutation
--> PASS: open one-node transaction
+-> PASS: capture before metrics
+-> mutate one node
+-> capture after metrics
+-> MUTATION_POSTCONDITION_GATE
 ```
 
-A convenience `build_all()` may exist only as a replay/orchestrator that requests and closes each node gate sequentially. It may never call all node functions directly.
+A convenience `build_all()` may exist only as an orchestrator that requests and closes each node transaction sequentially.
 
 ## Failure classes
 
@@ -100,8 +85,7 @@ A convenience `build_all()` may exist only as a replay/orchestrator that request
 - `AUTHORIZATION_GRAPH_REVISION_MISMATCH`
 - `AUTHORIZATION_NODE_MISMATCH`
 - `AUTHORIZATION_ACTION_MISMATCH`
-
-Any one blocks mutation.
+- downstream `MUTATION_POSTCONDITION_REQUIRED`
 
 ## Canonical executor
 
