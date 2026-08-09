@@ -65,7 +65,8 @@ def main() -> None:
     assert loft_report["status"] == "PASS" and loft_report["section_count"] == 3 and loft_report["sample_count"] == 8 and loft_report["vertex_count"] == 24
 
     completion_proof = {"status": "PASS", "evidence_kind": "RECON_FIDELITY_GATE", "provenance_id": "recon"}
-    checks = {"shape_graph_validation": "PASS", "rdl_stage_barriers": "PASS", "hard_dimensions": "PASS", "canonical_silhouettes": "PASS", "must_features": "PASS", "multi_view_gate": "PASS", "appearance_fidelity_gate": "NOT_REQUIRED", "reconstruction_fidelity_gate": completion_proof}
+    integrity_proof = {"status": "PASS", "evidence_kind": "GEOMETRIC_INTEGRITY_GATE", "provenance_id": "integrity"}
+    checks = {"shape_graph_validation": "PASS", "rdl_stage_barriers": "PASS", "hard_dimensions": "PASS", "canonical_silhouettes": "PASS", "must_features": "PASS", "multi_view_gate": "PASS", "appearance_fidelity_gate": "NOT_REQUIRED", "geometric_integrity_gate": integrity_proof, "reconstruction_fidelity_gate": completion_proof}
     done = completion.evaluate_completion(checks, target_level="RECONSTRUCTION_COMPLETE")
     assert done["status"] == "PASS", done
     checks.pop("rdl_stage_barriers")

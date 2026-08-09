@@ -4,9 +4,9 @@
 
 A reconstruction state machine is useless if state exists only in comments or transient Python variables.
 
-v0.11 requires a persistent checkpoint separating design state, appearance state and evidence.
+Persistent checkpoints separate design state, appearance state, assembly state and evidence.
 
-## Canonical node states
+## Canonical states
 
 ```text
 DECLARED
@@ -26,15 +26,16 @@ DIRTY
 SUPERSEDED
 ```
 
-`UNVERIFIED` is now a canonical state rather than only a gate return value.
-
 ## Transition ownership
 
 - `DECLARED -> CONSTRAINED`: planner/contract completion;
-- `CONSTRAINED -> READY_TO_BUILD`: only with `EXECUTION_AUTHORIZATION_GATE`;
-- `READY_TO_BUILD -> BUILT_UNVERIFIED`: one-node mutation artifact;
-- `BUILT_UNVERIFIED -> ACCEPTED`: only with `RECONSTRUCTION_NODE_GATE`;
+- `CONSTRAINED -> READY_TO_BUILD`: canonical `EXECUTION_AUTHORIZATION_GATE`;
+- authorized mutation occurs while node is `READY_TO_BUILD`;
+- `READY_TO_BUILD -> BUILT_UNVERIFIED`: requires `LOCAL_BUILDER` artifact **and** nested `MUTATION_POSTCONDITION_GATE: PASS` proof;
+- `BUILT_UNVERIFIED -> ACCEPTED`: only canonical `RECONSTRUCTION_NODE_GATE`;
 - `ACCEPTED -> DIRTY`: change-impact record required.
+
+A successful Python return without geometric postcondition cannot advance state.
 
 ## Checkpoint schema
 
@@ -43,7 +44,8 @@ asset_id: LAFAR_3470
 state_revision: state_018
 graph_revision: sg_012
 appearance_revision: ac_007
-current_rdl: RDL1
+assembly_revision: assembly_004
+current_rdl: RDL2
 shape_nodes:
   ARM:
     state: ACCEPTED
@@ -51,40 +53,51 @@ shape_nodes:
     last_transition_provenance: gate_arm_006
 appearance_owners:
   T_HEAD_BLUE_STRIP:
-    status: UNVERIFIED
-    host_revision: arm_006
+    status: PASS
+    hosts: [ARM]
 evidence:
+  mutation_arm_006:
+    type: MUTATION_POSTCONDITION
+    status: PASS
+    node_id: ARM
   gate_arm_006:
     type: NODE_GATE
+    status: PASS
+    node_id: ARM
+conflicts: {}
 history: []
 ```
 
 ## Separate namespaces
 
-Never mix:
-
-```text
-Shape Node IDs
-Appearance Owner IDs
-Evidence IDs
-```
-
-The lamp v0.10 builder recorded an Appearance Owner such as `D_SENSOR_LENSES` inside a generic `REPORT['nodes']` namespace. v0.11 forbids that ambiguity.
+Do not mix Shape Node IDs, Appearance Owner IDs, Assembly Relation IDs and Evidence IDs.
 
 ## Persistence rule
 
-After every state transition persist the checkpoint before requesting the next authorization.
+After every state transition persist checkpoint before requesting the next authorization. A scene reset/rebuild may be deterministic replay, but it does not reset acceptance history.
 
-A full scene reset/rebuild may be used for deterministic replay, but the orchestrator must restore and enforce canonical node states. Resetting Blender data is not permission to reset acceptance history.
+## v0.12 repair invalidation
 
-## Dirty propagation
+Do not manually dirty one node and leave descendants/evidence green.
 
-When an accepted node changes:
-- mark dependent geometry nodes `DIRTY` when their host relationship may change;
-- mark appearance owners tied to the old host revision `UNVERIFIED`;
-- keep unrelated accepted nodes reusable;
-- invalidate later RDL barriers that depended on the changed node.
+```text
+accepted host repair
+-> DEPENDENCY_INVALIDATOR
+-> changed node revision bump + DIRTY
+-> built descendants DIRTY
+-> unbuilt descendants BLOCKED
+-> hosted Appearance Owners UNVERIFIED
+-> old revision evidence SUPERSEDED
+-> later dependent barriers invalid
+```
 
-## Canonical executor
+Unrelated accepted branches remain reusable.
 
-`executors/node_state_store.py` validates transitions and checkpoint namespace integrity.
+## Evidence freshness
+
+Final reports must reference evidence bound to current node/graph/appearance/assembly revisions. `SUPERSEDED` proof stays in history but cannot satisfy a current gate.
+
+## Canonical executors
+
+- `executors/node_state_store.py` — transitions/checkpoint namespace integrity;
+- `executors/dependency_invalidator.py` — repair invalidation/supersession.

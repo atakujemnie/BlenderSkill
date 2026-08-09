@@ -1,5 +1,57 @@
 # Changelog
 
+## 0.12.0
+
+v0.12.0 is the **geometric integrity + mutation postcondition + adversarial validation** release, driven by the Lafar Street Lamp v0.11 repair benchmark.
+
+v0.11 enforced the intended reconstruction process and produced a fully green evidence chain, but human review still found a severe `ARM` / `SENSOR_MODULE` interpenetration that erased head detail. The initial containment guard also returned PASS on the known-broken geometry. The release therefore closes the gap between `correct process/evidence` and `physically correct geometry`.
+
+### Mutation postconditions
+- added `05_execution/76_MUTATION_POSTCONDITION_GATE.md` and `executors/mutation_postcondition_gate.py`;
+- `LOCAL_BUILDER: PASS` no longer authorizes `BUILT_UNVERIFIED` by itself;
+- risky mutations record before/after topology, volume/signature, transform and helper lifecycle;
+- silent Boolean no-op, wrong volume direction, unapplied transform and failed feature probes block the node;
+- `NODE_STATE_STORE` v0.2 requires canonical mutation-postcondition proof for `READY_TO_BUILD -> BUILT_UNVERIFIED`.
+
+### Assembly integrity
+- added `10_reconstruction/189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`;
+- added `executors/assembly_integrity_gate.py`;
+- junctions declare semantics such as `SHADOW_GAP`, `BUTT_JOINT`, `RECESSED_INSERT`, `FLUSH_MATE`, `CLEARANCE`, `EMBEDDED` and `WELDED` before validation;
+- measured gap/contact/embedding/interpenetration is evaluated against the declared relation;
+- generic overlap can no longer prove that two product parts are correctly joined.
+
+### Adversarial validation
+- added `10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md` and `executors/validator_negative_control.py`;
+- MUST validators require a known-good PASS and known-broken FAIL fixture before they can be trusted as acceptance evidence;
+- a validator that returns PASS on its own defect class is explicitly rejected as toothless.
+
+### Repair invalidation
+- added `05_execution/77_REPAIR_INVALIDATION_AND_EVIDENCE_SUPERSESSION.md` and `executors/dependency_invalidator.py`;
+- repairing an accepted host dirties/blocks dependent Shape Nodes, invalidates hosted Appearance Owners and marks old revision evidence `SUPERSEDED`;
+- unrelated accepted branches remain reusable;
+- stale green evidence cannot survive a geometry revision.
+
+### Topology and reference-mask hardening
+- `MESH_VALIDATE` now reports high-order, non-planar and concave n-gons plus signed closed volume;
+- non-planar n-gons and inverted closed volumes fail while planarity/concavity are classified rather than blanket-rejecting all n-gons;
+- `REFERENCE_OVERLAY_VALIDATE` v0.2 supports annotation exclusions and connected-component selection so dimension lines/leaders do not contaminate product silhouette evidence;
+- added `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md`.
+
+### Execution integration
+- `RECONSTRUCTION_NODE_GATE` v0.4 requires canonical mutation postcondition and assembly-integrity evidence for authorized production mutations;
+- state-machine precedence is now mutation -> postcondition -> `BUILT_UNVERIFIED` -> source QA/integrity -> canonical node gate;
+- added `08_scripts/99_GEOMETRIC_INTEGRITY_VALIDATION_PATTERN.md` and `11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md`.
+
+### Benchmark and tests
+- added benchmark `81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md`;
+- added `tools/test_v012_geometric_integrity.py`;
+- regression covers broken-vs-fixed sensor/arm relation, silent Boolean no-op, toothless validator rejection, state-store postcondition enforcement and repair invalidation;
+- v0.9, v0.10 and v0.11 regression suites remain active.
+
+Canonical manifest version: **0.12.0**.
+Canonical module count: **242**.
+Canonical benchmark: **81 — Lafar Street Lamp v0.11 Geometric Integrity Regression**.
+
 ## 0.11.0
 
 v0.11.0 is the **enforced reconstruction execution + reference-conflict closure** release, driven by the Lafar Street Lamp v0.10 benchmark.

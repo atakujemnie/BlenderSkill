@@ -2,12 +2,8 @@ from __future__ import annotations
 
 """Pure-Python completion gate for Blender asset agents.
 
-v0.7: Level D requires target-engine evidence.
-v0.8: Level A requires proof-bearing fidelity; Level C requires package proof.
-v0.9: Level A additionally requires Shape Graph validation and RDL barriers.
-v0.10: Level A requires explicit APPEARANCE_FIDELITY_GATE disposition. For
-        lower target fidelity it must be NOT_REQUIRED rather than silently
-        omitted; for L4/L5 it must be proof-bearing PASS.
+v0.12: Level A also requires typed GEOMETRIC_INTEGRITY_GATE proof. A reference-
+fidelity PASS cannot compensate for invalid physical geometry.
 """
 
 from collections.abc import Mapping
@@ -26,14 +22,11 @@ LEVELS = (
     "PIPELINE_INTEGRATED",
 )
 
-ENGINE_RUNTIME_EVIDENCE_KINDS = {
-    "ENGINE_PRODUCTION_LOADER",
-    "ENGINE_REGRESSION_TEST",
-    "ENGINE_INSTANTIATION",
-}
+ENGINE_RUNTIME_EVIDENCE_KINDS = {"ENGINE_PRODUCTION_LOADER", "ENGINE_REGRESSION_TEST", "ENGINE_INSTANTIATION"}
 
 TYPED_EVIDENCE_REQUIREMENTS = {
     "appearance_fidelity_gate": {"APPEARANCE_FIDELITY_GATE"},
+    "geometric_integrity_gate": {"GEOMETRIC_INTEGRITY_GATE"},
     "reconstruction_fidelity_gate": {"RECON_FIDELITY_GATE"},
     "runtime_package_validation": {"RUNTIME_PACKAGE_VALIDATE"},
 }
@@ -47,6 +40,7 @@ DEFAULT_REQUIREMENTS: dict[str, tuple[str, ...]] = {
         "must_features",
         "multi_view_gate",
         "appearance_fidelity_gate",
+        "geometric_integrity_gate",
         "reconstruction_fidelity_gate",
     ),
     "MODELING_COMPLETE": (
@@ -114,12 +108,8 @@ def _blocker(key: str, value) -> dict:
     return item
 
 
-def evaluate_completion(
-    checks: Mapping[str, object],
-    *,
-    target_level: str,
-    requirements: Mapping[str, Sequence[str]] = DEFAULT_REQUIREMENTS,
-) -> dict:
+def evaluate_completion(checks: Mapping[str, object], *, target_level: str,
+                        requirements: Mapping[str, Sequence[str]] = DEFAULT_REQUIREMENTS) -> dict:
     if target_level not in LEVELS:
         raise ValueError(f"target_level must be one of {LEVELS}")
 
@@ -151,13 +141,8 @@ def evaluate_completion(
     for level in LEVELS[: target_index + 1]:
         blockers.extend(missing_by_level.get(level, []))
 
-    return {
-        "status": target_status,
-        "target_level": target_level,
-        "highest_passed_level": highest_passed,
-        "levels": level_results,
-        "blockers": blockers,
-        "can_claim_done": target_status == PASS,
-        "runtime_evidence_kinds": sorted(ENGINE_RUNTIME_EVIDENCE_KINDS),
-        "typed_evidence_requirements": {key: sorted(value) for key, value in TYPED_EVIDENCE_REQUIREMENTS.items()},
-    }
+    return {"status": target_status, "target_level": target_level,
+            "highest_passed_level": highest_passed, "levels": level_results,
+            "blockers": blockers, "can_claim_done": target_status == PASS,
+            "runtime_evidence_kinds": sorted(ENGINE_RUNTIME_EVIDENCE_KINDS),
+            "typed_evidence_requirements": {key: sorted(value) for key, value in TYPED_EVIDENCE_REQUIREMENTS.items()}}

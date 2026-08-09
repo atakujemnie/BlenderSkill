@@ -1,11 +1,11 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
-  "benchmark": "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -14,9 +14,10 @@
     "07_examples/77_LAFAR_WAYFINDING_PYLON_VISUAL_FIDELITY_REGRESSION_BENCHMARK.md",
     "07_examples/78_LAFAR_WAYFINDING_PYLON_SHAPE_GRAPH_REGRESSION_BENCHMARK.md",
     "07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md",
-    "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md"
+    "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
+    "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 234,
+  "module_count": 243,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -251,7 +252,16 @@
     "10_reconstruction/186_APPEARANCE_OWNER_COVERAGE_AND_REPORT_NAMESPACES.md",
     "10_reconstruction/187_RDL_DIAGNOSTIC_GEOMETRY_AND_NEUTRAL_SHADING.md",
     "10_reconstruction/188_CANONICAL_SKILL_RUNTIME_PINNING_AND_ANALYSIS_REUSE.md",
-    "11_playbooks/119_CIVIC_STREET_LAMP.md"
+    "11_playbooks/119_CIVIC_STREET_LAMP.md",
+    "05_execution/76_MUTATION_POSTCONDITION_GATE.md",
+    "05_execution/77_REPAIR_INVALIDATION_AND_EVIDENCE_SUPERSESSION.md",
+    "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
+    "08_scripts/99_GEOMETRIC_INTEGRITY_VALIDATION_PATTERN.md",
+    "10_reconstruction/189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md",
+    "10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md",
+    "10_reconstruction/191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md",
+    "11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md",
+    "05_execution/78_GEOMETRIC_INTEGRITY_GATE.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository"

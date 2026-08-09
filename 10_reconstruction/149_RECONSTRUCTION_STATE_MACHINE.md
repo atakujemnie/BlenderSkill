@@ -1,193 +1,199 @@
 # Reconstruction State Machine
 
+## v0.12 integrity amendment
+
+Every production-node mutation now has two independent closure layers:
+
+```text
+execution permission
+-> actual mutation postcondition
+-> reference/assembly/topology proof
+```
+
+A node cannot reach `BUILT_UNVERIFIED` unless `MUTATION_POSTCONDITION_GATE` proves the intended geometry change actually occurred. A node cannot reach `ACCEPTED` unless required source evidence and Assembly Relations are valid. Final Level A also requires `GEOMETRIC_INTEGRITY_GATE`.
+
+Repairing accepted geometry first routes through `DEPENDENCY_INVALIDATOR` so descendants, Appearance Owners and old evidence cannot remain falsely green.
+
 ## R0 — INGEST
-Zapis źródeł i segmentów.
+
+Register sources/segments and stable source IDs.
 
 ## R1 — CLASSIFY EVIDENCE
-Projection, view, material/detail/text.
+
+Classify projection/view/material/detail/text/annotation evidence.
+
+For technical sheets distinguish product pixels from dimension lines/leaders/text when they contaminate QA.
 
 ## R2 — AUTHORITY
-Evidence + View Authority Matrix.
+
+Resolve property-level authority and conflicts. Do not use one global `card wins` rule for unrelated properties.
 
 ## R3 — REGISTER
-Skala, osie, image planes, camera.
+
+Physical scale, axes, datums, image planes/cameras, global registrations. No local candidate warp for acceptance.
 
 ## R4 — CONSTRAIN
-Dimension Graph, landmarks, Feature Contract.
 
-## R5 — DECOMPOSE + SHAPE GRAPH
+Dimension Graph, landmarks, Feature Contract, derived-parameter provenance.
 
-Obowiązkowe:
-- decompose asset na G0–G5 design forms;
-- zbuduj `Reconstruction Shape Graph`;
-- przypisz parent/dependencies;
-- sklasyfikuj shape representation każdego required node;
-- przypisz RDL;
-- przypisz authoritative views i controlled properties;
-- zdefiniuj node validation contracts.
+## R5 — DECOMPOSE + SHAPE / APPEARANCE / ASSEMBLY CONTRACTS
 
-`SHAPE_GRAPH` musi przejść structural validation przed produkcyjnym modelowaniem.
+Required:
+- decompose G0–G5 forms;
+- build Reconstruction Shape Graph;
+- assign parents/dependencies/RDL/shape representation;
+- assign authoritative views/properties;
+- define node validation contracts;
+- for L4/L5 build Reference Appearance Contract;
+- define semantic Assembly Relations for important multi-part junctions.
 
-Nie pisz monolitycznego build scriptu tworzącego G1–G5 w tym stanie.
+Shape Graph must structurally PASS before production geometry.
 
 ## R6 — RDL0 ENVELOPE
-Bounds + contact datum + minimal silhouette carrier.
 
-Wymagany proof przed advance:
+Create actual neutral diagnostic geometry for envelope/contact datum/axes.
+
+Proof:
 - numeric bounds;
-- registered envelope evidence dla authoritative FRONT/SIDE/TOP;
-- QA scene isolation;
+- registered FRONT/SIDE/TOP as authoritative;
+- QA isolation;
 - `RDL0_BARRIER: PASS`.
 
 ## R7 — RDL1 PRIMARY FORMS
 
-Buduj **node po node**:
+For each eligible G1 node:
 
 ```text
-ready G1 node
--> build only node
--> required canonical views
--> numeric/section checks
+EXECUTION_AUTHORIZATION_GATE
+-> READY_TO_BUILD
+-> before snapshot
+-> mutate node only
+-> after snapshot
+-> MUTATION_POSTCONDITION_GATE
+-> BUILT_UNVERIFIED
+-> required source QA + topology/assembly proof
 -> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL
+-> ACCEPTED | FAIL | UNVERIFIED
 ```
 
-Obejmuje:
-- primary body/shell;
-- base/plinth;
-- major structural shoulder/transition;
-- primary negative space.
+Includes primary shell/body, base/plinth, structural transitions and primary negative spaces.
 
-Po wszystkich required nodes:
-`RDL1_STAGE_BARRIER`.
-
-Nie wolno budować RDL2 przy FAIL required G1 node.
+All required G1 accepted -> `RDL1_STAGE_BARRIER`.
 
 ## R8 — RDL2 SECONDARY STRUCTURAL FORMS
 
-Buduj oddzielnie:
-- frames;
-- display housing/recess mass;
-- utility housing;
-- large service panels;
-- major trims/inserts.
+Build frames, housings, service assemblies, major trims/inserts and design-defining junction participants one node at a time.
 
-Każdy node ma własny required-view gate.
+Instantiate/validate relevant Appearance Owners and Assembly Relations. Outer silhouette alone does not close this state.
 
-Po wszystkich required nodes:
-`RDL2_STAGE_BARRIER`.
+All required G2 accepted -> `RDL2_STAGE_BARRIER`.
 
 ## R9 — RDL3 STRUCTURAL FEATURES
 
-Panels, openings, recesses, vents, structural grooves, light channels, handles, layered assemblies.
+Panels, openings, recesses, vents, grooves, light channels, handles, layered assemblies.
 
-Leaf skills mogą być używane dopiero, gdy host node jest `ACCEPTED`.
+Leaf skill only on ACCEPTED host.
 
-Wymagany proof odpowiedni do feature class:
-- ROI;
-- numeric depth/position;
-- visibility/layer stack;
-- panel-line/path contract;
-- regression outside expected-change region.
+Destructive Boolean/recess operation must prove mutation bite before source QA. Feature proof may include ROI, depth/position, layer stack, panel path and outside-region regression.
 
-Po required nodes:
-`RDL3_STAGE_BARRIER`.
+All required G3 accepted -> `RDL3_STAGE_BARRIER`.
 
 ## R10 — RDL4 EDGE LANGUAGE
 
-Bevel, fillet, chamfer, corner radius, tangency, SubD support geometry.
+Bevel/fillet/chamfer/corner radius/tangency/SubD support only after accepted form.
 
-Rule:
-
-```text
-correct shape first
--> edge treatment second
-```
-
-RDL4 nie może kompensować błędu RDL1/RDL2.
-
-Po edge treatment re-check:
+Validate:
+- source edge family;
 - protected dimensions;
-- canonical silhouette;
-- local feature boundaries.
+- silhouette/boundaries;
+- topology risk after destructive edge work.
 
-`RDL4_STAGE_BARRIER` przed surface detail.
+`RDL4_STAGE_BARRIER` before surface finish.
 
 ## R11 — RDL5 SURFACE / DETAIL
 
-Branding, decals, microgeometry, materials, texture direction, weathering, emissive finish.
+Branding, decals, materials, texture direction, weathering, emissive finish and required micro/meso detail.
 
-Readable branding/text wymaga canonical orientation proof z project handedness gdy dotyczy.
+For material-only operations geometry signature should remain stable. L4/L5 requires material appearance/segmentation evidence and Appearance Owner closure.
 
-Dla target fidelity L4/L5 wymagany material segmentation proof.
+## R12 — GEOMETRIC INTEGRITY + MULTIVIEW / APPEARANCE FIDELITY
 
-RDL5 może mieć jawne deferred items zależnie od requested completion level, ale nie może zmieniać accepted primary form bez dirty propagation.
+First physical closure:
 
-## R12 — MULTIVIEW QA + RECONSTRUCTION FIDELITY GATE
+```text
+current node revisions
+-> all required mutation postconditions PASS
+-> all MUST Assembly Relations PASS
+-> required topology records PASS
+-> required validator negative controls PASS
+-> zero stale/superseded evidence in current bundle
+-> GEOMETRIC_INTEGRITY_GATE
+```
 
-Kolejność:
+Then source/appearance closure:
 
 ```text
 Shape Graph revision validation
 -> all required node gates accepted
--> RDL stage barriers pass
+-> RDL barriers
 -> QA_SCENE_ISOLATE
--> registered canonical view validators
--> hard dimensions
--> primary landmarks/proportions
--> MUST feature evidence
--> material segmentation when required
+-> registered canonical views
+-> hard dimensions / landmarks
+-> MUST features
+-> Appearance Contract closure for L4/L5
+-> APPEARANCE_FIDELITY_GATE for L4/L5
 -> authority/deviation closure
 -> RECON_FIDELITY_GATE
 ```
 
-`RECON_FIDELITY_GATE` musi zwrócić proof-bearing PASS z provenance.
-
-Bare `PASS`, `looks correct`, `matching the card` albo poprawny overall envelope nie pozwalają wejść do runtime.
+A perfect overlay cannot compensate for invalid physical geometry.
 
 ## R13 — TOPOLOGY / RUNTIME PREP
 
-Dopiero tutaj:
-- topology cleanup/freeze;
+Only after required reconstruction gates PASS:
+- production topology cleanup/freeze;
 - UV;
 - runtime LOD;
 - collision;
 - bake;
 - runtime material closure.
 
-Ten etap jest niedostępny przy wcześniejszym barrier/fidelity FAIL.
-
 ## R14 — EXPORT VALIDATION
 
-Sprawdź:
-- package readback;
-- runtime primitive attributes;
-- node transform policy;
-- export round-trip dimensions/contact;
-- target engine evidence dopiero dla Level D.
+Validate package/readback, primitive attributes, node transform policy, export round-trip dimensions/contact and target-engine evidence for Level D.
 
-## Backtracking
+## Repair/backtracking
 
-Każdy FAIL wraca do najwcześniejszego właściciela problemu.
+Every FAIL routes to earliest owner.
 
-Przykłady:
+If accepted geometry changes:
 
 ```text
-SIDE primary contour FAIL
--> current G1 node / RDL1
+change intent
+-> DEPENDENCY_INVALIDATOR
+-> affected node revisions/states updated
+-> Appearance Owners UNVERIFIED
+-> old evidence SUPERSEDED
+-> rebuild affected closure
+```
 
-base FRONT okay + SIDE/TOP corner fail after corrected retry
+Examples:
+
+```text
+Boolean modifier applied but recess absent
+-> current node mutation / MUTATION_POSTCONDITION_GATE
+
+sensor housing pierces arm despite good side overlay
+-> J_SENSOR_ARM / ASSEMBLY_INTEGRITY_GATE
+
+validator passes known-broken overlap fixture
+-> VALIDATOR_NEGATIVE_CONTROL / validator implementation
+
+SIDE primary contour second FAIL
 -> SHAPE_CLASSIFY representation review
--> possible MULTI_SECTION_LOFT
 
-DISPLAY_RECESS host FAIL
--> RDL2; do not continue to glass/content
-
-PANEL_LINE FAIL because host surface wrong
--> parent G1/G2 owner, not HS_PANEL_LINE tweaking
-
-mirrored rear technical decal
--> RDL5 branding orientation owner
+technical-sheet leader pollutes contour
+-> reference mask annotation exclusion, not candidate warp
 
 missing TEXCOORD_0 after export
 -> runtime package/UV owner
@@ -195,20 +201,19 @@ missing TEXCOORD_0 after export
 
 ## Monolithic-build prohibition
 
-Regresja v0.9:
+Forbidden:
 
 ```text
-analyze
--> build body + base + screen + vents + logo + bevel + materials
--> one QA render
+analyze -> build G1..G5 -> one QA -> accept
 ```
 
 Canonical:
 
 ```text
-understand hierarchy
--> build one form
--> prove it
--> commit node acceptance
+understand hierarchy/relations
+-> authorize one form
+-> prove mutation
+-> prove source + physical integrity
+-> accept current revision
 -> continue coarse-to-fine
 ```

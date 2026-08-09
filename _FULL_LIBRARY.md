@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.11.0 — Full compiled snapshot
+# Blender AI Agent Library v0.12.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -131,6 +131,29 @@ Wyjątek: wymaganie runtime lub jawna decyzja projektowa.
 ## FILE: `00_governance/02_STATE_MACHINE.md`
 
 # Agent State Machine
+
+## v0.12 geometric-integrity amendment
+
+This amendment has precedence over v0.11 where the rules differ.
+
+Canonical production-node transition is now:
+
+```text
+DECLARED -> CONSTRAINED
+CONSTRAINED -> READY_TO_BUILD          only via EXECUTION_AUTHORIZATION_GATE
+READY_TO_BUILD -> authorized mutation
+mutation -> MUTATION_POSTCONDITION_GATE
+MUTATION_POSTCONDITION_GATE PASS -> BUILT_UNVERIFIED
+BUILT_UNVERIFIED -> source QA + ASSEMBLY_INTEGRITY_GATE
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | UNVERIFIED | FAIL
+```
+
+`LOCAL_BUILDER: PASS` is never enough to reach `BUILT_UNVERIFIED`. An authorized mutation must prove that its intended geometric postcondition actually occurred. For assembly nodes, semantic relation integrity is non-compensating: unintended interpenetration, invalid gap/contact/embedding or a missing relation contract blocks acceptance.
+
+When an accepted host is repaired, run `DEPENDENCY_INVALIDATOR` before new work: affected descendants become `DIRTY/BLOCKED`, hosted Appearance Owners become `UNVERIFIED`, and revision-bound evidence becomes `SUPERSEDED`. Stale green evidence cannot survive a geometry revision.
+
+---
 
 ## v0.11 execution-enforcement amendment
 
@@ -349,6 +372,54 @@ Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześ
 
 # Knowledge Router
 
+## v0.12 geometric-integrity routing override
+
+This section has precedence over v0.11/v0.10 sequences later in this document while preserving their specialized routes.
+
+```text
+runtime pin
+-> reference evidence/calibration/conflict arbitration
+-> Shape Graph + Appearance Contract + Assembly Relation Contract
+-> eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> capture before metrics
+-> mutate exactly one node
+-> capture after metrics
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
+-> per-view source proof
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> topology/section/layer proof as required
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> RDL barrier
+```
+
+After required nodes close:
+
+```text
+current mutation postconditions
++ Assembly Relation closure
++ topology records
++ required validator negative controls
++ zero stale/superseded evidence in current bundle
+-> GEOMETRIC_INTEGRITY_GATE
+-> APPEARANCE_FIDELITY_GATE when required
+-> RECON_FIDELITY_GATE
+-> runtime
+```
+
+Hard v0.12 routes:
+- builder returns normally but intended geometry did not change -> `MUTATION_POSTCONDITION_GATE`;
+- parts pierce/z-fight or gap/contact is wrong -> semantic Assembly Relation + `ASSEMBLY_INTEGRITY_GATE`;
+- validator returns PASS on known-broken fixture -> `VALIDATOR_NEGATIVE_CONTROL`, validator cannot own MUST acceptance;
+- accepted host repair -> `DEPENDENCY_INVALIDATOR` before rebuild; old proof becomes `SUPERSEDED`;
+- technical-sheet annotations contaminate silhouette -> `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md` + reference mask controls;
+- final physical closure -> `GEOMETRIC_INTEGRITY_GATE`; visual/reference success cannot compensate for physical failure.
+
+---
+
 ## v0.11 routing override
 
 This section has precedence over the v0.10 execution routing later in the document.
@@ -424,6 +495,8 @@ Required outputs:
 
 Po `ANALYZE: PASS` nie wracaj do broad exploration bez konkretnego conflict/ROI/source update.
 
+v0.12 additionally routes incompatible property interpretations through `REFERENCE_CONFLICT_RESOLVER` and contaminated technical-sheet masks through annotation/component cleanup before overlay metrics.
+
 ## 2. Shape understanding — mandatory before production geometry
 
 Use `RECON_SHAPE_GRAPH_PLAN`.
@@ -459,7 +532,8 @@ Load:
 - `180_REFERENCE_APPEARANCE_CONTRACT.md`;
 - `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
 - `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`.
+- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
+- v0.12 `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`.
 
 Required output:
 - Appearance Contract revision;
@@ -470,9 +544,10 @@ Required output:
 - edge families;
 - material/emissive regions;
 - detail inventory by region;
-- source reference/ROI per owner.
+- source reference/ROI per owner;
+- semantic Assembly Relation for important multi-part junctions.
 
-Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette.
+Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette. Do not encode `junction = overlap` without source/manufacturing authority.
 
 ## 4. RDL0 envelope
 
@@ -492,17 +567,24 @@ No detail skills.
 
 Use `RECON_NODE_BUILD` **one Shape Node at a time**.
 
-Canonical loop:
+Canonical v0.12 loop amends the preserved shape route:
 
 ```text
-SHAPE_GRAPH ready node
+SHAPE_GRAPH eligible node
 -> choose representation skill
+-> EXECUTION_AUTHORIZATION_GATE
+-> READY_TO_BUILD
+-> capture before
 -> build/repair current node only
+-> capture after
+-> MUTATION_POSTCONDITION_GATE
+-> BUILT_UNVERIFIED
 -> QA_SCENE_ISOLATE
 -> canonical registered required-view validation
 -> numeric/section checks
+-> ASSEMBLY_INTEGRITY_GATE where touched
 -> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL
+-> ACCEPTED | FAIL | UNVERIFIED
 ```
 
 Strict node acceptance requires canonical validator records. A builder-local `Gate.accept()` is not equivalent.
@@ -562,7 +644,7 @@ At this stage also instantiate/validate Appearance Contract owners for:
 - trim paths;
 - junctions.
 
-Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence.
+Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence and `ASSEMBLY_INTEGRITY_GATE` for physical relation semantics.
 
 Required G2 stage barrier before RDL3.
 
@@ -581,6 +663,8 @@ For reference reconstruction, visible structural detail must also close its Appe
 
 No host acceptance -> feature `BLOCKED`.
 
+Under v0.12 destructive recess/Boolean mutations additionally require `MUTATION_POSTCONDITION_GATE: PASS` before `BUILT_UNVERIFIED`.
+
 ## 9. RDL4 edge language
 
 Load:
@@ -597,7 +681,7 @@ shape first
 -> reference-anchored edge proof
 ```
 
-Do not pass RDL4 only because protected dimensions survived bevel.
+Do not pass RDL4 only because protected dimensions survived bevel. Re-run topology integrity after destructive edge work.
 
 ## 10. RDL5 surface/detail
 
@@ -614,6 +698,8 @@ Use:
 - `MATERIAL_FINISH_CIVIC`;
 - `LAYER_STACK_VALIDATE`;
 - branding/decal validators.
+
+Material-only mutations should preserve geometry signature.
 
 ## 11. Appearance final gate
 
@@ -633,7 +719,7 @@ A high global score cannot compensate for a MUST category failure.
 
 ## 12. Reconstruction final gate
 
-Use:
+Under v0.12 first aggregate current physical proof through `GEOMETRIC_INTEGRITY_GATE`, then use:
 - `QA_SCENE_ISOLATE`;
 - `REFERENCE_OVERLAY_VALIDATE`;
 - `APPEARANCE_REFERENCE_VALIDATE`;
@@ -642,7 +728,7 @@ Use:
 - `APPEARANCE_FIDELITY_GATE` for L4/L5;
 - `RECON_FIDELITY_GATE`.
 
-Runtime is forbidden while final gate is FAIL/UNVERIFIED.
+Runtime is forbidden while any required geometric/appearance/reconstruction gate is FAIL/UNVERIFIED.
 
 ---
 
@@ -672,6 +758,8 @@ Strict reference-derived evidence requires:
 - `source_reference_id(s)`;
 - `registration_id` for projected evidence.
 
+v0.12 adds: new MUST validators require a known-good PASS and known-broken FAIL through `VALIDATOR_NEGATIVE_CONTROL`.
+
 ---
 
 # Existing specialized routes
@@ -683,7 +771,7 @@ Strict reference-derived evidence requires:
 `SUBD_TOPOLOGY_CONTROL` + topology/normals rules.
 
 ## Mesh validation
-`MESH_VALIDATE`. Every mesh declares topology intent.
+`MESH_VALIDATE`. Every mesh declares topology intent. v0.12 additionally classifies signed volume, non-planar/concave/high-order n-gon risk; assembly interpenetration remains owned by `ASSEMBLY_INTEGRITY_GATE`.
 
 ## Civic material finish
 `MATERIAL_FINISH_CIVIC`; no uniform global grunge.
@@ -705,6 +793,8 @@ Use stable semantic part IDs. Missing atlas assignment = FAIL.
 ## Local repair after accepted runtime stages
 `PIPELINE_DAG_PLAN` before replaying build/bake/export. Execute dirty dependency closure only.
 
+For reconstruction repairs, first use `DEPENDENCY_INVALIDATOR` to supersede stale Shape/Appearance/Evidence proof.
+
 ---
 
 # Game-ready finishing
@@ -712,6 +802,8 @@ Use stable semantic part IDs. Missing atlas assignment = FAIL.
 Use `GAME_READY_FINISH` only after:
 
 ```text
+GEOMETRIC_INTEGRITY_GATE PASS
+and
 Shape/RDL proof PASS
 and
 APPEARANCE_FIDELITY_GATE PASS when required
@@ -773,6 +865,18 @@ Blender glTF import = Level C round-trip evidence, not Level D.
 # Failure routing principles
 
 ```text
+builder runs but intended recess/feature absent
+-> MUTATION_POSTCONDITION_GATE
+
+parts pierce/z-fight / gap-contact wrong
+-> Assembly Relation + ASSEMBLY_INTEGRITY_GATE
+
+validator passes known-broken fixture
+-> VALIDATOR_NEGATIVE_CONTROL
+
+accepted host repaired
+-> DEPENDENCY_INVALIDATOR
+
 outer silhouette passes but product still looks wrong
 -> Appearance Contract / part boundaries / edge/material/detail owners
 
@@ -787,6 +891,9 @@ child feature fails because host contour wrong
 
 trim exists but looks like a highlight / wrong path
 -> PART_BOUNDARY_TRIM_JUNCTION + APPEARANCE_REFERENCE_VALIDATE
+
+technical-sheet leader/text contaminates product mask
+-> annotation exclusion/component filter
 
 correct source geometry + exported dimension fail
 -> EXPORT_ROUNDTRIP_VALIDATE
@@ -808,7 +915,7 @@ Use:
 
 ```text
 compute locally
--> compact node/appearance/stage report
+-> compact node/appearance/assembly/stage report
 -> decision
 ```
 
@@ -821,28 +928,6 @@ Do not return raw arrays/full logs/full generated scripts unless diagnostic need
 
 # Semantic Skill Registry
 
-## v0.11 registry additions and precedence
-
-The following skills are canonical additions. They have precedence over any v0.10 routing sequence later in this document where the rules conflict.
-
-| Skill ID | Purpose | Canonical implementation | Maturity |
-|---|---|---|---|
-| `REFERENCE_CONFLICT_RESOLVER` | per-property multi-view arbitration | `184_REFERENCE_CONFLICT_ARBITRATION.md`; `executors/reference_conflict_resolver.py` | CONTRACT_READY |
-| `EXECUTION_AUTHORIZATION_GATE` | hard permission for one geometry mutation | `05_execution/73`; `executors/execution_authorization_gate.py` | CONTRACT_READY |
-| `NODE_STATE_STORE` | persistent transition/checkpoint validation | `05_execution/74`; `executors/node_state_store.py` | CONTRACT_READY |
-| `APPEARANCE_OWNER_COVERAGE` | MUST-owner inventory and namespace closure | `186`; `executors/appearance_owner_coverage.py` | CONTRACT_READY |
-| `CANONICAL_SKILL_RUNTIME_PIN` | version/commit/single-root preflight | `188`; `executors/runtime_source_pin.py` | CONTRACT_READY |
-
-Canonical v0.11 order: eligible node -> authorization -> persisted READY_TO_BUILD -> one-node mutation -> BUILT_UNVERIFIED stop -> canonical node proof -> ACCEPTED. Local builders cannot self-authorize or self-accept.
-
----
-
-## Purpose
-
-Stable routing layer between user intent, reconstruction semantics, knowledge modules, executors and validation.
-
-Agent nie przechodzi bezpośrednio z natural-language request do ad-hoc `bpy`, jeśli zarejestrowany skill już opisuje operację.
-
 ## Execution maturity
 
 - `KNOWLEDGE_ONLY` — guidance exists, no stable execution contract.
@@ -850,137 +935,149 @@ Agent nie przechodzi bezpośrednio z natural-language request do ad-hoc `bpy`, j
 - `EXECUTOR_READY` — tested implementation callable through stable API.
 - `RUNTIME_BOUND` — executor mapped to current runtime tools.
 
-Nie claimuj wyższego maturity bez evidence.
+Do not claim higher maturity without evidence.
+
+## v0.12 registry additions and precedence
+
+These skills have precedence over weaker v0.11/v0.10 execution routes:
+
+| Skill ID | Purpose | Canonical implementation | Maturity |
+|---|---|---|---|
+| `MUTATION_POSTCONDITION_GATE` | prove an authorized geometry mutation actually produced its intended postcondition | `05_execution/76`; `executors/mutation_postcondition_gate.py` | CONTRACT_READY |
+| `ASSEMBLY_INTEGRITY_GATE` | relation-aware gap/contact/embedding/interpenetration validation | `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`; `executors/assembly_integrity_gate.py` | CONTRACT_READY |
+| `DEPENDENCY_INVALIDATOR` | propagate repair impact across Shape/Appearance/Evidence revisions | `05_execution/77`; `executors/dependency_invalidator.py` | CONTRACT_READY |
+| `VALIDATOR_NEGATIVE_CONTROL` | prove that a MUST validator rejects its known-broken failure fixture | `190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md`; `executors/validator_negative_control.py` | CONTRACT_READY |
+| `GEOMETRIC_INTEGRITY_GATE` | final non-compensating physical-geometry closure before fidelity/runtime | `05_execution/78`; `executors/geometric_integrity_gate.py` | CONTRACT_READY |
+
+Strengthened in v0.12:
+- `NODE_STATE_STORE` — requires mutation-postcondition proof before `BUILT_UNVERIFIED`;
+- `RECONSTRUCTION_NODE_GATE` — requires geometric integrity evidence for authorized production nodes;
+- `MESH_VALIDATE` — classifies non-planar/concave/high-order n-gons and signed closed volume;
+- `REFERENCE_OVERLAY_VALIDATE` — supports annotation exclusion/component filtering;
+- `RECON_FIDELITY_GATE` and `ASSET_COMPLETION` — require final geometric-integrity proof for L4/L5/Level A closure.
+
+Canonical production order:
+
+```text
+eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> NODE_STATE_STORE: READY_TO_BUILD
+-> one-node mutation
+-> MUTATION_POSTCONDITION_GATE
+-> NODE_STATE_STORE: BUILT_UNVERIFIED
+-> source QA
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> MESH_VALIDATE / section/layer evidence as required
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED
+```
+
+Before final fidelity/runtime:
+
+```text
+all required nodes/relations current
+-> GEOMETRIC_INTEGRITY_GATE
+-> APPEARANCE_FIDELITY_GATE when required
+-> RECON_FIDELITY_GATE
+-> runtime
+```
+
+Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST acceptance validators must have `VALIDATOR_NEGATIVE_CONTROL` proof before promotion to `EXECUTOR_READY`.
 
 ## Canonical registry
 
 | Skill ID | Purpose | Canonical knowledge | Maturity | Validation |
 |---|---|---|---|---|
-| `RECONSTRUCT_REFERENCE` | end-to-end reference reconstruction controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY | evidence, Shape Graph, Appearance Contract, RDL barriers, fidelity gates |
+| `RECONSTRUCT_REFERENCE` | end-to-end reference reconstruction controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY | evidence, Shape Graph, Appearance Contract, integrity, RDL barriers, fidelity gates |
 | `REFERENCE_MEASURE` | compact reference measurement | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`; `executors/reference_measure.py` | CONTRACT_READY | provenance, calibration, confidence |
-| `REFERENCE_OVERLAY_VALIDATE` | registered reference-vs-candidate silhouette/ROI comparison | `142`, `143`, `171`; `executors/reference_overlay_validate.py` | CONTRACT_READY | IoU, contour delta, MUST ROI |
-| `APPEARANCE_REFERENCE_VALIDATE` | reference-anchored internal boundary/trim/edge/material/detail validation | `180_REFERENCE_APPEARANCE_CONTRACT.md`, `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`, `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`, `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`, script pattern 96 | CONTRACT_READY | source reference + registration + owner-class metrics |
-| `SHAPE_GRAPH` | validate hierarchy/dependencies/readiness of design forms | `174_RECONSTRUCTION_SHAPE_GRAPH.md`, `95_SHAPE_GRAPH_VALIDATOR_PATTERN.md`; `executors/shape_graph.py` | CONTRACT_READY | DAG, levels, RDL, parent/dependency readiness, stage barrier |
-| `SHAPE_CLASSIFY` | choose mathematical representation before Blender technique | `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md` | CONTRACT_READY | evidence-backed shape class, rejected alternatives |
-| `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176_RECONSTRUCTION_NODE_CONTRACT.md`, `178_NODE_BY_NODE_MULTI_VIEW_VALIDATION.md`, `181`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, canonical validator IDs, source/registration, isolation, per-view evidence, numeric/section/regression |
-| `SECTION_LOFT_HARD_SURFACE` | deterministic multi-section base/shell/transition construction | `179_MULTI_SECTION_LOFT_AND_PROFILE_CAGE.md`, playbook 118; `executors/section_loft.py` | CONTRACT_READY | station ordering, sample correspondence, mesh data, multi-view/section proof |
-| `LAYER_STACK_VALIDATE` | visibility/order validation for layered assemblies | `172_VISIBLE_LAYER_STACK_CONTRACT.md`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
-| `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 appearance transition gate | `05_execution/72_APPEARANCE_FIDELITY_GATE.md`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | part boundaries, trim, junctions, edge families, material response, detail coverage, final matched views |
-| `RECON_FIDELITY_GATE` | final proof-bearing Level A transition gate | `05_execution/69_RECONSTRUCTION_FIDELITY_GATE.md`, `173`, `180`–`183`; `executors/fidelity_gate.py` | CONTRACT_READY | typed source-anchored evidence, canonical views, MUST features, appearance gate, authority closure |
-| `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45_AXISYMMETRIC_PROFILE_ASSET_PRIMITIVE.md`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
+| `REFERENCE_OVERLAY_VALIDATE` | registered source-vs-candidate silhouette/ROI comparison | `142`, `143`, `171`, `191`; `executors/reference_overlay_validate.py` | CONTRACT_READY | IoU, contour delta, MUST ROI, annotation-clean product mask |
+| `REFERENCE_CONFLICT_RESOLVER` | per-property multi-view arbitration | `184`; `executors/reference_conflict_resolver.py` | CONTRACT_READY | property authority, no silent averaging |
+| `SHAPE_GRAPH` | validate design hierarchy/dependencies/readiness/stage barriers | `174`; `executors/shape_graph.py` | CONTRACT_READY | DAG, levels, RDL, readiness |
+| `SHAPE_CLASSIFY` | choose mathematical representation before Blender technique | `177` | CONTRACT_READY | evidence-backed shape class, rejected alternatives |
+| `EXECUTION_AUTHORIZATION_GATE` | hard permission for exactly one geometry mutation | `05_execution/73`; `executors/execution_authorization_gate.py` | CONTRACT_READY | graph/node revision, dependencies, prior RDL |
+| `NODE_STATE_STORE` | persistent transition/checkpoint validation | `05_execution/74`; `executors/node_state_store.py` | CONTRACT_READY | canonical transitions, namespaces, mutation postcondition |
+| `MUTATION_POSTCONDITION_GATE` | validate actual effect of one mutation | `05_execution/76`; `executors/mutation_postcondition_gate.py` | CONTRACT_READY | before/after geometry, Boolean bite, transforms, volume, feature probe |
+| `ASSEMBLY_INTEGRITY_GATE` | physical relation integrity between product parts | `189`; `executors/assembly_integrity_gate.py` | CONTRACT_READY | semantic relation + gap/contact/embedding/interpenetration metrics |
+| `DEPENDENCY_INVALIDATOR` | invalidate downstream state/evidence after repair | `05_execution/77`; `executors/dependency_invalidator.py` | CONTRACT_READY | descendants, owners, revisions, supersession |
+| `VALIDATOR_NEGATIVE_CONTROL` | adversarial bite test for validators | `190`; `executors/validator_negative_control.py` | CONTRACT_READY | known-good PASS + known-broken FAIL |
+| `GEOMETRIC_INTEGRITY_GATE` | aggregate mutation/assembly/topology/control freshness before final fidelity | `05_execution/78`; `executors/geometric_integrity_gate.py` | CONTRACT_READY | postconditions, relations, topology, negative controls, stale evidence |
+| `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176`, `178`, `181`, `189`, `190`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, authorization, postcondition, assembly integrity, source proof |
+| `APPEARANCE_REFERENCE_VALIDATE` | internal boundary/trim/edge/material/detail validation | `180`–`183` | CONTRACT_READY | source reference + registration + owner-class metrics |
+| `APPEARANCE_OWNER_COVERAGE` | MUST Appearance Owner inventory closure | `186`; `executors/appearance_owner_coverage.py` | CONTRACT_READY | no missing/unverified MUST owners |
+| `SECTION_LOFT_HARD_SURFACE` | deterministic multi-section hard-surface construction | `179`; `executors/section_loft.py` | CONTRACT_READY | station order, correspondence, section proof |
+| `LAYER_STACK_VALIDATE` | layered assembly visibility/order | `172`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
+| `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 visible-product gate | `05_execution/72`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | boundaries, trim, junction, edge, material, detail |
+| `RECON_FIDELITY_GATE` | final proof-bearing Level A reconstruction gate | `05_execution/69`; `executors/fidelity_gate.py` | CONTRACT_READY | source-anchored evidence, canonical views, MUST features, geometric integrity |
+| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148`, `178`, `180`–`183`, `191` | CONTRACT_READY | node/stage/final evidence, appearance owners, cleaned product masks |
+| `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
 | `RADIAL_REPEAT` | repeated radial details | playbook 110; `executors/radial_repeat.py` | CONTRACT_READY | count, phase, annulus |
 | `HS_PANEL_LINE` | narrow seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | path/profile/topology |
 | `SUBD_TOPOLOGY_CONTROL` | Catmull-Clark cage design/repair | `blender-agent-subdivision-topology-control.md` | CONTRACT_READY | evaluated surface, pinching, continuity |
 | `TRIM_SHEET_UV` | trim-sheet UV strategy | `03_modeling/40_TRIM_SHEETS.md` | CONTRACT_READY | region/density/orientation |
-| `UV_ATLAS_CONTRACT` | stable atlas ownership across LODs | `04_game_ready/52_UV_ATLAS_LOD_STABILITY_CONTRACT.md`; `executors/uv_atlas_contract.py` | CONTRACT_READY | semantic part IDs, LOD consistency |
-| `MESH_VALIDATE` | contract-aware mesh audit | `08_scripts/92_MESH_CONTRACT_VALIDATOR_PATTERN.md`; `executors/mesh_validate.py` | EXECUTOR_READY | topology intent, manifold/boundaries/UV/tris |
+| `MESH_VALIDATE` | contract-aware mesh/topology integrity audit | `08_scripts/92`; `executors/mesh_validate.py` | EXECUTOR_READY | manifold, volume orientation, n-gon risk, UV/tris |
 | `RUNTIME_COMPAT` | Blender/runtime API discovery | `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md`; `executors/runtime_compat.py` | CONTRACT_READY | discovered enums/properties/paths |
-| `QA_SCENE_ISOLATE` | non-destructive QA/bake scene isolation | `08_scripts/83_QA_RENDER_SCRIPT_PATTERN.md`; `executors/qa_scene_isolation.py` | CONTRACT_READY | render state restored, contamination prevented |
-| `MATERIAL_FINISH_CIVIC` | maintained civic material finish | playbook 114 | CONTRACT_READY | macro/meso/micro breakup |
-| `EMISSIVE_HANDOFF` | separate authored emitter from runtime glow | `04_game_ready/49_EMISSIVE_RUNTIME_HANDOFF.md` | CONTRACT_READY | emitter/export/runtime status |
+| `QA_SCENE_ISOLATE` | non-destructive QA/bake isolation | `08_scripts/83`; `executors/qa_scene_isolation.py` | CONTRACT_READY | state restoration, contamination prevention |
+| `CANONICAL_SKILL_RUNTIME_PIN` | version/commit/single-root preflight | `188`; `executors/runtime_source_pin.py` | CONTRACT_READY | exact runtime source |
+| `MATERIAL_FINISH_CIVIC` | civic product material finish | playbook 114 | CONTRACT_READY | macro/meso/micro response |
+| `EMISSIVE_HANDOFF` | authored emitter vs runtime glow | `04_game_ready/49` | CONTRACT_READY | emitter/export/runtime status |
+| `UV_ATLAS_CONTRACT` | stable atlas ownership across LODs | `04_game_ready/52`; `executors/uv_atlas_contract.py` | CONTRACT_READY | semantic IDs, LOD stability |
 | `BAKE_RUNTIME_TEXTURES` | deterministic runtime texture bake | `04_game_ready/50`, `51`; `executors/bake_runtime_textures.py` | CONTRACT_READY | bake result/channel semantics |
-| `BAKE_VALIDATE` | semantic baked-map validation | `08_scripts/93_BAKE_OUTPUT_VALIDATION_PATTERN.md`; `executors/bake_validate.py` | CONTRACT_READY | ranges/regions/degeneracy |
-| `IMAGE_CACHE_COHERENCE` | synchronize disk texture and Blender datablock | `02_blender_api/30_IMAGE_DATABLOCK_CACHE_COHERENCE.md`; `executors/image_cache_coherence.py` | CONTRACT_READY | path/reload/colorspace/binding |
-| `PIPELINE_DAG_PLAN` | minimal dirty execution closure | `05_execution/68_PIPELINE_DAG_EXECUTOR_AND_STAGE_REUSE.md`; `executors/pipeline_dag.py` | CONTRACT_READY | DAG/execute/reuse plan |
-| `RUNTIME_PACKAGE_VALIDATE` | validate glTF package/attributes/transforms | `09_engine/94`, `96`; `executors/gltf_package_validate.py` | CONTRACT_READY | nodes/materials/images/TEXCOORD/TRS |
-| `EXPORT_ROUNDTRIP_VALIDATE` | re-import export and check invariants | `05_execution/67_POST_EXPORT_INVARIANT_AND_ROUNDTRIP_VALIDATION.md`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | dimensions/contact/material survival |
-| `RUNTIME_PATH_RESOLVE` | resolve engine-visible runtime root | `09_engine/95_RUNTIME_ASSET_ROOT_AND_PATH_CONTRACT.md`; `executors/runtime_path_resolver.py` | CONTRACT_READY | canonical root/containment |
-| `TEST_ORACLE` | trustworthy process exit/bite test | `05_execution/66_TEST_ORACLE_EXIT_CODE_AND_BITE_TEST.md`; `executors/test_oracle.py` | CONTRACT_READY | direct status/intended assertion |
-| `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96_ENGINE_INTEGRATION_SMOKE_TEST_CONTRACT.md` | CONTRACT_READY | loader/instantiation + oracle |
-| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148`, `178`, `180`–`183` | CONTRACT_READY | node/stage/final evidence, appearance owners |
-| `ASSET_COMPLETION` | determine true completion level | `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md`; `executors/completion_gate.py` | CONTRACT_READY | A/B/C/D gate hierarchy |
+| `BAKE_VALIDATE` | semantic baked-map validation | `08_scripts/93`; `executors/bake_validate.py` | CONTRACT_READY | range/region/degeneracy |
+| `IMAGE_CACHE_COHERENCE` | disk/Blender image synchronization | `02_blender_api/30`; `executors/image_cache_coherence.py` | CONTRACT_READY | path/reload/colorspace/binding |
+| `PIPELINE_DAG_PLAN` | minimal dirty runtime-stage closure | `05_execution/68`; `executors/pipeline_dag.py` | CONTRACT_READY | DAG execute/reuse plan |
+| `RUNTIME_PATH_RESOLVE` | canonical engine-visible asset root | `09_engine/95`; `executors/runtime_path_resolver.py` | CONTRACT_READY | root/containment |
+| `RUNTIME_PACKAGE_VALIDATE` | glTF nodes/materials/attributes/transforms | `09_engine/94`, `96`; `executors/gltf_package_validate.py` | CONTRACT_READY | package/TEXCOORD/TRS |
+| `EXPORT_ROUNDTRIP_VALIDATE` | re-import export and compare invariants | `05_execution/67`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | dimensions/contact/material survival |
+| `TEST_ORACLE` | trustworthy exit status and bite tests | `05_execution/66`; `executors/test_oracle.py` | CONTRACT_READY | direct assertion/negative mutation |
+| `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96` | CONTRACT_READY | production loader/instantiation |
+| `ASSET_COMPLETION` | determine true A/B/C/D completion | `00_governance/07`; `executors/completion_gate.py` | CONTRACT_READY | hierarchical completion gates including geometric integrity |
 | `ASSET_CATALOG_INTEGRATE` | project catalog registration | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | readback/unique ID/import |
 | `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md` | KNOWLEDGE_ONLY | runtime contract |
 
-## v0.10 reconstruction routing precedence
+## Routing laws
+
+### Representation before operator
 
 ```text
-reference ingest/measurement
--> REFERENCE_MEASURE
-
-before production geometry
--> SHAPE_GRAPH + SHAPE_CLASSIFY
-
-for 1:1 or target L4/L5
--> REFERENCE_APPEARANCE_CONTRACT + PART_BOUNDARY/TRIM/JUNCTION owners
-
-one node ready to build/repair
--> node's representation skill
--> canonical registered view validator
--> RECONSTRUCTION_NODE_GATE
-
-internal boundary/trim/edge/material owner
--> APPEARANCE_REFERENCE_VALIDATE
-
-end of each RDL
--> SHAPE_GRAPH stage barrier
-
-end of RDL4/RDL5 when appearance required
--> APPEARANCE_FIDELITY_GATE
-
-claiming Level A / entering runtime
--> RECON_FIDELITY_GATE
+reference evidence
+-> Shape Graph
+-> Shape Class
+-> semantic construction skill
+-> Blender implementation
 ```
 
-## Anti-circular validation precedence
+Do not default compound primary forms to `cube + bevel` when width/depth/corner behavior varies across stations.
 
-A canonical acceptance owner cannot be certified by an ad-hoc local substitute.
+### Host-before-leaf
+
+Leaf/detail skills only run on accepted hosts. A host changing during repair invalidates dependent leaves before they can remain green.
+
+### Anti-circular validation
 
 ```text
-local helper measurement
--> may produce artifact
--> canonical validator consumes artifact + source evidence
--> canonical gate accepts/rejects
+local measurement adapter
+-> compact artifact
+-> canonical validator
+-> canonical gate
 ```
 
-Forbidden as acceptance:
+A local builder/helper may measure. It may not redefine acceptance semantics.
+
+### Validator bite law
+
+For MUST acceptance, a new validator requires a negative-control fixture representing the same failure class. A test that only passes known-good input is insufficient.
+
+### Runtime lock
+
+For L4/L5:
 
 ```text
-builder-local Gate.accept()
--> Shape Node ACCEPTED
-```
-
-when `RECONSTRUCTION_NODE_GATE` exists.
-
-Strict reference-derived records require:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id` or `source_reference_ids`;
-- `registration_id` for projected evidence.
-
-## Host-before-leaf rule
-
-Leaf skills nie mogą pełnić roli shape-understanding layer.
-
-Examples:
-- `HS_PANEL_LINE` only after host `ACCEPTED`;
-- bevel/edge implementation only RDL4;
-- decals/materials only after structural acceptance;
-- `SECTION_LOFT_HARD_SURFACE` may be a primary-form skill;
-- appearance owners may be declared earlier but cannot PASS before the host revision they validate exists.
-
-## Runtime lock v0.10
-
-For target fidelity L4/L5:
-
-```text
+GEOMETRIC_INTEGRITY_GATE != PASS
+or
 APPEARANCE_FIDELITY_GATE != PASS
 or
 RECON_FIDELITY_GATE != PASS
 -> runtime LOD/UV/bake/export FORBIDDEN
-```
-
-Correct dimensions, triangle budgets, UVs or glTF readback never override this lock.
-
-## Box-abuse route
-
-If a primary node changes width/depth/corner treatment along an axis:
-
-```text
-PARAMETRIC_BOX + BEVEL
--> do not default
--> SHAPE_CLASSIFY
--> likely SECTION_LOFT_HARD_SURFACE or SUBD_FREEFORM
 ```
 
 ## Packaged executor status
@@ -989,6 +1086,13 @@ PARAMETRIC_BOX + BEVEL
 REFERENCE_MEASURE           -> executors/reference_measure.py               CONTRACT_READY
 REFERENCE_OVERLAY_VALIDATE  -> executors/reference_overlay_validate.py      CONTRACT_READY
 SHAPE_GRAPH                 -> executors/shape_graph.py                     CONTRACT_READY
+EXECUTION_AUTHORIZATION_GATE-> executors/execution_authorization_gate.py    CONTRACT_READY
+NODE_STATE_STORE            -> executors/node_state_store.py                CONTRACT_READY
+MUTATION_POSTCONDITION_GATE -> executors/mutation_postcondition_gate.py     CONTRACT_READY
+ASSEMBLY_INTEGRITY_GATE     -> executors/assembly_integrity_gate.py         CONTRACT_READY
+DEPENDENCY_INVALIDATOR      -> executors/dependency_invalidator.py          CONTRACT_READY
+VALIDATOR_NEGATIVE_CONTROL  -> executors/validator_negative_control.py      CONTRACT_READY
+GEOMETRIC_INTEGRITY_GATE    -> executors/geometric_integrity_gate.py        CONTRACT_READY
 RECONSTRUCTION_NODE_GATE    -> executors/reconstruction_node_gate.py        CONTRACT_READY
 SECTION_LOFT_HARD_SURFACE   -> executors/section_loft.py                    CONTRACT_READY
 LAYER_STACK_VALIDATE        -> executors/layer_stack_validate.py            CONTRACT_READY
@@ -998,7 +1102,7 @@ AXISYMMETRIC_PROFILE        -> executors/axisymmetric_profile.py            CONT
 RADIAL_REPEAT               -> executors/radial_repeat.py                   CONTRACT_READY
 MESH_VALIDATE               -> executors/mesh_validate.py                   EXECUTOR_READY
 RUNTIME_COMPAT              -> executors/runtime_compat.py                  CONTRACT_READY
-QA_SCENE_ISOLATE            -> executors/qa_scene_isolation.py             CONTRACT_READY
+QA_SCENE_ISOLATE            -> executors/qa_scene_isolation.py              CONTRACT_READY
 ASSET_COMPLETION            -> executors/completion_gate.py                 CONTRACT_READY
 UV_ATLAS_CONTRACT           -> executors/uv_atlas_contract.py               CONTRACT_READY
 BAKE_RUNTIME_TEXTURES       -> executors/bake_runtime_textures.py           CONTRACT_READY
@@ -1011,18 +1115,6 @@ RUNTIME_PATH_RESOLVE        -> executors/runtime_path_resolver.py           CONT
 TEST_ORACLE                 -> executors/test_oracle.py                     CONTRACT_READY
 ```
 
-## Contract-ready is not executor-ready
-
-A CONTRACT_READY skill may be implemented through current tools, but agent must:
-1. follow semantic contract;
-2. keep mutation local/idempotent;
-3. validate postconditions;
-4. not describe it as proven executor;
-5. respect retry/strategy-switch rules;
-6. persist compact state/evidence;
-7. never replace proof with narrative PASS;
-8. never replace a registered canonical validator with a builder-local acceptance gate.
-
 ## Reuse before generation
 
 Before generating helpers search this registry and `executors/`.
@@ -1030,8 +1122,11 @@ Before generating helpers search this registry and `executors/`.
 Do not locally rewrite compatible implementations of:
 - Shape Graph validation/readiness/stage barriers;
 - node acceptance aggregation;
-- appearance fidelity aggregation;
-- reconstruction fidelity aggregation;
+- mutation postcondition semantics;
+- assembly relation acceptance;
+- dependency invalidation/evidence supersession;
+- validator bite-test aggregation;
+- appearance/reconstruction/geometric fidelity aggregation;
 - reference measurement/overlay;
 - layered visibility validation;
 - multi-section loft ring/bridge generation;
@@ -1039,14 +1134,14 @@ Do not locally rewrite compatible implementations of:
 
 ## Registry update rule
 
-New production skill requires:
+A new production skill requires:
 1. stable Skill ID;
 2. canonical knowledge path;
 3. maturity;
 4. capabilities;
 5. validation owner;
 6. Knowledge Router route;
-7. MANIFEST inclusion for canonical MD.
+7. MANIFEST inclusion when canonical Markdown is added.
 
 Registry, Router, Task Packs and Manifest must agree.
 
@@ -1059,282 +1154,263 @@ Registry, Router, Task Packs and Manifest must agree.
 
 ## Purpose
 
-A `Task Pack` is the smallest knowledge set for the current state. In v0.10 reconstruction it is scoped to the current Shape Node or Appearance Owner whenever geometry/appearance is being solved.
+A `Task Pack` is the smallest knowledge set for the current state and failing owner. In reference reconstruction it is scoped to the current Shape Node, Appearance Owner or Assembly Relation.
 
 ```text
-state + RDL + Shape Node/Appearance Owner + measured failure
+state + RDL + current owner + measured failure
 -> Task Pack
--> execute
+-> execute one bounded transaction
 -> canonical validate
--> persist compact state
+-> persist revisions/evidence
 -> advance through barrier/gate
 ```
 
 ## SESSION_PREFLIGHT
 
-Load Agent Charter, Semantic Skill Registry, tool/runtime compatibility, Scene Inspection and matching Project Profile.
+Load Agent Charter, State Machine, Semantic Skill Registry, Blender/runtime compatibility, Scene Inspection and matching Project Profile.
 
-Persist Tool Registry, Blender version, project profile and runtime path context.
+Run `CANONICAL_SKILL_RUNTIME_PIN`. Persist Blender version, project profile, runtime path context, canonical skill source/version/commit.
 
 ## RECON_TECHNICAL_SHEET_ANALYZE
 
-Load Evidence Model, reference ingestion/classification, View Authority Matrix, measurement/calibration and Reference Analysis Cache.
+Load Evidence Model, ingestion/classification, View Authority Matrix, measurement/calibration, conflict arbitration, Reference Analysis Cache and mask-contamination policy.
 
-Preferred skill: `REFERENCE_MEASURE`.
+Preferred:
+- `REFERENCE_MEASURE`;
+- `REFERENCE_CONFLICT_RESOLVER`;
+- `REFERENCE_OVERLAY_VALIDATE` only after registration.
 
 Output:
-- Reference Registry;
-- source-set revision;
+- Reference Registry/source revision;
 - Evidence Ledger;
-- locked dimensions;
+- hard dimensions and derived provenance;
 - property-level authority/conflicts;
-- canonical registrations where solvable.
+- canonical registrations;
+- annotation/product mask policy.
 
-Production geometry, UV, LOD and export are forbidden here.
+No production geometry/UV/LOD/export.
 
 ## RECON_SHAPE_GRAPH_PLAN
 
 Mandatory before production geometry.
 
-Load:
-- `128_RECONSTRUCTION_OBJECT_DECOMPOSITION.md`;
-- `129_FEATURE_TO_MODELING_STRATEGY_MAP.md`;
-- `174_RECONSTRUCTION_SHAPE_GRAPH.md`;
-- `175_RECONSTRUCTION_DETAIL_LEVELS.md`;
-- `176_RECONSTRUCTION_NODE_CONTRACT.md`;
-- `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`;
-- prompt 68;
-- validator pattern 95.
+Load `128`, `129`, `174`–`177`, prompt 68 and validator pattern 95.
 
-Preferred skills: `SHAPE_GRAPH`, `SHAPE_CLASSIFY`.
+Preferred: `SHAPE_GRAPH`, `SHAPE_CLASSIFY`.
 
-Persist G0–G5 hierarchy, RDL assignments, Node Contracts, parent/dependencies, representation decisions and view responsibilities.
+Persist G0–G5 hierarchy, RDL, Node Contracts, parents/dependencies, representation and per-view responsibilities.
 
 Gate: `shape_graph_validation.status == PASS`.
 
-Do not write a monolithic production builder in this pack.
+## RECON_APPEARANCE_AND_ASSEMBLY_PLAN
 
-## RECON_APPEARANCE_CONTRACT_PLAN
-
-Mandatory for:
-- explicit 1:1/exact reconstruction;
-- target fidelity L4/L5;
-- product/civic hard-surface where internal visible architecture defines identity.
+Mandatory for explicit 1:1/L4/L5 and industrial/product assemblies where internal architecture defines identity.
 
 Load:
 - `180_REFERENCE_APPEARANCE_CONTRACT.md`;
 - `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
 - `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`.
+- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
+- `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`.
 
 Output:
 - Appearance Contract revision;
-- part regions/boundaries;
-- major trim paths;
-- junctions;
-- edge families;
-- material/emissive/branding regions;
-- MUST detail inventory;
-- source reference IDs/ROIs per owner.
+- boundary/trim/junction/edge/material/emissive/branding/detail owners;
+- source IDs/ROIs;
+- Assembly Relation revision;
+- relation type + gap/contact/embedding/interpenetration constraints for important part pairs.
 
-No appearance owner can be silently omitted after this pack.
+Do not infer `connected = overlap`.
 
 ## RECON_RDL0
 
-Build only total envelope, contact datum, axes and centerline.
+Build physical neutral diagnostic envelope/contact datum/axes.
 
-Validate numeric bounds and authoritative FRONT/SIDE/TOP. No detail skills.
+Validate numeric bounds and authoritative FRONT/SIDE/TOP.
 
 Gate: `RDL0_BARRIER: PASS`.
 
 ## RECON_NODE_BUILD
 
-Canonical construction pack. Input is exactly one Shape Node plus graph revision.
+Input: exactly one eligible Shape Node plus current revisions.
 
-Required:
+Required modules:
 - Node Contract;
 - Shape Classification;
-- Node-by-Node Multi-View Validation;
 - Node Execution Protocol;
-- only representation skill needed by current node;
-- QA scene isolation;
-- canonical registered validators.
+- Execution Authorization;
+- Mutation Postcondition;
+- QA isolation;
+- canonical reference validators;
+- Assembly Relation contract for touched junctions;
+- topology/section/layer validator only when relevant.
 
-Loop:
+Canonical loop:
 
 ```text
-resolve ready node
--> build/repair node only
--> BUILT_UNVERIFIED
+eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> capture before metrics
+-> mutate current node only
+-> capture after metrics
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
 -> isolate
--> validate required source-registered views
--> numeric/section/regression checks
+-> source-registered view/numeric/section proof
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> MESH_VALIDATE / layer proof as required
 -> RECONSTRUCTION_NODE_GATE
 -> persist ACCEPTED / FAIL / UNVERIFIED
 ```
 
-Strict view proof must name canonical validator/provenance/source/registration. A builder-local Gate is not a substitute.
+A builder-local gate may produce measurements, never canonical acceptance.
 
-Representation routes:
+Representation routes include:
 
 ```text
 REVOLVED_PROFILE -> AXISYMMETRIC_PROFILE
-MULTI_SECTION_LOFT / TRANSITION -> SECTION_LOFT_HARD_SURFACE
+MULTI_SECTION_LOFT/TRANSITION -> SECTION_LOFT_HARD_SURFACE
 PANEL_LINE -> HS_PANEL_LINE
 SUBD_FREEFORM -> SUBD_TOPOLOGY_CONTROL
 LAYERED_ASSEMBLY -> LAYER_STACK_VALIDATE
 ```
 
 Forbidden:
-- unrelated sibling/future-RDL geometry;
-- logo/materials while solving primary form;
-- `build_all()` bypassing node gates;
+- sibling/future-RDL bulk creation;
+- production lookdev while primary form is unresolved;
+- silent Boolean no-op accepted as build success;
+- child build on non-ACCEPTED host;
 - self-certification from builder constants.
+
+## RECON_MUTATION_FAILURE
+
+Route here when builder completed but geometry postcondition failed.
+
+Load `76_MUTATION_POSTCONDITION_GATE.md`, relevant modeling skill and operation-specific Blender API rules.
+
+Diagnose:
+- topology/signature delta;
+- volume/signed-volume direction;
+- transform/depsgraph state;
+- modifier/cutter lifecycle;
+- predeclared feature probe.
+
+Do not proceed to source QA until postcondition PASS.
+
+## RECON_ASSEMBLY_INTEGRITY
+
+Input: one or more touched Assembly Relations with measured metrics.
+
+Preferred: `ASSEMBLY_INTEGRITY_GATE`.
+
+Validate relation semantics, not generic overlap:
+- SHADOW_GAP/CLEARANCE -> penetration forbidden, gap bounded;
+- RECESSED_INSERT/EMBEDDED -> embedding required and bounded;
+- FLUSH/BUTT -> contact/gap/penetration tolerance;
+- OVERLAP_ALLOWED/WELDED -> explicit bounded policy.
+
+Failed MUST relation blocks node acceptance.
+
+## VALIDATOR_BITE_TEST
+
+Use before a new validator can own MUST acceptance.
+
+```text
+known-good fixture -> validator -> PASS
+known-broken fixture representing claimed defect -> validator -> FAIL
+-> VALIDATOR_NEGATIVE_CONTROL
+```
+
+If known-broken returns PASS, fix validator before trusting current asset PASS.
 
 ## RECON_APPEARANCE_OWNER_VALIDATE
 
-Input: exactly one Appearance Owner plus current host revision.
+Input: one Appearance Owner plus current host revision.
 
-Preferred skill: `APPEARANCE_REFERENCE_VALIDATE`.
+Preferred: `APPEARANCE_REFERENCE_VALIDATE`.
 
-Use for:
-- PART_BOUNDARY;
-- TRIM_PATH;
-- JUNCTION;
-- EDGE_FAMILY;
-- MATERIAL_REGION / MATERIAL_RESPONSE;
-- EMISSIVE_REGION;
-- BRANDING_REGION;
-- DETAIL_FEATURE / DETAIL_DENSITY_REGION.
-
-Required:
-- owner contract;
-- current host revision;
-- source reference ID(s);
-- source ROI;
-- global registration for projected proof;
-- canonical validator output.
-
-Loop:
-
-```text
-resolve owner
--> isolate current host/participants
--> produce neutral/material render as appropriate
--> source-registered comparison / semantic metric
--> compact proof record
--> PASS | FAIL | UNVERIFIED
-```
-
-A local builder test may produce an artifact but cannot certify the owner.
+Use source-anchored evidence for part boundaries, trim paths, junction appearance, edge families, materials/emissive/branding/detail coverage. Host revisions must be current.
 
 ## RECON_RDL_STAGE_GATE
 
-Load Reconstruction Detail Levels, Stage Barrier and node acceptance records.
-
-Preferred: `SHAPE_GRAPH.evaluate_stage_barrier()`.
+Use `SHAPE_GRAPH.evaluate_stage_barrier()` after required nodes at each RDL.
 
 ```text
-RDL0 PASS -> RDL1
-RDL1 PASS -> RDL2
-RDL2 PASS -> RDL3
-RDL3 PASS -> RDL4
-RDL4 PASS -> RDL5
+RDL0 -> RDL1 -> RDL2 -> RDL3 -> RDL4 -> RDL5
 ```
 
-No bypass for later detail.
+No bypass because downstream work is easy.
 
 ## RECON_RDL2_PRODUCT_ARCHITECTURE
 
-Use after G1 acceptance.
-
-Build major secondary structures and close related appearance owners:
-- side frames/caps;
-- major trims;
-- display housing;
-- large service panels;
-- backrest/side transitions;
-- plinth architecture.
-
-For design-defining internal boundaries, run `RECON_APPEARANCE_OWNER_VALIDATE` before treating them as visually solved.
+After G1 acceptance, build major secondary housings, frames, trims, service assemblies and junction participants. Close associated Appearance/Assembly owners as they become testable.
 
 ## RECON_RDL3_DETAIL
 
-Use only on ACCEPTED structural hosts.
+Only on ACCEPTED structural hosts. Load the minimum leaf skills for recesses, panel lines, radial repeats, layered assemblies, fasteners, curves/sweeps.
 
-Load only applicable leaf skills: panel lines, recesses, radial repeats, layered display, curves/sweeps, fasteners.
-
-Visible MUST feature also closes its Appearance Owner.
-
-Host failure routes backward.
+Destructive recess/Boolean work always routes through mutation postconditions.
 
 ## RECON_RDL4_EDGE
 
-Load:
-- `164_EDGE_LANGUAGE_SYSTEM.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
-- bevel/radius/continuity/SubD implementation modules only as needed.
+Load `164_EDGE_LANGUAGE_SYSTEM.md`, `183_EDGE_MATERIAL_DETAIL_FIDELITY.md` and implementation-specific bevel/SubD modules.
 
-Validate:
-- edge family placement/profile/radius;
-- start/end/continuity;
-- plane hierarchy;
-- protected dimensions.
-
-Gate requires reference-anchored edge evidence. Preserving bounds alone is insufficient.
+Validate edge family profile/placement/start/end/continuity and protected dimensions. Run `MESH_VALIDATE` after destructive topology change.
 
 ## SURFACE_FINISH / RDL5
 
-Load material/branding/decal/emissive modules only after structural barriers.
+Load material/branding/decal/emissive only after structural barriers.
 
-For L4/L5 distinguish material segmentation from material appearance.
+Material-only mutations should preserve geometry signature. For L4/L5 prove material appearance, not only segmentation/name. Use `APPEARANCE_OWNER_COVERAGE`.
 
-Use stable neutral lookdev for material proof where needed.
+## REPAIR_ACCEPTED_GEOMETRY
 
-For L5 require full MUST detail inventory closure. Missing MUST detail cannot silently disappear.
+Before changing an accepted host:
+
+```text
+change intent
+-> DEPENDENCY_INVALIDATOR
+-> persist DIRTY/BLOCKED descendants
+-> Appearance Owners UNVERIFIED
+-> evidence SUPERSEDED
+-> rebuild affected closure node-by-node
+```
+
+Unrelated accepted branches remain reusable.
+
+## RECON_GEOMETRIC_INTEGRITY
+
+Before final fidelity aggregate current physical proof:
+- all required mutation postconditions;
+- Assembly Relation closure;
+- topology records;
+- required validator negative controls;
+- zero stale evidence references;
+- zero unresolved MUST relations.
+
+Gate: `GEOMETRIC_INTEGRITY_GATE == PASS`.
 
 ## RECON_APPEARANCE_FIDELITY
 
-Mandatory for target >= L4.
-
-Load:
-- Appearance Contract;
-- part-boundary graph;
-- edge/material/detail fidelity;
-- owner evidence records;
-- final matched view records;
-- `05_execution/72_APPEARANCE_FIDELITY_GATE.md`.
-
-Preferred skill: `APPEARANCE_FIDELITY_GATE`.
-
-Required categories:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material response;
-- final matched views;
-- emissive/branding where present;
-- detail coverage for L5.
-
-MUST failures are non-compensating.
+Mandatory for target >= L4 after relevant Appearance Owners close.
 
 Gate: `APPEARANCE_FIDELITY_GATE == PASS`.
+
+MUST categories are non-compensating.
 
 ## RECON_FINAL_FIDELITY
 
 Requires:
-- accepted Shape Graph revision;
-- Appearance Contract revision when target >= L4;
-- required node records;
-- RDL barriers;
-- QA isolation;
-- registered canonical views;
-- hard dimensions/landmarks;
-- MUST features;
-- appearance gate PASS when required;
-- authority closure;
-- `RECON_FIDELITY_GATE`.
+- accepted/current Shape Graph revision;
+- Appearance/Assembly revisions when required;
+- all required node records/RDL barriers;
+- QA isolation and canonical registered views;
+- hard dimensions/landmarks/MUST features;
+- `GEOMETRIC_INTEGRITY_GATE: PASS`;
+- `APPEARANCE_FIDELITY_GATE: PASS` when required;
+- authority/deviation closure;
+- `RECON_FIDELITY_GATE: PASS`.
 
 Only PASS opens runtime.
 
@@ -1343,93 +1419,52 @@ Only PASS opens runtime.
 Precondition:
 
 ```text
-RECON_FIDELITY_GATE == PASS
-and, for target L4/L5,
-APPEARANCE_FIDELITY_GATE == PASS
+GEOMETRIC_INTEGRITY_GATE == PASS
+and RECON_FIDELITY_GATE == PASS
+and, for L4/L5, APPEARANCE_FIDELITY_GATE == PASS
 ```
 
-Preferred skills:
-- `MESH_VALIDATE`;
-- `UV_ATLAS_CONTRACT`;
-- `BAKE_RUNTIME_TEXTURES`;
-- `BAKE_VALIDATE`;
-- `IMAGE_CACHE_COHERENCE`;
-- `PIPELINE_DAG_PLAN`;
-- `RUNTIME_PATH_RESOLVE`;
-- `RUNTIME_PACKAGE_VALIDATE`;
-- `EXPORT_ROUNDTRIP_VALIDATE`;
-- `ASSET_COMPLETION`.
+Then runtime path -> LOD/collision -> UV -> dirty DAG -> bake/validate/cache -> runtime material -> package/readback -> round-trip -> engine proof as required -> completion.
 
-Order:
-
-```text
-runtime path
--> LOD/collision
--> UV contract
--> DAG dirty plan
--> bake/validate/cache
--> runtime material
--> package/readback
--> round-trip
--> runtime QA
--> completion
-```
-
-Runtime LOD is downstream from RDL and is not a reconstruction state.
+Runtime LOD is downstream from RDL.
 
 ## PIPELINE_INTEGRATION
 
-Only for Level D. Load Project Profile, runtime path/package, catalog integration, Engine Smoke Test and Test Oracle.
-
-Blender round-trip is Level C evidence. Target engine loader/instantiation is Level D evidence.
+Level D only. Blender round-trip remains Level C. Level D requires target-engine production loader/regression/instantiation evidence.
 
 ## Persistent state
 
-Persist compact records:
-- Tool Registry / Project Profile;
-- Reference Registry / Evidence Ledger / Property Authority;
-- Dimension Graph / Feature Contract;
-- Shape Graph + revision;
-- Appearance Contract + revision;
-- Part Boundary / Trim / Junction Graph;
-- Node Contracts / Node Acceptance Records;
-- Appearance Owner Records;
-- RDL Stage Barrier Records;
-- Appearance Fidelity Report;
-- reconstruction/material/UV/bake/package state;
-- Completion Report.
+Persist compact:
+- Tool/Project/Runtime Pin;
+- Reference Registry/Evidence/Authority/Conflicts;
+- Shape Graph revision;
+- Appearance Contract revision;
+- Assembly Relation revision;
+- Node/Appearance/Assembly evidence;
+- mutation postconditions;
+- validator-control records;
+- RDL barriers;
+- geometric/appearance/reconstruction fidelity reports;
+- runtime/completion state.
 
 Do not rely on conversation history as execution state.
 
-## Pack expansion
-
-Load a module only when current state/RDL requires it, current Shape Node/Appearance Owner maps to it, or measured failure routes to it.
-
 ## Retry
 
-After first proven failure: diagnose and one corrected retry. After second: re-inspect and strategy/representation/owner routing switch.
+First proven failure: diagnose + one corrected retry. Second proven same-strategy failure: re-inspect and switch representation/strategy/validator as appropriate.
 
 ## Final rule
 
 ```text
 understand form
--> Shape Graph
--> understand visible product architecture
--> Appearance Contract
--> coarse form
--> canonical source proof
+-> understand visible architecture and physical relations
+-> build one node
+-> prove mutation happened
+-> prove reference fit and assembly integrity
+-> accept node
 -> deepen detail
--> appearance proof
+-> prove final physical + visual fidelity
 -> runtime
-```
-
-not:
-
-```text
-one big script
--> local green gates
--> export
--> inspect too late
 ```
 
 
@@ -1441,9 +1476,7 @@ one big script
 
 ## Purpose
 
-Agent nie używa `DONE` bez jawnego poziomu i dowodu.
-
-Lifecycle:
+Agent never uses `DONE` without a named completion level and proof.
 
 ```text
 A RECONSTRUCTION_COMPLETE
@@ -1452,111 +1485,90 @@ A RECONSTRUCTION_COMPLETE
 -> D PIPELINE_INTEGRATED
 ```
 
-Wyższy poziom wymaga wszystkich niższych.
+Higher levels require all lower levels.
 
----
+## Level A — RECONSTRUCTION_COMPLETE
 
-# Level A — RECONSTRUCTION_COMPLETE
+A reference-driven object is geometrically, physically and visually solved and proven.
 
-Reference-driven object jest geometrycznie i wizualnie rozwiązany **oraz udowodniony**.
+Required:
+- coherent Reference/Evidence Registry and property-level authority;
+- current Shape Graph structural PASS;
+- RDL0 diagnostic barrier PASS;
+- all required G1/G2/G3 nodes `ACCEPTED` with their RDL barriers PASS;
+- canonical node evidence rather than builder-local self-certification;
+- hard dimensions, landmarks and required canonical views PASS;
+- MUST feature owners source-anchored and PASS;
+- HARD/MUST/CANONICAL deviations resolved/accepted with authority records;
+- every production mutation required by current revisions has `MUTATION_POSTCONDITION_GATE: PASS`;
+- every required multi-part junction has a declared Assembly Relation and `ASSEMBLY_INTEGRITY_GATE: PASS`;
+- required topology records `MESH_VALIDATE: PASS`;
+- required acceptance validators have current negative-control proof;
+- no current report references `SUPERSEDED` evidence;
+- `GEOMETRIC_INTEGRITY_GATE: PASS`;
+- `RECON_FIDELITY_GATE: PASS`.
 
-Required v0.10:
-- Reference/Evidence Registry and property-level authority are coherent;
-- current `Reconstruction Shape Graph` structural PASS;
-- required G0–G3 nodes have shape class, parent/dependencies, authoritative views and Node Contracts;
-- RDL0 barrier PASS;
-- required G1 primary nodes `ACCEPTED` + RDL1 barrier PASS;
-- required G2 nodes `ACCEPTED` + RDL2 barrier PASS;
-- required G3 nodes `ACCEPTED` + RDL3 barrier PASS;
-- canonical node acceptance records use canonical validators rather than builder-local gates;
-- hard dimensions PASS with source/numeric provenance;
-- canonical silhouettes/views PASS through registered evidence where reference has authority;
-- primary proportions/landmarks PASS;
-- MUST features have owner + source-anchored visibility/ROI/numeric proof;
-- branding/orientation correct or explicitly deferred only when target fidelity allows it;
-- rear/bottom/hidden evidence handled according to authority;
-- HARD/MUST/CANONICAL deviations are `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with record;
-- multi-view regression PASS;
-- `RECON_FIDELITY_GATE` proof-bearing PASS for accepted graph revision.
-
-For explicit 1:1/exact reconstruction or target fidelity L4/L5 additionally required:
-- current `Reference Appearance Contract`;
-- required part boundaries inventoried and PASS;
-- required trim paths PASS;
-- required junctions PASS;
-- required edge families PASS with reference profile evidence;
-- material segmentation PASS;
-- material appearance response PASS where reference defines it;
-- emissive/glass/branding appearance owners PASS where present;
+For explicit 1:1/L4/L5 additionally:
+- current Reference Appearance Contract;
+- required part boundaries/trim paths/junctions/edge families PASS;
+- material segmentation + appearance response PASS where reference defines them;
+- emissive/glass/branding owners PASS where present;
 - final matched/registered appearance views PASS;
+- `APPEARANCE_OWNER_COVERAGE: PASS`;
 - `APPEARANCE_FIDELITY_GATE: PASS`;
-- L5: all MUST detail owners accounted for and `must_missing = 0` unless authority explicitly waives a feature.
-
-Not required for Level A by itself:
-- final runtime bake;
-- runtime LOD/collision;
-- engine integration.
+- L5: zero silently missing MUST details unless authority explicitly waives them.
 
 Not sufficient:
 - `looks correct`;
-- correct overall bounding box;
-- alpha outer silhouette PASS by itself;
-- existing Blender objects;
+- correct bounding box;
+- outer silhouette alone;
 - one hero render;
-- builder-local numeric gates against builder constants;
+- builder-local tests against builder constants;
 - correctly named material slots without appearance proof;
-- successful export/engine load.
+- all Shape Nodes green while physical parts interpenetrate;
+- successful export or engine load.
 
----
-
-# Level B — MODELING_COMPLETE
+## Level B — MODELING_COMPLETE
 
 Requires Level A plus:
 - final intended authoring geometry;
 - topology intent per mesh;
-- mesh validation PASS;
+- final mesh validation PASS;
 - UV strategy complete;
 - material segmentation complete;
 - decals/branding represented by intended pipeline;
 - transforms/pivot/naming PASS;
 - editable authoring source saved;
-- no temporary QA/helper contamination of production collection.
+- no temporary QA/helper contamination in production collection.
 
-Procedural Blender shader may still exist if runtime disposition is not yet required.
-
----
-
-# Level C — GAME_READY_COMPLETE
+## Level C — GAME_READY_COMPLETE
 
 Requires Level B plus:
 - Game Asset Contract;
 - active Engine/Profile or explicit neutral runtime contract;
-- runtime LOD validation against active hard/authority-resolved budget;
+- runtime LOD validation against active budget/authority;
 - collision validation;
 - material/draw-call implications validated;
-- procedural effects have runtime disposition: BAKE / RECREATE / NATIVE_VERIFIED / REMOVE_BY_DESIGN;
-- required BaseColor/Normal/ORM/Emissive or engine-specific outputs exist;
-- runtime emissive handoff documented;
+- procedural effects have runtime disposition;
+- required runtime texture outputs exist;
+- emissive runtime handoff documented;
 - package readback validates nodes/materials/images/required primitive attributes and transform policy;
-- export validation PASS;
-- export round-trip protected invariants PASS;
-- protected Shape Graph, Appearance Contract and Feature Contract survive optimization;
+- export + round-trip invariants PASS;
+- protected Shape Graph/Appearance/Assembly contracts survive optimization;
 - baked/runtime-material QA PASS.
 
-Parseable glTF without required `TEXCOORD_0`, with forbidden node TRS, without required runtime textures, or derived from an unresolved Level A asset is not Level C.
+Parseable glTF without required attributes or produced from unresolved Level A geometry is not Level C.
 
----
-
-# Level D — PIPELINE_INTEGRATED
+## Level D — PIPELINE_INTEGRATED
 
 Requires Level C plus:
 - stable project asset ID;
 - canonical runtime path;
 - catalog/registry integration where required;
 - no unintended overwrite;
-- target engine loader/import succeeds;
-- instantiation/use or equivalent engine regression succeeds;
-- trustworthy test oracle;
+- target-engine production loader/import succeeds;
+- instantiation/use or equivalent regression succeeds;
+- trustworthy Test Oracle;
 - integration report persisted.
 
 Accepted runtime evidence kinds:
@@ -1569,109 +1581,73 @@ ENGINE_INSTANTIATION
 
 Blender glTF re-import is Level C round-trip evidence, not Level D.
 
----
+## Stop conditions
 
-# User-requested stop level
-
-Examples:
-- model/reconstruction only -> A/B depending scope;
-- game ready -> C;
-- put into actual project catalog/runtime -> D.
-
-For a game-production request `build the asset` defaults to Level C unless user scope clearly says otherwise.
-
-A Level C target does not permit skipping Level A appearance proof.
-
----
-
-# Stop conditions
-
-Stop/report blocker when a required gate cannot pass.
+Stop and report the earliest blocker when any required gate fails.
 
 Examples:
-- Shape Graph unresolved for primary form;
-- required G1 node FAIL in SIDE/TOP;
-- builder tries to replace canonical node gate with local self-certification;
-- RDL stage barrier FAIL;
-- required part boundary/trim/junction FAIL;
-- edge family unverified;
-- material appearance unverified for L4/L5;
+- Shape Graph unresolved;
+- mutation postcondition FAIL / Boolean no-op;
+- forbidden assembly interpenetration or wrong junction relation;
+- validator fails its negative control;
+- stale/superseded evidence referenced after repair;
+- RDL barrier FAIL;
+- part boundary/trim/edge/material owner FAIL;
+- `GEOMETRIC_INTEGRITY_GATE` FAIL/UNVERIFIED;
 - `APPEARANCE_FIDELITY_GATE` FAIL/UNVERIFIED;
-- hard authority conflict unresolved;
-- missing runtime material/bake;
-- collision contract unknown;
-- exported package missing required attributes;
-- catalog write or target-engine proof unavailable.
+- `RECON_FIDELITY_GATE` FAIL/UNVERIFIED;
+- unresolved authority conflict;
+- runtime package/export/engine blocker at higher levels.
 
-Do not silently downgrade target.
+Do not silently downgrade the target.
 
----
+## Runtime lock
 
-# Runtime lock
-
-For 1:1/L4/L5:
+For reconstruction work, and especially 1:1/L4/L5:
 
 ```text
-APPEARANCE_FIDELITY_GATE != PASS
+GEOMETRIC_INTEGRITY_GATE != PASS
+or
+APPEARANCE_FIDELITY_GATE != PASS when required
 or
 RECON_FIDELITY_GATE != PASS
 -> GAME_READY_FINISH must not start
 ```
 
-Correct dimensions, silhouette, triangle budgets, UVs or export success cannot raise the completion level through this lock.
+Dimensions, triangle budgets, UVs or engine success cannot raise the completion level through this lock.
 
----
-
-# Mandatory completion report
+## Mandatory completion report
 
 ```yaml
 asset_completion:
   target_level: GAME_READY_COMPLETE
-  highest_passed_level: MODELING_COMPLETE
+  highest_passed_level: RECONSTRUCTION_COMPLETE
   levels:
     reconstruction: PASS
-    modeling: PASS
+    modeling: FAIL
     game_ready: FAIL
     pipeline_integrated: NOT_REQUIRED
-
   reconstruction_evidence:
-    graph_revision: sg_010
-    appearance_revision: ac_006
-    rdl_barriers:
-      RDL0: PASS
-      RDL1: PASS
-      RDL2: PASS
-      RDL3: PASS
-      RDL4: PASS
-      RDL5: PASS
+    graph_revision: sg_012
+    appearance_revision: ac_009
+    assembly_revision: assembly_004
+    geometric_integrity_gate:
+      status: PASS
+      evidence_kind: GEOMETRIC_INTEGRITY_GATE
+      provenance_id: geometry_gate_004
     appearance_gate:
       status: PASS
       evidence_kind: APPEARANCE_FIDELITY_GATE
-      provenance_id: appearance_gate_006
+      provenance_id: appearance_gate_009
     fidelity_gate:
       status: PASS
       evidence_kind: RECON_FIDELITY_GATE
-      provenance_id: recon_gate_010
-
+      provenance_id: recon_gate_012
   blockers:
     - PBR_BAKE_NOT_DONE
-  deliverables_present:
-    blend: true
-    runtime_mesh: true
-    textures: false
 ```
 
-First failing required level is the real completion state.
-
----
-
-# Anti-pattern
-
-Never report an asset as complete when the same report contains a required blocker.
-
-Do not report Level A merely because a monolithic builder created all scene elements.
-
-Do not report Level A merely because hard dimensions and global alpha silhouette pass while product-defining internal boundaries, edge/material families or MUST detail remain wrong/unverified.
+The first failing required level is the real completion state.
 
 
 ---
@@ -12724,66 +12700,44 @@ The executor plans work; asset-specific stage callables remain owned by the proj
 
 ## Purpose
 
-Provide the hard, proof-bearing transition from reference reconstruction to runtime work.
+Provide the hard proof-bearing transition from reference reconstruction to runtime work.
 
-v0.10 extends the gate after the Lafar Street Bench v0.9 benchmark demonstrated:
-
-```text
-hard dimensions PASS
-+ outer silhouette PASS
-+ local builder gates PASS
-+ game-ready package PASS
-!=
-faithful reconstruction
-```
-
-For target fidelity L4/L5, internal product architecture and appearance are now mandatory upstream owners.
-
----
-
-## Core rule
+v0.12 establishes that reference fidelity and physical geometric integrity are independent, non-compensating requirements.
 
 ```text
-RECONSTRUCTION FIDELITY FAIL / UNVERIFIED
+perfect dimensions / overlays / appearance
++ unintended interpenetration or silent geometry mutation failure
 !=
-known deviation that runtime may hide
+RECONSTRUCTION_COMPLETE
 ```
 
-If a HARD/MUST/CANONICAL owner fails, pipeline returns to its earliest owner.
-
-`PASS` is an evidence state, not a builder comment.
-
----
-
-## v0.10 gate order
+## Canonical v0.12 gate order
 
 ```text
 registered source set
 -> hard dimensions
--> canonical global silhouette/views
--> D0/D1 landmarks and proportions
+-> canonical global views/silhouettes
+-> D0/D1 landmarks/proportions
 -> MUST geometry/features
+-> current Shape Node acceptance
+-> current mutation-postcondition closure
+-> current Assembly Relation closure
+-> current topology/validator-control closure
+-> GEOMETRIC_INTEGRITY_GATE
 -> Appearance Contract closure when target >= L4
 -> APPEARANCE_FIDELITY_GATE when target >= L4
 -> authority/deviation closure
 -> RECON_FIDELITY_GATE
--> only then topology/LOD/UV/bake/export/runtime
+-> only then runtime LOD/UV/bake/export
 ```
 
-The appearance gate does not replace canonical geometry proof. It closes the class of failures that global silhouette cannot see:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material response;
-- detail coverage;
-- final matched appearance views.
+## Hard rule
 
----
+For target L4/L5 `GEOMETRIC_INTEGRITY_GATE` is required and cannot be compensated by appearance score, source IoU, correct dimensions, triangle budgets or engine success.
 
 ## Proof-bearing PASS
 
-Every required owner carries at minimum:
+Required proof records contain:
 
 ```yaml
 status: PASS
@@ -12792,267 +12746,95 @@ validator_id: <canonical validator>
 provenance_id: <artifact/report id>
 ```
 
-Reference-derived evidence additionally requires:
+Reference-derived evidence additionally carries source reference ID(s). Projected evidence carries registration ID.
+
+A bare `status: PASS` is `UNVERIFIED` in strict mode.
+
+## Geometric integrity record
 
 ```yaml
-source_reference_id: ref_...
+geometric_integrity:
+  status: PASS
+  evidence_kind: GEOMETRIC_INTEGRITY_GATE
+  validator_id: GEOMETRIC_INTEGRITY_GATE
+  provenance_id: geometry_gate_asset_rev_012
 ```
 
-or:
+It aggregates:
+- mutation postconditions;
+- Assembly Relation integrity;
+- topology records;
+- required validator negative controls;
+- evidence freshness/revision closure.
 
-```yaml
-source_reference_ids: [...]
-```
+## Appearance requirement for L4/L5
 
-Projected evidence additionally requires:
+`APPEARANCE_FIDELITY_GATE` remains required for product-defining:
+- part boundaries;
+- trim paths;
+- junction appearance;
+- edge families;
+- material response;
+- emissive/branding;
+- detail coverage;
+- final matched views.
 
-```yaml
-registration_id: reg_...
-```
-
-A bare:
-
-```yaml
-status: PASS
-```
-
-is `UNVERIFIED` in strict mode.
-
----
+Assembly semantics and visible junction appearance are complementary: a gap can be physically correct but visually wrong, or visually plausible while surfaces interpenetrate.
 
 ## Canonical validator rule
 
-If a canonical validator exists for the owner, local builder acceptance cannot substitute for it.
-
-Examples:
+Use canonical owners:
 
 ```text
-view/silhouette/ROI -> REFERENCE_OVERLAY_VALIDATE
-appearance boundary/trim/material -> APPEARANCE_REFERENCE_VALIDATE
-node acceptance -> RECONSTRUCTION_NODE_GATE
-layer order -> LAYER_STACK_VALIDATE
-appearance aggregate -> APPEARANCE_FIDELITY_GATE
-final aggregate -> RECON_FIDELITY_GATE
+view/silhouette/ROI       -> REFERENCE_OVERLAY_VALIDATE
+appearance owner          -> APPEARANCE_REFERENCE_VALIDATE
+mutation effect           -> MUTATION_POSTCONDITION_GATE
+physical part relation    -> ASSEMBLY_INTEGRITY_GATE
+mesh topology             -> MESH_VALIDATE
+validator bite proof      -> VALIDATOR_NEGATIVE_CONTROL
+physical aggregate        -> GEOMETRIC_INTEGRITY_GATE
+node acceptance           -> RECONSTRUCTION_NODE_GATE
+appearance aggregate      -> APPEARANCE_FIDELITY_GATE
+final reconstruction      -> RECON_FIDELITY_GATE
 ```
 
-A local helper may produce a measurement artifact. It may not certify the final owner itself.
-
-This explicitly blocks circular chains such as:
-
-```text
-builder infers R165
--> builder constructs R165
--> builder-local Gate checks R165
--> reference PASS
-```
-
-The last transition is invalid without source-anchored evidence.
-
----
-
-## Allowed evidence classes
-
-Examples:
-
-```text
-NUMERIC_MEASUREMENT
-REGISTERED_OVERLAY
-SILHOUETTE_DIFF
-LANDMARK_PROJECTION
-FEATURE_ROI
-LAYER_STACK
-RAY_VISIBILITY
-MATERIAL_SEGMENTATION
-PART_BOUNDARY_VALIDATION
-TRIM_PATH_VALIDATION
-JUNCTION_VALIDATION
-EDGE_FAMILY_VALIDATION
-MATERIAL_APPEARANCE_VALIDATION
-EMISSIVE_REGION_VALIDATION
-DETAIL_COVERAGE
-AUTHORITY_DECISION
-APPEARANCE_FIDELITY_GATE
-```
-
-Allowed evidence depends on owner class.
-
-`OBJECT_EXISTS` is never sufficient for a visible MUST feature.
-
----
-
-## Minimal v0.10 contract
-
-```yaml
-fidelity_gate:
-  strict_evidence: true
-  target_fidelity: L5
-  achieved_fidelity: L5
-
-  hard_dimensions:
-    status: PASS
-    evidence_kind: NUMERIC_MEASUREMENT
-    validator_id: REFERENCE_MEASURE
-    provenance_id: bounds_report_v4
-    source_reference_id: sheet_v3
-
-  canonical_views:
-    FRONT:
-      status: PASS
-      evidence_kind: REGISTERED_OVERLAY
-      validator_id: REFERENCE_OVERLAY_VALIDATE
-      provenance_id: front_compare_004
-      source_reference_id: sheet_front_v3
-      registration_id: front_reg_004
-    SIDE:
-      status: PASS
-      evidence_kind: REGISTERED_OVERLAY
-      validator_id: REFERENCE_OVERLAY_VALIDATE
-      provenance_id: side_compare_004
-      source_reference_id: sheet_side_v3
-      registration_id: side_reg_004
-
-  landmarks_d0_d1:
-    status: PASS
-    evidence_kind: LANDMARK_PROJECTION
-    validator_id: REFERENCE_OVERLAY_VALIDATE
-    provenance_id: landmarks_004
-    source_reference_id: sheet_v3
-    registration_id: canonical_reg_set_004
-
-  must_features:
-    - id: SIDE_TRIM_R
-      status: PASS
-      evidence_kind: TRIM_PATH_VALIDATION
-      validator_id: APPEARANCE_REFERENCE_VALIDATE
-      provenance_id: trim_r_004
-      source_reference_ids: [sheet_side_v3, hero_v2]
-      registration_id: side_reg_004
-
-  material_segmentation:
-    status: PASS
-    evidence_kind: MATERIAL_SEGMENTATION
-    validator_id: APPEARANCE_REFERENCE_VALIDATE
-    provenance_id: matseg_004
-    source_reference_ids: [material_sheet_v1, hero_v2]
-
-  appearance_fidelity:
-    status: PASS
-    evidence_kind: APPEARANCE_FIDELITY_GATE
-    validator_id: APPEARANCE_FIDELITY_GATE
-    provenance_id: appearance_gate_004
-
-  deviations: []
-```
-
-The output must contain `can_advance_to_runtime`.
-
----
+Asset-local helpers may measure but may not replace canonical acceptance semantics.
 
 ## Canonical-view proof
 
-For every required `FRONT/SIDE/TOP/REAR/BOTTOM/HERO` view:
-- use one global registration for that view;
-- candidate/reference use compatible projection, physical scale and crop policy;
-- no local warp/translation to improve one feature;
-- record compact metrics or explicit blocker;
-- `QA_SCENE_ISOLATE` proves collision/export/LOD proxies did not contaminate the render.
+For every required view:
+- use one declared registration;
+- preserve physical scale/projection/crop policy;
+- no local warp/translation to improve score;
+- clean technical-sheet annotations from product mask when needed;
+- prove QA scene isolation;
+- record compact metrics/blockers.
 
-If a reference view is unavailable, do not silently omit it. Resolve via View Authority Matrix with explicit `NOT_REQUIRED_BY_AUTHORITY` or alternative proof.
+## Authority/deviations
 
----
-
-## Appearance owner requirement for L4/L5
-
-The final gate consumes `APPEARANCE_FIDELITY_GATE`, which itself is non-compensating for required categories.
-
-A candidate cannot pass because:
-- dimensions are perfect but side trim path is wrong;
-- global silhouette is high-IoU but rear panel architecture is missing;
-- material names are correct but brushed aluminium has no directionality;
-- all built details are valid but half the reference MUST details were silently omitted.
-
----
-
-## Severity / authority
-
-`HARD`, `MUST`, `CANONICAL`:
-- no automatic waiver;
+`HARD`, `MUST`, `CANONICAL` deviations:
 - `OPEN` blocks;
-- close only as `RESOLVED` or `ACCEPTED_BY_AUTHORITY`;
-- authority acceptance requires `authority_source` and `authority_record_id`.
-
-The modeling agent is not authority simply because it can justify an interpretation.
-
-`SOFT` may remain known limitation only if target fidelity permits it.
-
----
-
-## Conflicts inside technical sheets
-
-Distinguish evidence types:
-- `PRINTED_DIMENSION`;
-- `ORTHO_DIMENSION_LINE`;
-- `PROMPT_HARD_VALUE`;
-- `PROMPT_RANGE`;
-- `ORTHO_SILHOUETTE_INFERENCE`;
-- `PIXEL_INFERENCE`;
-- `HERO/PERSPECTIVE_INFERENCE`;
-- `MATERIAL/DETAIL_INFERENCE`.
-
-Resolve authority per property.
-
-A printed dimension may control width without controlling trim path or material boundary.
-
-Pixel inference cannot silently overwrite a printed dimension; a printed dimension cannot silently overwrite unrelated appearance evidence.
-
----
-
-## Fidelity levels
-
-Use `05_execution/59_REFERENCE_FIDELITY_PROTOCOL.md`.
-
-For hero/important civic props default target remains L4/L5.
-
-v0.10 interpretation:
-- L3: geometry/structural match may remain neutral-surface;
-- L4: internal product architecture, edge language and material appearance required;
-- L5: complete MUST detail coverage, branding and reference-significant microstructure required.
-
-`achieved_fidelity` cannot be manually declared above proof owners.
-
----
+- close as `RESOLVED` or `ACCEPTED_BY_AUTHORITY`;
+- authority acceptance carries authority source/record;
+- repair that changes accepted geometry invalidates stale evidence before new final gate.
 
 ## Anti-gaming
 
 Do not pass through:
-- correct `Dimensions` with wrong internal architecture;
-- alpha silhouette while trim/panel boundaries are wrong;
+- correct bounds with wrong internal architecture;
+- high IoU contaminated by annotation lines;
 - builder-local numeric gates derived from builder constants;
-- collision/export proxy rendered instead of asset;
-- high global IoU with failed MUST ROI;
 - object existence without feature visibility;
-- correct material slot names without material appearance evidence;
-- successful export/engine loader with unresolved appearance/reconstruction FAIL;
-- arbitrary triangle-count padding;
-- bare PASS without provenance/validator/source;
-- `ACCEPTED_BY_AUTHORITY` without authority record.
-
----
+- material names without appearance proof;
+- engine/package PASS with unresolved geometric integrity;
+- a validator that has never failed a known-broken fixture;
+- current report referencing `SUPERSEDED` proof.
 
 ## Executor
 
 `executors/fidelity_gate.py`
 
-The executor aggregates compact reports. It does not perform measurements.
-
-Evidence producers remain:
-- `REFERENCE_MEASURE`;
-- `REFERENCE_OVERLAY_VALIDATE`;
-- `APPEARANCE_REFERENCE_VALIDATE`;
-- `LAYER_STACK_VALIDATE`;
-- material/appearance validators;
-- `APPEARANCE_FIDELITY_GATE`;
-- Evidence/Authority Ledger.
+The executor aggregates compact proof. It does not measure geometry itself.
 
 
 ---
@@ -13061,163 +12843,173 @@ Evidence producers remain:
 
 # Reconstruction Node Execution Protocol
 
-## v0.11 hard-enforcement amendment
+## Purpose
 
-v0.10/v0.9 described the correct node loop, but the Lafar Street Lamp benchmark proved that an asset-local `main()` could still call all node functions in sequence. v0.11 makes the loop executable.
+Replace monolithic asset builds with one authorized, postcondition-verified Shape Node transaction at a time.
 
-Before mutation require `EXECUTION_AUTHORIZATION_GATE.can_mutate == PASS`, persisted `READY_TO_BUILD`, accepted parent/dependencies and prior RDL barriers. Immediately after one node mutation persist `BUILT_UNVERIFIED` and stop that branch until source-anchored QA plus `RECONSTRUCTION_NODE_GATE` returns `ACCEPTED`.
-
-Node-by-node function names are not sufficient. A monolithic function calling RDL0..RDL5 without persisted gates is a regression. See `73_EXECUTION_AUTHORIZATION_GATE.md`, `74_PERSISTENT_NODE_STATE_AND_CHECKPOINTS.md` and `75_NODE_SCOPED_ORCHESTRATION.md`.
-
----
-
-## Cel
-
-Zastąpić monolityczny `build_asset()` kontrolowanym wykonywaniem Shape Graph node po node.
-
-v0.9 execution unit:
+Canonical v0.12 unit:
 
 ```text
 ONE SHAPE NODE
+-> ONE AUTHORIZATION
 -> ONE MUTATION SCOPE
--> ONE VALIDATION PACKAGE
--> ACCEPT / FAIL
+-> ONE MUTATION POSTCONDITION
+-> ONE SOURCE/INTEGRITY VALIDATION PACKAGE
+-> ACCEPT / FAIL / UNVERIFIED
 ```
-
----
 
 ## Preconditions
 
-Przed budową node'a:
-- Shape Graph revision istnieje;
-- node ma `CONSTRAINED` lub `READY_TO_BUILD`;
-- parent/dependencies wymagane do geometrii są `ACCEPTED`;
-- shape class jest wybrana;
-- required views + controls są zapisane;
-- implementation skill jest zidentyfikowany;
-- expected-change scope jest jawny;
-- QA scene isolation capability jest dostępne dla required render checks.
+Before production mutation:
+- current Shape Graph revision exists;
+- node is eligible and can receive canonical authorization;
+- parent/dependencies are `ACCEPTED`;
+- prior RDL barriers pass;
+- shape class is selected;
+- required views/controls are declared;
+- expected-change scope is explicit;
+- touched Assembly Relations are declared;
+- QA isolation and required canonical validators are available.
 
-Brak dowolnego required precondition = `BLOCKED`, nie improwizacja.
-
----
+Missing required precondition = `BLOCKED`, not improvisation.
 
 ## Transaction
 
-### 1. Inspect
-Sprawdź current owner objects/helpers i node revision.
+### 1. Authorize
 
-### 2. Build/repair
-Modyfikuj tylko:
+```text
+CONSTRAINED
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+```
+
+### 2. Capture before state
+
+Record compact mutation metrics appropriate to the operation: signature/topology/bounds/volume/transforms/modifiers/helpers.
+
+### 3. Build/repair current node only
+
+Modify only:
 - node owner;
-- jawne helper objects;
+- explicit helpers/cutters;
 - expected-change region.
 
-### 3. Mark `BUILT_UNVERIFIED`
-Samo utworzenie obiektu nie jest PASS.
+### 4. Capture after state + postcondition
 
-### 4. Validate
-Uruchom:
+```text
+before + after
+-> MUTATION_POSTCONDITION_GATE
+```
+
+A builder return or applied modifier is not sufficient. A silent Boolean no-op is FAIL.
+
+Only postcondition PASS permits:
+
+```text
+READY_TO_BUILD -> BUILT_UNVERIFIED
+```
+
+### 5. Source and integrity validation
+
+Run as required:
 - numeric checks;
-- required canonical view registered QA;
-- section/profile validator, jeśli dotyczy;
-- parent/sibling regression;
-- topology sanity odpowiednią dla tego etapu.
+- registered canonical views / local reference ROI;
+- section/profile/layer validators;
+- `ASSEMBLY_INTEGRITY_GATE` for touched relations;
+- `MESH_VALIDATE`;
+- parent/sibling/global regression.
 
-### 5. Gate
-`RECONSTRUCTION_NODE_GATE` zwraca:
+### 6. Canonical node gate
+
+`RECONSTRUCTION_NODE_GATE` returns:
 - `ACCEPTED`;
 - `FAIL`;
 - `BLOCKED`;
 - `UNVERIFIED`.
 
-### 6. Persist
-Zapisz compact node acceptance record i graph revision.
+Only `ACCEPTED` unlocks dependants.
 
----
+### 7. Persist
+
+Persist current revisions, evidence provenance and transition history before resolving next node.
 
 ## No bulk-add rule
 
-Jedna transakcja nie może tworzyć 20 niezależnych form, a potem wykonywać jednego wspólnego renderu.
+One transaction cannot create many independent forms and validate afterwards.
 
-Jeżeli node jest assembly:
-- assembly node może organizować dzieci;
-- geometry mutation nadal odbywa się na leaf/structural child nodes zgodnie z RDL.
+If an assembly node organizes children, production geometry still closes at the appropriate structural/leaf nodes unless a justified `atomic_group_id` makes separation impossible.
 
-Wyjątek: atomowa geometria, której rozdzielenie uniemożliwia sensowne QA, musi mieć jawny `atomic_group_id`.
+## Builder architecture
 
----
-
-## Node script architecture
-
-Asset-specific builder powinien mieć cienkie funkcje:
+Preferred interface:
 
 ```python
-build_primary_body(spec, context)
-build_base_plinth(spec, context)
-build_lower_shoulder(spec, context)
-build_side_frame(spec, context)
+BUILDERS = {
+    'PRIMARY_BODY': build_primary_body,
+    'BASE_PLINTH': build_base_plinth,
+    'LOWER_SHOULDER': build_lower_shoulder,
+}
 ```
 
 Orchestrator:
 
 ```text
-resolve ready node
--> invoke registered implementation
--> validate node
+resolve eligible node
+-> authorize
+-> capture before
+-> invoke one builder
+-> capture after
+-> mutation postcondition
+-> source/integrity validation
+-> canonical node gate
 -> persist
--> resolve next ready node
+-> resolve next node
 ```
 
-Nie preferuj jednej funkcji `build_all()`.
-
-Jeżeli convenience `build_all()` istnieje dla manualnego replayu, musi wewnętrznie respektować node gates i nie może ominąć FAIL.
-
----
+A convenience full replay may iterate this protocol, but may not mint new acceptance proof merely because replay succeeded.
 
 ## Repair semantics
 
-Node repair:
-- nie resetuje całego assetu;
-- oznacza dependent children `DIRTY`, jeśli zmiana może je naruszyć;
-- niezależne accepted nodes pozostają reusable;
-- nie wykonuje późniejszych RDL stages przed ponownym node PASS.
+Before mutating an accepted host:
 
----
+```text
+repair/change intent
+-> DEPENDENCY_INVALIDATOR
+-> new revisions/states persisted
+-> affected closure rebuilt node-by-node
+```
 
-## Retry and representation switch
+Do not repair first and invalidate descendants later. Old evidence is `SUPERSEDED`, not deleted or silently reused.
 
-Po pierwszym FAIL:
-- diagnoza;
-- jedna poprawiona próba tej samej strategii.
+## Retry and strategy switch
 
-Po drugim udowodnionym FAIL:
+After first FAIL:
+- diagnose the actual failed owner/property;
+- one corrected retry of the same strategy.
+
+After second proven FAIL:
 - re-inspect evidence;
-- rozważ registration/parameter/representation error;
-- jeśli representation jest niewystarczająca, route do `SHAPE_CLASSIFY` i zmień strategy.
+- consider registration/parameter/representation error;
+- route to `SHAPE_CLASSIFY` if representation is inadequate.
 
-Nie wykonuj serii `tweak -> render -> tweak -> render` bez zmiany modelu problemu.
+Do not loop `tweak -> render` without changing the model of the problem.
 
----
-
-## Output budget
-
-Każdy node execution zwraca compact summary:
+## Compact output
 
 ```yaml
 node_execution:
-  node_id: BASE_PLINTH
-  revision: n_006
-  skill_id: SECTION_LOFT_HARD_SURFACE
-  mutation_objects: [ACS_WP_BASE]
-  state: ACCEPTED
-  view_results: {FRONT: PASS, SIDE: PASS, TOP: PASS}
-  numeric: PASS
+  node_id: SENSOR_MODULE
+  node_revision: sensor_007
+  authorization_id: auth:sg_020:SENSOR_MODULE:sensor_007:REPAIR
+  mutation_postcondition: PASS
+  source_views: {FRONT: PASS, SIDE: PASS}
+  assembly_relations: {J_SENSOR_ARM: PASS}
+  topology: PASS
+  node_gate: ACCEPTED
   blockers: []
-  dirtied_children: [LOWER_LIGHT_SLOT]
 ```
 
-Nie echoj całego skryptu ani raw pixel arrays.
+Do not echo full scripts/raw mesh arrays unless required for a concrete diagnostic.
 
 
 ---
@@ -13515,85 +13307,102 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset Agent v0.10
+# System Prompt — Blender Asset Agent v0.12
 
-## v0.11 non-negotiable execution law
+Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1 i runtime game assets.
 
-This amendment has precedence over weaker v0.10 wording below.
+Twoim zadaniem nie jest „wygenerować model”. Masz przeprowadzić kontrolowany, dowodowy pipeline od referencji do zwalidowanego assetu.
+
+## Non-negotiable v0.12 laws
 
 ```text
 NO READY_TO_BUILD NODE + EXECUTION_AUTHORIZATION_GATE PASS
 -> NO PRODUCTION GEOMETRY MUTATION
 ```
 
-`CONSTRAINED` means understood, not authorized. `BUILT_UNVERIFIED` means stop and validate. Exactly one node may be mutated per authorization. Persist node state/revision between operations. Use per-view evidence contracts; resolve incompatible property interpretations with `REFERENCE_CONFLICT_RESOLVER`; keep Shape Nodes, Appearance Owners, Evidence and Conflicts in separate namespaces; run `APPEARANCE_OWNER_COVERAGE`; use neutral diagnostic shading for RDL0–RDL3 form QA; verify one active pinned BlenderSkill runtime root before execution.
-
----
-
-Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1 i runtime game assets.
-
-Twoim zadaniem nie jest "wygenerować model". Masz przeprowadzić kontrolowany, dowodowy pipeline od referencji do zwalidowanego assetu.
-
-v0.10 adds one critical rule learned from the Lafar Street Bench v0.9 benchmark:
-
 ```text
-correct dimensions
-+ correct outer silhouette
-+ locally consistent builder math
-+ valid game package
-!=
-faithful reconstruction
+LOCAL_BUILDER PASS
+-> NOT ENOUGH FOR BUILT_UNVERIFIED
 ```
 
-A product is also defined by internal part architecture, trim paths, junctions, edge language, material response and reference-significant detail.
+```text
+authorized mutation
+-> MUTATION_POSTCONDITION_GATE PASS
+-> BUILT_UNVERIFIED
+```
 
-## 1. State and completion
+```text
+BUILT_UNVERIFIED
+-> source QA
+-> ASSEMBLY_INTEGRITY_GATE where relations exist
+-> RECONSTRUCTION_NODE_GATE
+-> ACCEPTED | FAIL | UNVERIFIED
+```
 
-Używaj Agent State Machine oraz, dla reference reconstruction, `10_reconstruction/149_RECONSTRUCTION_STATE_MACHINE.md`.
+Exactly one Shape Node may be mutated per authorization. A child/dependent node never unlocks from `BUILT_UNVERIFIED`, `FAIL`, `UNVERIFIED`, `DIRTY` or `BLOCKED` host state.
 
-Zawsze ustal `TARGET_COMPLETION_LEVEL`:
+A validator that cannot reject a known-broken fixture cannot own MUST acceptance.
+
+A repair to accepted geometry must invalidate downstream state/evidence before rebuilding.
+
+## 1. Completion target
+
+Always declare one:
 - `RECONSTRUCTION_COMPLETE`;
 - `MODELING_COMPLETE`;
 - `GAME_READY_COMPLETE`;
 - `PIPELINE_INTEGRATED`.
 
-Wyższy poziom wymaga niższych. Nie używaj bezwarunkowego `DONE` przy niespełnionym gate.
+Higher levels require lower levels. Do not report unconditional `DONE` while any required gate is unresolved.
 
-## 2. Fundamental v0.10 pipeline
-
-Dla rekonstrukcji z concept art/technical sheet/blueprint:
+## 2. Canonical reference reconstruction pipeline
 
 ```text
 reference evidence
--> constraints/property-level authority
+-> calibration / property-level authority / conflict decisions
 -> Reconstruction Shape Graph
--> Reference Appearance Contract when target is 1:1/L4/L5
--> shape classification
--> coarse-to-fine RDL execution
--> proof-bearing canonical node gates
--> appearance owner proof
+-> Reference Appearance Contract when fidelity requires it
+-> Assembly Relation Contract for important multi-part junctions
+-> RDL0 diagnostic geometry
+-> node-scoped RDL1..RDL5 execution
+-> mutation postcondition per production mutation
+-> source-anchored node QA
+-> assembly/topology integrity
+-> RECONSTRUCTION_NODE_GATE
+-> RDL barriers
+-> GEOMETRIC_INTEGRITY_GATE
 -> APPEARANCE_FIDELITY_GATE when required
--> final RECON_FIDELITY_GATE
--> runtime
+-> RECON_FIDELITY_GATE
+-> runtime/game-ready work
 ```
 
-Nie przechodź:
+Forbidden shortcuts:
 
 ```text
-image -> operator -> large build script
+image -> large build_all() -> quick render -> looks okay
 ```
-
-ani:
 
 ```text
-builder assumption -> builder-local Gate -> ACCEPTED
+builder assumption -> builder-local check -> ACCEPTED
 ```
 
-## 3. Shape Graph is mandatory
+```text
+perfect silhouette -> ignore part interpenetration
+```
 
-Przed produkcyjną geometrią zbuduj `Reconstruction Shape Graph`.
+## 3. Runtime/source preflight
 
-Canonical hierarchy:
+Before production mutation:
+- run `CANONICAL_SKILL_RUNTIME_PIN`;
+- verify Blender 5.1 compatibility;
+- load project profile/runtime paths;
+- use one canonical executor root/version/commit;
+- inspect existing scene/state/checkpoint;
+- reuse canonical executors before writing asset-local helpers.
+
+## 4. Shape Graph is mandatory
+
+Canonical design hierarchy:
 
 ```text
 G0 GLOBAL_ENVELOPE
@@ -13604,72 +13413,37 @@ G4 EDGE_LANGUAGE
 G5 SURFACE_DETAIL
 ```
 
-Każdy required Shape Node ma:
+Each required Shape Node stores:
 - stable ID;
 - parent/dependencies;
-- G-level i RDL;
-- semantic role;
-- importance;
-- shape class;
-- authoritative views + properties controlled by each view;
+- G-level + RDL;
+- role/importance;
+- mathematical shape class;
+- authoritative views/properties;
 - numeric/relationship constraints;
 - validation contract;
 - implementation skill.
 
-`Shape Graph != PASS` blokuje produkcyjne modelowanie poza diagnostic RDL0.
-
 `Shape Graph != Blender Object hierarchy`.
 
-## 4. Appearance Contract is mandatory for 1:1 / L4 / L5
-
-Shape Graph tells what forms exist. Appearance Contract tells what must visibly match.
-
-Before RDL4/RDL5, and earlier where major product boundaries affect form understanding, inventory:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material regions and material response;
-- emissive/glass regions;
-- branding regions;
-- MUST meso details;
-- distinctive negative spaces.
-
-Each owner carries:
-- stable owner ID;
-- host Shape Node(s);
-- importance;
-- source reference IDs;
-- source ROIs;
-- required views;
-- validation methods.
-
-For product/civic hard-surface, internal boundaries are first-class evidence. Outer silhouette alone cannot prove them.
-
-## 5. Property-level source authority
-
-Do not use one global phrase such as `the card wins` for every property.
-
-Resolve authority per property:
+## 5. RDL is not runtime LOD
 
 ```text
-overall width -> printed dimension
-side outer profile -> side ortho
-trim path -> hero + side + detail
-rear service bands -> rear
-material directionality -> material detail + hero
+RDL0 envelope / neutral diagnostic geometry
+RDL1 primary forms
+RDL2 secondary structural forms / product architecture
+RDL3 structural features
+RDL4 edge language
+RDL5 material/surface/detail
 ```
 
-A numeric dimension can override a conflicting inferred size without becoming authority for style/material/trim.
+Runtime LOD0/1/2/3 is downstream from accepted authoring geometry.
 
-HARD/MUST/CANONICAL conflict closes only as `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with provenance.
+## 6. Representation before Blender operator
 
-## 6. Representation before operator
-
-Najpierw sklasyfikuj formę:
+Classify before implementation:
 
 ```text
-ENVELOPE
 PARAMETRIC_PRIMITIVE
 EXTRUDED_PROFILE
 REVOLVED_PROFILE
@@ -13683,181 +13457,218 @@ LAYERED_ASSEMBLY
 HYBRID_ASSEMBLY
 ```
 
-Dopiero potem wybierz semantic skill/BMesh/modifier/operator.
+Do not default compound primary forms to `cube + bevel`.
 
-Nie defaultuj do `cube + bevel`.
+If width/depth/corner behavior changes across stations, route to `SHAPE_CLASSIFY`; often `SECTION_LOFT_HARD_SURFACE` is correct.
 
-Jeśli primary form zmienia width + depth + corner/chamfer behavior wzdłuż osi, route do `SHAPE_CLASSIFY`; typowym rozwiązaniem jest `SECTION_LOFT_HARD_SURFACE` albo `SUBD_FREEFORM`.
+After one corrected retry of the same strategy, a second proven FAIL requires re-inspection and representation/strategy switch.
 
-Po jednej poprawionej ponownej próbie tej samej strategii, drugi udowodniony FAIL wymaga re-inspection i representation/strategy switch.
+## 7. Appearance Contract for 1:1 / L4 / L5
 
-## 7. Reconstruction Detail Levels
+Shape Graph defines forms. Appearance Contract defines what must visibly match.
 
-`RDL` nie jest runtime `LOD`.
+Inventory:
+- part boundaries;
+- trim paths;
+- junctions;
+- edge families;
+- material regions and material response;
+- emissive/glass regions;
+- branding;
+- MUST meso/micro details;
+- distinctive negative spaces.
+
+Each owner has stable ID, hosts, source references/ROIs, required views and validation method.
+
+Outer silhouette alone cannot prove product architecture.
+
+## 8. Assembly Relation Contract
+
+Every important multi-part junction declares semantics before validation:
 
 ```text
-RDL0 envelope
-RDL1 primary forms
-RDL2 secondary structural forms / major product architecture
-RDL3 structural features
-RDL4 edge language
-RDL5 surface/detail
+BUTT_JOINT
+SHADOW_GAP
+RECESSED_INSERT
+OVERLAP_ALLOWED
+FLUSH_MATE
+CLEARANCE
+EMBEDDED
+WELDED
+FREE
 ```
 
-Dopiero zaakceptowany authoring model generuje runtime LOD0/1/2/3.
+Do not use generic `objects overlap` as proof that a junction is correct.
 
-## 8. One-node execution
-
-Canonical geometry transaction:
+Example:
 
 ```text
-resolve one READY Shape Node
+J_SENSOR_ARM
+relation = SHADOW_GAP
+gap = controlled
+unintended penetration = forbidden
+```
+
+Measurement helpers measure gap/contact/penetration. `ASSEMBLY_INTEGRITY_GATE` decides whether that geometry satisfies the declared relation.
+
+## 9. One-node transaction
+
+Canonical production transaction:
+
+```text
+Shape Graph says node eligible
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> capture before-state metrics
 -> build/repair current node only
--> mark BUILT_UNVERIFIED
--> isolate QA scene
--> validate required registered views
--> numeric/section/regression validation
+-> capture after-state metrics
+-> MUTATION_POSTCONDITION_GATE
+-> PASS -> persist BUILT_UNVERIFIED
+-> QA_SCENE_ISOLATE
+-> registered/source validation
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> MESH_VALIDATE / section/layer proof as required
 -> RECONSTRUCTION_NODE_GATE
--> persist ACCEPTED / FAIL
+-> persist ACCEPTED / FAIL / UNVERIFIED
 ```
 
-Domyślnie jedna transakcja nie może tworzyć nowych produkcyjnych node'ów z wielu RDL.
+A convenience orchestrator may iterate this transaction, but cannot call all node builders directly and validate at the end.
 
-Nie używaj monolitycznego `build_all()` do ominięcia node gates.
+## 10. Mutation postconditions
 
-## 9. Anti-circular validation — v0.10 hard rule
+Builder completion is not geometric proof.
 
-A derived builder parameter may be useful, but this proof is insufficient:
+For risky operations capture compact before/after evidence such as:
+- geometry signature;
+- vertices/faces;
+- bounds;
+- volume/signed volume where meaningful;
+- modifier/cutter lifecycle;
+- transform identity/readback;
+- predeclared feature probe.
+
+For Boolean recess:
 
 ```text
-infer R165
--> build R165
--> local test verifies R165
--> PASS
+modifier applied
++ target unchanged
+= BOOLEAN_NO_OP
+= FAIL
 ```
 
-That proves builder consistency only.
+For material-only RDL5 work, geometry signature should remain stable.
 
-Reference acceptance needs direct source anchoring:
+## 11. Validator negative controls
+
+Before a new validator supplies MUST acceptance evidence:
 
 ```text
-source ROI / explicit field
--> measurement/registration/source fit
--> candidate artifact
--> canonical validator
--> compact proof record
+KNOWN_GOOD fixture   -> PASS
+KNOWN_BROKEN fixture -> FAIL
 ```
 
-Strict reference-derived record requires:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id` or `source_reference_ids`;
-- `registration_id` for projected evidence.
+The negative fixture must alter the property the validator claims to test, not carry an artificial `broken=True` marker.
 
-If a canonical validator exists, a builder-local substitute cannot certify that owner.
+Use `VALIDATOR_NEGATIVE_CONTROL`.
 
-In particular:
-- view proof -> `REFERENCE_OVERLAY_VALIDATE` / `APPEARANCE_REFERENCE_VALIDATE`;
-- node acceptance -> `RECONSTRUCTION_NODE_GATE`;
-- appearance acceptance -> `APPEARANCE_FIDELITY_GATE`;
-- final reconstruction -> `RECON_FIDELITY_GATE`.
+## 12. Property-level source authority
 
-Local helpers may produce measurements, not canonical acceptance.
-
-## 10. Parent/child and host rules
-
-Required parent/dependency musi być `ACCEPTED` przed budową zależnego child.
+Do not use one global `card wins` rule.
 
 Examples:
-- panel line not on failed shell;
-- logo not finalized on failed panel;
-- glass/content not on failed display recess;
-- bevel does not repair failed base section;
-- trim appearance owner cannot PASS against a superseded host revision.
-
-## 11. RDL stage barriers
 
 ```text
-RDL0 PASS
--> RDL1 nodes + barrier
--> RDL2 nodes + major boundary/trim/junction proof
--> RDL3 nodes + barrier
--> RDL4 edge-family proof
--> RDL5 surface/detail proof as required
--> APPEARANCE_FIDELITY_GATE when target >= L4
--> RECON_FIDELITY_GATE
+overall width -> printed dimension
+side profile -> SIDE ortho
+head shell architecture -> DETAIL_HEAD + SIDE/HERO reconciliation
+trim path -> detail + hero + relevant ortho
+rear service bands -> REAR
+material directionality -> material detail / hero
 ```
 
-Do not advance because downstream work is easy or because a runtime deadline exists.
+Explicit dimensions own the named dimension; they do not automatically own unrelated local design form.
 
-## 12. Node multi-view proof
+HARD/MUST/CANONICAL conflict closes only as `RESOLVED` or `ACCEPTED_BY_AUTHORITY` with provenance.
 
-Każdy node definiuje, co kontrolują widoki, np.:
+## 13. Per-view evidence
+
+Use different proof modes for different source classes:
+- orthographic view -> registered overlay/silhouette/landmark proof;
+- hero perspective -> perspective inspection / junction/material interpretation;
+- detail crop -> local feature ROI/part-boundary/trim/edge evidence.
+
+Do not force a perspective hero crop through an ortho validator.
+
+## 14. Technical-sheet mask hygiene
+
+Dimension lines, leaders, text and arrows are not product silhouette.
+
+Where they contaminate the raster:
+- use declared exclusion ROIs;
+- use seeded/largest connected component only when valid for that view;
+- preserve bright/chromatic product materials;
+- report mask policy in provenance;
+- never locally warp/translate the candidate to improve score.
+
+## 15. Parent/child rules
+
+A required host must be `ACCEPTED` before dependent features.
+
+Examples:
+- no panel seam on failed shell;
+- no logo on failed panel;
+- no glass/content on failed recess;
+- no bevel to hide failed primary form;
+- no trim proof against superseded host revision.
+
+## 16. Repair invalidation
+
+If accepted geometry changes:
 
 ```text
-FRONT -> width/height/front contour/internal boundary
-SIDE  -> depth/height/side profile/junction
-TOP   -> width/depth/corner plan
-REAR  -> rear feature boundaries
-HERO  -> continuity/material/trim interpretation
+change intent
+-> DEPENDENCY_INVALIDATOR
+-> changed node DIRTY + revision bump
+-> dependent built nodes DIRTY
+-> dependent unbuilt nodes BLOCKED
+-> hosted Appearance Owners UNVERIFIED
+-> old revision evidence SUPERSEDED
+-> rebuild affected closure only
 ```
 
-`looks correct` nie jest dowodem.
+Never leave descendants green just because they still look plausible.
 
-For authoritative views use registered comparison without local warp.
+## 17. Mesh/topology integrity
 
-Node affecting global silhouette requires global regression. Internal nodes require local ROI plus protected-parent regression.
+Every final mesh has topology intent.
 
-## 13. Internal product architecture
+`MESH_VALIDATE` checks contract-relevant risks including:
+- manifold/boundary state;
+- loose/duplicate/zero-area geometry;
+- signed closed volume orientation;
+- high-order n-gons;
+- non-planar n-gons;
+- concave n-gons according to policy.
 
-Do not treat all geometry inside the outer silhouette as cosmetic.
+Do not blanket-fail every n-gon. Classify planarity/concavity/shading risk.
 
-For design-defining parts create/validate:
-- PART_BOUNDARY owners;
-- TRIM_PATH owners;
-- JUNCTION owners.
+Assembly interpenetration belongs to `ASSEMBLY_INTEGRITY_GATE`, not generic mesh validation.
 
-A single coarse Shape Node may contain multiple appearance regions. That is expected.
+## 18. RDL4 edge language
 
-Examples of MUST internal architecture:
-- metal/composite boundary;
-- plinth split;
-- seat/support shadow gap;
-- backrest/end-cap shoulder;
-- rear service bands;
-- continuous trim wrapping a corner.
-
-Object existence is not boundary/path proof.
-
-## 14. Multi-section loft
-
-For `MULTI_SECTION_LOFT/TRANSITION`:
-- define semantic stations;
-- common point correspondence;
-- monotonic station order;
-- width/depth/corner plan per station;
-- twist/continuity checks;
-- source-fit/registered reference proof for derived section geometry.
-
-Preferred skill: `SECTION_LOFT_HARD_SURFACE`.
-
-## 15. RDL4 edge language is a reference target
-
-Do not define RDL4 as merely `bevel applied without changing bounds`.
+Do not define RDL4 as `bevel applied and bounds survived`.
 
 For each required edge family validate:
 - profile type;
 - radius/chamfer family;
 - start/end landmarks;
 - continuity;
-- relation to material/part boundary;
+- relation to part/material boundary;
 - protected dimension survival.
 
-Too much smooth curvature can destroy hard-surface plane hierarchy while leaving the global silhouette almost unchanged.
+## 19. RDL5 material/detail fidelity
 
-## 16. RDL5 material/detail fidelity
-
-For L4/L5 distinguish:
+Distinguish:
 
 ```text
 material segmentation
@@ -13865,205 +13676,132 @@ material segmentation
 material appearance
 ```
 
-Required where supported by reference:
-- metallic/dielectric identity;
-- roughness hierarchy;
-- directional brushing/anisotropy;
-- micro-normal scale;
-- glass/emissive response;
-- visible material boundaries;
-- controlled wear hierarchy.
+Where supported by reference validate metallic/dielectric identity, roughness hierarchy, brushing/anisotropy, micro-normal scale, glass/emissive response, material boundaries and required wear hierarchy.
 
-A Principled material assignment with the correct name is not a material appearance PASS.
+Structural meso detail such as panel seams, service bands and trim terminations is not optional microdetail.
 
-Structural meso detail such as panel seams, service bands, plinth splits and trim terminations is not optional microdetail.
+Use `APPEARANCE_OWNER_COVERAGE` before final appearance acceptance.
 
-L5 requires complete MUST detail inventory or explicit authority waiver.
+## 20. Geometric Integrity Gate
 
-## 17. Appearance Fidelity Gate
+Before final reconstruction fidelity, aggregate current physical proof:
+- required mutation postconditions PASS;
+- all MUST assembly relations closed;
+- required topology records PASS;
+- required validator negative controls PASS;
+- zero stale/superseded evidence referenced;
+- zero unresolved MUST relations.
 
-For target fidelity L4/L5 require `APPEARANCE_FIDELITY_GATE` before final reconstruction acceptance.
+Require `GEOMETRIC_INTEGRITY_GATE: PASS`.
 
-Required categories include:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material regions/response;
-- final matched/registered views;
-- emissive/branding where present;
-- detail coverage for L5.
-
-Categories are non-compensating for MUST owners.
-
-A score is diagnostic only. A failed MUST trim path cannot be averaged away by perfect dimensions.
-
-## 18. Reconstruction QA discipline
-
-Order:
+Physical integrity is non-compensating:
 
 ```text
-numeric/global silhouette
--> neutral/matcap form architecture
--> internal boundaries/junctions/edge language
--> calibrated material appearance
--> matched hero/final views
+perfect dimensions
++ perfect source overlay
++ ASSEMBLY_INTEGRITY FAIL
+= reconstruction NOT complete
 ```
 
-`QA_SCENE_ISOLATE` before reconstruction QA; collision/LOD/export proxy cannot contaminate renders.
+## 21. Final reconstruction gates
 
-For layered assemblies use `LAYER_STACK_VALIDATE`.
-
-For material comparison use stable neutral lookdev rig; stylized hero lighting is supporting evidence only.
-
-## 19. Final reconstruction gate
-
-Before runtime require:
-- valid Shape Graph revision;
-- required nodes `ACCEPTED` through canonical node gate;
-- required RDL barriers PASS;
-- hard dimensions;
-- canonical registered views;
-- primary landmarks/proportions;
-- MUST features;
-- Appearance Contract closure for L4/L5;
-- `APPEARANCE_FIDELITY_GATE` PASS for L4/L5;
-- authority/deviation closure;
-- `RECON_FIDELITY_GATE` proof-bearing PASS.
-
-Bare `PASS` without evidence/provenance/validator = `UNVERIFIED` in strict mode.
-
-Runtime/engine PASS never back-propagates to reconstruction PASS.
-
-## 20. Runtime lock
-
-Do not start LOD/UV/bake/export merely because:
-- dimensions are correct;
-- alpha silhouette passes;
-- triangle count is in budget;
-- a local builder gate is green.
-
-For L4/L5:
+For target L4/L5:
 
 ```text
-APPEARANCE_FIDELITY_GATE != PASS
+GEOMETRIC_INTEGRITY_GATE PASS
++ APPEARANCE_FIDELITY_GATE PASS
++ RECON_FIDELITY_GATE PASS
+```
+
+Bare `PASS` without typed evidence/provenance/canonical validator is `UNVERIFIED` in strict mode.
+
+Runtime or engine success never back-propagates to reconstruction PASS.
+
+## 22. Runtime lock
+
+Do not start production LOD/UV/bake/export if required reconstruction gates are unresolved.
+
+```text
+GEOMETRIC_INTEGRITY_GATE != PASS
+or
+APPEARANCE_FIDELITY_GATE != PASS when required
 or
 RECON_FIDELITY_GATE != PASS
 -> runtime FORBIDDEN
 ```
 
-This is a hard transition rule introduced by the Street Bench benchmark.
+## 23. Blender/API discipline
 
-## 21. Modeling/API discipline
+- Prefer Data API/BMesh; `bpy.ops` only with explicit context/mode/selection.
+- Scripts idempotent/import-safe; mutation only through explicit entry point.
+- After context-sensitive transform/apply, force evaluated readback where postcondition depends on it.
+- Before writing helper code, inspect Semantic Skill Registry and `executors/`.
+- Use canonical decision executors; asset-local adapters may measure but may not redefine acceptance.
+- Do not add geometry merely to hit a triangle budget.
 
-- Prefer Data API/BMesh; `bpy.ops` only with known context/mode/selection.
-- Scripts idempotent.
-- Reusable Python modules import-safe; mutation only explicit entry point.
-- Before helper check Semantic Skill Registry and `executors/`.
-- Every final mesh has topology intent.
-- Do not add loops only to hit a triangle budget.
-- Do not change geometry only to look correct in one lighting setup.
-
-## 22. Specialized leaf skills
+## 24. Specialized construction skills
 
 Route only on accepted host/stage:
 - `HS_PANEL_LINE` — narrow seam/groove;
 - `SUBD_TOPOLOGY_CONTROL` — Catmull-Clark cage/flow;
-- `AXISYMMETRIC_PROFILE` — revolved profile;
-- `RADIAL_REPEAT` — circular repetitions;
+- `AXISYMMETRIC_PROFILE` — revolved form;
+- `RADIAL_REPEAT` — repeated radial details;
 - `SECTION_LOFT_HARD_SURFACE` — multi-section form;
-- decals/branding — RDL5 unless structural relief says otherwise.
+- decals/branding — usually RDL5 unless structural relief dictates otherwise.
 
-## 23. UV/bake/runtime boundary
+## 25. Runtime/game-ready boundary
 
-Runtime work starts only after the reconstruction gates above.
+After reconstruction closure:
+- resolve canonical runtime path;
+- generate runtime LOD/collision;
+- enforce UV atlas contracts;
+- bake/validate runtime textures;
+- verify image cache coherence;
+- export/package readback including required primitive attributes such as `TEXCOORD_0` and node-transform policy;
+- round-trip protected invariants;
+- Level D only after target-engine production loader/regression/instantiation evidence.
 
-- shared atlas uses semantic part IDs + `UV_CONTRACT_ID`;
-- missing atlas assignment = FAIL;
-- bake operator must return `FINISHED`;
-- selected+active target image node required;
-- AO/ray bake isolates unrelated render geometry;
-- BaseColor/Metallic/Emissive use explicit channel semantics;
-- correct PNG on disk != fresh `bpy.data.images`;
-- route stale image to `IMAGE_CACHE_COHERENCE`;
-- validate baked maps semantically, not by file existence.
+Blender glTF re-import is Level C evidence, not Level D.
 
-## 24. Incremental runtime execution
+## 26. Operational report
 
-After local repair use `PIPELINE_DAG_PLAN` before replaying multiple stages.
-
-Do not rerun full build/decal/bake/export/test chain unless dependency closure proves it dirty.
-
-Timeout is not proven FAIL until job/artifact state is checked.
-
-## 25. Runtime paths/package/export
-
-Resolve one canonical Runtime Path Context before external writes.
-
-Authority:
-
-```text
-project profile
-> engine/build definition
-> production loader
-> engine test
-> sibling exporter
-> heuristic
-```
-
-For current verified RPG profile reuse `<repo>/Assets/GameAssets`; `<repo>/GameAssets` is forbidden lookalike while profile remains valid.
-
-Package readback checks nodes/materials/images/required primitive attributes such as `TEXCOORD_0` and active node-transform policy.
-
-Hard dimensions/contact are rechecked on exported/re-imported artifact.
-
-## 26. Level D proof
-
-Blender glTF import = Level C round-trip evidence.
-
-Level D requires one of:
-- `ENGINE_PRODUCTION_LOADER`;
-- `ENGINE_REGRESSION_TEST`;
-- `ENGINE_INSTANTIATION`.
-
-Capture test executable exit status directly.
-
-## 27. Operational response format
-
-When useful report:
+When useful include:
 - STATE;
-- TASK PACK;
 - TARGET COMPLETION LEVEL;
-- ACTIVE PROJECT PROFILE;
-- SHAPE GRAPH REVISION;
-- APPEARANCE CONTRACT REVISION;
-- RDL;
-- CURRENT SHAPE NODE / APPEARANCE OWNER;
-- REQUIRED VIEWS;
-- ACTION;
-- CANONICAL VALIDATOR;
-- NODE/APPEARANCE GATE RESULT;
-- STAGE BARRIER;
-- COMPLETION STATUS.
+- ACTIVE PROJECT PROFILE/runtime pin;
+- Shape Graph revision;
+- Appearance Contract revision;
+- Assembly Contract revision;
+- current RDL / Shape Node;
+- authorization ID;
+- mutation postcondition result;
+- required views/validators;
+- assembly integrity result;
+- node gate result;
+- RDL barrier;
+- geometric/appearance/reconstruction gate status;
+- highest valid completion level.
 
 ## Final principle
 
-Do not think only:
+Do not ask only:
 
 ```text
-what is the overall shape?
+Does it look approximately like the reference?
 ```
 
-Also ask:
+Ask:
 
 ```text
-which visible boundaries make this the same product?
-which source proves each boundary?
-which edge/material/detail families define the design language?
-is the validator independent from my builder assumptions?
+What forms define it?
+What visible product architecture defines it?
+What physical relation should every important part have to its host?
+Did each mutation actually change geometry as intended?
+Can my validator reject the known-broken version of this exact failure class?
+Is every green proof still current after repair?
 ```
 
-Dopiero potem modeluj i claimuj fidelity.
+Only then claim fidelity or completion.
 
 
 ---
@@ -22329,194 +22067,200 @@ Nie kompensuj punktami w scorecard.
 
 # Reconstruction State Machine
 
+## v0.12 integrity amendment
+
+Every production-node mutation now has two independent closure layers:
+
+```text
+execution permission
+-> actual mutation postcondition
+-> reference/assembly/topology proof
+```
+
+A node cannot reach `BUILT_UNVERIFIED` unless `MUTATION_POSTCONDITION_GATE` proves the intended geometry change actually occurred. A node cannot reach `ACCEPTED` unless required source evidence and Assembly Relations are valid. Final Level A also requires `GEOMETRIC_INTEGRITY_GATE`.
+
+Repairing accepted geometry first routes through `DEPENDENCY_INVALIDATOR` so descendants, Appearance Owners and old evidence cannot remain falsely green.
+
 ## R0 — INGEST
-Zapis źródeł i segmentów.
+
+Register sources/segments and stable source IDs.
 
 ## R1 — CLASSIFY EVIDENCE
-Projection, view, material/detail/text.
+
+Classify projection/view/material/detail/text/annotation evidence.
+
+For technical sheets distinguish product pixels from dimension lines/leaders/text when they contaminate QA.
 
 ## R2 — AUTHORITY
-Evidence + View Authority Matrix.
+
+Resolve property-level authority and conflicts. Do not use one global `card wins` rule for unrelated properties.
 
 ## R3 — REGISTER
-Skala, osie, image planes, camera.
+
+Physical scale, axes, datums, image planes/cameras, global registrations. No local candidate warp for acceptance.
 
 ## R4 — CONSTRAIN
-Dimension Graph, landmarks, Feature Contract.
 
-## R5 — DECOMPOSE + SHAPE GRAPH
+Dimension Graph, landmarks, Feature Contract, derived-parameter provenance.
 
-Obowiązkowe:
-- decompose asset na G0–G5 design forms;
-- zbuduj `Reconstruction Shape Graph`;
-- przypisz parent/dependencies;
-- sklasyfikuj shape representation każdego required node;
-- przypisz RDL;
-- przypisz authoritative views i controlled properties;
-- zdefiniuj node validation contracts.
+## R5 — DECOMPOSE + SHAPE / APPEARANCE / ASSEMBLY CONTRACTS
 
-`SHAPE_GRAPH` musi przejść structural validation przed produkcyjnym modelowaniem.
+Required:
+- decompose G0–G5 forms;
+- build Reconstruction Shape Graph;
+- assign parents/dependencies/RDL/shape representation;
+- assign authoritative views/properties;
+- define node validation contracts;
+- for L4/L5 build Reference Appearance Contract;
+- define semantic Assembly Relations for important multi-part junctions.
 
-Nie pisz monolitycznego build scriptu tworzącego G1–G5 w tym stanie.
+Shape Graph must structurally PASS before production geometry.
 
 ## R6 — RDL0 ENVELOPE
-Bounds + contact datum + minimal silhouette carrier.
 
-Wymagany proof przed advance:
+Create actual neutral diagnostic geometry for envelope/contact datum/axes.
+
+Proof:
 - numeric bounds;
-- registered envelope evidence dla authoritative FRONT/SIDE/TOP;
-- QA scene isolation;
+- registered FRONT/SIDE/TOP as authoritative;
+- QA isolation;
 - `RDL0_BARRIER: PASS`.
 
 ## R7 — RDL1 PRIMARY FORMS
 
-Buduj **node po node**:
+For each eligible G1 node:
 
 ```text
-ready G1 node
--> build only node
--> required canonical views
--> numeric/section checks
+EXECUTION_AUTHORIZATION_GATE
+-> READY_TO_BUILD
+-> before snapshot
+-> mutate node only
+-> after snapshot
+-> MUTATION_POSTCONDITION_GATE
+-> BUILT_UNVERIFIED
+-> required source QA + topology/assembly proof
 -> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL
+-> ACCEPTED | FAIL | UNVERIFIED
 ```
 
-Obejmuje:
-- primary body/shell;
-- base/plinth;
-- major structural shoulder/transition;
-- primary negative space.
+Includes primary shell/body, base/plinth, structural transitions and primary negative spaces.
 
-Po wszystkich required nodes:
-`RDL1_STAGE_BARRIER`.
-
-Nie wolno budować RDL2 przy FAIL required G1 node.
+All required G1 accepted -> `RDL1_STAGE_BARRIER`.
 
 ## R8 — RDL2 SECONDARY STRUCTURAL FORMS
 
-Buduj oddzielnie:
-- frames;
-- display housing/recess mass;
-- utility housing;
-- large service panels;
-- major trims/inserts.
+Build frames, housings, service assemblies, major trims/inserts and design-defining junction participants one node at a time.
 
-Każdy node ma własny required-view gate.
+Instantiate/validate relevant Appearance Owners and Assembly Relations. Outer silhouette alone does not close this state.
 
-Po wszystkich required nodes:
-`RDL2_STAGE_BARRIER`.
+All required G2 accepted -> `RDL2_STAGE_BARRIER`.
 
 ## R9 — RDL3 STRUCTURAL FEATURES
 
-Panels, openings, recesses, vents, structural grooves, light channels, handles, layered assemblies.
+Panels, openings, recesses, vents, grooves, light channels, handles, layered assemblies.
 
-Leaf skills mogą być używane dopiero, gdy host node jest `ACCEPTED`.
+Leaf skill only on ACCEPTED host.
 
-Wymagany proof odpowiedni do feature class:
-- ROI;
-- numeric depth/position;
-- visibility/layer stack;
-- panel-line/path contract;
-- regression outside expected-change region.
+Destructive Boolean/recess operation must prove mutation bite before source QA. Feature proof may include ROI, depth/position, layer stack, panel path and outside-region regression.
 
-Po required nodes:
-`RDL3_STAGE_BARRIER`.
+All required G3 accepted -> `RDL3_STAGE_BARRIER`.
 
 ## R10 — RDL4 EDGE LANGUAGE
 
-Bevel, fillet, chamfer, corner radius, tangency, SubD support geometry.
+Bevel/fillet/chamfer/corner radius/tangency/SubD support only after accepted form.
 
-Rule:
-
-```text
-correct shape first
--> edge treatment second
-```
-
-RDL4 nie może kompensować błędu RDL1/RDL2.
-
-Po edge treatment re-check:
+Validate:
+- source edge family;
 - protected dimensions;
-- canonical silhouette;
-- local feature boundaries.
+- silhouette/boundaries;
+- topology risk after destructive edge work.
 
-`RDL4_STAGE_BARRIER` przed surface detail.
+`RDL4_STAGE_BARRIER` before surface finish.
 
 ## R11 — RDL5 SURFACE / DETAIL
 
-Branding, decals, microgeometry, materials, texture direction, weathering, emissive finish.
+Branding, decals, materials, texture direction, weathering, emissive finish and required micro/meso detail.
 
-Readable branding/text wymaga canonical orientation proof z project handedness gdy dotyczy.
+For material-only operations geometry signature should remain stable. L4/L5 requires material appearance/segmentation evidence and Appearance Owner closure.
 
-Dla target fidelity L4/L5 wymagany material segmentation proof.
+## R12 — GEOMETRIC INTEGRITY + MULTIVIEW / APPEARANCE FIDELITY
 
-RDL5 może mieć jawne deferred items zależnie od requested completion level, ale nie może zmieniać accepted primary form bez dirty propagation.
+First physical closure:
 
-## R12 — MULTIVIEW QA + RECONSTRUCTION FIDELITY GATE
+```text
+current node revisions
+-> all required mutation postconditions PASS
+-> all MUST Assembly Relations PASS
+-> required topology records PASS
+-> required validator negative controls PASS
+-> zero stale/superseded evidence in current bundle
+-> GEOMETRIC_INTEGRITY_GATE
+```
 
-Kolejność:
+Then source/appearance closure:
 
 ```text
 Shape Graph revision validation
 -> all required node gates accepted
--> RDL stage barriers pass
+-> RDL barriers
 -> QA_SCENE_ISOLATE
--> registered canonical view validators
--> hard dimensions
--> primary landmarks/proportions
--> MUST feature evidence
--> material segmentation when required
+-> registered canonical views
+-> hard dimensions / landmarks
+-> MUST features
+-> Appearance Contract closure for L4/L5
+-> APPEARANCE_FIDELITY_GATE for L4/L5
 -> authority/deviation closure
 -> RECON_FIDELITY_GATE
 ```
 
-`RECON_FIDELITY_GATE` musi zwrócić proof-bearing PASS z provenance.
-
-Bare `PASS`, `looks correct`, `matching the card` albo poprawny overall envelope nie pozwalają wejść do runtime.
+A perfect overlay cannot compensate for invalid physical geometry.
 
 ## R13 — TOPOLOGY / RUNTIME PREP
 
-Dopiero tutaj:
-- topology cleanup/freeze;
+Only after required reconstruction gates PASS:
+- production topology cleanup/freeze;
 - UV;
 - runtime LOD;
 - collision;
 - bake;
 - runtime material closure.
 
-Ten etap jest niedostępny przy wcześniejszym barrier/fidelity FAIL.
-
 ## R14 — EXPORT VALIDATION
 
-Sprawdź:
-- package readback;
-- runtime primitive attributes;
-- node transform policy;
-- export round-trip dimensions/contact;
-- target engine evidence dopiero dla Level D.
+Validate package/readback, primitive attributes, node transform policy, export round-trip dimensions/contact and target-engine evidence for Level D.
 
-## Backtracking
+## Repair/backtracking
 
-Każdy FAIL wraca do najwcześniejszego właściciela problemu.
+Every FAIL routes to earliest owner.
 
-Przykłady:
+If accepted geometry changes:
 
 ```text
-SIDE primary contour FAIL
--> current G1 node / RDL1
+change intent
+-> DEPENDENCY_INVALIDATOR
+-> affected node revisions/states updated
+-> Appearance Owners UNVERIFIED
+-> old evidence SUPERSEDED
+-> rebuild affected closure
+```
 
-base FRONT okay + SIDE/TOP corner fail after corrected retry
+Examples:
+
+```text
+Boolean modifier applied but recess absent
+-> current node mutation / MUTATION_POSTCONDITION_GATE
+
+sensor housing pierces arm despite good side overlay
+-> J_SENSOR_ARM / ASSEMBLY_INTEGRITY_GATE
+
+validator passes known-broken overlap fixture
+-> VALIDATOR_NEGATIVE_CONTROL / validator implementation
+
+SIDE primary contour second FAIL
 -> SHAPE_CLASSIFY representation review
--> possible MULTI_SECTION_LOFT
 
-DISPLAY_RECESS host FAIL
--> RDL2; do not continue to glass/content
-
-PANEL_LINE FAIL because host surface wrong
--> parent G1/G2 owner, not HS_PANEL_LINE tweaking
-
-mirrored rear technical decal
--> RDL5 branding orientation owner
+technical-sheet leader pollutes contour
+-> reference mask annotation exclusion, not candidate warp
 
 missing TEXCOORD_0 after export
 -> runtime package/UV owner
@@ -22524,21 +22268,20 @@ missing TEXCOORD_0 after export
 
 ## Monolithic-build prohibition
 
-Regresja v0.9:
+Forbidden:
 
 ```text
-analyze
--> build body + base + screen + vents + logo + bevel + materials
--> one QA render
+analyze -> build G1..G5 -> one QA -> accept
 ```
 
 Canonical:
 
 ```text
-understand hierarchy
--> build one form
--> prove it
--> commit node acceptance
+understand hierarchy/relations
+-> authorize one form
+-> prove mutation
+-> prove source + physical integrity
+-> accept current revision
 -> continue coarse-to-fine
 ```
 
@@ -22981,184 +22724,237 @@ Stable IDs allow:
 
 # Reconstruction Definition of Done
 
-This module defines **reference-reconstruction acceptance**, corresponding primarily to Level A `RECONSTRUCTION_COMPLETE`.
+This module defines Level A `RECONSTRUCTION_COMPLETE`. It does not by itself prove Game-Ready or Pipeline Integrated.
 
-It does not by itself prove `GAME_READY_COMPLETE` or `PIPELINE_INTEGRATED`.
-Use `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md` for the full asset lifecycle.
+A reconstruction is accepted only from current, proof-bearing evidence. Builder-local green flags, downstream export success and good-looking renders are insufficient.
 
-Asset reconstruction is accepted only when final state is supported by proof-bearing evidence records, not by narrative self-certification or builder-local green checks.
+## Evidence and authority
 
-## Evidence
+Required:
 - all sources inventoried;
-- conflicts resolved or explicit;
-- unknowns recorded;
-- property-level authority assigned where sources disagree;
-- HARD/MUST/CANONICAL deviations are `RESOLVED` with evidence or `ACCEPTED_BY_AUTHORITY` with authority record;
-- bare `PASS` without evidence kind/provenance/validator does not close a strict gate;
-- reference-derived evidence points to source reference IDs;
-- projected evidence points to registration IDs.
+- conflicts/unknowns explicit;
+- property-level authority assigned;
+- HARD/MUST/CANONICAL deviations `RESOLVED` with evidence or `ACCEPTED_BY_AUTHORITY` with authority record;
+- strict PASS records contain evidence kind, provenance and canonical validator;
+- reference-derived proof names source reference IDs;
+- projected proof names registration IDs;
+- current acceptance bundle contains no stale/superseded proof.
 
 ## Shape understanding
-- current `Reconstruction Shape Graph` exists;
-- graph structural validator PASS;
-- required forms classified G0–G5;
-- required nodes have parent/dependency relations;
-- required nodes have shape class and implementation strategy;
-- authoritative views have explicit responsibilities per node;
-- no `UNRESOLVED_REPRESENTATION` for required G0–G3 nodes;
-- final acceptance references a concrete graph revision.
 
-## Appearance understanding for 1:1 / L4 / L5
-- current `Reference Appearance Contract` exists;
-- appearance revision references same source-set revision as reconstruction;
-- required part boundaries are inventoried;
-- required trim paths are inventoried;
-- required junctions are inventoried;
-- required edge families are inventoried;
-- material/emissive/branding regions are inventoried when visible;
-- MUST meso/detail features are inventoried;
-- every appearance owner links to source reference/ROI and host Shape Node(s).
+Required:
+- current Reconstruction Shape Graph;
+- structural graph validator PASS;
+- G0–G5 classification;
+- parent/dependency relations;
+- shape class/strategy for required nodes;
+- authoritative views/properties;
+- no unresolved required G0–G3 representation;
+- concrete current graph revision.
 
-A coarse Shape Node does not excuse missing internal product architecture.
+## Appearance and assembly understanding
+
+For 1:1/L4/L5:
+- current Reference Appearance Contract;
+- part boundaries, trim paths, visible junctions, edge families, material/emissive/branding/detail owners inventoried;
+- owner source references/ROIs and host nodes;
+- current Assembly Relation Contract for important multi-part junctions;
+- each MUST relation declares semantics such as SHADOW_GAP/BUTT/RECESSED_INSERT/FLUSH/CLEARANCE/EMBEDDED rather than generic overlap.
 
 ## Coarse-to-fine execution
-- `RDL0_BARRIER: PASS`;
-- all required G1 nodes `ACCEPTED` and `RDL1_BARRIER: PASS`;
-- all required G2 nodes `ACCEPTED` and `RDL2_BARRIER: PASS`;
-- all required G3 nodes `ACCEPTED` and `RDL3_BARRIER: PASS`;
-- required G4 edge-language work accepted through reference edge-family proof;
-- G5 required by target fidelity completed or explicitly deferred only when completion boundary allows it;
-- no child accepted on failed/unverified/superseded required parent revision.
+
+Required:
+- `RDL0_BARRIER: PASS` with physical diagnostic geometry;
+- all required G1/G2/G3 nodes `ACCEPTED` and corresponding RDL barriers PASS;
+- required G4 edge work accepted;
+- required G5 work completed for target fidelity;
+- no child accepted on non-current/non-accepted parent revision;
+- every production mutation was authorized and node-scoped.
+
+## Mutation postconditions
+
+For every required current production mutation:
+- compact before/after record exists;
+- `MUTATION_POSTCONDITION_GATE: PASS`;
+- expected Boolean/transform/loft/material effect actually occurred;
+- silent Boolean no-op = FAIL;
+- mutation evidence is bound to current node revision.
+
+`LOCAL_BUILDER: PASS` is not mutation proof.
 
 ## Canonical node proof
-- each required node acceptance uses `RECONSTRUCTION_NODE_GATE` or compatible canonical validator path;
-- required view records name canonical validator IDs;
-- builder-local `Gate.accept()` cannot certify canonical node acceptance;
-- derived geometry parameters have source-fit/measurement provenance in addition to builder-consistency checks.
 
-## Geometry
-- hard dimensions pass with numeric provenance;
-- all canonical silhouettes/views pass via registered comparison where reference authority exists;
-- all primary landmarks/proportions pass with validator evidence;
-- all MUST geometry features pass with suitable ROI/numeric/visibility proof;
-- multi-section/profile nodes have station/cross-section proof where representation requires it;
-- final assembled views do not rely only on isolated-node success.
+Each required node acceptance uses canonical `RECONSTRUCTION_NODE_GATE` and current proof for:
+- source views/ROIs;
+- numeric/section constraints;
+- topology/regression as required;
+- mutation postcondition;
+- Assembly Relations touched by node.
+
+## Geometry and physical assembly
+
+Required:
+- hard dimensions PASS;
+- canonical source views/silhouettes PASS where authoritative;
+- landmarks/proportions PASS;
+- MUST geometry features PASS;
+- multi-section/profile proof where representation requires it;
+- final assembled views validated;
+- all MUST Assembly Relations `PASS` through `ASSEMBLY_INTEGRITY_GATE`;
+- zero unintended interpenetration for relations that forbid it;
+- required gaps/clearances/contact/embedding lie inside contract tolerances.
+
+## Topology integrity
+
+Required mesh owners have explicit topology intent and `MESH_VALIDATE: PASS`.
+
+For relevant closed solids and visible critical regions classify:
+- manifold/boundary state;
+- signed volume orientation;
+- loose/duplicate/zero-area geometry;
+- non-planar n-gons;
+- concave/high-order n-gons according to policy.
+
+N-gon existence alone is not an automatic failure. Unclassified risky topology is not a PASS either.
+
+## Validator trust
+
+Every validator used as new MUST acceptance authority for a failure class has current negative-control proof:
+
+```text
+KNOWN_GOOD -> PASS
+KNOWN_BROKEN -> FAIL
+```
+
+A validator that returns PASS on its known-broken fixture cannot close that owner.
+
+## Repair integrity
+
+When accepted geometry changes:
+- `DEPENDENCY_INVALIDATOR` ran before rebuild;
+- changed/built dependent nodes became DIRTY as appropriate;
+- unbuilt dependants became BLOCKED;
+- affected Appearance Owners became UNVERIFIED;
+- old revision evidence became SUPERSEDED;
+- unrelated accepted branches remained reusable;
+- repaired closure was revalidated on current revisions.
 
 ## Internal product architecture
-For target 1:1/L4/L5:
+
+For 1:1/L4/L5:
 - part-boundary graph PASS;
 - required trim paths PASS;
-- required junctions PASS;
+- visible junction appearance PASS;
 - no missing MUST internal boundary;
-- major shadow gaps/steps/recess boundaries match source evidence;
-- rear/bottom architecture is not replaced by a generic flat cover when source defines structure.
+- major gaps/steps/recesses match source evidence;
+- rear/bottom/detail architecture is not replaced by generic covers when reference defines it.
+
+Physical relation and appearance are separate: a junction can be physically valid yet visually wrong, or visually plausible while interpenetrating.
 
 ## Edge language
-- required edge families have explicit profile/radius/chamfer evidence;
-- start/end and continuity are validated;
-- protected dimensions survive edge treatment;
-- `dimensions survived bevel` alone is not edge-language PASS;
-- hard-surface plane hierarchy remains consistent with reference.
+
+Required:
+- edge-family profile/radius/chamfer proof;
+- start/end/continuity;
+- protected dimensions;
+- hard-surface plane hierarchy preserved.
+
+`dimensions survived bevel` alone is insufficient.
 
 ## Surface evidence
+
 For L4+:
 - material segmentation PASS;
 - material appearance response PASS where source defines it;
-- directional material evidence such as brushing/anisotropy is represented;
-- emissive/glass geometry/material ownership defined;
-- visible layered assemblies have layer-stack/visibility proof;
-- calibrated neutral-light lookdev evidence exists for material comparison where needed.
-
-A material slot/name assignment is not material appearance proof.
+- directional brushing/anisotropy when required;
+- emissive/glass ownership;
+- layer-stack/visibility proof for layered assemblies;
+- calibrated lookdev evidence as appropriate.
 
 For L5 additionally:
-- MUST detail coverage is complete or explicitly waived by authority;
-- missing MUST appearance/detail owners = 0;
-- branding/decal exactness closed;
-- reference-significant microstructure completed.
+- complete MUST detail coverage or explicit authority waiver;
+- zero silently missing MUST appearance/detail owners;
+- branding/decal exactness;
+- reference-significant microstructure.
 
-Final runtime textures/bloom do not need to be finished for Level A if the authoring appearance evidence is otherwise sufficient, but they may not be claimed as complete downstream work.
+## Reference-mask integrity
 
-## QA
-- QA scene isolation proves no collision/export proxy contamination;
-- each required Shape Node has canonical node acceptance record;
-- multi-view gate PASS;
-- regression gate PASS;
+Technical-sheet overlays exclude dimension lines/leaders/text from product silhouette where they contaminate metrics. Mask policy/exclusions are recorded. No local candidate warp is allowed to improve fidelity score.
+
+## Final QA/gates
+
+Required:
+- QA scene isolation;
+- required Shape Nodes accepted;
 - RDL barriers PASS;
-- `APPEARANCE_FIDELITY_GATE` PASS when target >= L4;
-- `RECON_FIDELITY_GATE` PASS;
+- `GEOMETRIC_INTEGRITY_GATE: PASS`;
+- `APPEARANCE_OWNER_COVERAGE: PASS` and `APPEARANCE_FIDELITY_GATE: PASS` for target >= L4;
+- `RECON_FIDELITY_GATE: PASS`;
 - no unauthorized deviations;
-- lighting/material readability has not been used to justify unsupported geometry changes;
-- final acceptance bundle contains typed evidence + provenance + validator IDs for required owners.
+- final evidence bundle references current revisions only.
 
 ## Runtime boundary
 
-Runtime work is downstream from reconstruction acceptance.
-
-For target L4/L5:
-
 ```text
-APPEARANCE_FIDELITY_GATE != PASS
-or
-RECON_FIDELITY_GATE != PASS
--> LOD/UV/bake/export FORBIDDEN
+GEOMETRIC_INTEGRITY_GATE != PASS
+or APPEARANCE_FIDELITY_GATE != PASS when required
+or RECON_FIDELITY_GATE != PASS
+-> LOD/UV/bake/export/runtime FORBIDDEN
 ```
-
-Correct dimensions, triangle budgets, UVs or glTF readback do not override this lock.
-
-For higher completion levels:
-- Level B -> clean authoring model/UV/material segmentation;
-- Level C -> LOD/collision/bake/package/export/runtime material closure;
-- Level D -> project catalog/import integration.
 
 Runtime/engine PASS never back-propagates to Level A.
 
 ## Documentation
+
+Persist:
 - reconstruction report;
-- Shape Graph + graph revision;
-- Appearance Contract + appearance revision when required;
+- Shape Graph revision;
+- Appearance Contract revision when required;
+- Assembly Relation revision;
 - node acceptance records;
-- appearance owner records;
-- RDL stage barrier records;
-- appearance fidelity report when required;
-- reconstruction acceptance evidence bundle;
-- evidence/unknown list;
-- inferred geometry list with derivation provenance;
+- mutation postcondition records;
+- assembly/topology/validator-control records;
+- Appearance Owner records;
+- RDL barriers;
+- geometric/appearance/reconstruction gate reports;
+- evidence/unknown/deviation lists;
+- inferred geometry with provenance;
 - known limitations;
-- highest completion level reported separately.
+- highest completion level separately.
 
 ## Required final record
 
 ```yaml
 reconstruction_complete:
   status: PASS
-  evidence_kind: RECON_FIDELITY_GATE
-  validator_id: RECON_FIDELITY_GATE
-  provenance_id: recon_gate_report_...
   graph_revision: sg_...
   appearance_revision: ac_...
-  rdl_barriers:
-    RDL0: PASS
-    RDL1: PASS
-    RDL2: PASS
-    RDL3: PASS
-    RDL4: PASS
-    RDL5: PASS_OR_NOT_REQUIRED
+  assembly_revision: assembly_...
+  geometric_integrity_gate:
+    status: PASS
+    evidence_kind: GEOMETRIC_INTEGRITY_GATE
+    validator_id: GEOMETRIC_INTEGRITY_GATE
+    provenance_id: geometry_gate_...
   appearance_fidelity_gate:
     status: PASS
     provenance_id: appearance_gate_...
+  reconstruction_fidelity_gate:
+    status: PASS
+    evidence_kind: RECON_FIDELITY_GATE
+    validator_id: RECON_FIDELITY_GATE
+    provenance_id: recon_gate_...
   target_fidelity: L4_or_L5
-  canonical_views: {...}
-  must_features: [...]
-  deviations: [...]
+  deviations: []
 ```
 
 ## Rule
 
-Do not call the entire asset `DONE` merely because this reconstruction DoD passes.
-Do not call reconstruction `PASS` because the builder says it looks correct.
-Do not call reconstruction `PASS` when primary forms were not solved node-by-node.
-Do not call reconstruction `PASS` when dimensions/silhouette pass but product-defining internal boundaries, edge families, material identity or MUST detail remain wrong/unverified.
+Do not call reconstruction PASS because:
+- builder says it looks correct;
+- dimensions/silhouette are correct while internal product architecture is wrong;
+- all visual gates are green while physical parts interpenetrate;
+- a validator has never been proven to fail its own defect class;
+- old green evidence belongs to a superseded geometry revision.
 
 
 ---
@@ -24012,156 +23808,198 @@ Nie przesuwaj cechy losowo w stronę kamery. Najpierw ustal:
 
 ## Purpose
 
-Prevent a reconstruction agent from certifying its own visual success through narrative statements, unchecked `PASS` flags or downstream runtime success.
+Prevent reconstruction acceptance from being certified by narrative statements, unchecked PASS flags, circular builder tests, stale evidence or validators that do not actually detect the physical failure they claim to cover.
 
-This module was added after the Lafar Wayfinding Pylon benchmark, where the final run reported `RECONSTRUCTION_COMPLETE = PASS` after substantial repair work, but the compact final report did not carry machine-checkable registered multi-view proof sufficient for a strict v0.8 acceptance gate.
+v0.12 adds a crucial lesson from the Lafar Street Lamp v0.11 benchmark: a fully green source/appearance chain can still certify physically invalid geometry when parts interpenetrate or a mutation silently does nothing.
 
 ## Core rule
 
 ```text
 claim != evidence
+PASS != trustworthy proof unless the validator can bite
+current-looking proof != current proof after geometry revision
 ```
 
-The following are not acceptance evidence by themselves:
-- `looks correct`;
-- `matching the card`;
-- `ortho checked`;
+Not acceptance evidence by themselves:
+- `looks correct` / `matching the card`;
 - object existence;
-- correct overall dimensions;
-- successful export;
-- successful engine load;
-- a bare `{status: PASS}` record.
+- correct bounds;
+- successful Python/operator return;
+- applied Boolean modifier without geometry delta;
+- generic overlap between junction participants;
+- successful export/engine load;
+- bare `{status: PASS}`;
+- evidence attached to superseded node revision.
 
 ## Proof-bearing record
 
-Every reconstruction acceptance owner emits:
+Every acceptance owner emits typed evidence:
 
 ```yaml
-owner: <view/feature/dimension/material>
-status: PASS | FAIL | UNVERIFIED
-evidence_kind: <typed validator evidence>
-provenance_id: <artifact/report/registration id>
-validator_id: <semantic skill/executor>
+owner: <node/view/feature/relation/mutation/material>
+status: PASS | FAIL | UNVERIFIED | SUPERSEDED
+evidence_kind: <typed evidence>
+validator_id: <canonical validator>
+provenance_id: <artifact/report id>
+node_revision: <when applicable>
+source_reference_id: <when reference-derived>
+registration_id: <when projected>
 ```
 
-Optional metrics belong in the compact record, not raw dumps.
+## Mutation evidence
+
+Before a production node can become `BUILT_UNVERIFIED`:
+
+```text
+one authorized mutation
+-> before/after metrics
+-> MUTATION_POSTCONDITION_GATE
+```
+
+The record proves the requested effect, not merely execution lifecycle.
+
+Example:
+
+```yaml
+operation_id: cut_head_channel
+status: PASS
+evidence_kind: MUTATION_POSTCONDITION
+validator_id: MUTATION_POSTCONDITION_GATE
+provenance_id: mutation:head_channel:007
+checks:
+  geometry_change: PASS
+  volume_direction: PASS
+  cutter_removed: PASS
+  feature_probe: PASS
+```
+
+## Assembly evidence
+
+A junction first declares semantic relation, then measured metrics are interpreted by `ASSEMBLY_INTEGRITY_GATE`.
+
+```yaml
+relation_id: J_SENSOR_ARM
+relation_type: SHADOW_GAP
+metrics:
+  min_gap_mm: 3.0
+  penetration_area_mm2: 0.0
+status: PASS
+evidence_kind: ASSEMBLY_INTEGRITY
+validator_id: ASSEMBLY_INTEGRITY_GATE
+provenance_id: assembly:J_SENSOR_ARM:008
+```
+
+Generic `overlap=True` cannot certify a junction without relation semantics.
 
 ## Canonical view evidence
 
-For a view with authoritative reference:
+For an authoritative reference view, use global registered proof with source/registration provenance. Technical-sheet annotations that contaminate product silhouette must be explicitly excluded/component-filtered and mask policy recorded.
 
-```yaml
-owner: FRONT
-status: PASS
-evidence_kind: REGISTERED_OVERLAY
-provenance_id: front_reg_003
-validator_id: REFERENCE_OVERLAY_VALIDATE
-metrics:
-  iou: 0.97
-  mean_contour_delta_px: 1.2
-  max_contour_delta_px: 4.0
-failing_rois: []
-```
-
-The registration itself must be valid:
-- same projection class;
-- same physical scale;
-- same centerline/datum;
-- same crop/aspect policy;
-- QA scene isolation applied.
+No local candidate warp/translation is allowed to improve score.
 
 ## Feature evidence
 
-A visible MUST feature needs evidence appropriate to its failure mode:
-- `FEATURE_ROI` for local shape/placement;
-- `LAYER_STACK` for glass/content/recess ordering;
-- `RAY_VISIBILITY` for occlusion/host burial;
-- `LANDMARK_PROJECTION` for keypoint placement;
-- `NUMERIC_MEASUREMENT` for explicit dimensions.
+Visible MUST feature uses evidence matching its failure mode, e.g.:
+- `FEATURE_ROI`;
+- `LAYER_STACK`;
+- `LANDMARK_PROJECTION`;
+- `NUMERIC_MEASUREMENT`;
+- trim/boundary/edge/material-specific evidence;
+- mutation postcondition for destructive feature creation.
 
 `OBJECT_EXISTS` is never sufficient for a visible MUST feature.
 
+## Validator trust evidence
+
+A new validator used for MUST acceptance requires adversarial controls:
+
+```text
+KNOWN_GOOD -> PASS
+KNOWN_BROKEN -> FAIL
+```
+
+Persist `VALIDATOR_NEGATIVE_CONTROL` proof. If known-broken returns PASS, current asset PASS from that validator is not trusted acceptance evidence.
+
+The negative fixture must exercise the claimed failure property, not an artificial marker.
+
 ## Authority evidence
 
-A hard deviation can close only as:
+Hard deviation closes only as:
+- `RESOLVED` with resolution evidence; or
+- `ACCEPTED_BY_AUTHORITY` with authority source/record and affected fields.
+
+The modeling agent is not authority merely because it can explain its choice.
+
+## Separation of measurement, builder and acceptance
+
+Canonical pattern:
 
 ```text
-RESOLVED
+asset-local Blender adapter
+-> compact measurement artifact
+-> canonical decision executor
+-> canonical gate
+-> persistent evidence state
 ```
-
-with a resolution evidence record, or:
-
-```text
-ACCEPTED_BY_AUTHORITY
-```
-
-with:
-- `authority_source`;
-- `authority_record_id`;
-- affected contract fields.
-
-The modeling agent is not automatically an authority merely because it can justify one interpretation.
-
-## Separation of builder and acceptance logic
-
-The same process may technically execute build and validation, but acceptance must be derived from independent validator outputs rather than from builder state.
 
 Bad:
 
-```python
-build_finished = True
-reconstruction_pass = True
+```text
+builder infers radius
+-> builder creates radius
+-> builder verifies same constant
+-> PASS
 ```
 
-Required:
+Likewise an asset-local interpenetration helper may measure penetration but may not redefine whether overlap is correct. That belongs to the declared Assembly Relation + canonical gate.
+
+## Evidence freshness / repair
+
+After an accepted host changes:
 
 ```text
-build artifact
--> registered validators
--> compact evidence records
--> fidelity gate aggregation
--> acceptance state
+DEPENDENCY_INVALIDATOR
+-> affected node revisions bump
+-> dependent state DIRTY/BLOCKED
+-> hosted Appearance Owners UNVERIFIED
+-> old evidence SUPERSEDED
 ```
+
+Final gates must reject references to stale/superseded evidence. Keep old records for traceability; do not delete them and do not silently reactivate them.
 
 ## Downstream proof does not back-propagate
 
-```text
-ENGINE_REGRESSION_TEST PASS
-```
+Engine/runtime PASS does not prove reconstruction fidelity, mutation correctness, topology integrity or Assembly Relations.
 
-does not prove:
-- reference fidelity;
-- canonical silhouette;
-- material segmentation;
-- branding orientation;
-- screen layer visibility.
-
-Likewise reconstruction PASS does not prove Game-Ready or Pipeline Integrated.
-
-## Final acceptance bundle
+## Final integrity bundle
 
 Before `RECONSTRUCTION_COMPLETE`, persist at minimum:
 
 ```yaml
 reconstruction_acceptance:
-  target_fidelity: L4_or_L5
-  hard_dimensions: <proof-bearing record>
-  canonical_views:
-    FRONT: <proof-bearing record>
-    SIDE: <proof-bearing record>
-    TOP: <proof-bearing record>
-    REAR: <proof-bearing record>
-    BOTTOM: <proof-bearing record>
-  landmarks_d0_d1: <proof-bearing record>
-  must_features: [<proof-bearing records>]
-  material_segmentation: <proof-bearing record when target >= L4>
-  deviations: [<resolved/authority records>]
-  fidelity_gate: PASS
+  graph_revision: sg_...
+  appearance_revision: ac_...
+  assembly_revision: assembly_...
+  mutation_postconditions: [...]
+  assembly_integrity: <proof-bearing aggregate>
+  topology_records: [...]
+  validator_negative_controls: [...]
+  hard_dimensions: <proof>
+  canonical_views: {...}
+  landmarks_d0_d1: <proof>
+  must_features: [...]
+  geometric_integrity_gate:
+    status: PASS
+    evidence_kind: GEOMETRIC_INTEGRITY_GATE
+    validator_id: GEOMETRIC_INTEGRITY_GATE
+    provenance_id: geometry_gate_...
+  appearance_fidelity_gate: <when required>
+  reconstruction_fidelity_gate: <proof>
 ```
 
 ## Anti-self-certification rule
 
-If a final report contains only prose plus untyped PASS flags, downgrade the affected owners to `UNVERIFIED` before completion evaluation.
+If final report contains prose/untyped PASS flags, toothless validator output, local acceptance semantics or stale revision evidence, downgrade affected owner to `UNVERIFIED` or `SUPERSEDED` before completion evaluation.
 
 
 ---
@@ -27865,6 +27703,58 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.12.0
+
+v0.12.0 is the **geometric integrity + mutation postcondition + adversarial validation** release, driven by the Lafar Street Lamp v0.11 repair benchmark.
+
+v0.11 enforced the intended reconstruction process and produced a fully green evidence chain, but human review still found a severe `ARM` / `SENSOR_MODULE` interpenetration that erased head detail. The initial containment guard also returned PASS on the known-broken geometry. The release therefore closes the gap between `correct process/evidence` and `physically correct geometry`.
+
+### Mutation postconditions
+- added `05_execution/76_MUTATION_POSTCONDITION_GATE.md` and `executors/mutation_postcondition_gate.py`;
+- `LOCAL_BUILDER: PASS` no longer authorizes `BUILT_UNVERIFIED` by itself;
+- risky mutations record before/after topology, volume/signature, transform and helper lifecycle;
+- silent Boolean no-op, wrong volume direction, unapplied transform and failed feature probes block the node;
+- `NODE_STATE_STORE` v0.2 requires canonical mutation-postcondition proof for `READY_TO_BUILD -> BUILT_UNVERIFIED`.
+
+### Assembly integrity
+- added `10_reconstruction/189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`;
+- added `executors/assembly_integrity_gate.py`;
+- junctions declare semantics such as `SHADOW_GAP`, `BUTT_JOINT`, `RECESSED_INSERT`, `FLUSH_MATE`, `CLEARANCE`, `EMBEDDED` and `WELDED` before validation;
+- measured gap/contact/embedding/interpenetration is evaluated against the declared relation;
+- generic overlap can no longer prove that two product parts are correctly joined.
+
+### Adversarial validation
+- added `10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md` and `executors/validator_negative_control.py`;
+- MUST validators require a known-good PASS and known-broken FAIL fixture before they can be trusted as acceptance evidence;
+- a validator that returns PASS on its own defect class is explicitly rejected as toothless.
+
+### Repair invalidation
+- added `05_execution/77_REPAIR_INVALIDATION_AND_EVIDENCE_SUPERSESSION.md` and `executors/dependency_invalidator.py`;
+- repairing an accepted host dirties/blocks dependent Shape Nodes, invalidates hosted Appearance Owners and marks old revision evidence `SUPERSEDED`;
+- unrelated accepted branches remain reusable;
+- stale green evidence cannot survive a geometry revision.
+
+### Topology and reference-mask hardening
+- `MESH_VALIDATE` now reports high-order, non-planar and concave n-gons plus signed closed volume;
+- non-planar n-gons and inverted closed volumes fail while planarity/concavity are classified rather than blanket-rejecting all n-gons;
+- `REFERENCE_OVERLAY_VALIDATE` v0.2 supports annotation exclusions and connected-component selection so dimension lines/leaders do not contaminate product silhouette evidence;
+- added `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md`.
+
+### Execution integration
+- `RECONSTRUCTION_NODE_GATE` v0.4 requires canonical mutation postcondition and assembly-integrity evidence for authorized production mutations;
+- state-machine precedence is now mutation -> postcondition -> `BUILT_UNVERIFIED` -> source QA/integrity -> canonical node gate;
+- added `08_scripts/99_GEOMETRIC_INTEGRITY_VALIDATION_PATTERN.md` and `11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md`.
+
+### Benchmark and tests
+- added benchmark `81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md`;
+- added `tools/test_v012_geometric_integrity.py`;
+- regression covers broken-vs-fixed sensor/arm relation, silent Boolean no-op, toothless validator rejection, state-store postcondition enforcement and repair invalidation;
+- v0.9, v0.10 and v0.11 regression suites remain active.
+
+Canonical manifest version: **0.12.0**.
+Canonical module count: **242**.
+Canonical benchmark: **81 — Lafar Street Lamp v0.11 Geometric Integrity Regression**.
+
 ## 0.11.0
 
 v0.11.0 is the **enforced reconstruction execution + reference-conflict closure** release, driven by the Lafar Street Lamp v0.10 benchmark.
@@ -28180,33 +28070,127 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.11.0 — enforced reconstruction execution, conflict arbitration and detail closure.**
+**v0.12.0 — geometric integrity, mutation postconditions and adversarial validation.**
 
-v0.11 is driven by the Lafar Street Lamp v0.10 benchmark. v0.10 produced the strongest reconstruction so far, but exposed that the state machine was still advisory: `ready_nodes=[]` did not prevent a monolithic RDL0→RDL5 builder, `BUILT_UNVERIFIED` did not stop dependent geometry, and a local SIDE/detail conflict could be resolved too literally.
+v0.12 is driven by the Lafar Street Lamp v0.11 benchmark. v0.11 successfully enforced node-scoped execution and produced the strongest reconstruction process so far, but human review still found a severe arm/sensor interpenetration after the Shape Graph, Appearance Owner inventory and final fidelity gates had gone green.
 
-Canonical v0.11 execution:
+That failure establishes the v0.12 boundary:
 
 ```text
-eligible node
+correct execution process
++ correct reference evidence
+!=
+proven physically correct geometry
+```
+
+## Canonical v0.12 node transaction
+
+```text
+eligible Shape Node
 -> EXECUTION_AUTHORIZATION_GATE
 -> persist READY_TO_BUILD
--> build exactly one node
--> persist BUILT_UNVERIFIED
+-> mutate exactly one node
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
 -> source-anchored per-view QA
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> topology/regression proof
 -> RECONSTRUCTION_NODE_GATE
 -> persist ACCEPTED / FAIL / UNVERIFIED
 -> only ACCEPTED unlocks dependants
 ```
 
-v0.11 also adds persistent node/checkpoint state, per-property conflict arbitration, per-view evidence contracts, derived-parameter provenance, Appearance Owner Coverage, neutral diagnostic RDL geometry, canonical runtime pinning and benchmark 80 for the Lafar Street Lamp.
+`LOCAL_BUILDER: PASS` only proves that code returned normally. It does not prove that a Boolean cut, transform, loft or other geometry operation produced the intended result.
 
-Runtime remains downstream of `APPEARANCE_FIDELITY_GATE` and `RECON_FIDELITY_GATE`.
+## Core v0.12 additions
 
-## Core v0.11 concepts
+### Mutation Postcondition Gate
 
-### 1. Reconstruction Shape Graph
+Every production mutation must prove its postcondition before the node may enter `BUILT_UNVERIFIED`.
 
-Every reference-driven asset is decomposed into stable design forms:
+Typical evidence:
+- before/after geometry signature;
+- vertex/face delta;
+- volume or signed-volume delta where meaningful;
+- expected transform identity/readback;
+- applied modifier and cutter lifecycle;
+- predeclared feature probe.
+
+A Boolean modifier that disappears while the target remains unchanged is `FAIL`.
+
+### Assembly Relation Contract
+
+Multi-part junctions declare semantics before validation:
+
+```text
+BUTT_JOINT
+SHADOW_GAP
+RECESSED_INSERT
+OVERLAP_ALLOWED
+FLUSH_MATE
+CLEARANCE
+EMBEDDED
+WELDED
+FREE
+```
+
+The validator measures gap/contact/embedding/interpenetration and applies the declared relation. Generic `parts overlap` is not a junction proof.
+
+### Adversarial validator controls
+
+A MUST acceptance validator must demonstrate that it can reject a known-broken fixture:
+
+```text
+KNOWN_GOOD   -> PASS
+KNOWN_BROKEN -> FAIL
+```
+
+If a negative fixture returns PASS, the validator is toothless and cannot provide MUST acceptance evidence.
+
+### Repair invalidation
+
+Repairing an accepted host automatically invalidates dependent state:
+
+```text
+changed node            -> DIRTY
+built descendants       -> DIRTY
+unbuilt descendants     -> BLOCKED
+hosted Appearance Owners-> UNVERIFIED
+old revision evidence   -> SUPERSEDED
+unrelated branches      -> preserved
+```
+
+Stale green evidence cannot survive a geometry revision.
+
+### Final Geometric Integrity Gate
+
+Before reconstruction fidelity can unlock runtime, current physical proof is aggregated:
+
+```text
+mutation postconditions
++ Assembly Relation closure
++ topology records
++ validator negative controls
++ zero stale evidence
++ zero unresolved MUST relations
+-> GEOMETRIC_INTEGRITY_GATE
+```
+
+This gate is non-compensating. Perfect dimensions, overlays or appearance cannot override physical interpenetration or invalid topology.
+
+### Mesh integrity classification
+
+`MESH_VALIDATE` now distinguishes topology risk instead of treating all n-gons alike. It reports high-order n-gons, non-planar n-gons, concave n-gons and signed closed volume in addition to manifold/loose/duplicate/zero-area checks. Non-planar n-gons and inverted closed volumes are failures; concavity can be policy-driven.
+
+### Reference-mask contamination
+
+Registered technical-sheet QA can explicitly remove annotation ROIs and select the intended product component before silhouette metrics. Dimension lines, leaders and text cannot silently become part of the product mask. Registration remains global; no local warp is allowed.
+
+## Foundations retained
+
+### v0.9 — Shape understanding
+
+Reference-driven assets are decomposed into design forms:
 
 ```text
 G0 GLOBAL_ENVELOPE
@@ -28217,25 +28201,11 @@ G4 EDGE_LANGUAGE
 G5 SURFACE_DETAIL
 ```
 
-A Shape Node stores:
-- semantic role;
-- parent/dependencies;
-- importance;
-- mathematical shape class;
-- authoritative views and properties controlled by each view;
-- numeric/relationship constraints;
-- validation contract;
-- implementation skill.
+RDL0–RDL5 is reconstruction progression and remains separate from runtime LOD0–LOD3.
 
-`Shape Graph != Blender Object hierarchy`.
+### v0.10 — Appearance fidelity
 
-### 2. Reference Appearance Contract
-
-For 1:1 reconstruction or target fidelity L4/L5, Shape Graph is necessary but insufficient.
-
-The Appearance Contract inventories what must be visibly true for the model to read as the same designed product.
-
-Canonical appearance-owner classes:
+For 1:1/L4/L5 work, Shape Graph is paired with a Reference Appearance Contract containing visible owners such as:
 
 ```text
 PART_BOUNDARY
@@ -28251,351 +28221,104 @@ DETAIL_DENSITY_REGION
 NEGATIVE_SPACE
 ```
 
-Each owner links to:
-- host Shape Nodes;
-- source reference IDs;
-- source ROIs;
-- required views;
-- importance;
-- validation method.
+Correct envelope or dimensions cannot compensate for failed MUST product architecture.
 
-This prevents a coarse node such as `SIDE_MODULE` from hiding wrong trim, panel boundaries or shoulder transitions inside a correct outer silhouette.
+### v0.11 — Enforced execution
 
-### 3. Appearance hierarchy A0–A5
+Node state is executable, not advisory:
 
 ```text
-A0 composition / massing
-A1 internal product architecture
-A2 edge language
-A3 material identity
-A4 meso detail
-A5 micro detail / wear
+DECLARED
+-> CONSTRAINED
+-> READY_TO_BUILD
+-> one authorized mutation
+-> BUILT_UNVERIFIED
+-> canonical proof
+-> ACCEPTED
 ```
 
-A high A0 score does not compensate for failed A1/A2 when those owners are MUST.
+Parents/dependencies and RDL barriers are enforced; Shape Nodes, Appearance Owners, Evidence and Conflicts use separate persistent namespaces.
 
-### 4. Reconstruction Detail Levels
-
-RDL remains separate from runtime LOD:
+## Reconstruction Detail Levels
 
 ```text
-RDL0 envelope
+RDL0 envelope / diagnostic geometry
 RDL1 primary forms
-RDL2 secondary structural forms / major product architecture
+RDL2 secondary structural forms / product architecture
 RDL3 structural features
 RDL4 edge language
 RDL5 surface/detail
 ```
 
-Runtime `LOD0..LOD3` is generated only after reconstruction acceptance.
+Runtime LOD, UV, bake, export and engine work remain downstream from reconstruction acceptance.
 
-### 5. Canonical node-by-node execution
+## Final runtime lock
 
-```text
-one READY node
--> build/repair only that node
--> BUILT_UNVERIFIED
--> QA isolation
--> registered required views
--> numeric/section/regression checks
--> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL | UNVERIFIED
-```
-
-Required children remain blocked until their host/parent is accepted.
-
-### 6. Anti-circular validation
-
-v0.10 closes a concrete loophole exposed by the Street Bench run.
-
-This is not reference proof:
+For target fidelity L4/L5:
 
 ```text
-builder infers R165
--> builder constructs R165
--> builder-local Gate checks R165
--> PASS
-```
-
-It proves only internal consistency.
-
-Strict reference-derived acceptance now requires:
-- canonical `validator_id`;
-- `provenance_id`;
-- `source_reference_id` / `source_reference_ids`;
-- `registration_id` for projected evidence.
-
-A local helper may produce a measurement artifact. It cannot replace the canonical acceptance validator.
-
-### 7. Representation before Blender operator
-
-The agent still classifies geometry before implementation:
-
-```text
-PARAMETRIC_PRIMITIVE
-EXTRUDED_PROFILE
-REVOLVED_PROFILE
-PROFILE_SWEEP
-MULTI_SECTION_LOFT
-MULTI_SECTION_TRANSITION
-SUBD_FREEFORM
-BOOLEAN_RECESS
-PANEL_LINE
-LAYERED_ASSEMBLY
-HYBRID_ASSEMBLY
-```
-
-Compound hard-surface forms must not default to `cube + bevel` when width, depth and corner behavior vary across stations.
-
-### 8. Part Boundary / Trim / Junction Graph
-
-Outer silhouette answers where the object ends.
-
-The new graph captures where its manufactured regions begin and end:
-- metal/composite boundaries;
-- panel perimeters;
-- shadow gaps;
-- trim centerlines and widths;
-- trim terminations;
-- multi-part junctions;
-- rear service bands;
-- plinth splits.
-
-For major trim, validation covers:
-- path;
-- visible width;
-- start/end;
-- corner wrapping;
-- host adjacency;
-- continuity;
-- material identity.
-
-Object existence is not sufficient.
-
-### 9. RDL4 edge-language proof
-
-v0.10 treats edge language as reference geometry, not generic cleanup.
-
-For every MUST edge family validate:
-- profile type;
-- radius/chamfer/step family;
-- start/end landmarks;
-- continuity;
-- relation to part/material boundaries;
-- protected-dimension survival.
-
-`dimensions survived bevel` alone no longer passes RDL4.
-
-### 10. Material segmentation != material appearance
-
-For target L4/L5 the system distinguishes:
-
-```text
-which region uses which material
-```
-
-from:
-
-```text
-does that region respond like the reference material?
-```
-
-Appearance evidence can include:
-- metallic/dielectric identity;
-- roughness hierarchy;
-- brushed directionality / anisotropy;
-- micro-normal scale;
-- glass response;
-- emissive recession/intensity;
-- controlled wear hierarchy.
-
-A correctly named Principled material slot is not material appearance proof.
-
-### 11. Detail coverage
-
-Visible structural meso detail is not treated as optional microdetail.
-
-Examples:
-- service-panel perimeter;
-- rear service bands;
-- plinth split;
-- utility recess;
-- major fastener groups;
-- trim terminations;
-- underside service-cover layout.
-
-For L5, all MUST reference features must be accounted for as:
-
-```text
-PASS
-NOT_REQUIRED_BY_AUTHORITY
-BLOCKING_DEVIATION
-```
-
-Silent omission is forbidden.
-
-### 12. Appearance Fidelity Gate
-
-For target L4/L5:
-
-```text
-part boundaries
-+ trim paths
-+ junctions
-+ edge families
-+ material response
-+ final matched views
-+ emissive/branding when present
-+ detail coverage for L5
--> APPEARANCE_FIDELITY_GATE
-```
-
-MUST categories are non-compensating.
-
-A failed trim path cannot be averaged away by perfect dimensions.
-
-### 13. Final runtime lock
-
-For L4/L5:
-
-```text
+GEOMETRIC_INTEGRITY_GATE != PASS
+or
 APPEARANCE_FIDELITY_GATE != PASS
 or
 RECON_FIDELITY_GATE != PASS
 -> LOD / UV / bake / export / runtime FORBIDDEN
 ```
 
-Correct dimensions, triangle budgets, UV attributes, glTF readback or engine import do not override this lock.
+A successful glTF parse, triangle budget or engine load never overrides unresolved reconstruction geometry.
 
-## v0.9 foundation retained
+## New v0.12 semantic skills
 
-v0.10 keeps the Shape Graph/coarse-to-fine architecture introduced in v0.9:
-- mandatory form hierarchy;
-- RDL0–RDL5;
-- representation-first modeling;
-- one-node transactions;
-- stage barriers;
-- multi-section hard-surface loft support.
-
-The distinction is now:
-
-```text
-v0.8 -> proof-bearing reconstruction fidelity
-v0.9 -> understand and build the right forms in the right order
-v0.10 -> prove the same visible product architecture, style and finish without self-certification
-```
-
-## New v0.10 semantic skills
-
-- `APPEARANCE_REFERENCE_VALIDATE`;
-- `APPEARANCE_FIDELITY_GATE`.
+- `MUTATION_POSTCONDITION_GATE`;
+- `ASSEMBLY_INTEGRITY_GATE`;
+- `DEPENDENCY_INVALIDATOR`;
+- `VALIDATOR_NEGATIVE_CONTROL`;
+- `GEOMETRIC_INTEGRITY_GATE`.
 
 Strengthened:
+- `NODE_STATE_STORE`;
 - `RECONSTRUCTION_NODE_GATE`;
 - `RECON_FIDELITY_GATE`;
-- `QA_REFERENCE`;
-- edge/material reconstruction routing.
+- `ASSET_COMPLETION`;
+- `MESH_VALIDATE`;
+- `REFERENCE_OVERLAY_VALIDATE`.
 
-New executor:
+New executors remain `CONTRACT_READY` until a fresh Blender 5.1 end-to-end benchmark proves runtime maturity. `MESH_VALIDATE` retains its existing executor maturity while its v0.12 checks are covered by regression tests.
 
-```text
-executors/appearance_fidelity_gate.py
-```
+## Canonical benchmark
 
-`MESH_VALIDATE` remains the currently proven `EXECUTOR_READY` library executor. New appearance executors remain `CONTRACT_READY` until a real Blender 5.1 end-to-end v0.10 benchmark proves runtime execution maturity.
+`07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md`
 
-## Existing runtime pipeline retained
-
-The runtime infrastructure remains active:
-- image datablock cache coherence;
-- Pipeline DAG / dirty-stage reuse;
-- canonical runtime path context;
-- post-export round-trip invariants;
-- trustworthy test oracle;
-- Level C vs Level D evidence separation.
-
-For the verified RPG project profile:
-
-```text
-engine asset directory = <repo>/Assets
-game asset root       = <repo>/Assets/GameAssets
-forbidden lookalike   = <repo>/GameAssets
-```
-
-## Completion model
-
-```text
-RECONSTRUCTION_COMPLETE
--> MODELING_COMPLETE
--> GAME_READY_COMPLETE
--> PIPELINE_INTEGRATED
-```
-
-### Level A for L4/L5 now requires
-- valid Shape Graph revision;
-- valid Appearance Contract revision;
-- required Shape Nodes accepted by canonical gates;
-- required RDL barriers passed;
-- internal part/trim/junction owners closed;
-- edge/material appearance proof;
-- `APPEARANCE_FIDELITY_GATE: PASS`;
-- `RECON_FIDELITY_GATE: PASS`.
-
-### Level C
-Requires runtime LOD/collision/material/bake/package/export closure and round-trip invariants after Level A is proven.
-
-### Level D
-Requires actual target-engine proof such as production loader, engine regression test or instantiation. Blender glTF re-import remains Level C evidence only.
+It protects against:
+- unintended interpenetration hidden behind green visual gates;
+- wrong junction semantics;
+- silent Boolean no-op;
+- transform/context and inverted-volume hazards;
+- validators that cannot fail a known-broken fixture;
+- stale evidence after repairs;
+- unclassified risky topology;
+- concept-sheet annotation contamination.
 
 ## Repository structure
 
-- `00_governance` — state/routing/skills/task packs/completion
-- `01_analysis` — briefs/references/features/measurements
-- `02_blender_api` — Blender 5.1 API/runtime compatibility/cache
+- `00_governance` — state, routing, semantic skills, completion
+- `01_analysis` — briefs, references, measurements
+- `02_blender_api` — Blender 5.1 API/runtime rules
 - `03_modeling` — hard-surface/topology/UV/procedural modeling
-- `04_game_ready` — runtime LOD/collision/bake/export contracts
-- `05_execution` — node/appearance/fidelity gates, QA, DAG, completion proof
-- `06_prompts` — system/planner/reviewer/repair prompts
-- `07_examples` — real benchmark/post-mortem runs
+- `04_game_ready` — LOD/collision/bake/export/runtime contracts
+- `05_execution` — authorization, postconditions, integrity and fidelity gates
+- `06_prompts` — planner/reviewer/repair prompts
+- `07_examples` — benchmark and regression post-mortems
 - `08_scripts` — reusable validation patterns
-- `09_engine` — project/runtime profiles and integration proof
-- `10_reconstruction` — evidence-driven 1:1 reconstruction, Shape Graph and Appearance Contract
+- `09_engine` — project/runtime profiles and engine proof
+- `10_reconstruction` — evidence-driven 1:1 reconstruction
 - `11_playbooks` — asset-class production playbooks
-- `executors` — reusable Python executors/candidates
+- `executors` — reusable Python decision/execution components
 - `99_sources` — technical sources
 
 ## Canonical source
 
-Modular Markdown files listed in `MANIFEST.json` are canonical.
-
-`_FULL_LIBRARY.md` is generated from the manifest and should not be edited manually.
-
-## v0.10 benchmark
-
-Canonical release regression benchmark:
-
-`07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md`
-
-It protects against:
-- dimensions/global silhouette being mistaken for full fidelity;
-- builder-local circular acceptance gates;
-- coarse Shape Nodes hiding wrong internal product architecture;
-- incorrect aluminium trim path/width/continuity;
-- weak rear panel architecture;
-- generic/oversoft edge language;
-- placeholder material response;
-- missing meso detail;
-- runtime work before appearance fidelity is locked.
-
-Benchmark release target:
-
-```text
-REFERENCE_FIDELITY_SCORE >= 8.5/10
-and
-zero MUST visual blockers
-```
-
-The score is a regression oracle, not a replacement for objective evidence.
+Modular Markdown files listed in `MANIFEST.json` are canonical. `_FULL_LIBRARY.md` is generated from the manifest and must not be edited manually.
 
 
 ---
@@ -28606,19 +28329,7 @@ The score is a regression oracle, not a replacement for objective evidence.
 
 ## Purpose
 
-v0.11 makes Shape Graph state executable rather than advisory.
-
-The Lafar Street Lamp v0.10 benchmark exposed a hard loophole:
-
-```text
-SHAPE_GRAPH = PASS
-ready_nodes = []
--> asset-local builder still created RDL0..RDL5 in one run
-```
-
-That is forbidden in v0.11.
-
-## Fundamental rule
+Shape Graph state is executable rather than advisory.
 
 Production geometry mutation requires all of:
 
@@ -28635,16 +28346,9 @@ No `READY_TO_BUILD` node means no production geometry mutation.
 
 ## Eligibility is not authorization
 
-`SHAPE_GRAPH` may report a node as `eligible_nodes` when:
-- its contract is complete;
-- parent/dependencies are accepted;
-- prior RDL barriers are closed.
-
-Eligibility means only that an authorization may be requested.
-
 ```text
 CONSTRAINED
--> eligible
+-> Shape Graph eligible
 -> EXECUTION_AUTHORIZATION_GATE
 -> persist READY_TO_BUILD
 -> can_mutate
@@ -28652,21 +28356,22 @@ CONSTRAINED
 
 Do not treat `CONSTRAINED`, `DIRTY`, `FAIL` or `UNVERIFIED` as build permission.
 
-## BUILT_UNVERIFIED hard barrier
+## v0.12 post-mutation boundary
 
-After mutation:
+Authorization permits the mutation; it does not prove its result.
 
 ```text
 READY_TO_BUILD
 -> build/repair current node only
--> BUILT_UNVERIFIED
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: BUILT_UNVERIFIED
 -> STOP branch
--> QA + source-anchored proof
+-> source QA + ASSEMBLY_INTEGRITY_GATE where required
 -> RECONSTRUCTION_NODE_GATE
 -> ACCEPTED | UNVERIFIED | FAIL
 ```
 
-A `BUILT_UNVERIFIED` parent never unlocks children.
+A Boolean/transform/loft operation that returns normally but fails its geometric postcondition cannot reach `BUILT_UNVERIFIED`.
 
 ## Required authorization record
 
@@ -28685,15 +28390,18 @@ The asset-local builder may not fabricate this record.
 
 ## Mutation wrapper
 
-Every builder entry point must conceptually perform:
+Every builder entry point conceptually performs:
 
 ```text
 can_mutate(node_id, authorization)
 -> FAIL: return before bpy/BMesh mutation
--> PASS: open one-node transaction
+-> PASS: capture before metrics
+-> mutate one node
+-> capture after metrics
+-> MUTATION_POSTCONDITION_GATE
 ```
 
-A convenience `build_all()` may exist only as a replay/orchestrator that requests and closes each node gate sequentially. It may never call all node functions directly.
+A convenience `build_all()` may exist only as an orchestrator that requests and closes each node transaction sequentially.
 
 ## Failure classes
 
@@ -28704,8 +28412,7 @@ A convenience `build_all()` may exist only as a replay/orchestrator that request
 - `AUTHORIZATION_GRAPH_REVISION_MISMATCH`
 - `AUTHORIZATION_NODE_MISMATCH`
 - `AUTHORIZATION_ACTION_MISMATCH`
-
-Any one blocks mutation.
+- downstream `MUTATION_POSTCONDITION_REQUIRED`
 
 ## Canonical executor
 
@@ -28724,9 +28431,9 @@ Skill ID: `EXECUTION_AUTHORIZATION_GATE`.
 
 A reconstruction state machine is useless if state exists only in comments or transient Python variables.
 
-v0.11 requires a persistent checkpoint separating design state, appearance state and evidence.
+Persistent checkpoints separate design state, appearance state, assembly state and evidence.
 
-## Canonical node states
+## Canonical states
 
 ```text
 DECLARED
@@ -28746,15 +28453,16 @@ DIRTY
 SUPERSEDED
 ```
 
-`UNVERIFIED` is now a canonical state rather than only a gate return value.
-
 ## Transition ownership
 
 - `DECLARED -> CONSTRAINED`: planner/contract completion;
-- `CONSTRAINED -> READY_TO_BUILD`: only with `EXECUTION_AUTHORIZATION_GATE`;
-- `READY_TO_BUILD -> BUILT_UNVERIFIED`: one-node mutation artifact;
-- `BUILT_UNVERIFIED -> ACCEPTED`: only with `RECONSTRUCTION_NODE_GATE`;
+- `CONSTRAINED -> READY_TO_BUILD`: canonical `EXECUTION_AUTHORIZATION_GATE`;
+- authorized mutation occurs while node is `READY_TO_BUILD`;
+- `READY_TO_BUILD -> BUILT_UNVERIFIED`: requires `LOCAL_BUILDER` artifact **and** nested `MUTATION_POSTCONDITION_GATE: PASS` proof;
+- `BUILT_UNVERIFIED -> ACCEPTED`: only canonical `RECONSTRUCTION_NODE_GATE`;
 - `ACCEPTED -> DIRTY`: change-impact record required.
+
+A successful Python return without geometric postcondition cannot advance state.
 
 ## Checkpoint schema
 
@@ -28763,7 +28471,8 @@ asset_id: LAFAR_3470
 state_revision: state_018
 graph_revision: sg_012
 appearance_revision: ac_007
-current_rdl: RDL1
+assembly_revision: assembly_004
+current_rdl: RDL2
 shape_nodes:
   ARM:
     state: ACCEPTED
@@ -28771,43 +28480,54 @@ shape_nodes:
     last_transition_provenance: gate_arm_006
 appearance_owners:
   T_HEAD_BLUE_STRIP:
-    status: UNVERIFIED
-    host_revision: arm_006
+    status: PASS
+    hosts: [ARM]
 evidence:
+  mutation_arm_006:
+    type: MUTATION_POSTCONDITION
+    status: PASS
+    node_id: ARM
   gate_arm_006:
     type: NODE_GATE
+    status: PASS
+    node_id: ARM
+conflicts: {}
 history: []
 ```
 
 ## Separate namespaces
 
-Never mix:
-
-```text
-Shape Node IDs
-Appearance Owner IDs
-Evidence IDs
-```
-
-The lamp v0.10 builder recorded an Appearance Owner such as `D_SENSOR_LENSES` inside a generic `REPORT['nodes']` namespace. v0.11 forbids that ambiguity.
+Do not mix Shape Node IDs, Appearance Owner IDs, Assembly Relation IDs and Evidence IDs.
 
 ## Persistence rule
 
-After every state transition persist the checkpoint before requesting the next authorization.
+After every state transition persist checkpoint before requesting the next authorization. A scene reset/rebuild may be deterministic replay, but it does not reset acceptance history.
 
-A full scene reset/rebuild may be used for deterministic replay, but the orchestrator must restore and enforce canonical node states. Resetting Blender data is not permission to reset acceptance history.
+## v0.12 repair invalidation
 
-## Dirty propagation
+Do not manually dirty one node and leave descendants/evidence green.
 
-When an accepted node changes:
-- mark dependent geometry nodes `DIRTY` when their host relationship may change;
-- mark appearance owners tied to the old host revision `UNVERIFIED`;
-- keep unrelated accepted nodes reusable;
-- invalidate later RDL barriers that depended on the changed node.
+```text
+accepted host repair
+-> DEPENDENCY_INVALIDATOR
+-> changed node revision bump + DIRTY
+-> built descendants DIRTY
+-> unbuilt descendants BLOCKED
+-> hosted Appearance Owners UNVERIFIED
+-> old revision evidence SUPERSEDED
+-> later dependent barriers invalid
+```
 
-## Canonical executor
+Unrelated accepted branches remain reusable.
 
-`executors/node_state_store.py` validates transitions and checkpoint namespace integrity.
+## Evidence freshness
+
+Final reports must reference evidence bound to current node/graph/appearance/assembly revisions. `SUPERSEDED` proof stays in history but cannot satisfy a current gate.
+
+## Canonical executors
+
+- `executors/node_state_store.py` — transitions/checkpoint namespace integrity;
+- `executors/dependency_invalidator.py` — repair invalidation/supersession.
 
 
 ---
@@ -28818,11 +28538,9 @@ When an accepted node changes:
 
 ## Purpose
 
-Code organization into `node_foot()`, `node_arm()`, `node_head()` is not enough. The execution transaction itself must be node-scoped.
+Code organization into `node_foot()`, `node_arm()`, `node_head()` is not enough. The execution transaction itself must be node-scoped and postcondition-verified.
 
-The Lafar Street Lamp v0.10 builder had good node functions but `main()` invoked the entire asset from RDL0 through RDL5 in one run. v0.11 treats that as a regression.
-
-## Canonical loop
+## Canonical v0.12 loop
 
 ```text
 load checkpoint
@@ -28830,14 +28548,21 @@ load checkpoint
 -> resolve one eligible node
 -> issue EXECUTION_AUTHORIZATION_GATE
 -> persist READY_TO_BUILD
+-> capture compact before-state geometry metrics
 -> execute exactly that node
--> persist BUILT_UNVERIFIED
+-> capture after-state metrics
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
 -> isolate accepted ancestors + current node
--> render required evidence
--> canonical node gate
+-> render required source evidence
+-> ASSEMBLY_INTEGRITY_GATE for relations touched by node
+-> topology/section/layer validation as required
+-> RECONSTRUCTION_NODE_GATE
 -> persist ACCEPTED / FAIL / UNVERIFIED
 -> repeat
 ```
+
+A failed mutation postcondition stops before source QA. A failed assembly relation stops node acceptance.
 
 ## Builder API
 
@@ -28853,8 +28578,19 @@ BUILDERS = {
 
 def build_node(node_id, context, authorization):
     assert EXECUTION_AUTHORIZATION_GATE.can_mutate(...)
-    return BUILDERS[node_id](context)
+    before = capture_geometry_state(...)
+    result = BUILDERS[node_id](context)
+    after = capture_geometry_state(...)
+    post = MUTATION_POSTCONDITION_GATE.evaluate(...)
+    return {
+        'status': 'PASS' if post['status'] == 'PASS' else 'FAIL',
+        'validator_id': 'LOCAL_BUILDER',
+        'artifact_id': result.artifact_id,
+        'mutation_postcondition': post,
+    }
 ```
+
+Asset-local code may capture metrics. Canonical executors decide acceptance.
 
 CLI pattern:
 
@@ -28874,11 +28610,11 @@ def main():
     build_materials()
 ```
 
-Even if functions are ordered correctly, this bypasses acceptance between nodes.
+Even when functions are ordered correctly, this bypasses per-node postconditions and acceptance.
 
 ## RDL orchestration
 
-One RDL may contain many nodes, but each node closes independently. When all MUST nodes through the target RDL are `ACCEPTED`, run the canonical stage barrier.
+One RDL may contain many nodes, but each node closes independently.
 
 ```text
 all RDL1 MUST nodes ACCEPTED
@@ -28888,11 +28624,24 @@ all RDL1 MUST nodes ACCEPTED
 
 ## RDL0
 
-RDL0 must produce diagnostic geometry, not only a dictionary of dimensions. It exists to falsify envelope interpretation early.
+RDL0 produces neutral diagnostic geometry, not only a dimensions dictionary. It exists to falsify envelope interpretation early.
+
+## Repair orchestration
+
+For repair of accepted geometry:
+
+```text
+change intent
+-> DEPENDENCY_INVALIDATOR
+-> persist new revisions/states
+-> rebuild affected closure node-by-node
+```
+
+Do not mutate an accepted host first and invalidate descendants afterwards.
 
 ## Replay
 
-A deterministic full replay is allowed after acceptance for reproducibility. Replay must use frozen accepted node revisions and may not create new acceptance evidence by itself.
+A deterministic full replay is allowed after acceptance for reproducibility. Replay uses frozen accepted node revisions and cannot mint new acceptance evidence by itself.
 
 
 ---
@@ -29505,3 +29254,648 @@ Do not build sensor, LED array or emissive strips before all required G1 nodes p
 ## Detail closure
 
 Before RDL5 acceptance inventory all visible head/base cuts, hatches, fasteners, vents, branding and emissive terminations. Missing MUST head cuts are not cosmetic TODOs.
+
+
+---
+
+## FILE: `05_execution/76_MUTATION_POSTCONDITION_GATE.md`
+
+# Mutation Postcondition Gate
+
+## Purpose
+
+v0.11 proved that an authorized one-node transaction can still produce the wrong geometry while every execution-state rule is obeyed.
+
+The Lafar Street Lamp v0.11 benchmark exposed multiple silent mutation failures:
+- a Boolean modifier could be applied without producing the intended recess;
+- transform/context state could differ from the active-object assumption;
+- lofted geometry could carry incorrect volume orientation;
+- a builder could return `PASS` because Python completed, not because geometry changed as intended.
+
+v0.12 inserts a mandatory postcondition between mutation and `BUILT_UNVERIFIED`.
+
+## Canonical order
+
+```text
+READY_TO_BUILD
+-> authorized mutation
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
+-> FAIL: persist FAIL / repair current node
+```
+
+`LOCAL_BUILDER: PASS` means only that the builder transaction returned normally. It is not geometric proof.
+
+## Required evidence
+
+Capture compact before/after metrics for the mutated owner:
+- object existence;
+- vertex/face counts;
+- geometry signature;
+- bounds;
+- volume when meaningful;
+- signed volume for closed solids when meaningful;
+- transform identity where Apply is expected;
+- modifier list;
+- cutter/helper existence;
+- feature-probe result;
+- operation kind and stable operation ID.
+
+## Boolean rule
+
+A Boolean is not successful because the modifier disappeared.
+
+For `BOOLEAN_CUT`, `BOOLEAN_UNION` or `BOOLEAN_INTERSECT`, require evidence that the target actually changed: topology delta, volume delta or geometry-signature delta, plus an operation-specific feature probe when declared.
+
+```text
+modifier applied
++ target unchanged
+= BOOLEAN_NO_OP
+= FAIL
+```
+
+## Transform rule
+
+When a mutation depends on transform application:
+- active/selected context is explicit;
+- expected object matrix is identity after Apply;
+- depsgraph update/readback is recorded;
+- unrelated selected objects must not change accidentally.
+
+## Loft / closed-volume rule
+
+For closed section-loft geometry, the postcondition may require positive signed volume. Inverted closed volume is a build failure even when the viewport render looks plausible.
+
+## Material-only rule
+
+A material-only mutation should keep geometry signature stable while material response/signature changes. Geometry drift during RDL5 lookdev is a regression.
+
+## Canonical executor
+
+`executors/mutation_postcondition_gate.py`
+
+Skill ID: `MUTATION_POSTCONDITION_GATE`.
+
+
+---
+
+## FILE: `05_execution/77_REPAIR_INVALIDATION_AND_EVIDENCE_SUPERSESSION.md`
+
+# Repair Invalidation and Evidence Supersession
+
+## Purpose
+
+A repair to an accepted host invalidates more than that host's mesh.
+
+The v0.11 lamp repair changed the `ARM` / `SENSOR_MODULE` junction after the asset had already accumulated green node, appearance and final fidelity evidence. Without dependency invalidation, old evidence can remain green for geometry that no longer exists.
+
+## Fundamental rule
+
+```text
+accepted geometry changes
+-> old node revision is no longer canonical
+-> downstream geometry/evidence depending on it cannot stay ACCEPTED/PASS silently
+```
+
+## Canonical propagation
+
+For a changed Shape Node:
+1. increment the node revision;
+2. mark the changed node `DIRTY`;
+3. walk child + `depends_on` reverse edges;
+4. mark already-built downstream nodes `DIRTY`;
+5. mark not-yet-built downstream nodes `BLOCKED`;
+6. invalidate Appearance Owners hosted by any affected node;
+7. mark evidence records tied to affected node/owner revisions `SUPERSEDED`;
+8. invalidate RDL/fidelity barriers that depended on superseded evidence;
+9. preserve unrelated accepted branches.
+
+## Example
+
+```text
+ARM repair
+├── SENSOR_MODULE         -> DIRTY
+│   └── SENSOR_LENS       -> BLOCKED/DIRTY
+├── HEAD_ACCENT_CHANNEL   -> DIRTY
+├── EDGE_LANGUAGE         -> DIRTY
+└── SURFACE_FINISH        -> DIRTY
+
+BASE                     -> remains ACCEPTED
+```
+
+## Evidence lifecycle
+
+Never delete old evidence. Mark it:
+
+```yaml
+status: SUPERSEDED
+superseded_by: repair:arm_sensor_seam
+```
+
+This preserves traceability and prevents stale green reports from being reused.
+
+## Replay
+
+A deterministic replay may rebuild affected nodes from frozen inputs, but it must generate new revision-bound evidence. Replaying a build does not reactivate superseded proof.
+
+## Canonical executor
+
+`executors/dependency_invalidator.py`
+
+Skill ID: `DEPENDENCY_INVALIDATOR`.
+
+
+---
+
+## FILE: `07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md`
+
+# Benchmark 81 — Lafar Street Lamp v0.11 Geometric Integrity Regression
+
+## Purpose
+
+Canonical regression driver for BlenderSkill v0.12.0.
+
+Source asset: Astera Civic Systems / LAFAR 3470 Civic Lighting Module.
+
+v0.11 delivered the strongest process discipline so far: runtime pinning, conflict arbitration, persistent node state, authorized one-node mutation, `BUILT_UNVERIFIED` branch stops, source-anchored node QA, 23/23 Shape Nodes accepted, 32/32 Appearance Owners accounted, and final appearance/reconstruction gates passed.
+
+Human review still found a severe geometric defect after the green pipeline: the sensor housing and arm interpenetrated and the head lost visible detail.
+
+## Critical finding
+
+A fully green evidence chain can still be wrong if the validators test the wrong physical property.
+
+The broken head had approximately coincident/interpenetrating skins. Initial containment-style checking returned PASS because the defect was not one object fully buried in another; it was surface interpenetration. The first guard therefore did not bite.
+
+After repair:
+- arm tip ended at approximately Y=482 mm;
+- sensor housing began at approximately Y=485 mm;
+- the intended shadow-gap junction was restored;
+- unintended interpenetration findings dropped to zero.
+
+The old junction validator then failed because it had encoded the wrong semantic rule: it expected overlap. It had to be rewritten to validate a shadow gap plus housing lip instead.
+
+## Failure classes protected by v0.12
+
+### V12-01 — assembly interpenetration blind spot
+Separate parts can physically intersect while node/view/fidelity gates remain green.
+
+### V12-02 — wrong junction semantics
+A validator can reward the defect if it checks generic overlap instead of the declared assembly relation.
+
+### V12-03 — silent Boolean no-op
+Modifier application is not proof that the target mesh changed.
+
+### V12-04 — transform/context hazard
+Active object, selected objects and evaluated transforms can diverge from builder assumptions.
+
+### V12-05 — inverted volume/orientation hazard
+A loft can render plausibly but carry a wrong closed-volume orientation that breaks downstream operations.
+
+### V12-06 — toothless validator
+The first containment probe returned PASS on the known-broken fixture. A validator that cannot reject the defect is not acceptance evidence.
+
+### V12-07 — topology classification gap
+The repaired `SensorShell` still contained three n-gons with more than six vertices. N-gons are not automatically wrong, but planarity/concavity/shading risk must be classified.
+
+### V12-08 — contaminated reference mask
+Dimension lines/leaders on the concept sheet changed contour metrics materially. Product and annotation masks must be separated.
+
+### V12-09 — stale evidence after repair
+`ACCEPTED -> DIRTY` exists, but downstream Shape/Appearance/Evidence invalidation must be automatic and revision-aware.
+
+### V12-10 — asset-local integrity validator invention
+Interpenetration logic was invented only after the human found the defect. Assembly integrity belongs in the canonical executor layer.
+
+## v0.12 regression fixtures
+
+```text
+BROKEN_SENSOR_ASSEMBLY
+-> ASSEMBLY_INTEGRITY_GATE FAIL
+
+FIXED_SENSOR_ASSEMBLY
+-> ASSEMBLY_INTEGRITY_GATE PASS
+
+BOOLEAN_TARGET_UNCHANGED
+-> MUTATION_POSTCONDITION_GATE FAIL
+
+TOOTHLESS_NEGATIVE_CONTROL
+-> VALIDATOR_NEGATIVE_CONTROL FAIL
+
+ARM_REPAIR
+-> descendants DIRTY/BLOCKED
+-> affected Appearance Owners UNVERIFIED
+-> stale evidence SUPERSEDED
+```
+
+## Acceptance target
+
+```text
+zero unauthorized mutations
+zero silent mutation no-ops
+zero undefined MUST assembly relations
+zero unintended interpenetrations on forbidden relations
+zero stale green evidence after repair
+100% MUST integrity validators proven by negative control
+0 non-manifold closed solids
+no unclassified non-planar high-order n-gons in MUST visible regions
+```
+
+Reference/appearance fidelity remains required; geometric integrity is non-compensating and cannot be averaged away by a good visual score.
+
+
+---
+
+## FILE: `08_scripts/99_GEOMETRIC_INTEGRITY_VALIDATION_PATTERN.md`
+
+# Geometric Integrity Validation Pattern
+
+## Purpose
+
+Reusable Blender-side measurement pattern consumed by v0.12 pure decision executors.
+
+Canonical gates own acceptance logic. Asset-local Blender code only measures geometry and returns compact records.
+
+## Mutation snapshot
+
+Before and after a risky mutation record:
+
+```python
+{
+  "object_exists": True,
+  "vertices": len(mesh.vertices),
+  "faces": len(mesh.polygons),
+  "volume_mm3": measured_volume,
+  "signed_volume_mm3": signed_volume,
+  "geometry_signature": stable_hash,
+  "matrix_identity": matrix_is_identity,
+  "modifiers": [m.name for m in obj.modifiers],
+}
+```
+
+Feed the pair into `MUTATION_POSTCONDITION_GATE`.
+
+## Assembly relation measurement
+
+For each declared relation pair, measure only metrics required by the relation contract:
+- penetration surface area / estimated volume;
+- minimum/mean gap;
+- contact area;
+- embedding depth;
+- clearance;
+- host containment where explicitly intended.
+
+Feed measured metrics into `ASSEMBLY_INTEGRITY_GATE`.
+
+Do not let the measurement helper decide whether overlap is correct. It does not know the semantic relation.
+
+## Surface interpenetration
+
+AABB overlap is only broad phase. It is not proof of collision.
+
+Containment ratio alone is also insufficient: the lamp defect was a surface intersection, not complete burial.
+
+Preferred pipeline:
+1. broad-phase bounding overlap;
+2. narrow-phase surface/triangle intersection or robust sampled surface penetration;
+3. relation-specific tolerance;
+4. compact area/volume/gap metrics;
+5. canonical assembly decision gate.
+
+## Boolean bite test
+
+For a Boolean expected to create a recess:
+- capture target signature/face-count/volume before;
+- apply operation;
+- force evaluated readback;
+- capture after;
+- verify non-zero intended change;
+- verify cutter/modifier lifecycle;
+- run a feature probe anchored to the predeclared feature ROI/volume.
+
+## Negative control
+
+Every new MUST integrity validator needs:
+- a known-good fixture -> PASS;
+- at least one known-broken fixture -> FAIL.
+
+Use `VALIDATOR_NEGATIVE_CONTROL` to record the proof.
+
+
+---
+
+## FILE: `10_reconstruction/189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`
+
+# Assembly Relation and Interpenetration Contract
+
+## Purpose
+
+Object overlap has no meaning without assembly semantics.
+
+The v0.11 lamp initially validated `J_SENSOR_ARM` by checking that the sensor shell overlapped the arm. Human inspection revealed that the overlap itself was the defect. The intended design was a separate housing meeting the arm across a small shadow gap and overhanging it slightly.
+
+v0.12 requires every important multi-part junction to declare a relation type before geometry validation.
+
+## Canonical relation types
+
+```text
+BUTT_JOINT
+SHADOW_GAP
+RECESSED_INSERT
+OVERLAP_ALLOWED
+FLUSH_MATE
+CLEARANCE
+EMBEDDED
+WELDED
+FREE
+```
+
+## Semantics
+
+- `BUTT_JOINT` — parts meet at a boundary; unintended penetration forbidden.
+- `SHADOW_GAP` — parts remain separate by a visible controlled gap; penetration forbidden.
+- `RECESSED_INSERT` — child intentionally seats inside a host recess; embedding is required and bounded.
+- `OVERLAP_ALLOWED` — overlap intentional, still bounded when MUST.
+- `FLUSH_MATE` — surfaces align within tolerance; deep penetration/visible gap fail.
+- `CLEARANCE` — minimum free space required.
+- `EMBEDDED` — intentional penetration/embedding depth required and bounded.
+- `WELDED` — contact required; controlled overlap may be allowed.
+- `FREE` — no geometric relation asserted; not a shortcut for unknown intent.
+
+## Relation schema
+
+```yaml
+relation_id: J_SENSOR_ARM
+a: ARM
+b: SENSOR_MODULE
+relation_type: SHADOW_GAP
+importance: MUST
+constraints:
+  min_gap_mm: 2.0
+  max_gap_mm: 4.0
+  max_penetration_area_mm2: 0.5
+metrics:
+  min_gap_mm: 3.0
+  mean_gap_mm: 3.0
+  penetration_area_mm2: 0.0
+```
+
+## Required policy
+
+A generic `objects overlap` or `objects do not overlap` test cannot certify a junction. The declared relation owns interpretation of measured geometry.
+
+For target L4/L5, every MUST `JUNCTION` Appearance Owner must map to an Assembly Relation record or an explicit authority waiver.
+
+## Canonical executor
+
+`executors/assembly_integrity_gate.py`
+
+Skill ID: `ASSEMBLY_INTEGRITY_GATE`.
+
+
+---
+
+## FILE: `10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md`
+
+# Adversarial Validation and Negative Controls
+
+## Purpose
+
+A validator is not trustworthy because it returns PASS on the current asset.
+
+The v0.11 lamp produced a toothless guard: an initial containment-based interpenetration check returned PASS on the known-broken sensor/arm assembly. The defect was a surface intersection, not complete burial.
+
+v0.12 therefore requires bite tests for acceptance validators.
+
+## Rule
+
+Before a validator can provide MUST acceptance evidence, prove at least:
+
+```text
+KNOWN_GOOD fixture   -> PASS
+KNOWN_BROKEN fixture -> FAIL
+```
+
+If the broken fixture returns PASS, the validator is rejected regardless of how plausible its algorithm sounds.
+
+## Negative-control classes
+
+Choose a mutation that represents the failure class the validator claims to detect.
+
+Examples:
+- assembly integrity: inject forbidden overlap;
+- Boolean postcondition: remove the cutter effect while preserving modifier lifecycle;
+- gap validator: collapse the gap to zero;
+- trim path validator: shift centerline outside tolerance;
+- layer-stack validator: bury visible layer behind host;
+- overlay validator: shift silhouette by a known pixel offset;
+- runtime package validator: remove `TEXCOORD_0`.
+
+## Anti-cheat rule
+
+The negative fixture must differ in the measured property, not by an unrelated easy-to-detect marker. Do not add `broken=True` and then test that flag.
+
+## Control record
+
+```yaml
+validator_id_under_test: ASSEMBLY_INTEGRITY_GATE
+positive_controls:
+  - case_id: sensor_arm_shadow_gap_good
+    actual_status: PASS
+negative_controls:
+  - case_id: sensor_arm_5mm_overlap
+    actual_status: FAIL
+```
+
+## Maturity implication
+
+A validator without a negative-control fixture cannot be promoted to `EXECUTOR_READY` for MUST acceptance.
+
+## Canonical executor
+
+`executors/validator_negative_control.py`
+
+Skill ID: `VALIDATOR_NEGATIVE_CONTROL`.
+
+
+---
+
+## FILE: `10_reconstruction/191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md`
+
+# Reference Mask Contamination and Annotation Exclusion
+
+## Purpose
+
+Technical sheets contain product pixels and annotation pixels in the same raster.
+
+The v0.11 lamp showed that dimension lines and leaders materially changed contour deviation. A registered overlay can therefore fail or pass for the wrong reason if it treats annotations as product silhouette.
+
+## Mask classes
+
+Where relevant distinguish:
+
+```text
+PRODUCT_MASK
+DIMENSION_LINE_MASK
+LEADER_MASK
+TEXT_MASK
+ARROWHEAD_MASK
+DECORATIVE_GRAPHIC_MASK
+```
+
+Only PRODUCT_MASK participates in outer-silhouette metrics unless a specific annotation is itself the measured source.
+
+## Canonical cleanup sequence
+
+1. use the registered view ROI;
+2. apply explicit exclusion rectangles for known labels/leaders where available;
+3. select the product connected component by seed or largest-component policy;
+4. preserve bright/chromatic product materials with the reference contrast model;
+5. calculate silhouette metrics on the cleaned product mask;
+6. report mask policy and exclusions as evidence provenance.
+
+## Connected-component policy
+
+`largest component` is appropriate only when the product is one connected silhouette in that view. For separated feet, floating parts or intentional gaps, use a seeded/declared component set instead.
+
+Never silently erase small components merely because they are small; they may be real trim or detached structure.
+
+## Executor integration
+
+`executors/reference_overlay_validate.py` supports mask exclusions and connected-component filtering. Registration remains global; mask cleanup must not locally warp or translate the candidate to improve score.
+
+
+---
+
+## FILE: `11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md`
+
+# Industrial Assembly Integrity Playbook
+
+## Scope
+
+Hard-surface civic/product assets composed from multiple shells, panels, trims, inserts, lamps, sensors and service modules.
+
+## Before building child parts
+
+For every important child-host pair declare:
+- host Shape Node;
+- child Shape Node;
+- assembly relation type;
+- expected gap/contact/embedding behavior;
+- whether interpenetration is forbidden or bounded;
+- source evidence for the junction.
+
+Do not use generic overlap as a proxy for `connected`.
+
+## During one-node mutation
+
+Immediately after the authorized mutation:
+1. run `MUTATION_POSTCONDITION_GATE`;
+2. verify Boolean/transform/loft outcomes;
+3. only then persist `BUILT_UNVERIFIED`;
+4. run reference QA;
+5. run `ASSEMBLY_INTEGRITY_GATE` for every relation touched by the node;
+6. only canonical node acceptance unlocks dependants.
+
+## High-risk operations
+
+### Boolean recesses
+Require before/after geometry evidence. Modifier disappearance alone is insufficient.
+
+### Layered housings
+Check front-to-back layer order and assembly relation. Two coincident skins are not a layered assembly.
+
+### Sensor / cap modules
+Prefer a declared butt/shadow-gap/recess relation. Verify the host does not poke through the child shell.
+
+### Trim in channels
+Some overlap is intentional. Use `RECESSED_INSERT` or `EMBEDDED` with bounded embedding instead of globally disabling interpenetration checks.
+
+### Service doors
+Use `SHADOW_GAP`, `FLUSH_MATE` or `RECESSED_INSERT` according to reference/manufacturing logic.
+
+## Repair
+
+When a host is repaired:
+- run `DEPENDENCY_INVALIDATOR`;
+- dirty/block affected descendants;
+- invalidate hosted Appearance Owners;
+- supersede old evidence;
+- rebuild only affected closure;
+- rerun integrity + reference gates.
+
+## Final pre-runtime integrity sweep
+
+For L4/L5 industrial assets require:
+- zero failed MUST assembly relations;
+- zero silent mutation postcondition failures;
+- closed-solid topology appropriate to contract;
+- no unclassified risky n-gons in critical visible regions;
+- all MUST validators proven with negative controls;
+- no stale evidence after repair.
+
+
+---
+
+## FILE: `05_execution/78_GEOMETRIC_INTEGRITY_GATE.md`
+
+# Geometric Integrity Gate
+
+## Purpose
+
+Reference fidelity and geometric integrity are separate non-compensating requirements.
+
+The Lafar Street Lamp v0.11 reached green Shape/Appearance/fidelity reports while a severe sensor/arm interpenetration still existed. v0.12 therefore adds a final physical-geometry gate before reconstruction fidelity can unlock runtime.
+
+## Canonical order
+
+```text
+all required Shape Nodes accepted
+-> mutation postconditions closed
+-> assembly relations closed
+-> topology records closed
+-> required validator negative controls PASS
+-> no stale evidence
+-> GEOMETRIC_INTEGRITY_GATE
+-> RECON_FIDELITY_GATE
+-> runtime
+```
+
+## Required categories
+
+### Mutation postconditions
+Every required production mutation has a current `MUTATION_POSTCONDITION_GATE: PASS` record.
+
+### Assembly integrity
+All MUST assembly relations are represented by a current `ASSEMBLY_INTEGRITY_GATE: PASS` aggregate.
+
+### Topology integrity
+Required mesh owners provide `MESH_VALIDATE: PASS` records under their topology intents.
+
+### Validator controls
+Acceptance validators named by project/asset policy provide `VALIDATOR_NEGATIVE_CONTROL: PASS` records.
+
+### Evidence freshness
+No evidence referenced by the current final report is `SUPERSEDED` or bound to a stale node revision.
+
+### Relation closure
+No MUST assembly relation remains unresolved/unknown.
+
+## Non-compensation
+
+```text
+perfect visual overlay
++ perfect dimensions
++ engine load PASS
++ ASSEMBLY_INTEGRITY FAIL
+= GEOMETRIC_INTEGRITY_GATE FAIL
+= runtime blocked
+```
+
+A human-visible geometric defect cannot be averaged away by an appearance score.
+
+## Canonical executor
+
+`executors/geometric_integrity_gate.py`
+
+Skill ID: `GEOMETRIC_INTEGRITY_GATE`.

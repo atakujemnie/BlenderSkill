@@ -4,7 +4,6 @@ import importlib.util
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-
 def load(name: str, rel: str):
     spec = importlib.util.spec_from_file_location(name, ROOT / rel)
     if spec is None or spec.loader is None: raise RuntimeError(rel)
@@ -66,6 +65,8 @@ def main() -> None:
     }
     no_appearance = fidelity.evaluate(fidelity_report); assert no_appearance["status"] == "FAIL" and any(b["owner"] == "appearance_fidelity" for b in no_appearance["blockers"])
     fidelity_report["appearance_fidelity"] = {"status": "PASS", "evidence_kind": "APPEARANCE_FIDELITY_GATE", "validator_id": "APPEARANCE_FIDELITY_GATE", "provenance_id": "appearance_gate_001"}
+    no_integrity = fidelity.evaluate(fidelity_report); assert no_integrity["status"] == "FAIL" and any(b["owner"] == "geometric_integrity" for b in no_integrity["blockers"])
+    fidelity_report["geometric_integrity"] = {"status": "PASS", "evidence_kind": "GEOMETRIC_INTEGRITY_GATE", "validator_id": "GEOMETRIC_INTEGRITY_GATE", "provenance_id": "geometry_gate_001"}
     full = fidelity.evaluate(fidelity_report); assert full["status"] == "PASS" and full["can_advance_to_runtime"] is True
     print("v0.10 reference appearance/fidelity smoke tests: PASS")
 

@@ -1,5 +1,53 @@
 # Knowledge Router
 
+## v0.12 geometric-integrity routing override
+
+This section has precedence over v0.11/v0.10 sequences later in this document while preserving their specialized routes.
+
+```text
+runtime pin
+-> reference evidence/calibration/conflict arbitration
+-> Shape Graph + Appearance Contract + Assembly Relation Contract
+-> eligible node
+-> EXECUTION_AUTHORIZATION_GATE
+-> persist READY_TO_BUILD
+-> capture before metrics
+-> mutate exactly one node
+-> capture after metrics
+-> MUTATION_POSTCONDITION_GATE
+-> PASS: persist BUILT_UNVERIFIED
+-> per-view source proof
+-> ASSEMBLY_INTEGRITY_GATE for touched relations
+-> topology/section/layer proof as required
+-> RECONSTRUCTION_NODE_GATE
+-> persist ACCEPTED / FAIL / UNVERIFIED
+-> RDL barrier
+```
+
+After required nodes close:
+
+```text
+current mutation postconditions
++ Assembly Relation closure
++ topology records
++ required validator negative controls
++ zero stale/superseded evidence in current bundle
+-> GEOMETRIC_INTEGRITY_GATE
+-> APPEARANCE_FIDELITY_GATE when required
+-> RECON_FIDELITY_GATE
+-> runtime
+```
+
+Hard v0.12 routes:
+- builder returns normally but intended geometry did not change -> `MUTATION_POSTCONDITION_GATE`;
+- parts pierce/z-fight or gap/contact is wrong -> semantic Assembly Relation + `ASSEMBLY_INTEGRITY_GATE`;
+- validator returns PASS on known-broken fixture -> `VALIDATOR_NEGATIVE_CONTROL`, validator cannot own MUST acceptance;
+- accepted host repair -> `DEPENDENCY_INVALIDATOR` before rebuild; old proof becomes `SUPERSEDED`;
+- technical-sheet annotations contaminate silhouette -> `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md` + reference mask controls;
+- final physical closure -> `GEOMETRIC_INTEGRITY_GATE`; visual/reference success cannot compensate for physical failure.
+
+---
+
 ## v0.11 routing override
 
 This section has precedence over the v0.10 execution routing later in the document.
@@ -75,6 +123,8 @@ Required outputs:
 
 Po `ANALYZE: PASS` nie wracaj do broad exploration bez konkretnego conflict/ROI/source update.
 
+v0.12 additionally routes incompatible property interpretations through `REFERENCE_CONFLICT_RESOLVER` and contaminated technical-sheet masks through annotation/component cleanup before overlay metrics.
+
 ## 2. Shape understanding — mandatory before production geometry
 
 Use `RECON_SHAPE_GRAPH_PLAN`.
@@ -110,7 +160,8 @@ Load:
 - `180_REFERENCE_APPEARANCE_CONTRACT.md`;
 - `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
 - `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`.
+- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
+- v0.12 `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`.
 
 Required output:
 - Appearance Contract revision;
@@ -121,9 +172,10 @@ Required output:
 - edge families;
 - material/emissive regions;
 - detail inventory by region;
-- source reference/ROI per owner.
+- source reference/ROI per owner;
+- semantic Assembly Relation for important multi-part junctions.
 
-Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette.
+Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette. Do not encode `junction = overlap` without source/manufacturing authority.
 
 ## 4. RDL0 envelope
 
@@ -143,17 +195,24 @@ No detail skills.
 
 Use `RECON_NODE_BUILD` **one Shape Node at a time**.
 
-Canonical loop:
+Canonical v0.12 loop amends the preserved shape route:
 
 ```text
-SHAPE_GRAPH ready node
+SHAPE_GRAPH eligible node
 -> choose representation skill
+-> EXECUTION_AUTHORIZATION_GATE
+-> READY_TO_BUILD
+-> capture before
 -> build/repair current node only
+-> capture after
+-> MUTATION_POSTCONDITION_GATE
+-> BUILT_UNVERIFIED
 -> QA_SCENE_ISOLATE
 -> canonical registered required-view validation
 -> numeric/section checks
+-> ASSEMBLY_INTEGRITY_GATE where touched
 -> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL
+-> ACCEPTED | FAIL | UNVERIFIED
 ```
 
 Strict node acceptance requires canonical validator records. A builder-local `Gate.accept()` is not equivalent.
@@ -213,7 +272,7 @@ At this stage also instantiate/validate Appearance Contract owners for:
 - trim paths;
 - junctions.
 
-Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence.
+Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence and `ASSEMBLY_INTEGRITY_GATE` for physical relation semantics.
 
 Required G2 stage barrier before RDL3.
 
@@ -232,6 +291,8 @@ For reference reconstruction, visible structural detail must also close its Appe
 
 No host acceptance -> feature `BLOCKED`.
 
+Under v0.12 destructive recess/Boolean mutations additionally require `MUTATION_POSTCONDITION_GATE: PASS` before `BUILT_UNVERIFIED`.
+
 ## 9. RDL4 edge language
 
 Load:
@@ -248,7 +309,7 @@ shape first
 -> reference-anchored edge proof
 ```
 
-Do not pass RDL4 only because protected dimensions survived bevel.
+Do not pass RDL4 only because protected dimensions survived bevel. Re-run topology integrity after destructive edge work.
 
 ## 10. RDL5 surface/detail
 
@@ -265,6 +326,8 @@ Use:
 - `MATERIAL_FINISH_CIVIC`;
 - `LAYER_STACK_VALIDATE`;
 - branding/decal validators.
+
+Material-only mutations should preserve geometry signature.
 
 ## 11. Appearance final gate
 
@@ -284,7 +347,7 @@ A high global score cannot compensate for a MUST category failure.
 
 ## 12. Reconstruction final gate
 
-Use:
+Under v0.12 first aggregate current physical proof through `GEOMETRIC_INTEGRITY_GATE`, then use:
 - `QA_SCENE_ISOLATE`;
 - `REFERENCE_OVERLAY_VALIDATE`;
 - `APPEARANCE_REFERENCE_VALIDATE`;
@@ -293,7 +356,7 @@ Use:
 - `APPEARANCE_FIDELITY_GATE` for L4/L5;
 - `RECON_FIDELITY_GATE`.
 
-Runtime is forbidden while final gate is FAIL/UNVERIFIED.
+Runtime is forbidden while any required geometric/appearance/reconstruction gate is FAIL/UNVERIFIED.
 
 ---
 
@@ -323,6 +386,8 @@ Strict reference-derived evidence requires:
 - `source_reference_id(s)`;
 - `registration_id` for projected evidence.
 
+v0.12 adds: new MUST validators require a known-good PASS and known-broken FAIL through `VALIDATOR_NEGATIVE_CONTROL`.
+
 ---
 
 # Existing specialized routes
@@ -334,7 +399,7 @@ Strict reference-derived evidence requires:
 `SUBD_TOPOLOGY_CONTROL` + topology/normals rules.
 
 ## Mesh validation
-`MESH_VALIDATE`. Every mesh declares topology intent.
+`MESH_VALIDATE`. Every mesh declares topology intent. v0.12 additionally classifies signed volume, non-planar/concave/high-order n-gon risk; assembly interpenetration remains owned by `ASSEMBLY_INTEGRITY_GATE`.
 
 ## Civic material finish
 `MATERIAL_FINISH_CIVIC`; no uniform global grunge.
@@ -356,6 +421,8 @@ Use stable semantic part IDs. Missing atlas assignment = FAIL.
 ## Local repair after accepted runtime stages
 `PIPELINE_DAG_PLAN` before replaying build/bake/export. Execute dirty dependency closure only.
 
+For reconstruction repairs, first use `DEPENDENCY_INVALIDATOR` to supersede stale Shape/Appearance/Evidence proof.
+
 ---
 
 # Game-ready finishing
@@ -363,6 +430,8 @@ Use stable semantic part IDs. Missing atlas assignment = FAIL.
 Use `GAME_READY_FINISH` only after:
 
 ```text
+GEOMETRIC_INTEGRITY_GATE PASS
+and
 Shape/RDL proof PASS
 and
 APPEARANCE_FIDELITY_GATE PASS when required
@@ -424,6 +493,18 @@ Blender glTF import = Level C round-trip evidence, not Level D.
 # Failure routing principles
 
 ```text
+builder runs but intended recess/feature absent
+-> MUTATION_POSTCONDITION_GATE
+
+parts pierce/z-fight / gap-contact wrong
+-> Assembly Relation + ASSEMBLY_INTEGRITY_GATE
+
+validator passes known-broken fixture
+-> VALIDATOR_NEGATIVE_CONTROL
+
+accepted host repaired
+-> DEPENDENCY_INVALIDATOR
+
 outer silhouette passes but product still looks wrong
 -> Appearance Contract / part boundaries / edge/material/detail owners
 
@@ -438,6 +519,9 @@ child feature fails because host contour wrong
 
 trim exists but looks like a highlight / wrong path
 -> PART_BOUNDARY_TRIM_JUNCTION + APPEARANCE_REFERENCE_VALIDATE
+
+technical-sheet leader/text contaminates product mask
+-> annotation exclusion/component filter
 
 correct source geometry + exported dimension fail
 -> EXPORT_ROUNDTRIP_VALIDATE
@@ -459,7 +543,7 @@ Use:
 
 ```text
 compute locally
--> compact node/appearance/stage report
+-> compact node/appearance/assembly/stage report
 -> decision
 ```
 

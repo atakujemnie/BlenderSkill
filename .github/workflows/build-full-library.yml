@@ -11,6 +11,8 @@ on:
       - 'tools/test_v09_shape_graph.py'
       - 'tools/test_v010_reference_fidelity.py'
       - 'tools/test_v011_execution_enforcement.py'
+      - 'tools/test_v012_geometric_integrity.py'
+      - 'tools/test_v012_final_integrity_gate.py'
       - '.github/workflows/build-full-library.yml'
 
 permissions:
@@ -34,6 +36,10 @@ jobs:
         run: python tools/test_v010_reference_fidelity.py
       - name: Run v0.11 execution-enforcement smoke tests
         run: python tools/test_v011_execution_enforcement.py
+      - name: Run v0.12 geometric-integrity smoke tests
+        run: python tools/test_v012_geometric_integrity.py
+      - name: Run v0.12 final integrity/runtime-lock tests
+        run: python tools/test_v012_final_integrity_gate.py
       - name: Generate compiled snapshot
         run: python tools/build_full_library.py
       - name: Commit generated snapshot if changed
