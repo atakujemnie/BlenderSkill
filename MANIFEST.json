@@ -1,11 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
-  "benchmark": "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
+  "procedural_generation_layer": "12_procedural_generation",
+  "benchmark": "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -15,9 +16,10 @@
     "07_examples/78_LAFAR_WAYFINDING_PYLON_SHAPE_GRAPH_REGRESSION_BENCHMARK.md",
     "07_examples/79_LAFAR_STREET_BENCH_V09_APPEARANCE_FAILURE_REGRESSION_BENCHMARK.md",
     "07_examples/80_LAFAR_STREET_LAMP_V010_EXECUTION_DETAIL_REGRESSION_BENCHMARK.md",
-    "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md"
+    "07_examples/81_LAFAR_STREET_LAMP_V011_GEOMETRIC_INTEGRITY_REGRESSION_BENCHMARK.md",
+    "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md"
   ],
-  "module_count": 243,
+  "module_count": 263,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -261,7 +263,27 @@
     "10_reconstruction/190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md",
     "10_reconstruction/191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md",
     "11_playbooks/120_INDUSTRIAL_ASSEMBLY_INTEGRITY.md",
-    "05_execution/78_GEOMETRIC_INTEGRITY_GATE.md"
+    "05_execution/78_GEOMETRIC_INTEGRITY_GATE.md",
+    "00_governance/08_PROCEDURAL_GENERATION_EXTENSION.md",
+    "06_prompts/69_PROCEDURAL_ENVIRONMENT_PLANNER_PROMPT.md",
+    "07_examples/82_LAFAR_PLANTER_VEGETATION_V013_BENCHMARK.md",
+    "08_scripts/100_PROCEDURAL_PROVIDER_AND_VEGETATION_VALIDATION_PATTERN.md",
+    "11_playbooks/121_LAFAR_PLANTER_AND_VEGETATION.md",
+    "12_procedural_generation/200_PROCEDURAL_GENERATOR_PROVIDER_CONTRACT.md",
+    "12_procedural_generation/201_GENERATOR_DISCOVERY_CAPABILITY_AND_LICENSE_GATE.md",
+    "12_procedural_generation/202_NODEGRAPH_TO_PYTHON_AND_CODEGEN.md",
+    "12_procedural_generation/203_PROCEDURAL_REPRODUCIBILITY_AND_PROVENANCE.md",
+    "12_procedural_generation/210_VEGETATION_GENERATION_CONTRACT.md",
+    "12_procedural_generation/211_BOTANICAL_STRUCTURE_AND_GROWTH_MODEL.md",
+    "12_procedural_generation/212_TREE_SHRUB_AND_PLANT_GENERATION.md",
+    "12_procedural_generation/213_GRASS_GROUND_COVER_AND_SMALL_PLANTS.md",
+    "12_procedural_generation/214_IVY_VINES_AND_SURFACE_GROWTH.md",
+    "12_procedural_generation/215_VEGETATION_SCATTER_AND_BIOME_PLACEMENT.md",
+    "12_procedural_generation/216_PLANTER_CONTAINER_AND_VEGETATION_COMPOSITION.md",
+    "12_procedural_generation/217_VEGETATION_RUNTIME_PREPARATION.md",
+    "12_procedural_generation/218_VEGETATION_LOD_LEAF_CARDS_AND_IMPOSTORS.md",
+    "12_procedural_generation/219_VEGETATION_WIND_AND_RUNTIME_ATTRIBUTES.md",
+    "99_sources/PROCEDURAL_GENERATION_SOURCES.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository"
