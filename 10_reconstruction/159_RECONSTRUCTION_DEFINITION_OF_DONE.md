@@ -1,180 +1,233 @@
 # Reconstruction Definition of Done
 
-This module defines **reference-reconstruction acceptance**, corresponding primarily to Level A `RECONSTRUCTION_COMPLETE`.
+This module defines Level A `RECONSTRUCTION_COMPLETE`. It does not by itself prove Game-Ready or Pipeline Integrated.
 
-It does not by itself prove `GAME_READY_COMPLETE` or `PIPELINE_INTEGRATED`.
-Use `00_governance/07_DONE_LEVELS_AND_STOP_CONDITIONS.md` for the full asset lifecycle.
+A reconstruction is accepted only from current, proof-bearing evidence. Builder-local green flags, downstream export success and good-looking renders are insufficient.
 
-Asset reconstruction is accepted only when final state is supported by proof-bearing evidence records, not by narrative self-certification or builder-local green checks.
+## Evidence and authority
 
-## Evidence
+Required:
 - all sources inventoried;
-- conflicts resolved or explicit;
-- unknowns recorded;
-- property-level authority assigned where sources disagree;
-- HARD/MUST/CANONICAL deviations are `RESOLVED` with evidence or `ACCEPTED_BY_AUTHORITY` with authority record;
-- bare `PASS` without evidence kind/provenance/validator does not close a strict gate;
-- reference-derived evidence points to source reference IDs;
-- projected evidence points to registration IDs.
+- conflicts/unknowns explicit;
+- property-level authority assigned;
+- HARD/MUST/CANONICAL deviations `RESOLVED` with evidence or `ACCEPTED_BY_AUTHORITY` with authority record;
+- strict PASS records contain evidence kind, provenance and canonical validator;
+- reference-derived proof names source reference IDs;
+- projected proof names registration IDs;
+- current acceptance bundle contains no stale/superseded proof.
 
 ## Shape understanding
-- current `Reconstruction Shape Graph` exists;
-- graph structural validator PASS;
-- required forms classified G0–G5;
-- required nodes have parent/dependency relations;
-- required nodes have shape class and implementation strategy;
-- authoritative views have explicit responsibilities per node;
-- no `UNRESOLVED_REPRESENTATION` for required G0–G3 nodes;
-- final acceptance references a concrete graph revision.
 
-## Appearance understanding for 1:1 / L4 / L5
-- current `Reference Appearance Contract` exists;
-- appearance revision references same source-set revision as reconstruction;
-- required part boundaries are inventoried;
-- required trim paths are inventoried;
-- required junctions are inventoried;
-- required edge families are inventoried;
-- material/emissive/branding regions are inventoried when visible;
-- MUST meso/detail features are inventoried;
-- every appearance owner links to source reference/ROI and host Shape Node(s).
+Required:
+- current Reconstruction Shape Graph;
+- structural graph validator PASS;
+- G0–G5 classification;
+- parent/dependency relations;
+- shape class/strategy for required nodes;
+- authoritative views/properties;
+- no unresolved required G0–G3 representation;
+- concrete current graph revision.
 
-A coarse Shape Node does not excuse missing internal product architecture.
+## Appearance and assembly understanding
+
+For 1:1/L4/L5:
+- current Reference Appearance Contract;
+- part boundaries, trim paths, visible junctions, edge families, material/emissive/branding/detail owners inventoried;
+- owner source references/ROIs and host nodes;
+- current Assembly Relation Contract for important multi-part junctions;
+- each MUST relation declares semantics such as SHADOW_GAP/BUTT/RECESSED_INSERT/FLUSH/CLEARANCE/EMBEDDED rather than generic overlap.
 
 ## Coarse-to-fine execution
-- `RDL0_BARRIER: PASS`;
-- all required G1 nodes `ACCEPTED` and `RDL1_BARRIER: PASS`;
-- all required G2 nodes `ACCEPTED` and `RDL2_BARRIER: PASS`;
-- all required G3 nodes `ACCEPTED` and `RDL3_BARRIER: PASS`;
-- required G4 edge-language work accepted through reference edge-family proof;
-- G5 required by target fidelity completed or explicitly deferred only when completion boundary allows it;
-- no child accepted on failed/unverified/superseded required parent revision.
+
+Required:
+- `RDL0_BARRIER: PASS` with physical diagnostic geometry;
+- all required G1/G2/G3 nodes `ACCEPTED` and corresponding RDL barriers PASS;
+- required G4 edge work accepted;
+- required G5 work completed for target fidelity;
+- no child accepted on non-current/non-accepted parent revision;
+- every production mutation was authorized and node-scoped.
+
+## Mutation postconditions
+
+For every required current production mutation:
+- compact before/after record exists;
+- `MUTATION_POSTCONDITION_GATE: PASS`;
+- expected Boolean/transform/loft/material effect actually occurred;
+- silent Boolean no-op = FAIL;
+- mutation evidence is bound to current node revision.
+
+`LOCAL_BUILDER: PASS` is not mutation proof.
 
 ## Canonical node proof
-- each required node acceptance uses `RECONSTRUCTION_NODE_GATE` or compatible canonical validator path;
-- required view records name canonical validator IDs;
-- builder-local `Gate.accept()` cannot certify canonical node acceptance;
-- derived geometry parameters have source-fit/measurement provenance in addition to builder-consistency checks.
 
-## Geometry
-- hard dimensions pass with numeric provenance;
-- all canonical silhouettes/views pass via registered comparison where reference authority exists;
-- all primary landmarks/proportions pass with validator evidence;
-- all MUST geometry features pass with suitable ROI/numeric/visibility proof;
-- multi-section/profile nodes have station/cross-section proof where representation requires it;
-- final assembled views do not rely only on isolated-node success.
+Each required node acceptance uses canonical `RECONSTRUCTION_NODE_GATE` and current proof for:
+- source views/ROIs;
+- numeric/section constraints;
+- topology/regression as required;
+- mutation postcondition;
+- Assembly Relations touched by node.
+
+## Geometry and physical assembly
+
+Required:
+- hard dimensions PASS;
+- canonical source views/silhouettes PASS where authoritative;
+- landmarks/proportions PASS;
+- MUST geometry features PASS;
+- multi-section/profile proof where representation requires it;
+- final assembled views validated;
+- all MUST Assembly Relations `PASS` through `ASSEMBLY_INTEGRITY_GATE`;
+- zero unintended interpenetration for relations that forbid it;
+- required gaps/clearances/contact/embedding lie inside contract tolerances.
+
+## Topology integrity
+
+Required mesh owners have explicit topology intent and `MESH_VALIDATE: PASS`.
+
+For relevant closed solids and visible critical regions classify:
+- manifold/boundary state;
+- signed volume orientation;
+- loose/duplicate/zero-area geometry;
+- non-planar n-gons;
+- concave/high-order n-gons according to policy.
+
+N-gon existence alone is not an automatic failure. Unclassified risky topology is not a PASS either.
+
+## Validator trust
+
+Every validator used as new MUST acceptance authority for a failure class has current negative-control proof:
+
+```text
+KNOWN_GOOD -> PASS
+KNOWN_BROKEN -> FAIL
+```
+
+A validator that returns PASS on its known-broken fixture cannot close that owner.
+
+## Repair integrity
+
+When accepted geometry changes:
+- `DEPENDENCY_INVALIDATOR` ran before rebuild;
+- changed/built dependent nodes became DIRTY as appropriate;
+- unbuilt dependants became BLOCKED;
+- affected Appearance Owners became UNVERIFIED;
+- old revision evidence became SUPERSEDED;
+- unrelated accepted branches remained reusable;
+- repaired closure was revalidated on current revisions.
 
 ## Internal product architecture
-For target 1:1/L4/L5:
+
+For 1:1/L4/L5:
 - part-boundary graph PASS;
 - required trim paths PASS;
-- required junctions PASS;
+- visible junction appearance PASS;
 - no missing MUST internal boundary;
-- major shadow gaps/steps/recess boundaries match source evidence;
-- rear/bottom architecture is not replaced by a generic flat cover when source defines structure.
+- major gaps/steps/recesses match source evidence;
+- rear/bottom/detail architecture is not replaced by generic covers when reference defines it.
+
+Physical relation and appearance are separate: a junction can be physically valid yet visually wrong, or visually plausible while interpenetrating.
 
 ## Edge language
-- required edge families have explicit profile/radius/chamfer evidence;
-- start/end and continuity are validated;
-- protected dimensions survive edge treatment;
-- `dimensions survived bevel` alone is not edge-language PASS;
-- hard-surface plane hierarchy remains consistent with reference.
+
+Required:
+- edge-family profile/radius/chamfer proof;
+- start/end/continuity;
+- protected dimensions;
+- hard-surface plane hierarchy preserved.
+
+`dimensions survived bevel` alone is insufficient.
 
 ## Surface evidence
+
 For L4+:
 - material segmentation PASS;
 - material appearance response PASS where source defines it;
-- directional material evidence such as brushing/anisotropy is represented;
-- emissive/glass geometry/material ownership defined;
-- visible layered assemblies have layer-stack/visibility proof;
-- calibrated neutral-light lookdev evidence exists for material comparison where needed.
-
-A material slot/name assignment is not material appearance proof.
+- directional brushing/anisotropy when required;
+- emissive/glass ownership;
+- layer-stack/visibility proof for layered assemblies;
+- calibrated lookdev evidence as appropriate.
 
 For L5 additionally:
-- MUST detail coverage is complete or explicitly waived by authority;
-- missing MUST appearance/detail owners = 0;
-- branding/decal exactness closed;
-- reference-significant microstructure completed.
+- complete MUST detail coverage or explicit authority waiver;
+- zero silently missing MUST appearance/detail owners;
+- branding/decal exactness;
+- reference-significant microstructure.
 
-Final runtime textures/bloom do not need to be finished for Level A if the authoring appearance evidence is otherwise sufficient, but they may not be claimed as complete downstream work.
+## Reference-mask integrity
 
-## QA
-- QA scene isolation proves no collision/export proxy contamination;
-- each required Shape Node has canonical node acceptance record;
-- multi-view gate PASS;
-- regression gate PASS;
+Technical-sheet overlays exclude dimension lines/leaders/text from product silhouette where they contaminate metrics. Mask policy/exclusions are recorded. No local candidate warp is allowed to improve fidelity score.
+
+## Final QA/gates
+
+Required:
+- QA scene isolation;
+- required Shape Nodes accepted;
 - RDL barriers PASS;
-- `APPEARANCE_FIDELITY_GATE` PASS when target >= L4;
-- `RECON_FIDELITY_GATE` PASS;
+- `GEOMETRIC_INTEGRITY_GATE: PASS`;
+- `APPEARANCE_OWNER_COVERAGE: PASS` and `APPEARANCE_FIDELITY_GATE: PASS` for target >= L4;
+- `RECON_FIDELITY_GATE: PASS`;
 - no unauthorized deviations;
-- lighting/material readability has not been used to justify unsupported geometry changes;
-- final acceptance bundle contains typed evidence + provenance + validator IDs for required owners.
+- final evidence bundle references current revisions only.
 
 ## Runtime boundary
 
-Runtime work is downstream from reconstruction acceptance.
-
-For target L4/L5:
-
 ```text
-APPEARANCE_FIDELITY_GATE != PASS
-or
-RECON_FIDELITY_GATE != PASS
--> LOD/UV/bake/export FORBIDDEN
+GEOMETRIC_INTEGRITY_GATE != PASS
+or APPEARANCE_FIDELITY_GATE != PASS when required
+or RECON_FIDELITY_GATE != PASS
+-> LOD/UV/bake/export/runtime FORBIDDEN
 ```
-
-Correct dimensions, triangle budgets, UVs or glTF readback do not override this lock.
-
-For higher completion levels:
-- Level B -> clean authoring model/UV/material segmentation;
-- Level C -> LOD/collision/bake/package/export/runtime material closure;
-- Level D -> project catalog/import integration.
 
 Runtime/engine PASS never back-propagates to Level A.
 
 ## Documentation
+
+Persist:
 - reconstruction report;
-- Shape Graph + graph revision;
-- Appearance Contract + appearance revision when required;
+- Shape Graph revision;
+- Appearance Contract revision when required;
+- Assembly Relation revision;
 - node acceptance records;
-- appearance owner records;
-- RDL stage barrier records;
-- appearance fidelity report when required;
-- reconstruction acceptance evidence bundle;
-- evidence/unknown list;
-- inferred geometry list with derivation provenance;
+- mutation postcondition records;
+- assembly/topology/validator-control records;
+- Appearance Owner records;
+- RDL barriers;
+- geometric/appearance/reconstruction gate reports;
+- evidence/unknown/deviation lists;
+- inferred geometry with provenance;
 - known limitations;
-- highest completion level reported separately.
+- highest completion level separately.
 
 ## Required final record
 
 ```yaml
 reconstruction_complete:
   status: PASS
-  evidence_kind: RECON_FIDELITY_GATE
-  validator_id: RECON_FIDELITY_GATE
-  provenance_id: recon_gate_report_...
   graph_revision: sg_...
   appearance_revision: ac_...
-  rdl_barriers:
-    RDL0: PASS
-    RDL1: PASS
-    RDL2: PASS
-    RDL3: PASS
-    RDL4: PASS
-    RDL5: PASS_OR_NOT_REQUIRED
+  assembly_revision: assembly_...
+  geometric_integrity_gate:
+    status: PASS
+    evidence_kind: GEOMETRIC_INTEGRITY_GATE
+    validator_id: GEOMETRIC_INTEGRITY_GATE
+    provenance_id: geometry_gate_...
   appearance_fidelity_gate:
     status: PASS
     provenance_id: appearance_gate_...
+  reconstruction_fidelity_gate:
+    status: PASS
+    evidence_kind: RECON_FIDELITY_GATE
+    validator_id: RECON_FIDELITY_GATE
+    provenance_id: recon_gate_...
   target_fidelity: L4_or_L5
-  canonical_views: {...}
-  must_features: [...]
-  deviations: [...]
+  deviations: []
 ```
 
 ## Rule
 
-Do not call the entire asset `DONE` merely because this reconstruction DoD passes.
-Do not call reconstruction `PASS` because the builder says it looks correct.
-Do not call reconstruction `PASS` when primary forms were not solved node-by-node.
-Do not call reconstruction `PASS` when dimensions/silhouette pass but product-defining internal boundaries, edge families, material identity or MUST detail remain wrong/unverified.
+Do not call reconstruction PASS because:
+- builder says it looks correct;
+- dimensions/silhouette are correct while internal product architecture is wrong;
+- all visual gates are green while physical parts interpenetrate;
+- a validator has never been proven to fail its own defect class;
+- old green evidence belongs to a superseded geometry revision.
