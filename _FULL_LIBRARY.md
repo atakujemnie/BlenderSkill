@@ -18695,6 +18695,13 @@ project_asset_pipeline:
     forbidden_lookalike_root:
       - <repo>/GameAssets
 
+  authoring_design_system:
+    root: <repo>/Blender/DesignSystems
+    location_pattern: <repo>/Blender/DesignSystems/<location_id>
+    markdown_pattern: <repo>/Blender/DesignSystems/<location_id>/LOCATION_DESIGN_SYSTEM.md
+    manifest_pattern: <repo>/Blender/DesignSystems/<location_id>/design_system.json
+    blender_asset_library_pattern: <repo>/Blender/DesignSystems/<location_id>/<LOCATION>_ASSET_LIBRARY.blend
+
   city_asset_layout:
     first_planet_road_modules: <repo>/Assets/GameAssets/City/first_planet/road_kit/modules
     location_material_library_root: <repo>/Assets/GameAssets/Materials/Locations
@@ -18752,8 +18759,11 @@ project_asset_pipeline:
 ## Required use
 
 When this profile matches the active project:
-- resolve/create the location material library under `<repo>/Assets/GameAssets/Materials/Locations/<location_id>` and return that path to the user;
+- resolve the location design system under `<repo>/Blender/DesignSystems/<location_id>` before final appearance authoring and return that path to the user/task;
+- when missing and creation is authorized, bootstrap it once rather than creating per-asset style folders;
+- resolve/create the location material library under `<repo>/Assets/GameAssets/Materials/Locations/<location_id>` and link it from the design-system manifest;
 - reuse compatible location material families before generating new texture sets;
+- reuse canonical branding/components/nodegroups from the resolved design system when applicable;
 - do not rediscover the runtime root with `ls/find` before every asset;
 - do not write to `<repo>/GameAssets`;
 - inject the resolved runtime root into bake/decal/export stages;
@@ -18763,6 +18773,14 @@ When this profile matches the active project:
 - do not claim Level D from Blender glTF import alone;
 - require identity/baked runtime mesh-node TRS while the current loader path does not prove transform application;
 - require `TEXCOORD_0` on textured runtime primitives.
+
+## Design-system source/runtime boundary
+
+`<repo>/Blender/DesignSystems` is authoring/source infrastructure. It may contain Markdown, source textures, logos, reusable `.blend` datablocks and previews.
+
+`<repo>/Assets/GameAssets/Materials/Locations` is runtime material infrastructure.
+
+Do not treat the whole design-system authoring library as a runtime package.
 
 ## Handedness caution
 
@@ -18805,6 +18823,8 @@ A glTF package can parse and load while required vertex attributes are absent. F
 This is a project-specific optimization layer, not a universal Blender rule.
 
 Invalidate/reverify affected fields after changes to:
+- source design-system root or inheritance conventions;
+- location material-library root;
 - CMake asset-directory definitions;
 - engine loader root configuration;
 - glTF importer handedness;
