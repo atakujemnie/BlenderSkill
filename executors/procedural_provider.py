@@ -9,7 +9,7 @@ feed a compact probe artifact to this executor.
 from typing import Any, Mapping
 
 EXECUTOR_ID = "PROCEDURAL_GENERATOR_PROVIDER"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.14.0"
 
 EXECUTION_TYPES = {"DIRECT_PYTHON", "BPY_OPERATOR", "GEOMETRY_NODES", "EXTERNAL_PROCESS", "SOURCE_ONLY"}
 PROBE_STATES = {"PASS", "FAIL", "UNAVAILABLE", "UNTESTED"}
@@ -71,6 +71,7 @@ def evaluate(provider: Mapping[str, Any], runtime: Mapping[str, Any], *, require
     if execution_type == "SOURCE_ONLY":
         return {
             "status": "SOURCE_ONLY" if not blockers else "BLOCKED",
+            "validator_id": EXECUTOR_ID,
             "provider_id": provider_id,
             "can_execute": False,
             "blockers": blockers,
@@ -103,6 +104,7 @@ def evaluate(provider: Mapping[str, Any], runtime: Mapping[str, Any], *, require
     status = "PASS" if not blockers else "BLOCKED"
     return {
         "status": status,
+        "validator_id": EXECUTOR_ID,
         "provider_id": provider_id,
         "provider_version": provider.get("provider_version"),
         "execution_type": execution_type,
