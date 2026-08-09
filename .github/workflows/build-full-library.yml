@@ -11,6 +11,7 @@ on:
       - 'tools/test_v09_shape_graph.py'
       - 'tools/test_v010_reference_fidelity.py'
       - 'tools/test_v011_execution_enforcement.py'
+      - 'tools/test_v012_geometric_integrity.py'
       - '.github/workflows/build-full-library.yml'
 
 permissions:
@@ -34,6 +35,8 @@ jobs:
         run: python tools/test_v010_reference_fidelity.py
       - name: Run v0.11 execution-enforcement smoke tests
         run: python tools/test_v011_execution_enforcement.py
+      - name: Run v0.12 geometric-integrity smoke tests
+        run: python tools/test_v012_geometric_integrity.py
       - name: Generate compiled snapshot
         run: python tools/build_full_library.py
       - name: Commit generated snapshot if changed
@@ -44,7 +47,7 @@ jobs:
             exit 0
           fi
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.email '4189825+github-actions[bot]@users.noreply.github.com'
           git add _FULL_LIBRARY.md
           if git diff --cached --quiet; then
             echo 'No generated changes.'
