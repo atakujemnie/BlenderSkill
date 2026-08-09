@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-"""Blender-side collector for installed/enabled add-ons and Asset Libraries.
+"""Read-only Blender runtime discovery.
 
-Import this module safely outside Blender; `collect_runtime_inventory()` imports bpy
-and addon_utils lazily and is intended to run inside the active Blender process.
+Discovery may inspect Blender preferences, addon_utils metadata and already-loaded
+modules, but MUST NOT import or execute an undiscovered provider.
 """
 
 from typing import Any
-import importlib
 import sys
 
 EXECUTOR_ID = "BLENDER_RUNTIME_ADDON_DISCOVERY"
-EXECUTOR_VERSION = "0.17.0"
+EXECUTOR_VERSION = "0.18.0"
 
 
 def _version_text(value: Any) -> str:
@@ -37,22 +36,16 @@ def collect_runtime_inventory() -> dict[str, Any]:
     try:
         import bpy  # type: ignore
         import addon_utils  # type: ignore
-    except Exception as exc:  # pragma: no cover - only meaningful outside Blender
-        return {
-            "status": "BLOCKED",
-            "validator_id": EXECUTOR_ID,
-            "blockers": [{"reason": "BLENDER_RUNTIME_REQUIRED", "error": str(exc)}],
-        }
+    except Exception as exc:  # pragma: no cover
+        return {"status": "BLOCKED", "validator_id": EXECUTOR_ID, "blockers": [{"reason": "BLENDER_RUNTIME_REQUIRED", "error": str(exc)}]}
 
     blender_version = _version_text(getattr(bpy.app, "version", None))
-    enabled_ids: set[str] = set()
     try:
         enabled_ids = {str(item.module) for item in bpy.context.preferences.addons}
     except Exception:
         enabled_ids = set()
 
     discovered: dict[str, dict[str, Any]] = {}
-
     try:
         modules = list(addon_utils.modules(refresh=False))
     except TypeError:
@@ -65,55 +58,26 @@ def collect_runtime_inventory() -> dict[str, Any]:
         if not module_name:
             continue
         meta = _metadata_from_module(module)
-        discovered[module_name] = {
-            "module_name": module_name,
-            "display_name": meta["display_name"],
-            "version": meta["version"],
-            "enabled": module_name in enabled_ids,
-            "discovered": True,
-            "metadata": meta["metadata"],
-        }
+        discovered[module_name] = {"module_name": module_name, "display_name": meta["display_name"], "version": meta["version"], "enabled": module_name in enabled_ids, "discovered": True, "metadata": meta["metadata"]}
 
-    # Blender extensions can use namespaced module IDs. Preferences are the
-    # authority for what is enabled, so never drop an enabled module merely
-    # because addon_utils did not return it through the same discovery surface.
     for module_name in sorted(enabled_ids):
         if module_name in discovered:
             discovered[module_name]["enabled"] = True
             continue
         module = sys.modules.get(module_name)
-        if module is None:
-            try:
-                module = importlib.import_module(module_name)
-            except Exception:
-                module = None
         if module is not None:
             meta = _metadata_from_module(module)
-            display_name = meta["display_name"]
-            version = meta["version"]
-            metadata = meta["metadata"]
+            display_name, version, metadata = meta["display_name"], meta["version"], meta["metadata"]
         else:
             display_name = module_name.rsplit(".", 1)[-1]
             version = "UNKNOWN"
-            metadata = {"metadata_partial": True}
-        discovered[module_name] = {
-            "module_name": module_name,
-            "display_name": display_name,
-            "version": version,
-            "enabled": True,
-            "discovered": True,
-            "metadata": metadata,
-        }
+            metadata = {"metadata_partial": True, "discovery_policy": "NO_IMPORT"}
+        discovered[module_name] = {"module_name": module_name, "display_name": display_name, "version": version, "enabled": True, "discovered": True, "metadata": metadata}
 
     asset_libraries: list[dict[str, Any]] = []
     try:
-        libraries = getattr(bpy.context.preferences.filepaths, "asset_libraries", [])
-        for library in libraries:
-            asset_libraries.append({
-                "name": str(getattr(library, "name", "Asset Library")),
-                "path": str(getattr(library, "path", "")),
-                "import_method": str(getattr(library, "import_method", "UNKNOWN")),
-            })
+        for library in getattr(bpy.context.preferences.filepaths, "asset_libraries", []):
+            asset_libraries.append({"name": str(getattr(library, "name", "Asset Library")), "path": str(getattr(library, "path", "")), "import_method": str(getattr(library, "import_method", "UNKNOWN"))})
     except Exception:
         pass
 
@@ -123,12 +87,6 @@ def collect_runtime_inventory() -> dict[str, Any]:
         "blender_version": blender_version,
         "addons": sorted(discovered.values(), key=lambda x: (not x["enabled"], x["display_name"].lower())),
         "asset_libraries": asset_libraries,
-        "builtins": [{
-            "provider_id": "builtin_geometry_nodes",
-            "display_name": "Blender Geometry Nodes",
-            "version": blender_version,
-            "domains": ["GEOMETRY_NODES", "PARAMETRIC_GEOMETRY", "GENERIC_PROCEDURAL"],
-            "runtime_probe_status": "PASS",
-        }],
+        "builtins": [{"provider_id": "builtin_geometry_nodes", "display_name": "Blender Geometry Nodes", "version": blender_version, "domains": ["GEOMETRY_NODES", "PARAMETRIC_GEOMETRY", "GENERIC_PROCEDURAL"], "runtime_probe_status": "PROBE_REQUIRED"}],
         "blockers": [],
     }
