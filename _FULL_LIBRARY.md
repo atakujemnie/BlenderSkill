@@ -27936,6 +27936,22 @@ unrelated branches      -> preserved
 
 Stale green evidence cannot survive a geometry revision.
 
+### Final Geometric Integrity Gate
+
+Before reconstruction fidelity can unlock runtime, current physical proof is aggregated:
+
+```text
+mutation postconditions
++ Assembly Relation closure
++ topology records
++ validator negative controls
++ zero stale evidence
++ zero unresolved MUST relations
+-> GEOMETRIC_INTEGRITY_GATE
+```
+
+This gate is non-compensating. Perfect dimensions, overlays or appearance cannot override physical interpenetration or invalid topology.
+
 ### Mesh integrity classification
 
 `MESH_VALIDATE` now distinguishes topology risk instead of treating all n-gons alike. It reports high-order n-gons, non-planar n-gons, concave n-gons and signed closed volume in addition to manifold/loose/duplicate/zero-area checks. Non-planar n-gons and inverted closed volumes are failures; concavity can be policy-driven.
@@ -28015,9 +28031,7 @@ Runtime LOD, UV, bake, export and engine work remain downstream from reconstruct
 For target fidelity L4/L5:
 
 ```text
-required node integrity != PASS
-or
-required assembly integrity != PASS
+GEOMETRIC_INTEGRITY_GATE != PASS
 or
 APPEARANCE_FIDELITY_GATE != PASS
 or
@@ -28032,11 +28046,14 @@ A successful glTF parse, triangle budget or engine load never overrides unresolv
 - `MUTATION_POSTCONDITION_GATE`;
 - `ASSEMBLY_INTEGRITY_GATE`;
 - `DEPENDENCY_INVALIDATOR`;
-- `VALIDATOR_NEGATIVE_CONTROL`.
+- `VALIDATOR_NEGATIVE_CONTROL`;
+- `GEOMETRIC_INTEGRITY_GATE`.
 
 Strengthened:
 - `NODE_STATE_STORE`;
 - `RECONSTRUCTION_NODE_GATE`;
+- `RECON_FIDELITY_GATE`;
+- `ASSET_COMPLETION`;
 - `MESH_VALIDATE`;
 - `REFERENCE_OVERLAY_VALIDATE`.
 
@@ -28063,7 +28080,7 @@ It protects against:
 - `02_blender_api` — Blender 5.1 API/runtime rules
 - `03_modeling` — hard-surface/topology/UV/procedural modeling
 - `04_game_ready` — LOD/collision/bake/export/runtime contracts
-- `05_execution` — authorization, postconditions, checkpoints and fidelity gates
+- `05_execution` — authorization, postconditions, integrity and fidelity gates
 - `06_prompts` — planner/reviewer/repair prompts
 - `07_examples` — benchmark and regression post-mortems
 - `08_scripts` — reusable validation patterns
