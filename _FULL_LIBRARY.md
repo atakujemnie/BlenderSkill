@@ -23582,156 +23582,198 @@ Nie przesuwaj cechy losowo w stronę kamery. Najpierw ustal:
 
 ## Purpose
 
-Prevent a reconstruction agent from certifying its own visual success through narrative statements, unchecked `PASS` flags or downstream runtime success.
+Prevent reconstruction acceptance from being certified by narrative statements, unchecked PASS flags, circular builder tests, stale evidence or validators that do not actually detect the physical failure they claim to cover.
 
-This module was added after the Lafar Wayfinding Pylon benchmark, where the final run reported `RECONSTRUCTION_COMPLETE = PASS` after substantial repair work, but the compact final report did not carry machine-checkable registered multi-view proof sufficient for a strict v0.8 acceptance gate.
+v0.12 adds a crucial lesson from the Lafar Street Lamp v0.11 benchmark: a fully green source/appearance chain can still certify physically invalid geometry when parts interpenetrate or a mutation silently does nothing.
 
 ## Core rule
 
 ```text
 claim != evidence
+PASS != trustworthy proof unless the validator can bite
+current-looking proof != current proof after geometry revision
 ```
 
-The following are not acceptance evidence by themselves:
-- `looks correct`;
-- `matching the card`;
-- `ortho checked`;
+Not acceptance evidence by themselves:
+- `looks correct` / `matching the card`;
 - object existence;
-- correct overall dimensions;
-- successful export;
-- successful engine load;
-- a bare `{status: PASS}` record.
+- correct bounds;
+- successful Python/operator return;
+- applied Boolean modifier without geometry delta;
+- generic overlap between junction participants;
+- successful export/engine load;
+- bare `{status: PASS}`;
+- evidence attached to superseded node revision.
 
 ## Proof-bearing record
 
-Every reconstruction acceptance owner emits:
+Every acceptance owner emits typed evidence:
 
 ```yaml
-owner: <view/feature/dimension/material>
-status: PASS | FAIL | UNVERIFIED
-evidence_kind: <typed validator evidence>
-provenance_id: <artifact/report/registration id>
-validator_id: <semantic skill/executor>
+owner: <node/view/feature/relation/mutation/material>
+status: PASS | FAIL | UNVERIFIED | SUPERSEDED
+evidence_kind: <typed evidence>
+validator_id: <canonical validator>
+provenance_id: <artifact/report id>
+node_revision: <when applicable>
+source_reference_id: <when reference-derived>
+registration_id: <when projected>
 ```
 
-Optional metrics belong in the compact record, not raw dumps.
+## Mutation evidence
+
+Before a production node can become `BUILT_UNVERIFIED`:
+
+```text
+one authorized mutation
+-> before/after metrics
+-> MUTATION_POSTCONDITION_GATE
+```
+
+The record proves the requested effect, not merely execution lifecycle.
+
+Example:
+
+```yaml
+operation_id: cut_head_channel
+status: PASS
+evidence_kind: MUTATION_POSTCONDITION
+validator_id: MUTATION_POSTCONDITION_GATE
+provenance_id: mutation:head_channel:007
+checks:
+  geometry_change: PASS
+  volume_direction: PASS
+  cutter_removed: PASS
+  feature_probe: PASS
+```
+
+## Assembly evidence
+
+A junction first declares semantic relation, then measured metrics are interpreted by `ASSEMBLY_INTEGRITY_GATE`.
+
+```yaml
+relation_id: J_SENSOR_ARM
+relation_type: SHADOW_GAP
+metrics:
+  min_gap_mm: 3.0
+  penetration_area_mm2: 0.0
+status: PASS
+evidence_kind: ASSEMBLY_INTEGRITY
+validator_id: ASSEMBLY_INTEGRITY_GATE
+provenance_id: assembly:J_SENSOR_ARM:008
+```
+
+Generic `overlap=True` cannot certify a junction without relation semantics.
 
 ## Canonical view evidence
 
-For a view with authoritative reference:
+For an authoritative reference view, use global registered proof with source/registration provenance. Technical-sheet annotations that contaminate product silhouette must be explicitly excluded/component-filtered and mask policy recorded.
 
-```yaml
-owner: FRONT
-status: PASS
-evidence_kind: REGISTERED_OVERLAY
-provenance_id: front_reg_003
-validator_id: REFERENCE_OVERLAY_VALIDATE
-metrics:
-  iou: 0.97
-  mean_contour_delta_px: 1.2
-  max_contour_delta_px: 4.0
-failing_rois: []
-```
-
-The registration itself must be valid:
-- same projection class;
-- same physical scale;
-- same centerline/datum;
-- same crop/aspect policy;
-- QA scene isolation applied.
+No local candidate warp/translation is allowed to improve score.
 
 ## Feature evidence
 
-A visible MUST feature needs evidence appropriate to its failure mode:
-- `FEATURE_ROI` for local shape/placement;
-- `LAYER_STACK` for glass/content/recess ordering;
-- `RAY_VISIBILITY` for occlusion/host burial;
-- `LANDMARK_PROJECTION` for keypoint placement;
-- `NUMERIC_MEASUREMENT` for explicit dimensions.
+Visible MUST feature uses evidence matching its failure mode, e.g.:
+- `FEATURE_ROI`;
+- `LAYER_STACK`;
+- `LANDMARK_PROJECTION`;
+- `NUMERIC_MEASUREMENT`;
+- trim/boundary/edge/material-specific evidence;
+- mutation postcondition for destructive feature creation.
 
 `OBJECT_EXISTS` is never sufficient for a visible MUST feature.
 
+## Validator trust evidence
+
+A new validator used for MUST acceptance requires adversarial controls:
+
+```text
+KNOWN_GOOD -> PASS
+KNOWN_BROKEN -> FAIL
+```
+
+Persist `VALIDATOR_NEGATIVE_CONTROL` proof. If known-broken returns PASS, current asset PASS from that validator is not trusted acceptance evidence.
+
+The negative fixture must exercise the claimed failure property, not an artificial marker.
+
 ## Authority evidence
 
-A hard deviation can close only as:
+Hard deviation closes only as:
+- `RESOLVED` with resolution evidence; or
+- `ACCEPTED_BY_AUTHORITY` with authority source/record and affected fields.
+
+The modeling agent is not authority merely because it can explain its choice.
+
+## Separation of measurement, builder and acceptance
+
+Canonical pattern:
 
 ```text
-RESOLVED
+asset-local Blender adapter
+-> compact measurement artifact
+-> canonical decision executor
+-> canonical gate
+-> persistent evidence state
 ```
-
-with a resolution evidence record, or:
-
-```text
-ACCEPTED_BY_AUTHORITY
-```
-
-with:
-- `authority_source`;
-- `authority_record_id`;
-- affected contract fields.
-
-The modeling agent is not automatically an authority merely because it can justify one interpretation.
-
-## Separation of builder and acceptance logic
-
-The same process may technically execute build and validation, but acceptance must be derived from independent validator outputs rather than from builder state.
 
 Bad:
 
-```python
-build_finished = True
-reconstruction_pass = True
+```text
+builder infers radius
+-> builder creates radius
+-> builder verifies same constant
+-> PASS
 ```
 
-Required:
+Likewise an asset-local interpenetration helper may measure penetration but may not redefine whether overlap is correct. That belongs to the declared Assembly Relation + canonical gate.
+
+## Evidence freshness / repair
+
+After an accepted host changes:
 
 ```text
-build artifact
--> registered validators
--> compact evidence records
--> fidelity gate aggregation
--> acceptance state
+DEPENDENCY_INVALIDATOR
+-> affected node revisions bump
+-> dependent state DIRTY/BLOCKED
+-> hosted Appearance Owners UNVERIFIED
+-> old evidence SUPERSEDED
 ```
+
+Final gates must reject references to stale/superseded evidence. Keep old records for traceability; do not delete them and do not silently reactivate them.
 
 ## Downstream proof does not back-propagate
 
-```text
-ENGINE_REGRESSION_TEST PASS
-```
+Engine/runtime PASS does not prove reconstruction fidelity, mutation correctness, topology integrity or Assembly Relations.
 
-does not prove:
-- reference fidelity;
-- canonical silhouette;
-- material segmentation;
-- branding orientation;
-- screen layer visibility.
-
-Likewise reconstruction PASS does not prove Game-Ready or Pipeline Integrated.
-
-## Final acceptance bundle
+## Final integrity bundle
 
 Before `RECONSTRUCTION_COMPLETE`, persist at minimum:
 
 ```yaml
 reconstruction_acceptance:
-  target_fidelity: L4_or_L5
-  hard_dimensions: <proof-bearing record>
-  canonical_views:
-    FRONT: <proof-bearing record>
-    SIDE: <proof-bearing record>
-    TOP: <proof-bearing record>
-    REAR: <proof-bearing record>
-    BOTTOM: <proof-bearing record>
-  landmarks_d0_d1: <proof-bearing record>
-  must_features: [<proof-bearing records>]
-  material_segmentation: <proof-bearing record when target >= L4>
-  deviations: [<resolved/authority records>]
-  fidelity_gate: PASS
+  graph_revision: sg_...
+  appearance_revision: ac_...
+  assembly_revision: assembly_...
+  mutation_postconditions: [...]
+  assembly_integrity: <proof-bearing aggregate>
+  topology_records: [...]
+  validator_negative_controls: [...]
+  hard_dimensions: <proof>
+  canonical_views: {...}
+  landmarks_d0_d1: <proof>
+  must_features: [...]
+  geometric_integrity_gate:
+    status: PASS
+    evidence_kind: GEOMETRIC_INTEGRITY_GATE
+    validator_id: GEOMETRIC_INTEGRITY_GATE
+    provenance_id: geometry_gate_...
+  appearance_fidelity_gate: <when required>
+  reconstruction_fidelity_gate: <proof>
 ```
 
 ## Anti-self-certification rule
 
-If a final report contains only prose plus untyped PASS flags, downgrade the affected owners to `UNVERIFIED` before completion evaluation.
+If final report contains prose/untyped PASS flags, toothless validator output, local acceptance semantics or stale revision evidence, downgrade affected owner to `UNVERIFIED` or `SUPERSEDED` before completion evaluation.
 
 
 ---
