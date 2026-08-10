@@ -1,5 +1,6 @@
 from executors.asset_envelope_gate import validate as validate_envelope
 from executors.component_execution_gate import authorize as authorize_recipe
+from executors.component_validation_runner import validate_and_publish
 from executors.production_studio_service import (
     authorize_component,
     create_asset,
@@ -8,9 +9,9 @@ from executors.production_studio_service import (
     prepare_task,
     promote_production_tasks,
     publish_scene,
-    publish_validation_receipt,
     transition_production_task,
 )
+from executors.scene_snapshot_repository import load as load_scene_snapshot
 
 
 def _asset(*, stage="BLOCKOUT", slab_width=994):
@@ -47,7 +48,12 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
                     "height": {"value": 40, "unit": "mm", "locked": True},
                 },
                 "anchors": {},
-                "validation": {"required_validator_ids": ["SCENE_COMPONENT_VALIDATION", "REPRESENTATION_CONTRACT_GATE"]},
+                "validation": {
+                    "required_validator_ids": ["SCENE_COMPONENT_VALIDATION", "REPRESENTATION_CONTRACT_GATE"],
+                    "require_dimensions_match": True,
+                    "placement_tolerance_mm": 0.5,
+                    "dimension_tolerance_mm": 0.5,
+                },
             },
             "SLAB_R": {
                 "parent": "ROOT",
@@ -104,17 +110,18 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
     }
 
 
-def _receipt(receipt_id, validator_id, *, asset_revision=2, scene_revision=1):
+def _slab_recipe():
     return {
-        "receipt_id": receipt_id,
-        "validator_id": validator_id,
-        "validator_version": "0.21.0",
-        "asset_id": "ACS-SM-SIDEWALK-3470-S-B91",
-        "asset_revision": asset_revision,
         "component_id": "SLAB_L",
-        "scene_revision": scene_revision,
-        "status": "PASS",
-        "source": "SYSTEM",
+        "operations": [
+            {
+                "id": "body",
+                "op": "ROUNDED_BOX",
+                "output": "BODY",
+                "dimensions": {"width": 994, "depth": 1000, "height": 40},
+            }
+        ],
+        "final_outputs": ["BODY"],
     }
 
 
@@ -166,6 +173,11 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
     assert authorized["asset_revision"] == 2
     assert authorized["authorization"]["validator_id"] == "ASSET_EXECUTION_AUTHORIZATION_GATE"
     assert authorized["authorization"]["source"] == "SYSTEM"
+
+    execution_pack_result = prepare_task(tmp_path, asset["asset_id"], "SLAB_L", task_kind="BUILD")
+    assert execution_pack_result["status"] == "PASS", execution_pack_result
+    execution_pack = execution_pack_result["task_pack"]
+    assert execution_pack["asset_revision"] == 2
 
     task = create_production_task(
         tmp_path,
@@ -234,20 +246,14 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
     assert self_certified["status"] == "FAIL"
     assert self_certified["blockers"][0]["reason"] == "TRUSTED_VALIDATION_RECEIPTS_REQUIRED"
 
-    first = publish_validation_receipt(
-        tmp_path,
-        asset["asset_id"],
-        _receipt("VR-SCENE", "SCENE_COMPONENT_VALIDATION"),
-        expected_validation_revision=1,
-    )
-    assert first["status"] == "PASS", first
-    second = publish_validation_receipt(
-        tmp_path,
-        asset["asset_id"],
-        _receipt("VR-REP", "REPRESENTATION_CONTRACT_GATE"),
-        expected_validation_revision=2,
-    )
-    assert second["status"] == "PASS", second
+    persisted_scene = load_scene_snapshot(tmp_path, asset["asset_id"])
+    assert persisted_scene["status"] == "PASS", persisted_scene
+    validation = validate_and_publish(tmp_path, execution_pack, _slab_recipe(), persisted_scene["snapshot"])
+    assert validation["status"] == "PASS", validation
+    assert {receipt["validator_id"] for receipt in validation["receipts"]} == {
+        "SCENE_COMPONENT_VALIDATION",
+        "REPRESENTATION_CONTRACT_GATE",
+    }
 
     approved = transition_production_task(
         tmp_path,
