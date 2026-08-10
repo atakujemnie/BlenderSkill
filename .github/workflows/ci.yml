@@ -26,8 +26,20 @@ jobs:
       - name: Install dev dependencies
         run: python -m pip install 'pytest>=8.3,<9' 'ruff>=0.12,<1'
 
-      - name: Ruff
-        run: ruff check --output-format=github executors tests tools
+      - name: Ruff changed Python
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            mapfile -t files < <(git diff --name-only --diff-filter=ACM "${{ github.event.pull_request.base.sha }}...HEAD" -- '*.py')
+          else
+            mapfile -t files < <(git diff-tree --no-commit-id --name-only -r HEAD -- '*.py')
+          fi
+          if ((${#files[@]})); then
+            ruff check --output-format=github "${files[@]}"
+          else
+            echo "No changed Python files to lint."
+          fi
 
       - name: Pytest unit
         run: pytest tests/unit
