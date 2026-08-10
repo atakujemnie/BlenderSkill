@@ -11,7 +11,7 @@ from executors.parameter_graph import resolve as resolve_parameters
 from executors.reference_evidence_registry import query as query_reference_evidence
 
 EXECUTOR_ID = "ASSET_PRODUCTION_ORCHESTRATOR"
-EXECUTOR_VERSION = "0.19.0"
+EXECUTOR_VERSION = "0.22.0"
 
 
 def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
@@ -99,6 +99,9 @@ def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
         "resolved_bindings": bindings["resolved_bindings"],
         "reference_evidence": deduplicated_evidence,
     }
+    if spec.get("reference_artifacts") is not None:
+        task_spec["reference_artifacts"] = spec.get("reference_artifacts")
+        task_spec["reference_artifact_root"] = spec.get("reference_artifact_root")
     if spec.get("max_input_tokens") is not None:
         task_spec["max_input_tokens"] = int(spec["max_input_tokens"])
 
