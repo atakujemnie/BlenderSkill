@@ -1,0 +1,6 @@
+{
+  "results": [
+    {"provider_id": "builtin_geometry_nodes", "probe_state": "PASS", "cleanup_state": "PASS", "side_effects_detected": false, "capabilities": ["GEOMETRY_NODES", "PARAMETRIC_GEOMETRY"]},
+    {"provider_id": "sapling_tree_gen", "probe_state": "PASS", "cleanup_state": "PASS", "side_effects_detected": false, "capabilities": ["TREE", "WOODY_PLANT"]}
+  ]
+}
