@@ -3,9 +3,9 @@ from __future__ import annotations
 """Prevent a structural pass from being reported as a finished asset.
 
 v0.21 allowed all component BUILD tasks to be APPROVED while the asset remained
-at STRUCTURAL_GEOMETRY. v0.22 makes every late stage prove the completion level
-of its leaf components, and final APPROVED additionally requires a current
-independent visual fidelity review.
+at STRUCTURAL_GEOMETRY. v0.22 requires reference-feature inventory before serious
+geometry, proves each later completion level, and requires a current independent
+visual review for final approval.
 """
 
 from typing import Any, Mapping
@@ -123,7 +123,16 @@ def validate(
         if incomplete:
             blockers.append({"reason": "ASSET_STAGE_COMPONENTS_INCOMPLETE", "components": incomplete})
 
-    if bool(asset.get("enforce_feature_contracts", False)) and target in {"DETAILS", "MATERIALS", "GAME_READY", "FIDELITY_AUDIT", "APPROVED"}:
+    # Feature inventory must exist before entering structural production, not
+    # after details have already been lost.
+    if bool(asset.get("enforce_feature_contracts", False)) and target in {
+        "STRUCTURAL_GEOMETRY",
+        "DETAILS",
+        "MATERIALS",
+        "GAME_READY",
+        "FIDELITY_AUDIT",
+        "APPROVED",
+    }:
         missing_contract = [
             component_id
             for component_id, component in components.items()
