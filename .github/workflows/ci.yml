@@ -35,6 +35,9 @@ jobs:
       - name: Pytest integration
         run: pytest tests/integration
 
+      - name: Benchmark 87 regression
+        run: pytest tests/regression
+
       - name: Legacy regressions v0.9-v0.17
         shell: bash
         run: |
