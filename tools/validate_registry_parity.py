@@ -22,13 +22,18 @@ def validate(manifest: dict) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
     executors = manifest.get("executors", []) or []
     declared_paths = {str(item.get("executor") or "") for item in executors if item.get("executor")}
+    current_version = str(manifest.get("version") or "")
 
     for item in executors:
         if str(item.get("maturity") or "") != "EXECUTOR_READY":
             continue
         skill_id = str(item.get("id") or "")
-        contract = ROOT / str(item.get("contract") or "")
+        contract_rel = str(item.get("contract") or "")
         executor_rel = str(item.get("executor") or "")
+        if not contract_rel or not executor_rel:
+            errors.append({"code": "REGISTRY_PATH_INVALID", "id": skill_id})
+            continue
+        contract = ROOT / contract_rel
         executor = ROOT / executor_rel
         tests = [ROOT / str(path) for path in item.get("tests", []) or []]
 
@@ -48,8 +53,9 @@ def validate(manifest: dict) -> list[dict[str, str]]:
 
     for executor in sorted((ROOT / "executors").glob("*.py")):
         constants = _constants(executor)
-        if constants.get("EXECUTOR_ID") and executor.relative_to(ROOT).as_posix() not in declared_paths:
-            errors.append({"code": "ORPHAN_EXECUTOR", "id": constants["EXECUTOR_ID"]})
+        if constants.get("EXECUTOR_ID") and constants.get("EXECUTOR_VERSION") == current_version:
+            if executor.relative_to(ROOT).as_posix() not in declared_paths:
+                errors.append({"code": "ORPHAN_EXECUTOR", "id": constants["EXECUTOR_ID"]})
 
     return errors
 
