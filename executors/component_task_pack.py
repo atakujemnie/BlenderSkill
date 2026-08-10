@@ -6,7 +6,7 @@ import json
 from typing import Any, Mapping
 
 EXECUTOR_ID = "COMPONENT_TASK_PACK"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.1.1"
 DEFAULT_BUILD_TOKEN_BUDGET = 8000
 DEFAULT_REPAIR_TOKEN_BUDGET = 4000
 
@@ -35,8 +35,6 @@ def _descendants(components: Mapping[str, Mapping[str, Any]], root: str) -> set[
 
 
 def _estimate_tokens(value: Any) -> int:
-    # Deterministic conservative estimator for routing/budgeting. It deliberately
-    # avoids a model-specific tokenizer dependency inside BlenderSkill.
     text = json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     return max(1, (len(text) + 3) // 4)
 
@@ -103,7 +101,17 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
             references.append(
                 {
                     key: item.get(key)
-                    for key in ("reference_id", "component_id", "view", "roi", "artifact_id", "authority")
+                    for key in (
+                        "evidence_id",
+                        "reference_id",
+                        "component_id",
+                        "view",
+                        "authority",
+                        "feature_ids",
+                        "roi",
+                        "artifact_id",
+                        "registration_id",
+                    )
                     if item.get(key) is not None
                 }
             )
