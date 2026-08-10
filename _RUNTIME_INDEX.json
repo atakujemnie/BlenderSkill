@@ -1,6 +1,6 @@
 {
-  "canonical_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
-  "library_version": "0.20.0",
+  "canonical_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+  "library_version": "0.21.0",
   "runtime_index_schema_version": 1,
   "skills": [
     {
@@ -19,6 +19,24 @@
         "tolerance"
       ],
       "skill_id": "ASSEMBLY_ANCHOR_GATE"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "COMPONENT_TRANSFORM",
+        "PARAMETER_GRAPH"
+      ],
+      "executor": "executors/asset_envelope_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Validate component extents and mathematical seam constraints against the asset envelope.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "ASSET_ENVELOPE_GATE"
     },
     {
       "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
@@ -93,14 +111,31 @@
       "skill_id": "ASSET_STUDIO_VIEW_MODEL"
     },
     {
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "DESIGN_BINDING_RESOLVER"
+      ],
+      "executor": "executors/blender_design_resource_adapter.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Materialize resolved design-system MATERIAL bindings as real Blender materials.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "BLENDER_DESIGN_RESOURCE_ADAPTER"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "dependencies": [
         "HARD_SURFACE_RECIPE"
       ],
       "executor": "executors/blender_hard_surface_builder.py",
       "maturity": "EXECUTOR_READY",
       "purpose": "Blender 5.1 executor for deterministic hard-surface recipe operations.",
-      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "blender",
         "builder",
@@ -157,7 +192,26 @@
       "skill_id": "CANONICAL_PROVIDER_REGISTRY"
     },
     {
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "BLENDER_HARD_SURFACE_BUILDER",
+        "COMPONENT_TRANSFORM",
+        "REPRESENTATION_CONTRACT_GATE"
+      ],
+      "executor": "executors/component_execution_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Authorize scoped recipes, preserve canonical placement and gate Blender mutation.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "COMPONENT_EXECUTION_GATE"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "dependencies": [
         "DESIGN_BINDING_RESOLVER",
         "PARAMETER_GRAPH",
@@ -166,7 +220,7 @@
       "executor": "executors/component_task_pack.py",
       "maturity": "EXECUTOR_READY",
       "purpose": "Token-bounded component mutation pack with explicit mutable/read-only scope.",
-      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "component",
         "context",
@@ -174,6 +228,21 @@
         "token"
       ],
       "skill_id": "COMPONENT_TASK_PACK"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [],
+      "executor": "executors/component_transform.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Normalize canonical component placement and coordinate-space provenance.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "COMPONENT_TRANSFORM"
     },
     {
       "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
@@ -324,7 +393,7 @@
       "skill_id": "PRODUCTION_ITERATION_GATE"
     },
     {
-      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "dependencies": [
         "ASSET_PRODUCTION_ORCHESTRATOR",
         "ASSET_REPOSITORY",
@@ -336,7 +405,7 @@
       "executor": "executors/production_studio_service.py",
       "maturity": "EXECUTOR_READY",
       "purpose": "Operational service layer for asset, correction, task, evidence, scene and task-pack workflows.",
-      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "api",
         "asset",
@@ -346,14 +415,14 @@
       "skill_id": "PRODUCTION_STUDIO_SERVICE"
     },
     {
-      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "dependencies": [
         "COMPONENT_TASK_PACK"
       ],
       "executor": "executors/production_task_lifecycle.py",
       "maturity": "EXECUTOR_READY",
       "purpose": "Deterministic dependency-aware production task state machine.",
-      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "approval",
         "queue",
@@ -473,6 +542,21 @@
       "skill_id": "PROVIDER_STATE_PROTOCOL"
     },
     {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [],
+      "executor": "executors/reference_evidence_materializer.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Resolve scoped reference metadata into concrete local multimodal attachment descriptors.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "REFERENCE_EVIDENCE_MATERIALIZER"
+    },
+    {
       "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
       "dependencies": [],
       "executor": "executors/reference_evidence_registry.py",
@@ -503,6 +587,23 @@
         "revision"
       ],
       "skill_id": "REFERENCE_EVIDENCE_REPOSITORY"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "HARD_SURFACE_RECIPE"
+      ],
+      "executor": "executors/representation_contract_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Reject recipes that cannot represent required physical component features.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "REPRESENTATION_CONTRACT_GATE"
     },
     {
       "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
@@ -537,6 +638,21 @@
         "snapshot"
       ],
       "skill_id": "SCENE_SNAPSHOT_REPOSITORY"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [],
+      "executor": "executors/validation_receipt_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Persist immutable trusted validator receipts bound to exact production revisions.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "fidelity",
+        "geometry",
+        "v0.21"
+      ],
+      "skill_id": "VALIDATION_RECEIPT_REPOSITORY"
     },
     {
       "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",

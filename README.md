@@ -1,4 +1,4 @@
-> Current production runtime: v0.20.0 — operational persistent Production Studio API and live GUI.
+> Current production runtime: v0.21.0 — fidelity enforcement, deterministic assembly and trusted validation.
 
 # BlenderSkill
 
@@ -6,10 +6,26 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.18.0 — Runtime Verification & Contract Convergence.**
+**v0.21.0 — Fidelity Enforcement & Deterministic Assembly.**
 
-v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
+v0.21 closes the false-success path exposed by the blind Lafar sidewalk test. Canonical component placement now survives task compilation, representation contracts fail closed, geometry tasks cannot bypass persisted stage/build authorization, design-system MATERIAL bindings are materialized in Blender, and strict task approval requires trusted revision-bound validation receipts rather than worker self-certification. Task approval converges back to `component.state=ACCEPTED`.
 
+Canonical regression: **Benchmark 91 — Lafar Sidewalk Fidelity Enforcement v0.21**.
+
+## v0.21 Fidelity Enforcement & Deterministic Assembly
+
+```text
+persistent asset state
+-> canonical component transform + origin
+-> envelope / seam constraints
+-> execution authorization
+-> scoped task pack
+-> representation contract
+-> deterministic Blender execution + real material binding
+-> current scene snapshot
+-> trusted validation receipts
+-> APPROVED + component ACCEPTED
+```
 
 ## v0.18 Runtime Verification & Contract Convergence
 
