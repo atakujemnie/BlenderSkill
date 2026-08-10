@@ -7,11 +7,11 @@ from typing import Any, Mapping
 EXECUTOR_ID = "PROVIDER_SELECTION_REPORT"
 EXECUTOR_VERSION = "0.18.0"
 
-VEGETATION_DOMAINS = {"TREE", "WOODY_PLANT", "GRASS", "GROUNDCOVER", "VINE", "SURFACE_GROWTH"}
+VEGETATION_DOMAINS = {"TREE", "WOODY_PLANT", "GRASS", "GROUNDCOVER", "VINE", "SURFACE_GROWTH", "VEGETATION"}
 
 
 def _broadly_relevant(provider: Mapping[str, Any], requested_domains: set[str]) -> bool:
-    domains = {str(x) for x in provider.get("domains", []) or []}
+    domains = {str(x).upper() for x in provider.get("domains", []) or []}
     kind = str(provider.get("source_kind") or "")
     if domains & requested_domains:
         return True
@@ -64,6 +64,12 @@ def build_report(
         elif probe_state != "PASS" and str(provider.get("source_kind")) != "READY_ASSET_SOURCE":
             decision = "BLOCKED"
             reasons.append("RUNTIME_CAPABILITY_PROBE_REQUIRED" if probe_state == "PROBE_REQUIRED" else f"PROBE_{probe_state}")
+        elif compatibility_state == "BLOCKED":
+            decision = "BLOCKED"
+            reasons.append("BLENDER_VERSION_OR_PROVIDER_CONTRACT_BLOCKED")
+        elif license_state == "BLOCKED":
+            decision = "BLOCKED"
+            reasons.append("LICENSE_POLICY_BLOCKED")
         elif quality_state == "REJECTED":
             decision = "REJECTED"
             reasons.append("QUALITY_REJECTED")
@@ -76,10 +82,7 @@ def build_report(
             decision = "BLOCKED"
             reasons.append("DOMAIN_CLASSIFICATION_REQUIRED")
 
-        if provider_id == selected_provider_id and decision in {"ELIGIBLE", "ELIGIBLE_GENERIC"}:
-            selection_state = "SELECTED"
-        else:
-            selection_state = decision
+        selection_state = "SELECTED" if provider_id == selected_provider_id and decision in {"ELIGIBLE", "ELIGIBLE_GENERIC"} else decision
 
         candidates.append({
             "provider_id": provider_id,

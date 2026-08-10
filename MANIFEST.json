@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -21,9 +21,10 @@
     "07_examples/83_LAFAR_PLANTER_V014_VISUAL_QUALITY_AND_EFFICIENCY_REGRESSION_BENCHMARK.md",
     "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
     "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md",
-    "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md"
+    "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md",
+    "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 326,
+  "module_count": 337,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -350,11 +351,357 @@
     "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
     "12_procedural_generation/234_PROVIDER_SELECTION_REPORT.md",
     "12_procedural_generation/235_DISCOVERY_MISMATCH_AND_EXPECTED_PROVIDER_GATE.md",
-    "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md"
+    "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+    "00_governance/15_RUNTIME_VERIFICATION_EXTENSION_V018.md",
+    "00_governance/16_RUNTIME_VERIFICATION_SKILL_REGISTRY_V018.md",
+    "05_execution/80_CONTRACT_EXECUTOR_TEST_PARITY_GATE.md",
+    "05_execution/81_REAL_BLENDER_RUNTIME_VALIDATION.md",
+    "06_prompts/73_RUNTIME_VERIFICATION_PROMPT.md",
+    "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+    "12_procedural_generation/237_PROVIDER_STATE_PROTOCOL.md",
+    "12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md",
+    "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+    "12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md",
+    "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository",
   "environment_assembly_layer": "13_environment_assembly",
   "design_system_layer": "14_design_system",
-  "provider_discovery_version": "0.17.0"
+  "provider_discovery_version": "0.18.0",
+  "manifest_schema_version": 2,
+  "skills": [
+    {
+      "id": "PROVIDER_STATE_PROTOCOL",
+      "purpose": "Canonical provider evidence state vocabulary and normalization.",
+      "contract": "12_procedural_generation/237_PROVIDER_STATE_PROTOCOL.md",
+      "executor": "executors/provider_contracts.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_state_protocol",
+        "runtime"
+      ]
+    },
+    {
+      "id": "CANONICAL_PROVIDER_REGISTRY",
+      "purpose": "Canonical static provider identity/classification registry.",
+      "contract": "12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md",
+      "executor": "executors/provider_registry.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "canonical_provider_registry",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "BLENDER_RUNTIME_ADDON_DISCOVERY",
+      "purpose": "Read-only discovery from the active Blender runtime.",
+      "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+      "executor": "executors/blender_addon_inventory.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "blender_runtime_addon_discovery",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "INSTALLED_PROVIDER_DISCOVERY",
+      "purpose": "Normalize runtime discovery into canonical provider records.",
+      "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+      "executor": "executors/installed_provider_inventory.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "installed_provider_discovery",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "EXPECTED_PROVIDER_GATE",
+      "purpose": "Verify expected provider presence and version constraints.",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/expected_provider_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "expected_provider_gate",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "PROCEDURAL_GENERATOR_PROVIDER",
+      "purpose": "Evaluate provider runtime compatibility and probe evidence.",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/procedural_provider.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "procedural_generator_provider",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "PROVIDER_CAPABILITY_PROBE",
+      "purpose": "Run isolated explicit provider capability probes.",
+      "contract": "12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md",
+      "executor": "executors/provider_probe_runner.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_capability_probe",
+        "runtime"
+      ]
+    },
+    {
+      "id": "PROVIDER_QUALITY_SELECT",
+      "purpose": "Evaluate provider quality tier for usage class.",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/provider_quality.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_quality_select",
+        "runtime"
+      ]
+    },
+    {
+      "id": "PROVIDER_SELECTION_REPORT",
+      "purpose": "Preserve auditable provider selection evidence.",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/provider_selection_report.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_selection_report",
+        "runtime"
+      ]
+    },
+    {
+      "id": "PROVIDER_DECISION_PIPELINE",
+      "purpose": "Canonical discovery-to-selection provider pipeline.",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/provider_orchestrator.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_decision_pipeline",
+        "runtime"
+      ]
+    },
+    {
+      "id": "PROVIDER_CAPABILITY_PROBE_MATRIX",
+      "purpose": "Executable capability-probe matrix facade over provider-specific adapters.",
+      "contract": "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+      "executor": "executors/provider_capability_probe_matrix.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PROVIDER_CAPABILITY_PROBE"
+      ],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "capability",
+        "matrix",
+        "probe",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "VEGETATION_PROVIDER_ROUTE",
+      "purpose": "Executable vegetation-domain provider routing with custom-fallback enforcement.",
+      "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+      "executor": "executors/vegetation_provider_route.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PROVIDER_DECISION_PIPELINE"
+      ],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "grass",
+        "plant",
+        "provider",
+        "vegetation"
+      ]
+    }
+  ],
+  "executors": [
+    {
+      "id": "PROVIDER_STATE_PROTOCOL",
+      "contract": "12_procedural_generation/237_PROVIDER_STATE_PROTOCOL.md",
+      "executor": "executors/provider_contracts.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_contracts.py"
+      ]
+    },
+    {
+      "id": "CANONICAL_PROVIDER_REGISTRY",
+      "contract": "12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md",
+      "executor": "executors/provider_registry.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_registry.py"
+      ]
+    },
+    {
+      "id": "BLENDER_RUNTIME_ADDON_DISCOVERY",
+      "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+      "executor": "executors/blender_addon_inventory.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_discovery.py",
+        "tests/blender/test_runtime_discovery.py"
+      ]
+    },
+    {
+      "id": "INSTALLED_PROVIDER_DISCOVERY",
+      "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+      "executor": "executors/installed_provider_inventory.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_classification.py",
+        "tests/integration/test_v017_fixture_compatibility.py"
+      ]
+    },
+    {
+      "id": "EXPECTED_PROVIDER_GATE",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/expected_provider_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_expected_provider_gate.py"
+      ]
+    },
+    {
+      "id": "PROCEDURAL_GENERATOR_PROVIDER",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/procedural_provider.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_selection.py"
+      ]
+    },
+    {
+      "id": "PROVIDER_CAPABILITY_PROBE",
+      "contract": "12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md",
+      "executor": "executors/provider_probe_runner.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/blender/test_geometry_nodes_probe.py",
+        "tests/blender/test_probe_cleanup.py"
+      ]
+    },
+    {
+      "id": "PROVIDER_QUALITY_SELECT",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/provider_quality.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_quality.py"
+      ]
+    },
+    {
+      "id": "PROVIDER_SELECTION_REPORT",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/provider_selection_report.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_report.py"
+      ]
+    },
+    {
+      "id": "PROVIDER_DECISION_PIPELINE",
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "executor": "executors/provider_orchestrator.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/integration/test_provider_pipeline.py"
+      ]
+    },
+    {
+      "id": "PROVIDER_CAPABILITY_PROBE_MATRIX",
+      "contract": "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+      "executor": "executors/provider_capability_probe_matrix.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_capability_matrix.py"
+      ]
+    },
+    {
+      "id": "VEGETATION_PROVIDER_ROUTE",
+      "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+      "executor": "executors/vegetation_provider_route.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_vegetation_provider_route.py",
+        "tests/regression/test_benchmark_87.py"
+      ]
+    }
+  ],
+  "tests": [
+    "tests/blender/run_suite.py",
+    "tests/blender/test_geometry_nodes_probe.py",
+    "tests/blender/test_probe_cleanup.py",
+    "tests/blender/test_runtime_discovery.py",
+    "tests/integration/test_provider_pipeline.py",
+    "tests/integration/test_v017_fixture_compatibility.py",
+    "tests/regression/test_benchmark_87.py",
+    "tests/unit/test_expected_provider_gate.py",
+    "tests/unit/test_provider_capability_matrix.py",
+    "tests/unit/test_provider_classification.py",
+    "tests/unit/test_provider_contracts.py",
+    "tests/unit/test_provider_discovery.py",
+    "tests/unit/test_provider_quality.py",
+    "tests/unit/test_provider_registry.py",
+    "tests/unit/test_provider_report.py",
+    "tests/unit/test_provider_selection.py",
+    "tests/unit/test_registry_parity.py",
+    "tests/unit/test_vegetation_provider_route.py",
+    "tests/unit/test_version_constraints.py"
+  ],
+  "generated_artifacts": [
+    {
+      "path": "_FULL_LIBRARY.md",
+      "builder": "tools/build_full_library.py"
+    },
+    {
+      "path": "_RUNTIME_INDEX.json",
+      "builder": "tools/build_runtime_index.py",
+      "max_bytes": 153600
+    }
+  ],
+  "runtime_verification_version": "0.18.0"
 }

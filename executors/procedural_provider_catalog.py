@@ -1,227 +1,33 @@
 from __future__ import annotations
 
-"""Curated provider identity/capability hints for discovery normalization.
+"""Backward-compatible facade over the canonical v0.18 provider registry.
 
-These records are never runtime truth. BlenderSkill must still inspect the active
-Blender process and run capability probes before production selection.
+Provider metadata must not be authored here. This module exists only so v0.17
+callers importing procedural_provider_catalog continue to work during v0.18.
 """
 
 from copy import deepcopy
 
-CATALOG_AS_OF = "2026-08-09"
+from executors.provider_registry import get_provider, provider_definitions
 
-_CATALOG = {
-    "builtin_geometry_nodes": {
-        "provider_id": "builtin_geometry_nodes",
-        "provider_version": "5.1.x",
-        "execution_type": "GEOMETRY_NODES",
-        "source_kind": "BUILTIN_BACKEND",
-        "domains": ["GEOMETRY_NODES", "PARAMETRIC_GEOMETRY", "GENERIC_PROCEDURAL"],
-        "blender_min": "5.1.0",
-        "blender_max": "5.1.99",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "BLENDER_RUNTIME",
-        "role": "PRIMARY_RUNTIME_BACKEND",
-    },
-    "nodetopython": {
-        "provider_id": "nodetopython",
-        "provider_version": "un-pinned",
-        "execution_type": "SOURCE_ONLY",
-        "source_kind": "UTILITY",
-        "domains": ["GEOMETRY_NODES"],
-        "supports_seed": True,
-        "probe_required": False,
-        "license": "GPL-3.0",
-        "role": "OPTIONAL_REFERENCE_TOOL_NOT_RUNTIME_DEPENDENCY",
-    },
-    "geonodes": {
-        "provider_id": "geonodes",
-        "provider_version": "un-pinned",
-        "execution_type": "DIRECT_PYTHON",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["GEOMETRY_NODES", "PARAMETRIC_GEOMETRY", "GENERIC_PROCEDURAL"],
-        "blender_min": "5.1.0",
-        "blender_max": "5.1.99",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "PYTHON_GEOMETRY_NODES_AUTHORING",
-    },
-    "sapling_tree_gen": {
-        "provider_id": "sapling_tree_gen",
-        "provider_version": "extension",
-        "execution_type": "BPY_OPERATOR",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["TREE", "WOODY_PLANT"],
-        "blender_min": "4.2.0",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "OPTIONAL_TREE_BACKEND",
-    },
-    "ivygen": {
-        "provider_id": "ivygen",
-        "provider_version": "extension",
-        "execution_type": "BPY_OPERATOR",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["VINE", "SURFACE_GROWTH"],
-        "blender_min": "4.2.0",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "OPTIONAL_SURFACE_GROWTH_BACKEND",
-    },
-    "ant_landscape": {
-        "provider_id": "ant_landscape",
-        "provider_version": "extension",
-        "execution_type": "BPY_OPERATOR",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["TERRAIN"],
-        "blender_min": "4.2.0",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "OPTIONAL_TERRAIN_BACKEND",
-    },
-    "archimesh": {
-        "provider_id": "archimesh",
-        "provider_version": "extension",
-        "execution_type": "BPY_OPERATOR",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["ARCHITECTURAL_BLOCKOUT"],
-        "blender_min": "4.2.0",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "OPTIONAL_ARCHITECTURAL_BLOCKOUT",
-    },
-    "sverchok": {
-        "provider_id": "sverchok",
-        "provider_version": "un-pinned",
-        "execution_type": "DIRECT_PYTHON",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["PARAMETRIC_GEOMETRY", "GENERIC_PROCEDURAL"],
-        "blender_min": "5.1.0",
-        "blender_max": "5.1.99",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "GPL-3.0",
-        "role": "OPTIONAL_PARAMETRIC_BACKEND",
-    },
-    "engon_botaniq": {
-        "provider_id": "engon_botaniq",
-        "provider_version": "un-pinned",
-        "execution_type": "BPY_OPERATOR",
-        "source_kind": "READY_ASSET_SOURCE",
-        "domains": ["TREE", "WOODY_PLANT", "GRASS", "GROUNDCOVER", "VEGETATION_SCATTER"],
-        "blender_min": "4.2.0",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "CODE_AND_ASSET_LICENSE_SEPARATE",
-        "role": "OPTIONAL_ASSET_SCATTER_BACKEND",
-    },
-    "mpfb": {
-        "provider_id": "mpfb",
-        "provider_version": "un-pinned",
-        "execution_type": "BPY_OPERATOR",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["CHARACTER"],
-        "supports_seed": False,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "CHARACTER_GENERATOR",
-    },
-    "geo_nodes_guide": {
-        "provider_id": "geo_nodes_guide",
-        "provider_version": "un-pinned",
-        "execution_type": "DIRECT_PYTHON",
-        "source_kind": "UTILITY",
-        "domains": ["GEOMETRY_NODES"],
-        "supports_seed": False,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "GEOMETRY_NODES_UTILITY",
-    },
-    "mcp": {
-        "provider_id": "mcp",
-        "provider_version": "un-pinned",
-        "execution_type": "DIRECT_PYTHON",
-        "source_kind": "UTILITY",
-        "domains": ["INTEGRATION"],
-        "supports_seed": False,
-        "probe_required": True,
-        "license": "DISCOVER_AT_PROBE",
-        "role": "INTEGRATION_UTILITY",
-    },
-    "meshy": {
-        "provider_id": "meshy",
-        "provider_version": "un-pinned",
-        "execution_type": "EXTERNAL_PROCESS",
-        "source_kind": "EXTERNAL_GENERATOR",
-        "domains": ["EXTERNAL_3D_GENERATION"],
-        "supports_seed": False,
-        "probe_required": True,
-        "license": "SERVICE_AND_OUTPUT_LICENSE_SEPARATE",
-        "role": "EXTERNAL_3D_GENERATOR",
-    },
-    "the_grove": {
-        "provider_id": "the_grove",
-        "provider_version": "2.2",
-        "execution_type": "DIRECT_PYTHON",
-        "source_kind": "PROCEDURAL_GENERATOR",
-        "domains": ["TREE", "WOODY_PLANT"],
-        "blender_min": "4.2.0",
-        "blender_max": "4.4.99",
-        "supports_seed": True,
-        "probe_required": True,
-        "license": "COMMERCIAL/PROPRIETARY",
-        "role": "VERSION_BLOCKED_TREE_BACKEND",
-    },
-    "procfunc": {
-        "provider_id": "procfunc",
-        "provider_version": "0.x",
-        "execution_type": "SOURCE_ONLY",
-        "source_kind": "UTILITY",
-        "domains": ["GENERIC_PROCEDURAL"],
-        "blender_min": "4.2.0",
-        "blender_max": "4.2.99",
-        "supports_seed": True,
-        "probe_required": False,
-        "license": "BSD-3-Clause",
-        "role": "SOURCE_PATTERN_ONLY",
-    },
-    "blenderproc": {
-        "provider_id": "blenderproc",
-        "provider_version": "2.8.0",
-        "execution_type": "SOURCE_ONLY",
-        "source_kind": "UTILITY",
-        "domains": ["SCENE_GENERATION"],
-        "blender_min": "4.2.1",
-        "blender_max": "4.2.99",
-        "supports_seed": True,
-        "probe_required": False,
-        "license": "GPL-3.0",
-        "role": "SOURCE_PATTERN_OR_EXTERNAL_WORKER",
-    },
-    "infinigen": {
-        "provider_id": "infinigen",
-        "provider_version": "un-pinned",
-        "execution_type": "SOURCE_ONLY",
-        "source_kind": "UTILITY",
-        "domains": ["GENERIC_PROCEDURAL", "NATURAL_ENVIRONMENT"],
-        "blender_min": "0",
-        "supports_seed": True,
-        "probe_required": False,
-        "license": "BSD-3-Clause",
-        "role": "ALGORITHM_REFERENCE",
-    },
-}
+CATALOG_AS_OF = "CANONICAL_REGISTRY_V018"
+
+
+def _legacy_shape(provider_id: str, definition: dict) -> dict:
+    item = deepcopy(definition)
+    item["provider_id"] = provider_id
+    item.setdefault("provider_version", "un-pinned")
+    item.setdefault("license", item.get("license_policy"))
+    item.setdefault("probe_required", item.get("probe_type") not in {None, "", "none"})
+    return item
 
 
 def get(provider_id: str) -> dict:
-    return deepcopy(_CATALOG[provider_id])
+    definition = get_provider(provider_id)
+    if definition is None:
+        raise KeyError(provider_id)
+    return _legacy_shape(provider_id, dict(definition))
 
 
 def all_providers() -> dict[str, dict]:
-    return deepcopy(_CATALOG)
+    return {provider_id: _legacy_shape(provider_id, dict(definition)) for provider_id, definition in provider_definitions().items()}

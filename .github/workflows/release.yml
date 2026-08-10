@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        required: true
+        default: '0.18.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      BLENDER_VERSION: '5.1.0'
+      BLENDER_ARCHIVE: 'blender-5.1.0-linux-x64.tar.xz'
+      BLENDER_SHA_FILE: 'blender-5.1.0.sha256'
+      BLENDER_BASE_URL: 'https://download.blender.org/release/Blender5.1'
+    steps:
+      - name: Require main and v0.18.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "main"
+          test "${{ inputs.version }}" = "0.18.0"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dev dependencies
+        run: python -m pip install 'pytest>=8.3,<9' 'ruff>=0.12,<1'
+
+      - name: Validate metadata and normal tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruff check executors tests tools
+          pytest tests/unit tests/integration tests/regression
+          python tools/test_v09_shape_graph.py
+          python tools/test_v010_reference_fidelity.py
+          python tools/test_v011_execution_enforcement.py
+          python tools/test_v012_geometric_integrity.py
+          python tools/test_v012_final_integrity_gate.py
+          python tools/test_v013_procedural_vegetation.py
+          python tools/test_v014_visual_quality.py
+          python tools/test_v015_location_assembly.py
+          python tools/test_v016_location_design_system.py
+          python tools/test_v017_provider_discovery.py
+          python tools/validate_registry_parity.py
+          python tools/build_full_library.py
+          python tools/build_runtime_index.py
+          python tools/validate_release_metadata.py
+          git diff --exit-code -- MANIFEST.json _FULL_LIBRARY.md _RUNTIME_INDEX.json
+
+      - name: Download and verify pinned Blender
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSLO "$BLENDER_BASE_URL/$BLENDER_ARCHIVE"
+          curl -fsSLO "$BLENDER_BASE_URL/$BLENDER_SHA_FILE"
+          grep " $BLENDER_ARCHIVE$" "$BLENDER_SHA_FILE" | sha256sum -c -
+          tar -xf "$BLENDER_ARCHIVE"
+          echo "$GITHUB_WORKSPACE/blender-$BLENDER_VERSION-linux-x64" >> "$GITHUB_PATH"
+
+      - name: Run required Blender suite
+        run: blender --background --factory-startup --disable-autoexec --python tests/blender/run_suite.py
+
+      - name: Verify release tag is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git rev-parse -q --verify refs/tags/v0.18.0 >/dev/null; then
+            echo 'Tag v0.18.0 already exists.' >&2
+            exit 1
+          fi
+          test -z "$(git ls-remote --tags origin refs/tags/v0.18.0)"
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a v0.18.0 -m 'BlenderSkill v0.18.0 — Runtime Verification & Contract Convergence'
+          git push origin v0.18.0
+          gh release create v0.18.0 --title 'BlenderSkill v0.18.0 — Runtime Verification & Contract Convergence' --notes-file <(awk '/^## 0\.18\.0/{flag=1;next}/^## /{flag=0}flag' CHANGELOG.md)

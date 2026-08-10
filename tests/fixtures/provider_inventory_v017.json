@@ -1,0 +1,11 @@
+{
+  "blender_version": "5.1.0",
+  "addons": [
+    {"module_name": "add_curve_sapling", "display_name": "Sapling Tree Gen", "version": "0.3.7", "enabled": true, "discovered": true},
+    {"module_name": "unknown_fixture_addon", "display_name": "Unknown Fixture Add-on", "version": "1.0.0", "enabled": true, "discovered": true}
+  ],
+  "asset_libraries": [],
+  "builtins": [
+    {"provider_id": "builtin_geometry_nodes", "display_name": "Blender Geometry Nodes", "version": "5.1.0", "domains": ["GEOMETRY_NODES", "PARAMETRIC_GEOMETRY", "GENERIC_PROCEDURAL"], "runtime_probe_status": "PROBE_REQUIRED"}
+  ]
+}

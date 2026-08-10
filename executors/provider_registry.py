@@ -2,12 +2,14 @@ from __future__ import annotations
 
 """Load and query the canonical provider registry."""
 
+import json
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
-import json
-import re
 
+EXECUTOR_ID = "CANONICAL_PROVIDER_REGISTRY"
+EXECUTOR_VERSION = "0.18.0"
 REGISTRY_PATH = Path(__file__).resolve().parent.parent / "data" / "provider_registry.json"
 
 
@@ -22,6 +24,13 @@ def load_registry() -> dict[str, Any]:
     providers = payload.get("providers") or {}
     if not isinstance(providers, dict):
         raise ValueError("PROVIDER_REGISTRY_INVALID")
+    for provider_id, definition in providers.items():
+        if not isinstance(definition, dict):
+            raise ValueError(f"PROVIDER_REGISTRY_ENTRY_INVALID:{provider_id}")
+        if not definition.get("source_kind"):
+            raise ValueError(f"PROVIDER_REGISTRY_SOURCE_KIND_REQUIRED:{provider_id}")
+        if not isinstance(definition.get("domains", []), list):
+            raise ValueError(f"PROVIDER_REGISTRY_DOMAINS_INVALID:{provider_id}")
     return payload
 
 

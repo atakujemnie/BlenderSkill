@@ -1,0 +1,192 @@
+{
+  "canonical_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+  "library_version": "0.18.0",
+  "runtime_index_schema_version": 1,
+  "skills": [
+    {
+      "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+      "dependencies": [],
+      "executor": "executors/blender_addon_inventory.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Read-only discovery from the active Blender runtime.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "blender_runtime_addon_discovery",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "BLENDER_RUNTIME_ADDON_DISCOVERY"
+    },
+    {
+      "contract": "12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md",
+      "dependencies": [],
+      "executor": "executors/provider_registry.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Canonical static provider identity/classification registry.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "canonical_provider_registry",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "CANONICAL_PROVIDER_REGISTRY"
+    },
+    {
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "dependencies": [],
+      "executor": "executors/expected_provider_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Verify expected provider presence and version constraints.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "expected_provider_gate",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "EXPECTED_PROVIDER_GATE"
+    },
+    {
+      "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
+      "dependencies": [],
+      "executor": "executors/installed_provider_inventory.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Normalize runtime discovery into canonical provider records.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "installed_provider_discovery",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "INSTALLED_PROVIDER_DISCOVERY"
+    },
+    {
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "dependencies": [],
+      "executor": "executors/procedural_provider.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Evaluate provider runtime compatibility and probe evidence.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "procedural_generator_provider",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "PROCEDURAL_GENERATOR_PROVIDER"
+    },
+    {
+      "contract": "12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md",
+      "dependencies": [],
+      "executor": "executors/provider_probe_runner.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Run isolated explicit provider capability probes.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_capability_probe",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_CAPABILITY_PROBE"
+    },
+    {
+      "contract": "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+      "dependencies": [
+        "PROVIDER_CAPABILITY_PROBE"
+      ],
+      "executor": "executors/provider_capability_probe_matrix.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Executable capability-probe matrix facade over provider-specific adapters.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "capability",
+        "matrix",
+        "probe",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_CAPABILITY_PROBE_MATRIX"
+    },
+    {
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "dependencies": [],
+      "executor": "executors/provider_orchestrator.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Canonical discovery-to-selection provider pipeline.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_decision_pipeline",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_DECISION_PIPELINE"
+    },
+    {
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "dependencies": [],
+      "executor": "executors/provider_quality.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Evaluate provider quality tier for usage class.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_quality_select",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_QUALITY_SELECT"
+    },
+    {
+      "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+      "dependencies": [],
+      "executor": "executors/provider_selection_report.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Preserve auditable provider selection evidence.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_selection_report",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_SELECTION_REPORT"
+    },
+    {
+      "contract": "12_procedural_generation/237_PROVIDER_STATE_PROTOCOL.md",
+      "dependencies": [],
+      "executor": "executors/provider_contracts.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Canonical provider evidence state vocabulary and normalization.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "provider",
+        "provider_state_protocol",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_STATE_PROTOCOL"
+    },
+    {
+      "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+      "dependencies": [
+        "PROVIDER_DECISION_PIPELINE"
+      ],
+      "executor": "executors/vegetation_provider_route.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Executable vegetation-domain provider routing with custom-fallback enforcement.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "grass",
+        "plant",
+        "provider",
+        "vegetation"
+      ],
+      "skill_id": "VEGETATION_PROVIDER_ROUTE"
+    }
+  ]
+}
