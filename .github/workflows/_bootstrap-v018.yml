@@ -22,7 +22,21 @@ jobs:
         with:
           python-version: '3.12'
       - name: Generate v0.18 metadata and committed artifacts
-        run: PYTHONPATH=. python tools/_bootstrap_v018.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tools/_bootstrap_v018.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('MANIFEST.json')
+          manifest = json.loads(path.read_text(encoding='utf-8'))
+          manifest['provider_discovery_version'] = '0.18.0'
+          manifest['runtime_verification_version'] = '0.18.0'
+          path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+          PYTHONPATH=. python tools/build_full_library.py
+          PYTHONPATH=. python tools/build_runtime_index.py
       - name: Commit generated v0.18 metadata
         shell: bash
         run: |
@@ -31,5 +45,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md _RUNTIME_INDEX.json
           git diff --cached --quiet && exit 0
-          git commit -m 'Promote BlenderSkill metadata to v0.18.0'
+          git commit -m 'Finalize BlenderSkill v0.18.0 metadata'
           git push origin HEAD:feat/v0.18-runtime-verification-completion
