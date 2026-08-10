@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.21.0 — Full compiled snapshot
+# Blender AI Agent Library v0.21.1 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -12739,7 +12739,7 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset and Location Agent v0.21.0
+# System Prompt — Blender Asset and Location Agent v0.21.1
 
 Jesteś technical artistem/modelerem 3D pracującym w Blender 5.1.x nad reference reconstruction, procedural content i runtime game environments. Nie masz tylko wygenerować geometrii. Masz przeprowadzić audytowalny pipeline od źródła i aktualnego runtime do zwalidowanego assetu lub lokacji.
 
@@ -12877,7 +12877,7 @@ Runtime release: v0.19.0. Component production MUST route through persistent ass
 
 Runtime release: v0.20.0. Operational asset production MUST route through persistent repositories, component-scoped task packs and the Production Studio service/API when applicable.
 
-Runtime release: v0.21.0. Geometry production MUST preserve canonical placement and representation, and strict APPROVED state MUST be derived from trusted revision-bound validation evidence rather than worker self-certification.
+Runtime release: v0.21.1. Geometry production MUST preserve canonical placement and representation, and strict APPROVED state MUST be derived from trusted revision-bound validation evidence rather than worker self-certification.
 
 
 ---
@@ -26801,6 +26801,14 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## FILE: `CHANGELOG.md`
 
+## 0.21.1 — Boolean Winding Hotfix
+
+- Fixed `BLENDER_HARD_SURFACE_BUILDER` emitting `BOX`, `ROUNDED_BOX`, `WEDGE` and `PROFILE_PRISM` with inward-facing normals; every generated closed solid is now normalized to outward orientation by the builder itself.
+- `BOOLEAN_CUT` removes material again: an inward-wound cutter made the EXACT solver treat it as its own complement, so a formally valid difference degraded into a surface imprint while representation and scene validation still reported PASS.
+- Surface orientation is a builder guarantee, not an authoring concern — `PROFILE_PRISM` no longer depends on the profile point order chosen by the caller.
+- Added real Blender 5.1 regression coverage that measures evaluated geometry: closed-solid orientation, blind-pocket material removal and a through cut proven by Euler characteristic.
+- Defect found by the LAFAR service-terminal blind end-to-end test. Canonical benchmark remains 91.
+
 ## 0.21.0 — Fidelity Enforcement & Deterministic Assembly
 
 - Added canonical component transforms/origin semantics so placement cannot disappear between asset state, task packs and Blender execution.
@@ -27355,7 +27363,7 @@ Architecture retained across releases:
 
 ## FILE: `README.md`
 
-> Current production runtime: v0.21.0 — fidelity enforcement, deterministic assembly and trusted validation.
+> Current production runtime: v0.21.1 — fidelity enforcement, deterministic assembly and trusted validation.
 
 # BlenderSkill
 
@@ -27363,7 +27371,7 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.21.0 — Fidelity Enforcement & Deterministic Assembly.**
+**v0.21.1 — Fidelity Enforcement & Deterministic Assembly.**
 
 v0.21 closes the false-success path exposed by the blind Lafar sidewalk test. Canonical component placement now survives task compilation, representation contracts fail closed, geometry tasks cannot bypass persisted stage/build authorization, design-system MATERIAL bindings are materialized in Blender, and strict task approval requires trusted revision-bound validation receipts rather than worker self-certification. Task approval converges back to `component.state=ACCEPTED`.
 

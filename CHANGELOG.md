@@ -1,3 +1,11 @@
+## 0.21.1 — Boolean Winding Hotfix
+
+- Fixed `BLENDER_HARD_SURFACE_BUILDER` emitting `BOX`, `ROUNDED_BOX`, `WEDGE` and `PROFILE_PRISM` with inward-facing normals; every generated closed solid is now normalized to outward orientation by the builder itself.
+- `BOOLEAN_CUT` removes material again: an inward-wound cutter made the EXACT solver treat it as its own complement, so a formally valid difference degraded into a surface imprint while representation and scene validation still reported PASS.
+- Surface orientation is a builder guarantee, not an authoring concern — `PROFILE_PRISM` no longer depends on the profile point order chosen by the caller.
+- Added real Blender 5.1 regression coverage that measures evaluated geometry: closed-solid orientation, blind-pocket material removal and a through cut proven by Euler characteristic.
+- Defect found by the LAFAR service-terminal blind end-to-end test. Canonical benchmark remains 91.
+
 ## 0.21.0 — Fidelity Enforcement & Deterministic Assembly
 
 - Added canonical component transforms/origin semantics so placement cannot disappear between asset state, task packs and Blender execution.

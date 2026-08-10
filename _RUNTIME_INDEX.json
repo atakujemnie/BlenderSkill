@@ -1,6 +1,6 @@
 {
   "canonical_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
-  "library_version": "0.21.0",
+  "library_version": "0.21.1",
   "runtime_index_schema_version": 1,
   "skills": [
     {

@@ -1,6 +1,6 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
@@ -1348,7 +1348,8 @@
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/blender/test_hard_surface_builder.py",
-        "tests/blender/test_v021_component_execution.py"
+        "tests/blender/test_v021_component_execution.py",
+        "tests/blender/test_v0211_primitive_winding_and_boolean.py"
       ]
     },
     {
@@ -1619,7 +1620,8 @@
     "tests/unit/test_validation_receipt_repository.py",
     "tests/unit/test_asset_execution_authorization_gate.py",
     "tests/unit/test_scene_component_validation.py",
-    "tests/unit/test_component_validation_runner.py"
+    "tests/unit/test_component_validation_runner.py",
+    "tests/blender/test_v0211_primitive_winding_and_boolean.py"
   ],
   "generated_artifacts": [
     {
