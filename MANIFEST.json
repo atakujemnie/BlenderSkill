@@ -520,6 +520,41 @@
         "provider_decision_pipeline",
         "runtime"
       ]
+    },
+    {
+      "id": "PROVIDER_CAPABILITY_PROBE_MATRIX",
+      "purpose": "Executable capability-probe matrix facade over provider-specific adapters.",
+      "contract": "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+      "executor": "executors/provider_capability_probe_matrix.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PROVIDER_CAPABILITY_PROBE"
+      ],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "capability",
+        "matrix",
+        "probe",
+        "provider",
+        "runtime"
+      ]
+    },
+    {
+      "id": "VEGETATION_PROVIDER_ROUTE",
+      "purpose": "Executable vegetation-domain provider routing with custom-fallback enforcement.",
+      "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+      "executor": "executors/vegetation_provider_route.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PROVIDER_DECISION_PIPELINE"
+      ],
+      "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "grass",
+        "plant",
+        "provider",
+        "vegetation"
+      ]
     }
   ],
   "executors": [
@@ -615,6 +650,25 @@
       "tests": [
         "tests/integration/test_provider_pipeline.py"
       ]
+    },
+    {
+      "id": "PROVIDER_CAPABILITY_PROBE_MATRIX",
+      "contract": "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+      "executor": "executors/provider_capability_probe_matrix.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_provider_capability_matrix.py"
+      ]
+    },
+    {
+      "id": "VEGETATION_PROVIDER_ROUTE",
+      "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+      "executor": "executors/vegetation_provider_route.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_vegetation_provider_route.py",
+        "tests/regression/test_benchmark_87.py"
+      ]
     }
   ],
   "tests": [
@@ -624,7 +678,9 @@
     "tests/blender/test_runtime_discovery.py",
     "tests/integration/test_provider_pipeline.py",
     "tests/integration/test_v017_fixture_compatibility.py",
+    "tests/regression/test_benchmark_87.py",
     "tests/unit/test_expected_provider_gate.py",
+    "tests/unit/test_provider_capability_matrix.py",
     "tests/unit/test_provider_classification.py",
     "tests/unit/test_provider_contracts.py",
     "tests/unit/test_provider_discovery.py",
@@ -633,6 +689,7 @@
     "tests/unit/test_provider_report.py",
     "tests/unit/test_provider_selection.py",
     "tests/unit/test_registry_parity.py",
+    "tests/unit/test_vegetation_provider_route.py",
     "tests/unit/test_version_constraints.py"
   ],
   "generated_artifacts": [

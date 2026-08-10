@@ -94,6 +94,24 @@
       "skill_id": "PROVIDER_CAPABILITY_PROBE"
     },
     {
+      "contract": "12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md",
+      "dependencies": [
+        "PROVIDER_CAPABILITY_PROBE"
+      ],
+      "executor": "executors/provider_capability_probe_matrix.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Executable capability-probe matrix facade over provider-specific adapters.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "capability",
+        "matrix",
+        "probe",
+        "provider",
+        "runtime"
+      ],
+      "skill_id": "PROVIDER_CAPABILITY_PROBE_MATRIX"
+    },
+    {
       "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
       "dependencies": [],
       "executor": "executors/provider_orchestrator.py",
@@ -152,6 +170,23 @@
         "runtime"
       ],
       "skill_id": "PROVIDER_STATE_PROTOCOL"
+    },
+    {
+      "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
+      "dependencies": [
+        "PROVIDER_DECISION_PIPELINE"
+      ],
+      "executor": "executors/vegetation_provider_route.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Executable vegetation-domain provider routing with custom-fallback enforcement.",
+      "relevant_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "grass",
+        "plant",
+        "provider",
+        "vegetation"
+      ],
+      "skill_id": "VEGETATION_PROVIDER_ROUTE"
     }
   ]
 }
