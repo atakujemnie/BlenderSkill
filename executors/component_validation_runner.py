@@ -126,8 +126,9 @@ def validate_and_publish(
     validation_blockers = [
         *list(representation.get("blockers", []) or []),
         *list(scene.get("blockers", []) or []),
-        *list(feature.get("blockers", []) or []) if isinstance(feature, Mapping) else [],
     ]
+    if isinstance(feature, Mapping):
+        validation_blockers.extend(list(feature.get("blockers", []) or []))
     status = "PASS" if not persistence_failures and not validation_blockers else "FAIL"
     validators: dict[str, Any] = {
         "REPRESENTATION_CONTRACT_GATE": representation,
