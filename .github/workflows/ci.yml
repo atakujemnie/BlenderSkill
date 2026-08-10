@@ -47,7 +47,7 @@ jobs:
       - name: Pytest integration
         run: pytest tests/integration
 
-      - name: Benchmark 87 regression
+      - name: Benchmark regression
         run: pytest tests/regression
 
       - name: Legacy regressions v0.9-v0.17
@@ -66,7 +66,7 @@ jobs:
           python tools/test_v016_location_design_system.py
           python tools/test_v017_provider_discovery.py
 
-      - name: v0.18 registry parity
+      - name: Registry parity
         run: python tools/validate_registry_parity.py
 
       - name: Validate and build full library

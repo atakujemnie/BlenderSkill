@@ -14,8 +14,9 @@ from typing import Any
 from executors.scene_component_snapshot import build as build_snapshot
 
 EXECUTOR_ID = "BLENDER_SCENE_SNAPSHOT_ADAPTER"
-EXECUTOR_VERSION = "0.20.0-dev"
+EXECUTOR_VERSION = "0.20.0"
 M_TO_MM = 1000.0
+MM_DIGITS = 3
 
 
 def _bpy():
@@ -28,8 +29,12 @@ def _round(value: Any, digits: int = 6) -> float:
     return round(float(value), digits)
 
 
-def _vector(values: Any, *, scale: float = 1.0) -> list[float]:
-    return [_round(float(value) * scale) for value in values]
+def _vector(values: Any, *, scale: float = 1.0, digits: int = 6) -> list[float]:
+    return [_round(float(value) * scale, digits) for value in values]
+
+
+def _mm_vector(values: Any) -> list[float]:
+    return _vector(values, scale=M_TO_MM, digits=MM_DIGITS)
 
 
 def _hash_settings(value: Any) -> str:
@@ -42,7 +47,7 @@ def _modifier_settings(modifier: Any) -> dict[str, Any]:
     settings: dict[str, Any] = {}
     if kind == "BEVEL":
         settings = {
-            "width_mm": _round(float(modifier.width) * M_TO_MM),
+            "width_mm": _round(float(modifier.width) * M_TO_MM, MM_DIGITS),
             "segments": int(modifier.segments),
             "limit_method": str(modifier.limit_method),
         }
@@ -51,7 +56,7 @@ def _modifier_settings(modifier: Any) -> dict[str, Any]:
     elif kind == "ARRAY":
         settings = {
             "count": int(modifier.count),
-            "constant_offset_mm": _vector(modifier.constant_offset_displace, scale=M_TO_MM),
+            "constant_offset_mm": _mm_vector(modifier.constant_offset_displace),
             "use_relative_offset": bool(modifier.use_relative_offset),
             "use_constant_offset": bool(modifier.use_constant_offset),
         }
@@ -131,11 +136,11 @@ def measure_object(obj: Any) -> dict[str, Any]:
         "object_type": str(obj.type).upper(),
         "parent_id": parent_id,
         "transform": {
-            "location_mm": _vector(location, scale=M_TO_MM),
+            "location_mm": _mm_vector(location),
             "rotation_rad": _vector(rotation),
             "scale": _vector(scale),
         },
-        "dimensions_mm": _vector(obj.dimensions, scale=M_TO_MM),
+        "dimensions_mm": _mm_vector(obj.dimensions),
         "mesh_metrics": _mesh_metrics(obj),
         "material_ids": sorted(material_ids),
         "modifier_stack": modifier_stack,

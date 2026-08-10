@@ -1,6 +1,6 @@
 {
-  "canonical_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
-  "library_version": "0.19.0",
+  "canonical_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+  "library_version": "0.20.0",
   "runtime_index_schema_version": 1,
   "skills": [
     {
@@ -125,6 +125,23 @@
       "skill_id": "BLENDER_RUNTIME_ADDON_DISCOVERY"
     },
     {
+      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "dependencies": [
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "executor": "executors/blender_scene_snapshot_adapter.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Read Blender 5.1 scene data into compact production snapshots without mutating the scene.",
+      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "measurement",
+        "scene",
+        "snapshot"
+      ],
+      "skill_id": "BLENDER_SCENE_SNAPSHOT_ADAPTER"
+    },
+    {
       "contract": "12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md",
       "dependencies": [],
       "executor": "executors/provider_registry.py",
@@ -174,6 +191,23 @@
         "resource"
       ],
       "skill_id": "DESIGN_BINDING_RESOLVER"
+    },
+    {
+      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "dependencies": [
+        "DESIGN_SYSTEM_REPOSITORY"
+      ],
+      "executor": "executors/design_studio_service.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Operational listing, mutation and impact inspection for shared design-system resources.",
+      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "design system",
+        "impact",
+        "resource",
+        "studio"
+      ],
+      "skill_id": "DESIGN_STUDIO_SERVICE"
     },
     {
       "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
@@ -288,6 +322,28 @@
         "validation"
       ],
       "skill_id": "PRODUCTION_ITERATION_GATE"
+    },
+    {
+      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "dependencies": [
+        "ASSET_PRODUCTION_ORCHESTRATOR",
+        "ASSET_REPOSITORY",
+        "DESIGN_SYSTEM_REPOSITORY",
+        "PRODUCTION_TASK_REPOSITORY",
+        "REFERENCE_EVIDENCE_REPOSITORY",
+        "SCENE_SNAPSHOT_REPOSITORY"
+      ],
+      "executor": "executors/production_studio_service.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Operational service layer for asset, correction, task, evidence, scene and task-pack workflows.",
+      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "api",
+        "asset",
+        "production",
+        "studio"
+      ],
+      "skill_id": "PRODUCTION_STUDIO_SERVICE"
     },
     {
       "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
@@ -432,6 +488,23 @@
       "skill_id": "REFERENCE_EVIDENCE_REGISTRY"
     },
     {
+      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "dependencies": [
+        "REFERENCE_EVIDENCE_REGISTRY"
+      ],
+      "executor": "executors/reference_evidence_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Persist asset-scoped reference evidence registries with immutable revisions and stale-writer protection.",
+      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "evidence",
+        "persistence",
+        "reference",
+        "revision"
+      ],
+      "skill_id": "REFERENCE_EVIDENCE_REPOSITORY"
+    },
+    {
       "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
       "dependencies": [
         "BLENDER_HARD_SURFACE_BUILDER"
@@ -447,6 +520,23 @@
         "snapshot"
       ],
       "skill_id": "SCENE_COMPONENT_SNAPSHOT"
+    },
+    {
+      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "dependencies": [
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "executor": "executors/scene_snapshot_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Persist compact scene snapshots with immutable revision history and optimistic concurrency.",
+      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "persistence",
+        "revision",
+        "scene",
+        "snapshot"
+      ],
+      "skill_id": "SCENE_SNAPSHOT_REPOSITORY"
     },
     {
       "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",

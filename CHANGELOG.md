@@ -1,3 +1,12 @@
+## 0.20.0 — Operational Production Studio
+
+- Promoted the local Production Studio from inspection shell to operational workflow engine.
+- Added revisioned scene-snapshot and reference-evidence repositories with optimistic concurrency.
+- Added read-only Blender 5.1 scene snapshot adapter and real Blender regression coverage.
+- Added Production Studio and Design Studio service layers over canonical repositories.
+- Added loopback-first JSON HTTP API and live asset/design-system Studio interfaces.
+- Added canonical Benchmark 90 for persistent operational Studio workflow, scoped context and restart-safe state.
+
 ## 0.19.0 — Production Studio Runtime
 
 - Promoted persistent asset/component production state and relational parameter graph to release executors.
