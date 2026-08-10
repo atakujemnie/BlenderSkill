@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -22,9 +22,11 @@
     "07_examples/84_LAFAR_RESTAURANT_V015_FULL_LOCATION_REGRESSION_BENCHMARK.md",
     "07_examples/85_LAFAR_LOCATION_DESIGN_SYSTEM_V016_REGRESSION_BENCHMARK.md",
     "07_examples/86_LAFAR_PROVIDER_DISCOVERY_V017_REGRESSION_BENCHMARK.md",
-    "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md"
+    "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
+    "07_examples/88_LAFAR_STREET_BENCH_ASSET_RUNTIME_BENCHMARK.md",
+    "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 337,
+  "module_count": 341,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -362,7 +364,11 @@
     "12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md",
     "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
     "12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md",
-    "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md"
+    "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
+    "07_examples/88_LAFAR_STREET_BENCH_ASSET_RUNTIME_BENCHMARK.md",
+    "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+    "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+    "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository",
@@ -555,6 +561,283 @@
         "provider",
         "vegetation"
       ]
+    },
+    {
+      "id": "ASSET_STATE_RUNTIME",
+      "purpose": "Persistent canonical asset/component state and correction semantics.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/asset_state_runtime.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "component",
+        "correction",
+        "state"
+      ]
+    },
+    {
+      "id": "ASSET_REPOSITORY",
+      "purpose": "Revisioned filesystem persistence for canonical asset state.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/asset_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "persistence",
+        "repository",
+        "revision"
+      ]
+    },
+    {
+      "id": "PARAMETER_GRAPH",
+      "purpose": "Deterministic relational parameter resolution without LLM arithmetic.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/parameter_graph.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "dimension",
+        "parameter",
+        "relation",
+        "constraint"
+      ]
+    },
+    {
+      "id": "DESIGN_BINDING_RESOLVER",
+      "purpose": "Resolve inherited/overridden/custom design-system bindings and locks.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/design_binding_resolver.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "binding",
+        "design",
+        "resource",
+        "override"
+      ]
+    },
+    {
+      "id": "REFERENCE_EVIDENCE_REGISTRY",
+      "purpose": "Index and route component/feature scoped multi-view reference evidence.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/reference_evidence_registry.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "evidence",
+        "reference",
+        "roi",
+        "view"
+      ]
+    },
+    {
+      "id": "COMPONENT_TASK_PACK",
+      "purpose": "Token-bounded component mutation pack with explicit mutable/read-only scope.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/component_task_pack.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PARAMETER_GRAPH",
+        "DESIGN_BINDING_RESOLVER",
+        "REFERENCE_EVIDENCE_REGISTRY"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "component",
+        "context",
+        "task",
+        "token"
+      ]
+    },
+    {
+      "id": "ASSET_PRODUCTION_ORCHESTRATOR",
+      "purpose": "Prepare one component production task from persistent asset truth.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/asset_production_orchestrator.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME",
+        "PARAMETER_GRAPH",
+        "DESIGN_BINDING_RESOLVER",
+        "COMPONENT_TASK_PACK"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "component",
+        "orchestrator",
+        "production"
+      ]
+    },
+    {
+      "id": "HARD_SURFACE_RECIPE",
+      "purpose": "Deterministic intermediate representation for manufactured hard-surface construction.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/hard_surface_recipe.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "COMPONENT_TASK_PACK"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "hard surface",
+        "recipe",
+        "geometry",
+        "manufactured"
+      ]
+    },
+    {
+      "id": "BLENDER_HARD_SURFACE_BUILDER",
+      "purpose": "Blender 5.1 executor for deterministic hard-surface recipe operations.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/blender_hard_surface_builder.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "HARD_SURFACE_RECIPE"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "builder",
+        "hard surface",
+        "recipe"
+      ]
+    },
+    {
+      "id": "ASSEMBLY_ANCHOR_GATE",
+      "purpose": "Validate explicit component anchor relations and assembly tolerances.",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/assembly_anchor_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "anchor",
+        "assembly",
+        "mount",
+        "tolerance"
+      ]
+    },
+    {
+      "id": "DESIGN_SYSTEM_REPOSITORY",
+      "purpose": "Versioned reusable design resources with reverse usage and impact analysis.",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/design_system_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "DESIGN_BINDING_RESOLVER"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "design system",
+        "impact",
+        "resource",
+        "version"
+      ]
+    },
+    {
+      "id": "PRODUCTION_TASK_LIFECYCLE",
+      "purpose": "Deterministic dependency-aware production task state machine.",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/production_task_lifecycle.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "COMPONENT_TASK_PACK"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "approval",
+        "queue",
+        "review",
+        "task"
+      ]
+    },
+    {
+      "id": "PRODUCTION_TASK_REPOSITORY",
+      "purpose": "Persistent revisioned task queues with optimistic concurrency.",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/production_task_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PRODUCTION_TASK_LIFECYCLE"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "persistence",
+        "queue",
+        "revision",
+        "task"
+      ]
+    },
+    {
+      "id": "SCENE_COMPONENT_SNAPSHOT",
+      "purpose": "Compact deterministic Blender scene/component snapshots and structural diffs.",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/scene_component_snapshot.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "BLENDER_HARD_SURFACE_BUILDER"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "diff",
+        "scene",
+        "snapshot",
+        "scope"
+      ]
+    },
+    {
+      "id": "PRODUCTION_ITERATION_GATE",
+      "purpose": "Block stale or out-of-scope worker iterations before review.",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/production_iteration_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "PRODUCTION_TASK_LIFECYCLE",
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "gate",
+        "mutation",
+        "review",
+        "validation"
+      ]
+    },
+    {
+      "id": "ASSET_STUDIO_VIEW_MODEL",
+      "purpose": "Compact production Studio UI model over canonical runtime records.",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/asset_studio_view_model.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME",
+        "PRODUCTION_TASK_LIFECYCLE",
+        "SCENE_COMPONENT_SNAPSHOT",
+        "DESIGN_SYSTEM_REPOSITORY"
+      ],
+      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "gui",
+        "inspector",
+        "studio"
+      ]
     }
   ],
   "executors": [
@@ -669,6 +952,150 @@
         "tests/unit/test_vegetation_provider_route.py",
         "tests/regression/test_benchmark_87.py"
       ]
+    },
+    {
+      "id": "ASSET_STATE_RUNTIME",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/asset_state_runtime.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_state_runtime.py"
+      ]
+    },
+    {
+      "id": "ASSET_REPOSITORY",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/asset_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_repository.py"
+      ]
+    },
+    {
+      "id": "PARAMETER_GRAPH",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/parameter_graph.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_parameter_graph.py"
+      ]
+    },
+    {
+      "id": "DESIGN_BINDING_RESOLVER",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/design_binding_resolver.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_design_binding_resolver.py"
+      ]
+    },
+    {
+      "id": "REFERENCE_EVIDENCE_REGISTRY",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/reference_evidence_registry.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_production_orchestrator.py"
+      ]
+    },
+    {
+      "id": "COMPONENT_TASK_PACK",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/component_task_pack.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_component_task_pack.py"
+      ]
+    },
+    {
+      "id": "ASSET_PRODUCTION_ORCHESTRATOR",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/asset_production_orchestrator.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_production_orchestrator.py"
+      ]
+    },
+    {
+      "id": "HARD_SURFACE_RECIPE",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/hard_surface_recipe.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_hard_surface_recipe.py"
+      ]
+    },
+    {
+      "id": "BLENDER_HARD_SURFACE_BUILDER",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/blender_hard_surface_builder.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/blender/test_hard_surface_builder.py"
+      ]
+    },
+    {
+      "id": "ASSEMBLY_ANCHOR_GATE",
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "executor": "executors/assembly_anchor_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_assembly_anchor_gate.py"
+      ]
+    },
+    {
+      "id": "DESIGN_SYSTEM_REPOSITORY",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/design_system_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_design_system_repository.py"
+      ]
+    },
+    {
+      "id": "PRODUCTION_TASK_LIFECYCLE",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/production_task_lifecycle.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_production_task_lifecycle.py"
+      ]
+    },
+    {
+      "id": "PRODUCTION_TASK_REPOSITORY",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/production_task_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_production_task_repository.py"
+      ]
+    },
+    {
+      "id": "SCENE_COMPONENT_SNAPSHOT",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/scene_component_snapshot.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_scene_component_snapshot.py"
+      ]
+    },
+    {
+      "id": "PRODUCTION_ITERATION_GATE",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/production_iteration_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_production_iteration_gate.py"
+      ]
+    },
+    {
+      "id": "ASSET_STUDIO_VIEW_MODEL",
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "executor": "executors/asset_studio_view_model.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_studio_view_model.py"
+      ]
     }
   ],
   "tests": [
@@ -690,7 +1117,23 @@
     "tests/unit/test_provider_selection.py",
     "tests/unit/test_registry_parity.py",
     "tests/unit/test_vegetation_provider_route.py",
-    "tests/unit/test_version_constraints.py"
+    "tests/unit/test_version_constraints.py",
+    "tests/blender/test_hard_surface_builder.py",
+    "tests/regression/test_benchmark_89.py",
+    "tests/unit/test_assembly_anchor_gate.py",
+    "tests/unit/test_asset_production_orchestrator.py",
+    "tests/unit/test_asset_repository.py",
+    "tests/unit/test_asset_state_runtime.py",
+    "tests/unit/test_asset_studio_view_model.py",
+    "tests/unit/test_component_task_pack.py",
+    "tests/unit/test_design_binding_resolver.py",
+    "tests/unit/test_design_system_repository.py",
+    "tests/unit/test_hard_surface_recipe.py",
+    "tests/unit/test_parameter_graph.py",
+    "tests/unit/test_production_iteration_gate.py",
+    "tests/unit/test_production_task_lifecycle.py",
+    "tests/unit/test_production_task_repository.py",
+    "tests/unit/test_scene_component_snapshot.py"
   ],
   "generated_artifacts": [
     {
@@ -703,5 +1146,5 @@
       "max_bytes": 153600
     }
   ],
-  "runtime_verification_version": "0.18.0"
+  "runtime_verification_version": "0.19.0"
 }

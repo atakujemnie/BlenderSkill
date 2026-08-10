@@ -11,7 +11,7 @@ from executors.parameter_graph import resolve as resolve_parameters
 from executors.reference_evidence_registry import query as query_reference_evidence
 
 EXECUTOR_ID = "ASSET_PRODUCTION_ORCHESTRATOR"
-EXECUTOR_VERSION = "0.1.2"
+EXECUTOR_VERSION = "0.19.0"
 
 
 def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:

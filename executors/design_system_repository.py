@@ -9,7 +9,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Mapping
 
 EXECUTOR_ID = "DESIGN_SYSTEM_REPOSITORY"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 SCHEMA_VERSION = 1
 RESOURCE_KINDS = {
     "MATERIAL",

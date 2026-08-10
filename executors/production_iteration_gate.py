@@ -8,7 +8,7 @@ from executors.production_task_lifecycle import validate_task
 from executors.scene_component_snapshot import assert_mutation_scope
 
 EXECUTOR_ID = "PRODUCTION_ITERATION_GATE"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 PASS_LIKE = {"PASS", "NOT_REQUIRED"}
 
 

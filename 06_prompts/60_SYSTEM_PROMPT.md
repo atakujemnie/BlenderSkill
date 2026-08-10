@@ -86,3 +86,6 @@ Dla v0.18 minimalny release proof to pinned Blender 5.1.x uruchomiony jako:
 ```
 
 z PASS dla runtime discovery, realnego Geometry Nodes probe i cleanup validation.
+
+
+Runtime release: v0.19.0. Component production MUST route through persistent asset state, scoped task packs and validation gates when applicable.

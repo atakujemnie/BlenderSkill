@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 EXECUTOR_ID = "PRODUCTION_TASK_LIFECYCLE"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 TASK_STATUSES = {
     "QUEUED",
     "READY",

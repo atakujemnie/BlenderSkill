@@ -1,8 +1,114 @@
 {
-  "canonical_benchmark": "07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md",
-  "library_version": "0.18.0",
+  "canonical_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+  "library_version": "0.19.0",
   "runtime_index_schema_version": 1,
   "skills": [
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "executor": "executors/assembly_anchor_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Validate explicit component anchor relations and assembly tolerances.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "anchor",
+        "assembly",
+        "mount",
+        "tolerance"
+      ],
+      "skill_id": "ASSEMBLY_ANCHOR_GATE"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME",
+        "COMPONENT_TASK_PACK",
+        "DESIGN_BINDING_RESOLVER",
+        "PARAMETER_GRAPH"
+      ],
+      "executor": "executors/asset_production_orchestrator.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Prepare one component production task from persistent asset truth.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "component",
+        "orchestrator",
+        "production"
+      ],
+      "skill_id": "ASSET_PRODUCTION_ORCHESTRATOR"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "executor": "executors/asset_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Revisioned filesystem persistence for canonical asset state.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "persistence",
+        "repository",
+        "revision"
+      ],
+      "skill_id": "ASSET_REPOSITORY"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [],
+      "executor": "executors/asset_state_runtime.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Persistent canonical asset/component state and correction semantics.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "component",
+        "correction",
+        "state"
+      ],
+      "skill_id": "ASSET_STATE_RUNTIME"
+    },
+    {
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME",
+        "DESIGN_SYSTEM_REPOSITORY",
+        "PRODUCTION_TASK_LIFECYCLE",
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "executor": "executors/asset_studio_view_model.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Compact production Studio UI model over canonical runtime records.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "asset",
+        "gui",
+        "inspector",
+        "studio"
+      ],
+      "skill_id": "ASSET_STUDIO_VIEW_MODEL"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "HARD_SURFACE_RECIPE"
+      ],
+      "executor": "executors/blender_hard_surface_builder.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Blender 5.1 executor for deterministic hard-surface recipe operations.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "blender",
+        "builder",
+        "hard surface",
+        "recipe"
+      ],
+      "skill_id": "BLENDER_HARD_SURFACE_BUILDER"
+    },
     {
       "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
       "dependencies": [],
@@ -34,6 +140,59 @@
       "skill_id": "CANONICAL_PROVIDER_REGISTRY"
     },
     {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "DESIGN_BINDING_RESOLVER",
+        "PARAMETER_GRAPH",
+        "REFERENCE_EVIDENCE_REGISTRY"
+      ],
+      "executor": "executors/component_task_pack.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Token-bounded component mutation pack with explicit mutable/read-only scope.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "component",
+        "context",
+        "task",
+        "token"
+      ],
+      "skill_id": "COMPONENT_TASK_PACK"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "executor": "executors/design_binding_resolver.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Resolve inherited/overridden/custom design-system bindings and locks.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "binding",
+        "design",
+        "override",
+        "resource"
+      ],
+      "skill_id": "DESIGN_BINDING_RESOLVER"
+    },
+    {
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "dependencies": [
+        "DESIGN_BINDING_RESOLVER"
+      ],
+      "executor": "executors/design_system_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Versioned reusable design resources with reverse usage and impact analysis.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "design system",
+        "impact",
+        "resource",
+        "version"
+      ],
+      "skill_id": "DESIGN_SYSTEM_REPOSITORY"
+    },
+    {
       "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
       "dependencies": [],
       "executor": "executors/expected_provider_gate.py",
@@ -47,6 +206,23 @@
         "runtime"
       ],
       "skill_id": "EXPECTED_PROVIDER_GATE"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "COMPONENT_TASK_PACK"
+      ],
+      "executor": "executors/hard_surface_recipe.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Deterministic intermediate representation for manufactured hard-surface construction.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "geometry",
+        "hard surface",
+        "manufactured",
+        "recipe"
+      ],
+      "skill_id": "HARD_SURFACE_RECIPE"
     },
     {
       "contract": "12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md",
@@ -64,6 +240,23 @@
       "skill_id": "INSTALLED_PROVIDER_DISCOVERY"
     },
     {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "executor": "executors/parameter_graph.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Deterministic relational parameter resolution without LLM arithmetic.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "constraint",
+        "dimension",
+        "parameter",
+        "relation"
+      ],
+      "skill_id": "PARAMETER_GRAPH"
+    },
+    {
       "contract": "12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md",
       "dependencies": [],
       "executor": "executors/procedural_provider.py",
@@ -77,6 +270,58 @@
         "runtime"
       ],
       "skill_id": "PROCEDURAL_GENERATOR_PROVIDER"
+    },
+    {
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "dependencies": [
+        "PRODUCTION_TASK_LIFECYCLE",
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "executor": "executors/production_iteration_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Block stale or out-of-scope worker iterations before review.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "gate",
+        "mutation",
+        "review",
+        "validation"
+      ],
+      "skill_id": "PRODUCTION_ITERATION_GATE"
+    },
+    {
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "dependencies": [
+        "COMPONENT_TASK_PACK"
+      ],
+      "executor": "executors/production_task_lifecycle.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Deterministic dependency-aware production task state machine.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "approval",
+        "queue",
+        "review",
+        "task"
+      ],
+      "skill_id": "PRODUCTION_TASK_LIFECYCLE"
+    },
+    {
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "dependencies": [
+        "PRODUCTION_TASK_LIFECYCLE"
+      ],
+      "executor": "executors/production_task_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Persistent revisioned task queues with optimistic concurrency.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "persistence",
+        "queue",
+        "revision",
+        "task"
+      ],
+      "skill_id": "PRODUCTION_TASK_REPOSITORY"
     },
     {
       "contract": "12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md",
@@ -170,6 +415,38 @@
         "runtime"
       ],
       "skill_id": "PROVIDER_STATE_PROTOCOL"
+    },
+    {
+      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "dependencies": [],
+      "executor": "executors/reference_evidence_registry.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Index and route component/feature scoped multi-view reference evidence.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "evidence",
+        "reference",
+        "roi",
+        "view"
+      ],
+      "skill_id": "REFERENCE_EVIDENCE_REGISTRY"
+    },
+    {
+      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "dependencies": [
+        "BLENDER_HARD_SURFACE_BUILDER"
+      ],
+      "executor": "executors/scene_component_snapshot.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Compact deterministic Blender scene/component snapshots and structural diffs.",
+      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "diff",
+        "scene",
+        "scope",
+        "snapshot"
+      ],
+      "skill_id": "SCENE_COMPONENT_SNAPSHOT"
     },
     {
       "contract": "12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md",
