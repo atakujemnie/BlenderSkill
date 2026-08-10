@@ -41,6 +41,7 @@ SERVER_VERSION = "0.20.0-dev"
 MAX_JSON_BYTES = 4 * 1024 * 1024
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STUDIO_HTML = REPO_ROOT / "studio" / "asset_production_studio.html"
+DESIGN_STUDIO_HTML = REPO_ROOT / "studio" / "design_system_studio.html"
 
 
 def _http_status(result: Mapping[str, Any], *, created: bool = False) -> int:
@@ -100,6 +101,9 @@ def make_handler(data_root: str | Path):
             path = parsed.path.rstrip("/") or "/"
             if path in {"/", "/studio", "/index.html"}:
                 self._serve_file(STUDIO_HTML)
+                return
+            if path in {"/design", "/design-system", "/design_system_studio.html"}:
+                self._serve_file(DESIGN_STUDIO_HTML)
                 return
             if path == "/api/health":
                 self._json(
