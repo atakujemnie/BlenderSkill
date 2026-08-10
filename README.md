@@ -4,10 +4,18 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.17.0 — runtime provider discovery, capability inventory and selection transparency.**
+**v0.18.0 — Runtime Verification & Contract Convergence.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.18 Runtime Verification & Contract Convergence
+
+v0.18 moves BlenderSkill from documented provider behavior to executable runtime evidence. Provider states and metadata are canonicalized, discovery is non-executing, capability probes are explicit and cleanup-verified, version constraints replace exact-only gating, and provider selection preserves discovery/probe/domain/compatibility/license/quality evidence independently.
+
+Normal CI is read-only. A separate pinned Blender 5.1.x workflow proves runtime discovery and a real Geometry Nodes evaluation. `MANIFEST.json` uses schema v2, `_RUNTIME_INDEX.json` is the compact routing entry point, and release tagging is isolated to the manual release workflow.
+
+Canonical regression: **Benchmark 87 — Lafar Runtime Capability Probe v0.18**.
 
 ## v0.17 runtime provider discovery and selection transparency
 

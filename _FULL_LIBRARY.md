@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.17.0 — Full compiled snapshot
+# Blender AI Agent Library v0.18.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -372,623 +372,159 @@ Powoduje to dryf celu. Rozdział ról zmusza do porównywania wykonania z wcześ
 
 # Knowledge Router
 
-## v0.17 installed-provider discovery precedence
+Version: 0.18.0
+Status: CURRENT CONTRACT
 
-Before procedural/environment provider selection:
+The router loads the smallest evidence pack required by the current task. Historical v0.9-v0.17 override sections are not active routing layers; their semantics remain available through Git history, CHANGELOG and regression benchmarks.
+
+## Entry point
+
+```text
+USER TASK
+→ _RUNTIME_INDEX.json
+→ task/reference classification
+→ current Blender/project state
+→ smallest required skill contracts
+→ executor/tool binding
+→ evidence-producing execution
+→ postcondition and quality gates
+```
+
+Do not load `_FULL_LIBRARY.md` as the default routing surface. It is a complete snapshot, not the runtime index.
+
+## Provider-sensitive tasks
+
+For procedural generation, vegetation, external generators, Asset Libraries or add-on-dependent tasks:
 
 ```text
 BLENDER_RUNTIME_ADDON_DISCOVERY
--> INSTALLED_PROVIDER_DISCOVERY
--> EXPECTED_PROVIDER_GATE when expected installations are known
--> provider capability probes
--> PROVIDER_SELECTION_REPORT
--> provider quality/route selection
-```
-
-Do not route `Asset Library empty` to `no provider`. Keep ready assets, generators, external services, utilities and built-ins as separate evidence buckets.
-
-If an expected installed provider is missing from normalized discovery, stop on `DISCOVERY_MISMATCH`; do not silently fall back to a custom generator.
-
----
-
-## v0.16 persistent design-system routing override
-
-For an asset or location assigned to a known location/faction/family, resolve reusable visual language before final appearance:
-
-```text
-location identity
--> LOCATION_DESIGN_SYSTEM_RESOLVE
--> bootstrap only if missing
--> DESIGN_SYSTEM_INHERITANCE_RESOLVE
--> compact resolved design context
--> asset/location authoring
--> DESIGN_SYSTEM_CONFORMANCE_GATE
-```
-
-Load `14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md` and only the relevant domain modules. Do not reload raw logos/textures/reference packs when stable canonical IDs and paths already exist.
-
-Asset-specific technical dimensions remain owned by authoritative asset references. Locked location/organization identity (canonical logo, brand color, material identity etc.) cannot be silently overridden by an asset-local approximation.
-
----
-
-## v0.14 visual-quality routing override
-
-This section has precedence for final environment/vegetation/material authoring while preserving v0.12 physical-integrity rules.
-
-```text
-project/location preflight
--> LOCATION_MATERIAL_LIBRARY find-or-create and persist returned path
--> discover installed providers/asset libraries
--> PROCEDURAL_GENERATOR_PROVIDER runtime probe where executable
--> PROVIDER_QUALITY_SELECT for HERO/MID/BACKGROUND usage
--> source/variation generation
--> PLANTER_VEGETATION_COMPOSITION physical gate when applicable
--> PLANTING_COMPOSITION_QUALITY
--> reference composition fidelity when reference-driven
--> location material-language reuse/adaptation
--> early visual-quality barrier
--> only then LOD/bake/export/runtime
--> CONTEXT_BUDGET_GATE
+→ INSTALLED_PROVIDER_DISCOVERY
+→ canonical provider registry classification
+→ EXPECTED_PROVIDER_GATE when expected installations are known
+→ explicit capability probes
+→ Blender compatibility
+→ requested-domain suitability
+→ license policy
+→ quality suitability
+→ PROVIDER_DECISION_PIPELINE
+→ PROVIDER_SELECTION_REPORT
+→ execution
 ```
 
 Hard rules:
-- do not regenerate a private material language when the location library exists;
-- if the location library is absent, create its canonical skeleton/manifest and report the exact path;
-- runtime compatibility never implies hero-quality suitability;
-- physical placement PASS never implies planting-composition PASS;
-- visually unresolved final assets do not proceed to expensive runtime finishing;
-- reusable provider/material/composition infrastructure belongs in `executors/`, not repeated project-local scripts.
 
----
+- discovery is read-only and never executes provider code;
+- installation/discovery never implies capability `PASS`;
+- unknown add-on = `UNKNOWN`, never implicit `UTILITY`;
+- `builtin_geometry_nodes` remains `PROBE_REQUIRED` until the real probe passes;
+- a relevant rejected/blocked provider remains visible in the report;
+- missing expected provider produces `DISCOVERY_MISMATCH` and blocks fallback;
+- custom/native fallback is legal only after stronger candidates were evaluated and none remains eligible.
 
-## v0.12 geometric-integrity routing override
+Load for this route:
 
-This section has precedence over v0.11/v0.10 sequences later in this document while preserving their specialized routes.
+- `12_procedural_generation/237_PROVIDER_STATE_PROTOCOL.md`;
+- `12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md`;
+- `12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md`;
+- `12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md`;
+- `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md`;
+- `05_execution/80_CONTRACT_EXECUTOR_TEST_PARITY_GATE.md` when changing runtime infrastructure;
+- `05_execution/81_REAL_BLENDER_RUNTIME_VALIDATION.md` when claiming Blender capability.
 
-```text
-runtime pin
--> reference evidence/calibration/conflict arbitration
--> Shape Graph + Appearance Contract + Assembly Relation Contract
--> eligible node
--> EXECUTION_AUTHORIZATION_GATE
--> persist READY_TO_BUILD
--> capture before metrics
--> mutate exactly one node
--> capture after metrics
--> MUTATION_POSTCONDITION_GATE
--> PASS: persist BUILT_UNVERIFIED
--> per-view source proof
--> ASSEMBLY_INTEGRITY_GATE for touched relations
--> topology/section/layer proof as required
--> RECONSTRUCTION_NODE_GATE
--> persist ACCEPTED / FAIL / UNVERIFIED
--> RDL barrier
-```
+## Reference reconstruction
 
-After required nodes close:
+For reference-driven assets:
 
 ```text
-current mutation postconditions
-+ Assembly Relation closure
-+ topology records
-+ required validator negative controls
-+ zero stale/superseded evidence in current bundle
--> GEOMETRIC_INTEGRITY_GATE
--> APPEARANCE_FIDELITY_GATE when required
--> RECON_FIDELITY_GATE
--> runtime
+reference ingestion/calibration
+→ property-level authority and conflict resolution
+→ Shape Graph
+→ Appearance Contract
+→ eligible reconstruction node
+→ execution authorization
+→ one-node mutation
+→ mutation postcondition
+→ registered source/numeric evidence
+→ assembly/topology checks
+→ node acceptance
+→ RDL barrier
+→ geometric integrity
+→ appearance fidelity when required
+→ reconstruction fidelity
+→ runtime finishing
 ```
 
-Hard v0.12 routes:
-- builder returns normally but intended geometry did not change -> `MUTATION_POSTCONDITION_GATE`;
-- parts pierce/z-fight or gap/contact is wrong -> semantic Assembly Relation + `ASSEMBLY_INTEGRITY_GATE`;
-- validator returns PASS on known-broken fixture -> `VALIDATOR_NEGATIVE_CONTROL`, validator cannot own MUST acceptance;
-- accepted host repair -> `DEPENDENCY_INVALIDATOR` before rebuild; old proof becomes `SUPERSEDED`;
-- technical-sheet annotations contaminate silhouette -> `191_REFERENCE_MASK_CONTAMINATION_AND_ANNOTATION_EXCLUSION.md` + reference mask controls;
-- final physical closure -> `GEOMETRIC_INTEGRITY_GATE`; visual/reference success cannot compensate for physical failure.
+Primary reconstruction contracts remain under `10_reconstruction/`. Use the smallest set matching the active RDL, representation class and failing evidence. A builder-local self-check is not canonical acceptance evidence.
 
----
+## Location design system
 
-## v0.11 routing override
-
-This section has precedence over the v0.10 execution routing later in the document.
+For an asset or location assigned to a known location/faction/family:
 
 ```text
-runtime pin
--> reference evidence/calibration
--> REFERENCE_CONFLICT_RESOLVER for incompatible property interpretations
--> Shape Graph + Appearance Contract
--> eligible node
--> EXECUTION_AUTHORIZATION_GATE
--> NODE_STATE_STORE persists READY_TO_BUILD
--> build exactly one node
--> persist BUILT_UNVERIFIED
--> per-view source proof
--> RECONSTRUCTION_NODE_GATE
--> persist ACCEPTED / FAIL / UNVERIFIED
--> RDL barrier
+location identity
+→ LOCATION_DESIGN_SYSTEM_RESOLVE
+→ inheritance resolve
+→ compact resolved design context
+→ authoring
+→ DESIGN_SYSTEM_CONFORMANCE_GATE
 ```
 
-View evidence is typed per view: ORTHO uses registered overlay/numeric evidence, HERO uses supporting `PERSPECTIVE_INSPECTION`, DETAIL uses `LOCAL_FEATURE_ROI`. Before L4/L5 closure run `APPEARANCE_OWNER_COVERAGE`. Missing authorization or `ready_nodes=[]` blocks geometry mutation.
+Asset-specific technical dimensions remain owned by authoritative asset references. Locked location/organization identity cannot be silently replaced by an asset-local approximation.
 
----
+## Visual-quality and vegetation composition
 
-Agent nie ładuje całej biblioteki. Router wybiera najmniejszy Task Pack dla current state, failing evidence i Shape/Appearance ownera.
-
-Canonical rule:
+For final environment/vegetation/material work:
 
 ```text
-intent/current state
--> Task Pack
--> semantic skill
--> executor/tool binding
--> compact evidence
+location material/design context
+→ provider decision pipeline
+→ source/variation generation
+→ physical placement gate
+→ planting/composition quality gate
+→ reference composition fidelity when applicable
+→ early visual-quality barrier
+→ LOD/bake/export/runtime
+→ context budget gate
 ```
 
-## SESSION_PREFLIGHT
+Runtime compatibility never implies hero-quality suitability. Physical placement PASS never implies composition-quality PASS.
 
-Load:
-- Agent Charter;
-- Semantic Skill Registry;
-- Tool Discovery/Profile;
-- Blender 5.1 Compatibility Matrix;
-- Scene Inspection;
-- matching Project Asset Pipeline Profile.
+## Game-ready finishing
 
-Persist Tool Registry, Blender version, project profile, runtime path context.
-
-Nie rediscoveruj stable project facts per asset.
-
----
-
-# Reference reconstruction v0.10
-
-## 1. Technical-sheet / concept analyze
-
-Use `RECON_TECHNICAL_SHEET_ANALYZE`:
-- Evidence Model;
-- ingestion/view classification/authority;
-- measurement/calibration;
-- Reference Analysis Cache.
-
-Preferred skills:
-- `REFERENCE_MEASURE`;
-- `REFERENCE_OVERLAY_VALIDATE` only after registration exists.
-
-Required outputs:
-- source-set revision;
-- reference IDs;
-- property-level authority decisions;
-- conflicts/unknowns;
-- calibrated canonical views.
-
-Po `ANALYZE: PASS` nie wracaj do broad exploration bez konkretnego conflict/ROI/source update.
-
-v0.12 additionally routes incompatible property interpretations through `REFERENCE_CONFLICT_RESOLVER` and contaminated technical-sheet masks through annotation/component cleanup before overlay metrics.
-
-## 2. Shape understanding — mandatory before production geometry
-
-Use `RECON_SHAPE_GRAPH_PLAN`.
-
-Load:
-- `128_RECONSTRUCTION_OBJECT_DECOMPOSITION.md`;
-- `174_RECONSTRUCTION_SHAPE_GRAPH.md`;
-- `176_RECONSTRUCTION_NODE_CONTRACT.md`;
-- `177_SHAPE_CLASSIFICATION_AND_REPRESENTATION.md`;
-- prompt 68;
-- script pattern 95.
-
-Preferred skills:
-- `SHAPE_GRAPH`;
-- `SHAPE_CLASSIFY`.
-
-Required persistent output:
-- Shape Graph revision;
-- G0–G5 hierarchy;
-- RDL0–RDL5 assignment;
-- node parent/dependencies;
-- shape class;
-- authoritative views + controlled properties;
-- node validation contract.
-
-`SHAPE_GRAPH != PASS` blocks production geometry except diagnostic RDL0.
-
-## 3. Appearance understanding — mandatory for 1:1 / L4 / L5
-
-Use `RECON_APPEARANCE_CONTRACT_PLAN`.
-
-Load:
-- `180_REFERENCE_APPEARANCE_CONTRACT.md`;
-- `181_ANTI_CIRCULAR_VISUAL_VALIDATION.md`;
-- `182_PART_BOUNDARY_TRIM_JUNCTION_GRAPH.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
-- v0.12 `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`.
-
-Required output:
-- Appearance Contract revision;
-- MUST/SHOULD visible owners;
-- part-boundary graph;
-- major trim paths;
-- junction owners;
-- edge families;
-- material/emissive regions;
-- detail inventory by region;
-- source reference/ROI per owner;
-- semantic Assembly Relation for important multi-part junctions.
-
-Do not postpone major visible boundaries until material lookdev. For civic/product hard-surface, A1 internal architecture is often as important as outer silhouette. Do not encode `junction = overlap` without source/manufacturing authority.
-
-## 4. RDL0 envelope
-
-Use `RECON_RDL0`.
-
-Only:
-- global bounds;
-- axes;
-- ground/contact;
-- minimal envelope carrier.
-
-Validate FRONT/SIDE/TOP where authoritative.
-
-No detail skills.
-
-## 5. RDL1 primary forms
-
-Use `RECON_NODE_BUILD` **one Shape Node at a time**.
-
-Canonical v0.12 loop amends the preserved shape route:
-
-```text
-SHAPE_GRAPH eligible node
--> choose representation skill
--> EXECUTION_AUTHORIZATION_GATE
--> READY_TO_BUILD
--> capture before
--> build/repair current node only
--> capture after
--> MUTATION_POSTCONDITION_GATE
--> BUILT_UNVERIFIED
--> QA_SCENE_ISOLATE
--> canonical registered required-view validation
--> numeric/section checks
--> ASSEMBLY_INTEGRITY_GATE where touched
--> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL | UNVERIFIED
-```
-
-Strict node acceptance requires canonical validator records. A builder-local `Gate.accept()` is not equivalent.
-
-After all required G1 nodes:
-`SHAPE_GRAPH.evaluate_stage_barrier(RDL1)`.
-
-Do not load G2–G5 implementation skills on RDL1 FAIL.
-
-## 6. Shape representation routing
-
-```text
-axisymmetric profile
--> AXISYMMETRIC_PROFILE
-
-width/depth/corner treatment change across stations
--> SECTION_LOFT_HARD_SURFACE
-
-structural transition between sections
--> SECTION_LOFT_HARD_SURFACE
-
-stable 2D profile + depth
--> EXTRUDED_PROFILE / direct mesh strategy
-
-path-driven profile
--> PROFILE_SWEEP / curves
-
-smooth compound freeform without stable sections
--> SUBD_TOPOLOGY_CONTROL
-```
-
-### Box-abuse trigger
-
-If primary form changes width + depth + corner treatment along an axis:
-
-```text
-PARAMETRIC_BOX + BEVEL
--> not default
--> SHAPE_CLASSIFY
--> MULTI_SECTION_LOFT or SUBD_FREEFORM candidate
-```
-
-## 7. RDL2 secondary structural forms + product architecture
-
-Same node-by-node loop.
-
-Typical:
-- side frames;
-- display housing;
-- utility modules;
-- large service panels;
-- major trims;
-- backrest/end-cap transitions.
-
-At this stage also instantiate/validate Appearance Contract owners for:
-- major part boundaries;
-- trim paths;
-- junctions.
-
-Use `APPEARANCE_REFERENCE_VALIDATE` for reference-anchored owner evidence and `ASSEMBLY_INTEGRITY_GATE` for physical relation semantics.
-
-Required G2 stage barrier before RDL3.
-
-## 8. RDL3 structural features
-
-Leaf skills become available only on `ACCEPTED` hosts:
-
-```text
-narrow seam/groove -> HS_PANEL_LINE
-recess -> boolean/direct recess playbook
-layered glass/content -> LAYER_STACK_VALIDATE
-radial holes/fasteners -> RADIAL_REPEAT
-```
-
-For reference reconstruction, visible structural detail must also close its Appearance Contract owner.
-
-No host acceptance -> feature `BLOCKED`.
-
-Under v0.12 destructive recess/Boolean mutations additionally require `MUTATION_POSTCONDITION_GATE: PASS` before `BUILT_UNVERIFIED`.
-
-## 9. RDL4 edge language
-
-Load:
-- `164_EDGE_LANGUAGE_SYSTEM.md`;
-- `183_EDGE_MATERIAL_DETAIL_FIDELITY.md`;
-- bevel/continuity/SubD support only as implementation details.
-
-Rule:
-
-```text
-shape first
--> reference edge-family contract
--> edge implementation
--> reference-anchored edge proof
-```
-
-Do not pass RDL4 only because protected dimensions survived bevel. Re-run topology integrity after destructive edge work.
-
-## 10. RDL5 surface/detail
-
-Load branding, materials, decals, emissive, civic finish after structural barriers.
-
-For target L4/L5:
-- material segmentation alone is insufficient;
-- require material appearance owners;
-- require emissive region behavior where present;
-- L5 requires complete MUST detail inventory / zero silent omissions.
-
-Use:
-- `APPEARANCE_REFERENCE_VALIDATE`;
-- `MATERIAL_FINISH_CIVIC`;
-- `LAYER_STACK_VALIDATE`;
-- branding/decal validators.
-
-Material-only mutations should preserve geometry signature.
-
-## 11. Appearance final gate
-
-For target >= L4 use `APPEARANCE_FIDELITY_GATE`.
-
-Required categories:
-- part boundaries;
-- trim paths;
-- junctions;
-- edge families;
-- material response;
-- final matched/registered appearance views;
-- emissive/branding when present;
-- detail coverage for L5.
-
-A high global score cannot compensate for a MUST category failure.
-
-## 12. Reconstruction final gate
-
-Under v0.12 first aggregate current physical proof through `GEOMETRIC_INTEGRITY_GATE`, then use:
-- `QA_SCENE_ISOLATE`;
-- `REFERENCE_OVERLAY_VALIDATE`;
-- `APPEARANCE_REFERENCE_VALIDATE`;
-- `RECONSTRUCTION_NODE_GATE` records;
-- RDL barriers;
-- `APPEARANCE_FIDELITY_GATE` for L4/L5;
-- `RECON_FIDELITY_GATE`.
-
-Runtime is forbidden while any required geometric/appearance/reconstruction gate is FAIL/UNVERIFIED.
-
----
-
-# Anti-circular validation route
-
-If an agent locally derives a radius/angle/station/path:
-
-```text
-derived parameter
--> builder-consistency check
--> source-fit/registered reference evidence
--> canonical validator
--> canonical gate
-```
-
-Do not route:
-
-```text
-local builder constant
--> local Gate compares mesh to same constant
--> ACCEPTED
-```
-
-Strict reference-derived evidence requires:
-- `validator_id`;
-- `provenance_id`;
-- `source_reference_id(s)`;
-- `registration_id` for projected evidence.
-
-v0.12 adds: new MUST validators require a known-good PASS and known-broken FAIL through `VALIDATOR_NEGATIVE_CONTROL`.
-
----
-
-# Existing specialized routes
-
-## Panel line
-`HS_PANEL_LINE`; add SubD skill only if evaluated cage/flow requires it.
-
-## SubD topology
-`SUBD_TOPOLOGY_CONTROL` + topology/normals rules.
-
-## Mesh validation
-`MESH_VALIDATE`. Every mesh declares topology intent. v0.12 additionally classifies signed volume, non-planar/concave/high-order n-gon risk; assembly interpenetration remains owned by `ASSEMBLY_INTEGRITY_GATE`.
-
-## Civic material finish
-`MATERIAL_FINISH_CIVIC`; no uniform global grunge.
-
-## Emissive
-`EMISSIVE_HANDOFF`; authored emitter and engine bloom are separate gates.
-
-## UV atlas / runtime bake
-`UV_ATLAS_CONTRACT` -> `BAKE_RUNTIME_TEXTURES` -> `BAKE_VALIDATE`.
-
-Use stable semantic part IDs. Missing atlas assignment = FAIL.
-
-## QA/bake contamination
-`QA_SCENE_ISOLATE`. `hide_viewport` is not render proof.
-
-## Stale external image in Blender
-`IMAGE_CACHE_COHERENCE` before rebake/UV changes.
-
-## Local repair after accepted runtime stages
-`PIPELINE_DAG_PLAN` before replaying build/bake/export. Execute dirty dependency closure only.
-
-For reconstruction repairs, first use `DEPENDENCY_INVALIDATOR` to supersede stale Shape/Appearance/Evidence proof.
-
----
-
-# Game-ready finishing
-
-Use `GAME_READY_FINISH` only after:
-
-```text
-GEOMETRIC_INTEGRITY_GATE PASS
-and
-Shape/RDL proof PASS
-and
-APPEARANCE_FIDELITY_GATE PASS when required
-and
-RECON_FIDELITY_GATE PASS
-```
-
-Preferred skills:
-- `MESH_VALIDATE`;
-- `UV_ATLAS_CONTRACT`;
-- `BAKE_RUNTIME_TEXTURES`;
-- `BAKE_VALIDATE`;
-- `IMAGE_CACHE_COHERENCE`;
-- `PIPELINE_DAG_PLAN`;
-- `RUNTIME_PATH_RESOLVE`;
-- `RUNTIME_PACKAGE_VALIDATE`;
-- `EXPORT_ROUNDTRIP_VALIDATE`;
-- `ASSET_COMPLETION`.
-
-Order:
+Game-ready finishing is downstream of accepted reconstruction/appearance state:
 
 ```text
 runtime path
--> LOD/collision
--> UV contract
--> dirty bake stages
--> bake validation/cache coherence
--> runtime material
--> export/package readback
--> round-trip invariants
--> baked runtime QA
--> completion gate
+→ LOD/collision
+→ UV contract
+→ dirty bake stages
+→ bake validation/cache coherence
+→ runtime material
+→ export/package readback
+→ round-trip invariants
+→ runtime QA
+→ completion gate
 ```
 
-Runtime LOD is downstream from RDL and must not be used as reconstruction progression state.
+Do not use runtime LOD as reconstruction progression state.
 
----
+## Failure routing
 
-# Pipeline integration
+Route from the failing evidence dimension, not from generic task intent:
 
-Use `PIPELINE_INTEGRATION` only when target is Level D.
+- no runtime provider evidence → provider discovery/probe contracts;
+- reference disagreement → reference conflict/evidence contracts;
+- intended geometry did not change → mutation postcondition gate;
+- contact/interpenetration problem → assembly integrity;
+- known-broken fixture passes → validator negative control;
+- visual form differs despite valid topology → shape/appearance fidelity;
+- stale external image → image cache coherence;
+- accepted host changed → dependency invalidation before downstream replay;
+- generated artifacts dirty → rebuild and commit them in the feature branch; CI must not commit them.
 
-Load verified Project Profile, runtime-root, package, catalog, Engine Smoke Test, Test Oracle.
+## Runtime verification authority
 
-For current RPG profile reuse:
-- `<repo>/Assets/GameAssets`;
-- one glTF multi-node LOD packaging;
-- current MIRROR_X contract while valid;
-- `Source/Engine/AssetCatalog.cpp`;
-- `Engine::Model::Load`;
-- `Tests/ModelTests.cpp`;
-- `Build/windows-debug` / `ModelTests`;
-- direct executable exit status.
-
-Blender glTF import = Level C round-trip evidence, not Level D.
-
----
-
-# Failure routing principles
-
-```text
-builder runs but intended recess/feature absent
--> MUTATION_POSTCONDITION_GATE
-
-parts pierce/z-fight / gap-contact wrong
--> Assembly Relation + ASSEMBLY_INTEGRITY_GATE
-
-validator passes known-broken fixture
--> VALIDATOR_NEGATIVE_CONTROL
-
-accepted host repaired
--> DEPENDENCY_INVALIDATOR
-
-outer silhouette passes but product still looks wrong
--> Appearance Contract / part boundaries / edge/material/detail owners
-
-looks wrong in one view
--> registration/parameters/shape representation
-
-FRONT pass + SIDE/TOP compound-form fail
--> SHAPE_CLASSIFY before random parameter tweaking
-
-child feature fails because host contour wrong
--> parent Shape Node owner
-
-trim exists but looks like a highlight / wrong path
--> PART_BOUNDARY_TRIM_JUNCTION + APPEARANCE_REFERENCE_VALIDATE
-
-technical-sheet leader/text contaminates product mask
--> annotation exclusion/component filter
-
-correct source geometry + exported dimension fail
--> EXPORT_ROUNDTRIP_VALIDATE
-
-parseable glTF + missing TEXCOORD_0
--> RUNTIME_PACKAGE_VALIDATE
-
-ambiguous test success
--> TEST_ORACLE
-```
-
-After one corrected retry of same strategy, second proven failure requires re-inspection + strategy switch.
-
----
-
-# Output budget
-
-Use:
-
-```text
-compute locally
--> compact node/appearance/assembly/stage report
--> decision
-```
-
-Do not return raw arrays/full logs/full generated scripts unless diagnostic need requires them.
+A claim that depends on Blender runtime is valid only when supported by a real Blender process. CPython tests can validate parsing, routing and decision logic but cannot substitute for Blender runtime evidence.
 
 
 ---
@@ -997,267 +533,49 @@ Do not return raw arrays/full logs/full generated scripts unless diagnostic need
 
 # Semantic Skill Registry
 
-## v0.17 provider-discovery registry precedence
+Version: 0.18.0
+Status: CURRENT CONTRACT
 
-The detailed v0.17 registry is `00_governance/14_PROVIDER_DISCOVERY_SKILL_REGISTRY_V017.md`.
+This file is the active semantic registry entry point. Historical version-specific override tables are not stacked here. Domain details remain in their current layer indexes and contracts; historical behavior remains in Git history, CHANGELOG and regression benchmarks.
 
-| Skill ID | Executor | Maturity |
-|---|---|---|
-| `INSTALLED_PROVIDER_DISCOVERY` | `executors/blender_addon_inventory.py` + `executors/installed_provider_inventory.py` | EXECUTOR_READY |
-| `EXPECTED_PROVIDER_GATE` | `executors/expected_provider_gate.py` | EXECUTOR_READY |
-| `PROVIDER_SELECTION_REPORT` | `executors/provider_selection_report.py` | EXECUTOR_READY |
-| `PROVIDER_CAPABILITY_PROBE_MATRIX` | provider-specific adapters + `12_procedural_generation/233` | CONTRACT_READY |
-| `VEGETATION_PROVIDER_ROUTE` | `12_procedural_generation/236` | CONTRACT_READY |
+## Runtime verification skills
 
-For procedural/environment content, these precede v0.14 provider-quality selection and any custom fallback.
-
-## v0.16 persistent design-system registry precedence
-
-The detailed v0.16 registry is `00_governance/12_LOCATION_DESIGN_SYSTEM_SKILL_REGISTRY_V016.md`.
-
-Canonical new executable skills:
-
-| Skill ID | Executor | Maturity |
-|---|---|---|
-| `LOCATION_DESIGN_SYSTEM_RESOLVE` | `executors/design_system_resolver.py` | EXECUTOR_READY |
-| `LOCATION_DESIGN_SYSTEM_MANIFEST` | `executors/design_system_manifest.py` | EXECUTOR_READY |
-| `DESIGN_SYSTEM_INHERITANCE_RESOLVE` | `executors/design_system_inheritance.py` | EXECUTOR_READY |
-| `DESIGN_SYSTEM_RESOURCE_PROMOTE` | `executors/design_system_resource_registry.py` | EXECUTOR_READY |
-| `DESIGN_SYSTEM_CONFORMANCE_GATE` | `executors/design_system_conformance.py` | EXECUTOR_READY |
-
-For known-location L4/L5/final art-direction work, the resolved design system and conformance gate are upstream of runtime completion.
-
-## Execution maturity
-
-- `KNOWLEDGE_ONLY` — guidance exists, no stable execution contract.
-- `CONTRACT_READY` — stable inputs/outputs/validation exist.
-- `EXECUTOR_READY` — tested implementation callable through stable API.
-- `RUNTIME_BOUND` — executor mapped to current runtime tools.
-
-Do not claim higher maturity without evidence.
-
-
-## v0.14 registry additions
-
-| Skill ID | Purpose | Canonical implementation | Maturity |
+| Skill ID | Contract | Executor | Maturity |
 |---|---|---|---|
-| `LOCATION_MATERIAL_LIBRARY` | resolve/create persistent material language per location and return its path | `12_procedural_generation/220`; `executors/location_material_library.py` | EXECUTOR_READY |
-| `PROVIDER_QUALITY_SELECT` | choose visually suitable provider independently of runtime compatibility | `12_procedural_generation/221`; `executors/provider_quality.py` | EXECUTOR_READY |
-| `PLANTING_COMPOSITION_QUALITY` | validate masses/layers/coverage/periodicity/clone repetition | `12_procedural_generation/222`; `executors/planting_composition_quality.py` | EXECUTOR_READY |
-| `VEGETATION_SOURCE_QUALITY` | enforce library-first quality by usage class | `12_procedural_generation/223` | CONTRACT_READY |
-| `PLANTING_REFERENCE_FIDELITY` | compact reference-vs-candidate planting massing proof | `12_procedural_generation/224` | CONTRACT_READY |
-| `LOCATION_MATERIAL_AUTHORING` | reuse/adapt shared location material families before creating new ones | `03_modeling/46` | CONTRACT_READY |
-| `CONTEXT_BUDGET_GATE` | block excessive context/code churn and reusable-executor misses | `05_execution/79`; `executors/context_budget_gate.py` | EXECUTOR_READY |
+| BLENDER_RUNTIME_ADDON_DISCOVERY | `12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md` | `executors/blender_addon_inventory.py` | EXECUTOR_READY |
+| INSTALLED_PROVIDER_DISCOVERY | `12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md` | `executors/installed_provider_inventory.py` | EXECUTOR_READY |
+| EXPECTED_PROVIDER_GATE | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/expected_provider_gate.py` | EXECUTOR_READY |
+| PROCEDURAL_GENERATOR_PROVIDER | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/procedural_provider.py` | EXECUTOR_READY |
+| PROVIDER_CAPABILITY_PROBE | `12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md` | `executors/provider_probe_runner.py` | EXECUTOR_READY |
+| PROVIDER_QUALITY_SELECT | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/provider_quality.py` | EXECUTOR_READY |
+| PROVIDER_SELECTION_REPORT | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/provider_selection_report.py` | EXECUTOR_READY |
+| PROVIDER_DECISION_PIPELINE | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/provider_orchestrator.py` | EXECUTOR_READY |
 
-v0.13 procedural skills remain canonical and are now explicitly downstream of provider-quality selection when final visual quality matters.
+The detailed v0.18 runtime registry is `00_governance/16_RUNTIME_VERIFICATION_SKILL_REGISTRY_V018.md`.
 
-## v0.12 registry additions and precedence
+## Reconstruction domain
 
-These skills have precedence over weaker v0.11/v0.10 execution routes:
+Reconstruction skills are routed from `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` and the current Knowledge Router. Core semantic families include reference ingestion/measurement, Shape Graph, representation selection, node execution authorization, mutation postconditions, assembly integrity, registered visual/numeric evidence, RDL barriers, geometric integrity, appearance fidelity and final reconstruction fidelity.
 
-| Skill ID | Purpose | Canonical implementation | Maturity |
-|---|---|---|---|
-| `MUTATION_POSTCONDITION_GATE` | prove an authorized geometry mutation actually produced its intended postcondition | `05_execution/76`; `executors/mutation_postcondition_gate.py` | CONTRACT_READY |
-| `ASSEMBLY_INTEGRITY_GATE` | relation-aware gap/contact/embedding/interpenetration validation | `189_ASSEMBLY_RELATION_AND_INTERPENETRATION_CONTRACT.md`; `executors/assembly_integrity_gate.py` | CONTRACT_READY |
-| `DEPENDENCY_INVALIDATOR` | propagate repair impact across Shape/Appearance/Evidence revisions | `05_execution/77`; `executors/dependency_invalidator.py` | CONTRACT_READY |
-| `VALIDATOR_NEGATIVE_CONTROL` | prove that a MUST validator rejects its known-broken failure fixture | `190_ADVERSARIAL_VALIDATION_AND_NEGATIVE_CONTROLS.md`; `executors/validator_negative_control.py` | CONTRACT_READY |
-| `GEOMETRIC_INTEGRITY_GATE` | final non-compensating physical-geometry closure before fidelity/runtime | `05_execution/78`; `executors/geometric_integrity_gate.py` | CONTRACT_READY |
+## Game-ready domain
 
-Strengthened in v0.12:
-- `NODE_STATE_STORE` — requires mutation-postcondition proof before `BUILT_UNVERIFIED`;
-- `RECONSTRUCTION_NODE_GATE` — requires geometric integrity evidence for authorized production nodes;
-- `MESH_VALIDATE` — classifies non-planar/concave/high-order n-gons and signed closed volume;
-- `REFERENCE_OVERLAY_VALIDATE` — supports annotation exclusion/component filtering;
-- `RECON_FIDELITY_GATE` and `ASSET_COMPLETION` — require final geometric-integrity proof for L4/L5/Level A closure.
+Game-ready skills remain under `04_game_ready/`, `08_scripts/`, `09_engine/` and current execution contracts. Runtime finishing is permitted only after upstream geometry/appearance/reconstruction gates required by the task have passed.
 
-Canonical production order:
+## Location design-system domain
 
-```text
-eligible node
--> EXECUTION_AUTHORIZATION_GATE
--> NODE_STATE_STORE: READY_TO_BUILD
--> one-node mutation
--> MUTATION_POSTCONDITION_GATE
--> NODE_STATE_STORE: BUILT_UNVERIFIED
--> source QA
--> ASSEMBLY_INTEGRITY_GATE for touched relations
--> MESH_VALIDATE / section/layer evidence as required
--> RECONSTRUCTION_NODE_GATE
--> ACCEPTED
-```
+Location/faction/family identity resolves through the `14_design_system/` layer. Stable canonical IDs, shared materials, branding and inherited design language are reused rather than regenerated per asset.
 
-Before final fidelity/runtime:
+## Procedural and vegetation domain
 
-```text
-all required nodes/relations current
--> GEOMETRIC_INTEGRITY_GATE
--> APPEARANCE_FIDELITY_GATE when required
--> RECON_FIDELITY_GATE
--> runtime
-```
+Procedural provider identity is owned by `data/provider_registry.json`; runtime suitability is owned by the v0.18 discovery/probe/decision pipeline. Composition and visual-quality gates under `12_procedural_generation/` remain separate from provider capability.
 
-Repair of accepted geometry routes first through `DEPENDENCY_INVALIDATOR`. MUST acceptance validators must have `VALIDATOR_NEGATIVE_CONTROL` proof before promotion to `EXECUTOR_READY`.
+## Maturity rule
 
-## Canonical registry
+`EXECUTOR_READY` is an executable claim, not a documentation label. It requires contract/executor/test parity validated by `tools/validate_registry_parity.py`. `CONTRACT_READY` means the contract may be routed but executable enforcement is not yet release-authoritative.
 
-| Skill ID | Purpose | Canonical knowledge | Maturity | Validation |
-|---|---|---|---|---|
-| `RECONSTRUCT_REFERENCE` | end-to-end reference reconstruction controller | `10_reconstruction/100_RECONSTRUCTION_LAYER_INDEX.md` | CONTRACT_READY | evidence, Shape Graph, Appearance Contract, integrity, RDL barriers, fidelity gates |
-| `REFERENCE_MEASURE` | compact reference measurement | `08_scripts/91_REFERENCE_MEASUREMENT_EXECUTOR_PATTERN.md`; `executors/reference_measure.py` | CONTRACT_READY | provenance, calibration, confidence |
-| `REFERENCE_OVERLAY_VALIDATE` | registered source-vs-candidate silhouette/ROI comparison | `142`, `143`, `171`, `191`; `executors/reference_overlay_validate.py` | CONTRACT_READY | IoU, contour delta, MUST ROI, annotation-clean product mask |
-| `REFERENCE_CONFLICT_RESOLVER` | per-property multi-view arbitration | `184`; `executors/reference_conflict_resolver.py` | CONTRACT_READY | property authority, no silent averaging |
-| `SHAPE_GRAPH` | validate design hierarchy/dependencies/readiness/stage barriers | `174`; `executors/shape_graph.py` | CONTRACT_READY | DAG, levels, RDL, readiness |
-| `SHAPE_CLASSIFY` | choose mathematical representation before Blender technique | `177` | CONTRACT_READY | evidence-backed shape class, rejected alternatives |
-| `EXECUTION_AUTHORIZATION_GATE` | hard permission for exactly one geometry mutation | `05_execution/73`; `executors/execution_authorization_gate.py` | CONTRACT_READY | graph/node revision, dependencies, prior RDL |
-| `NODE_STATE_STORE` | persistent transition/checkpoint validation | `05_execution/74`; `executors/node_state_store.py` | CONTRACT_READY | canonical transitions, namespaces, mutation postcondition |
-| `MUTATION_POSTCONDITION_GATE` | validate actual effect of one mutation | `05_execution/76`; `executors/mutation_postcondition_gate.py` | CONTRACT_READY | before/after geometry, Boolean bite, transforms, volume, feature probe |
-| `ASSEMBLY_INTEGRITY_GATE` | physical relation integrity between product parts | `189`; `executors/assembly_integrity_gate.py` | CONTRACT_READY | semantic relation + gap/contact/embedding/interpenetration metrics |
-| `DEPENDENCY_INVALIDATOR` | invalidate downstream state/evidence after repair | `05_execution/77`; `executors/dependency_invalidator.py` | CONTRACT_READY | descendants, owners, revisions, supersession |
-| `VALIDATOR_NEGATIVE_CONTROL` | adversarial bite test for validators | `190`; `executors/validator_negative_control.py` | CONTRACT_READY | known-good PASS + known-broken FAIL |
-| `GEOMETRIC_INTEGRITY_GATE` | aggregate mutation/assembly/topology/control freshness before final fidelity | `05_execution/78`; `executors/geometric_integrity_gate.py` | CONTRACT_READY | postconditions, relations, topology, negative controls, stale evidence |
-| `RECONSTRUCTION_NODE_GATE` | proof-bearing acceptance of one Shape Node | `176`, `178`, `181`, `189`, `190`; `executors/reconstruction_node_gate.py` | CONTRACT_READY | parent/dependency, authorization, postcondition, assembly integrity, source proof |
-| `APPEARANCE_REFERENCE_VALIDATE` | internal boundary/trim/edge/material/detail validation | `180`–`183` | CONTRACT_READY | source reference + registration + owner-class metrics |
-| `APPEARANCE_OWNER_COVERAGE` | MUST Appearance Owner inventory closure | `186`; `executors/appearance_owner_coverage.py` | CONTRACT_READY | no missing/unverified MUST owners |
-| `SECTION_LOFT_HARD_SURFACE` | deterministic multi-section hard-surface construction | `179`; `executors/section_loft.py` | CONTRACT_READY | station order, correspondence, section proof |
-| `LAYER_STACK_VALIDATE` | layered assembly visibility/order | `172`; `executors/layer_stack_validate.py` | CONTRACT_READY | front-to-back order, burial, facing |
-| `APPEARANCE_FIDELITY_GATE` | non-compensating L4/L5 visible-product gate | `05_execution/72`; `executors/appearance_fidelity_gate.py` | CONTRACT_READY | boundaries, trim, junction, edge, material, detail |
-| `RECON_FIDELITY_GATE` | final proof-bearing Level A reconstruction gate | `05_execution/69`; `executors/fidelity_gate.py` | CONTRACT_READY | source-anchored evidence, canonical views, MUST features, geometric integrity |
-| `QA_REFERENCE` | reconstruction visual/numeric QA | `141`–`148`, `178`, `180`–`183`, `191` | CONTRACT_READY | node/stage/final evidence, appearance owners, cleaned product masks |
-| `AXISYMMETRIC_PROFILE` | revolved hard-surface profile | `03_modeling/45`; `executors/axisymmetric_profile.py` | CONTRACT_READY | bounds, continuity, topology |
-| `RADIAL_REPEAT` | repeated radial details | playbook 110; `executors/radial_repeat.py` | CONTRACT_READY | count, phase, annulus |
-| `HS_PANEL_LINE` | narrow seam/groove | `blender-agent-procedural-hard-surface-panel-lines.md` | CONTRACT_READY | path/profile/topology |
-| `SUBD_TOPOLOGY_CONTROL` | Catmull-Clark cage design/repair | `blender-agent-subdivision-topology-control.md` | CONTRACT_READY | evaluated surface, pinching, continuity |
-| `TRIM_SHEET_UV` | trim-sheet UV strategy | `03_modeling/40_TRIM_SHEETS.md` | CONTRACT_READY | region/density/orientation |
-| `MESH_VALIDATE` | contract-aware mesh/topology integrity audit | `08_scripts/92`; `executors/mesh_validate.py` | EXECUTOR_READY | manifold, volume orientation, n-gon risk, UV/tris |
-| `RUNTIME_COMPAT` | Blender/runtime API discovery | `02_blender_api/29_BLENDER_5_1_COMPATIBILITY_MATRIX.md`; `executors/runtime_compat.py` | CONTRACT_READY | discovered enums/properties/paths |
-| `QA_SCENE_ISOLATE` | non-destructive QA/bake isolation | `08_scripts/83`; `executors/qa_scene_isolation.py` | CONTRACT_READY | state restoration, contamination prevention |
-| `CANONICAL_SKILL_RUNTIME_PIN` | version/commit/single-root preflight | `188`; `executors/runtime_source_pin.py` | CONTRACT_READY | exact runtime source |
-| `MATERIAL_FINISH_CIVIC` | civic product material finish | playbook 114 | CONTRACT_READY | macro/meso/micro response |
-| `EMISSIVE_HANDOFF` | authored emitter vs runtime glow | `04_game_ready/49` | CONTRACT_READY | emitter/export/runtime status |
-| `UV_ATLAS_CONTRACT` | stable atlas ownership across LODs | `04_game_ready/52`; `executors/uv_atlas_contract.py` | CONTRACT_READY | semantic IDs, LOD stability |
-| `BAKE_RUNTIME_TEXTURES` | deterministic runtime texture bake | `04_game_ready/50`, `51`; `executors/bake_runtime_textures.py` | CONTRACT_READY | bake result/channel semantics |
-| `BAKE_VALIDATE` | semantic baked-map validation | `08_scripts/93`; `executors/bake_validate.py` | CONTRACT_READY | range/region/degeneracy |
-| `IMAGE_CACHE_COHERENCE` | disk/Blender image synchronization | `02_blender_api/30`; `executors/image_cache_coherence.py` | CONTRACT_READY | path/reload/colorspace/binding |
-| `PIPELINE_DAG_PLAN` | minimal dirty runtime-stage closure | `05_execution/68`; `executors/pipeline_dag.py` | CONTRACT_READY | DAG execute/reuse plan |
-| `RUNTIME_PATH_RESOLVE` | canonical engine-visible asset root | `09_engine/95`; `executors/runtime_path_resolver.py` | CONTRACT_READY | root/containment |
-| `RUNTIME_PACKAGE_VALIDATE` | glTF nodes/materials/attributes/transforms | `09_engine/94`, `96`; `executors/gltf_package_validate.py` | CONTRACT_READY | package/TEXCOORD/TRS |
-| `EXPORT_ROUNDTRIP_VALIDATE` | re-import export and compare invariants | `05_execution/67`; `executors/export_roundtrip_validate.py` | CONTRACT_READY | dimensions/contact/material survival |
-| `TEST_ORACLE` | trustworthy exit status and bite tests | `05_execution/66`; `executors/test_oracle.py` | CONTRACT_READY | direct assertion/negative mutation |
-| `ENGINE_INTEGRATION_PROOF` | Level D target-engine proof | `09_engine/96` | CONTRACT_READY | production loader/instantiation |
-| `ASSET_COMPLETION` | determine true A/B/C/D completion | `00_governance/07`; `executors/completion_gate.py` | CONTRACT_READY | hierarchical completion gates including geometric integrity |
-| `ASSET_CATALOG_INTEGRATE` | project catalog registration | `09_engine/93_ASSET_CATALOG_INTEGRATION_PROTOCOL.md` | KNOWLEDGE_ONLY | readback/unique ID/import |
-| `EXPORT_VALIDATE` | export and post-export checks | `04_game_ready/45_GLTF_EXPORT.md`, `05_execution/53_FINAL_VALIDATION.md` | KNOWLEDGE_ONLY | runtime contract |
+## Runtime index
 
-## Routing laws
-
-### Representation before operator
-
-```text
-reference evidence
--> Shape Graph
--> Shape Class
--> semantic construction skill
--> Blender implementation
-```
-
-Do not default compound primary forms to `cube + bevel` when width/depth/corner behavior varies across stations.
-
-### Host-before-leaf
-
-Leaf/detail skills only run on accepted hosts. A host changing during repair invalidates dependent leaves before they can remain green.
-
-### Anti-circular validation
-
-```text
-local measurement adapter
--> compact artifact
--> canonical validator
--> canonical gate
-```
-
-A local builder/helper may measure. It may not redefine acceptance semantics.
-
-### Validator bite law
-
-For MUST acceptance, a new validator requires a negative-control fixture representing the same failure class. A test that only passes known-good input is insufficient.
-
-### Runtime lock
-
-For L4/L5:
-
-```text
-GEOMETRIC_INTEGRITY_GATE != PASS
-or
-APPEARANCE_FIDELITY_GATE != PASS
-or
-RECON_FIDELITY_GATE != PASS
--> runtime LOD/UV/bake/export FORBIDDEN
-```
-
-## Packaged executor status
-
-```text
-REFERENCE_MEASURE           -> executors/reference_measure.py               CONTRACT_READY
-REFERENCE_OVERLAY_VALIDATE  -> executors/reference_overlay_validate.py      CONTRACT_READY
-SHAPE_GRAPH                 -> executors/shape_graph.py                     CONTRACT_READY
-EXECUTION_AUTHORIZATION_GATE-> executors/execution_authorization_gate.py    CONTRACT_READY
-NODE_STATE_STORE            -> executors/node_state_store.py                CONTRACT_READY
-MUTATION_POSTCONDITION_GATE -> executors/mutation_postcondition_gate.py     CONTRACT_READY
-ASSEMBLY_INTEGRITY_GATE     -> executors/assembly_integrity_gate.py         CONTRACT_READY
-DEPENDENCY_INVALIDATOR      -> executors/dependency_invalidator.py          CONTRACT_READY
-VALIDATOR_NEGATIVE_CONTROL  -> executors/validator_negative_control.py      CONTRACT_READY
-GEOMETRIC_INTEGRITY_GATE    -> executors/geometric_integrity_gate.py        CONTRACT_READY
-RECONSTRUCTION_NODE_GATE    -> executors/reconstruction_node_gate.py        CONTRACT_READY
-SECTION_LOFT_HARD_SURFACE   -> executors/section_loft.py                    CONTRACT_READY
-LAYER_STACK_VALIDATE        -> executors/layer_stack_validate.py            CONTRACT_READY
-APPEARANCE_FIDELITY_GATE    -> executors/appearance_fidelity_gate.py        CONTRACT_READY
-RECON_FIDELITY_GATE         -> executors/fidelity_gate.py                   CONTRACT_READY
-AXISYMMETRIC_PROFILE        -> executors/axisymmetric_profile.py            CONTRACT_READY
-RADIAL_REPEAT               -> executors/radial_repeat.py                   CONTRACT_READY
-MESH_VALIDATE               -> executors/mesh_validate.py                   EXECUTOR_READY
-RUNTIME_COMPAT              -> executors/runtime_compat.py                  CONTRACT_READY
-QA_SCENE_ISOLATE            -> executors/qa_scene_isolation.py              CONTRACT_READY
-ASSET_COMPLETION            -> executors/completion_gate.py                 CONTRACT_READY
-UV_ATLAS_CONTRACT           -> executors/uv_atlas_contract.py               CONTRACT_READY
-BAKE_RUNTIME_TEXTURES       -> executors/bake_runtime_textures.py           CONTRACT_READY
-BAKE_VALIDATE               -> executors/bake_validate.py                   CONTRACT_READY
-IMAGE_CACHE_COHERENCE       -> executors/image_cache_coherence.py           CONTRACT_READY
-PIPELINE_DAG_PLAN           -> executors/pipeline_dag.py                    CONTRACT_READY
-RUNTIME_PACKAGE_VALIDATE    -> executors/gltf_package_validate.py           CONTRACT_READY
-EXPORT_ROUNDTRIP_VALIDATE   -> executors/export_roundtrip_validate.py       CONTRACT_READY
-RUNTIME_PATH_RESOLVE        -> executors/runtime_path_resolver.py           CONTRACT_READY
-TEST_ORACLE                 -> executors/test_oracle.py                     CONTRACT_READY
-```
-
-## Reuse before generation
-
-Before generating helpers search this registry and `executors/`.
-
-Do not locally rewrite compatible implementations of:
-- Shape Graph validation/readiness/stage barriers;
-- node acceptance aggregation;
-- mutation postcondition semantics;
-- assembly relation acceptance;
-- dependency invalidation/evidence supersession;
-- validator bite-test aggregation;
-- appearance/reconstruction/geometric fidelity aggregation;
-- reference measurement/overlay;
-- layered visibility validation;
-- multi-section loft ring/bridge generation;
-- mesh/bake/cache/package/path/test validators.
-
-## Registry update rule
-
-A new production skill requires:
-1. stable Skill ID;
-2. canonical knowledge path;
-3. maturity;
-4. capabilities;
-5. validation owner;
-6. Knowledge Router route;
-7. MANIFEST inclusion when canonical Markdown is added.
-
-Registry, Router, Task Packs and Manifest must agree.
+Agents should enter the registry through `_RUNTIME_INDEX.json`, select the minimal matching contracts, then load detailed modules. `_FULL_LIBRARY.md` is not the default routing surface.
 
 
 ---
@@ -13421,401 +12739,94 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset and Location Agent v0.17
+# System Prompt — Blender Asset and Location Agent v0.18.0
 
-Jesteś technical artistem/modelerem 3D specjalizującym się w Blender 5.1, reference reconstruction, procedural content and runtime game environments.
+Jesteś technical artistem/modelerem 3D pracującym w Blender 5.1.x nad reference reconstruction, procedural content i runtime game environments. Nie masz tylko wygenerować geometrii. Masz przeprowadzić audytowalny pipeline od źródła i aktualnego runtime do zwalidowanego assetu lub lokacji.
 
-Nie masz po prostu „wygenerować modelu”. Masz przeprowadzić kontrolowany pipeline od dowodów referencyjnych do zwalidowanego assetu albo kompletnej lokacji.
+## Runtime entry
 
-## 0.17 provider-discovery precedence
+Zaczynaj od `_RUNTIME_INDEX.json`, potem ładuj wyłącznie kontrakty potrzebne dla bieżącego zadania i aktualnie failing evidence. `_FULL_LIBRARY.md` jest pełnym snapshotem, nie domyślnym kontekstem runtime.
 
-For procedural/environment work where installed providers may help:
-- inspect the active Blender runtime; do not infer installed add-ons from an empty Asset Library directory;
-- separate ready asset sources, procedural generators, external generators, utilities and built-in backends;
-- if the user/project names installed providers, treat that list as expected evidence and run `EXPECTED_PROVIDER_GATE`;
-- missing expected providers are `DISCOVERY_MISMATCH`, not permission to fall back;
-- discovered-but-untested providers are `PROBE_REQUIRED`, not `UNAVAILABLE`;
-- produce `PROVIDER_SELECTION_REPORT` before custom/native fallback, including relevant rejected providers and reasons.
+## Provider verification
 
-`READY_ASSET_SOURCE: NONE` must never be summarized as `NO_PROVIDERS` when generators/backends are present.
-
-## 0.16 design-system precedence
-
-For any known-location/faction asset before final appearance:
-- resolve `14_design_system/400_LOCATION_DESIGN_SYSTEM_LAYER_INDEX.md`;
-- call `LOCATION_DESIGN_SYSTEM_RESOLVE`;
-- reuse the existing canonical system when present;
-- if missing and creation is authorized, bootstrap one canonical root and populate it from authoritative references/accepted assets;
-- resolve Location -> Organization -> Family -> Asset inheritance;
-- consume canonical material/branding/component/form/light/weathering IDs;
-- run `DESIGN_SYSTEM_CONFORMANCE_GATE` before final appearance/runtime closure.
-
-Never redraw a canonical logo or generate another generic equivalent of an existing approved material/component merely because the current asset folder does not contain it.
-
-## 0.15 precedence
-
-For complete interiors/exteriors/streets/rooms/plazas/buildings load:
-- `00_governance/09_LOCATION_ASSEMBLY_EXTENSION.md`;
-- `00_governance/10_LOCATION_SKILL_REGISTRY_V015.md`;
-- `13_environment_assembly/300_LOCATION_RECONSTRUCTION_LAYER_INDEX.md`;
-- `06_prompts/70_LOCATION_RECONSTRUCTION_PLANNER_PROMPT.md`.
-
-The v0.15 Location layer is above, not instead of, v0.12-v0.14 asset/procedural rules.
-
-## Non-negotiable asset laws retained
+Jeżeli zadanie może używać add-onów, Asset Libraries, procedural generators lub external generators:
 
 ```text
-NO READY_TO_BUILD NODE + EXECUTION_AUTHORIZATION_GATE PASS
--> NO PRODUCTION GEOMETRY MUTATION
-
-LOCAL_BUILDER PASS
--> NOT ENOUGH FOR BUILT_UNVERIFIED
-
-authorized mutation
--> MUTATION_POSTCONDITION_GATE PASS
--> BUILT_UNVERIFIED
-
-BUILT_UNVERIFIED
--> source QA
--> ASSEMBLY_INTEGRITY_GATE where relations exist
--> RECONSTRUCTION_NODE_GATE
--> ACCEPTED | FAIL | UNVERIFIED
+read-only Blender discovery
+→ canonical provider registry
+→ expected-provider gate
+→ explicit capability probes
+→ Blender compatibility
+→ requested domain
+→ license policy
+→ quality
+→ auditable selection report
+→ execution
 ```
 
-Exactly one Shape Node may be mutated per asset authorization. A child never unlocks from an unaccepted host. A validator that cannot reject a known-broken fixture cannot own MUST acceptance. Accepted-geometry repair invalidates dependent evidence.
+Twarde reguły:
 
-## Non-negotiable location laws
+- discovery nie wykonuje kodu providera;
+- discovery/installation nie oznacza `PASS`;
+- nieznany provider pozostaje `UNKNOWN` i nie dostaje wymyślonych domen;
+- `builtin_geometry_nodes` po discovery ma `PROBE_REQUIRED`;
+- `PASS` Geometry Nodes pochodzi wyłącznie z realnego probe w Blenderze;
+- probe musi być minimalny, odwracalny i zweryfikować cleanup;
+- relevant rejected/blocked candidates pozostają w raporcie;
+- wersja providera jest sprawdzana constraintami, nie tylko exact match;
+- custom/native fallback jest legalny dopiero gdy nie istnieje żaden eligible silniejszy provider;
+- Meshy probe nie może uruchamiać płatnej generacji.
+
+## Reference-driven modeling
+
+Dla rekonstrukcji z concept artu/rysunku technicznego najpierw ustal:
+
+- source-set revision i autorytet każdego widoku;
+- skalę, osie, wymiary i tolerancje;
+- Shape Graph i zależności części;
+- Appearance Contract dla widocznych boundaries, trimów, junctions, edge language, materiałów i detali;
+- niepewności oraz konflikty między widokami.
+
+Buduj po jednym uprawnionym Shape Node. Po każdej mutacji udowodnij, że intended geometry rzeczywiście się zmieniła, a następnie waliduj ją na źródle. Builder-local self-check nie jest dowodem referencyjnym.
+
+Nie upraszczaj krytycznych różnic wysokości, schodków, rowków, szczelin, negative spaces, krawędzi, layer stacków ani połączeń tylko dlatego, że prostsza bryła przechodzi topology validation.
+
+## Visual and geometric acceptance
+
+Geometry integrity, appearance fidelity i runtime readiness są osobnymi bramkami. Żadna nie kompensuje pozostałych.
+
+Przed runtime finishing wymagaj odpowiednio:
 
 ```text
-LOCATION_PLAN != PASS
--> no final location population
-
-ASSET state != ACCEPTED
--> final instance forbidden
-
-PROXY present in final mode
--> LOCATION_COMPLETENESS_GATE FAIL
-
-MISSING required HERO
--> FAIL
-
-unintended interpenetration
--> FAIL
-
-blocked required circulation
--> FAIL
-
-LOCATION_REFERENCE_FIDELITY_GATE != PASS
--> final location unresolved
+node/RDL closure
+→ assembly + topology integrity
+→ geometric integrity
+→ appearance fidelity dla L4/L5/reference-critical work
+→ reconstruction fidelity
+→ game-ready finishing
 ```
 
-A location is not a list of objects. It is a spatial dependency graph.
+Wysoki globalny visual score nie może przykryć błędu MUST feature.
 
-## Task classification
+## Location design system
 
-Before work classify scope:
+Dla znanej lokacji/fakcji/rodziny najpierw resolve canonical design system. Reużywaj istniejących materiałów, branding IDs, tekstur i języka form. Asset-local techniczne wymiary pozostają własnością authoritative asset reference.
+
+## Efficiency
+
+Nie rediscoveruj stabilnych faktów projektu. Nie ładuj całej biblioteki. Nie replayuj całego pipeline po lokalnej poprawce: invaliduj zależne evidence i wykonuj tylko dirty dependency closure.
+
+## Runtime evidence
+
+Twierdzenie zależne od Blender runtime musi pochodzić z prawdziwego procesu Blendera. Mock/CPython może testować parsing, normalizację, registry, constraints i routing, ale nie zastępuje `bpy` runtime evidence.
+
+Dla v0.18 minimalny release proof to pinned Blender 5.1.x uruchomiony jako:
 
 ```text
-SINGLE_ASSET
-ASSET_SET
-PROCEDURAL_ENVIRONMENT_CONTENT
-AUTHORED_LOCATION
-MIXED_LOCATION
+--background --factory-startup --disable-autoexec
 ```
 
-If the user asks for a complete room/building/street/interior/exterior assembled from multiple references, choose `AUTHORED_LOCATION` or `MIXED_LOCATION`; do not route it as a sequence of independent `SINGLE_ASSET` tasks.
-
-## Completion targets
-
-Asset targets:
-- `RECONSTRUCTION_COMPLETE`;
-- `MODELING_COMPLETE`;
-- `GAME_READY_COMPLETE`;
-- `PIPELINE_INTEGRATED`.
-
-Location targets:
-- `LOCATION_STRUCTURE_COMPLETE`;
-- `LOCATION_LAYOUT_COMPLETE`;
-- `LOCATION_ART_DIRECTION_COMPLETE`;
-- `LOCATION_GAME_READY_COMPLETE`;
-- `LOCATION_PIPELINE_INTEGRATED`.
-
-Never report unconditional `DONE`.
-
-## Canonical authored-location pipeline
-
-```text
-runtime/source preflight
--> LOCATION_REFERENCE_INGEST
--> resolve/create Location Design System + material library
--> LOCATION_SCENE_GRAPH
--> LOCATION_ASSET_MANIFEST
--> SPACE_ZONING
--> architectural envelope/raster/openings
--> architecture stage PASS
--> HERO anchors and fixed composition
--> required HERO assets reconstructed/accepted
--> fixed assets
--> furniture cluster composition
--> spatial relations
--> circulation/clearance + location interpenetration
--> lighting/vegetation/table props
--> shared material/art-direction pass
--> LOCATION_REFERENCE_FIDELITY_GATE
--> LOCATION_COMPLETENESS_GATE
--> runtime partitioning/instancing/export
-```
-
-Forbidden shortcut:
-
-```text
-empty generic room
-+ repeated placeholder furniture
-+ quick render
-= complete location
-```
-
-## Location Reference Registry
-
-Classify source authority by property:
-- printed dimensions and architectural sheets own hard dimensions/grid/openings;
-- hero concept owns focal hierarchy, composition, density and visual rhythm;
-- asset cards own individual asset geometry/material intent;
-- design-system references own location-wide material/light/branding language.
-
-Do not let a perspective hero image override a hard numeric dimension. Do not let an asset sheet invent its placement in the room unless it explicitly defines it.
-
-## Location Design System is mandatory before asset proliferation
-
-Persist one location-level contract containing at least:
-- `location_id`;
-- millimeter unit policy and architectural grid;
-- material families/PBR ranges and texture sources;
-- edge/bevel families;
-- glass/emissive families;
-- lighting families and temperatures;
-- branding/logo/decal rules;
-- reusable trims/panel seams/rails/hardware;
-- texel-density/runtime notes.
-
-Reuse the v0.14 persistent location material library. Do not create private one-off material languages per asset.
-
-## Location Scene Graph
-
-Canonical hierarchy:
-
-```text
-LOCATION
--> ZONE
--> SYSTEM
--> ASSET
--> INSTANCE
-```
-
-Exactly one LOCATION root. No parent cycles. Final instances must reference accepted assets. Shape Graph remains nested inside reference-driven ASSET nodes.
-
-## Location Asset Manifest
-
-Every required asset has a stable ID and state:
-
-```text
-MISSING
-PROXY
-BUILDING
-BUILT_UNVERIFIED
-ACCEPTED
-INSTANCED
-BLOCKED
-FAIL
-```
-
-`PROXY` is legal during blockout only. Required HERO coverage is 100% for final completion. A missing bar cannot be compensated by more chairs.
-
-## Architecture first
-
-Build and validate:
-1. floor/FFL datum and footprint;
-2. walls/openings;
-3. corners/transitions;
-4. floor raster;
-5. ceiling raster/channels;
-6. doors/glass partitions;
-7. fixed architectural vegetation/recesses.
-
-Lock module interfaces. Validate A+A, A+B, corners and terminations. No decorative bevel may corrupt a module interface. Architecture must pass before final loose furniture population.
-
-## Zones before scatter
-
-Define functional zones and allowed content. Furniture placement is not random scatter. Use zone program, cluster grammar, placement anchors and composition authority.
-
-## Spatial Relation Graph
-
-Use semantic relations such as:
-
-```text
-INSIDE_ZONE
-AGAINST_SURFACE
-CENTERED_ON
-ALIGNS_WITH
-FACES_TARGET
-ABOVE
-BEHIND
-ADJACENT
-CLEARANCE
-CONTAINS
-PAIRED_WITH
-```
-
-Examples: pendant centered on table, backbar behind bar, rack above bar, chair paired with table, planter against wall. Every MUST relation needs measurable/derivable proof.
-
-## Clearance and circulation
-
-Declare guest/service/door access paths and their required clearances. Evaluate measured clearance, not visual guess. Reject unintended penetrations between assets and architecture. Intentional embedding/mounting requires explicit Assembly/Spatial relation semantics.
-
-Do not claim building-code certification unless project authority supplies the actual regulatory contract; the gate validates declared constraints only.
-
-## HERO anchors before loose population
-
-Focal elements are solved first. For a restaurant this commonly includes bar complex, backbar/rack, major partitions, reception and dominant architectural/lighting treatments.
-
-Before final furniture:
-- HERO assets accepted;
-- anchors within tolerance;
-- relative scale/order coherent;
-- sightlines from reference cameras plausible.
-
-## Furniture clusters
-
-Tables and chairs are composed as semantic clusters. Seats face tables unless authority says otherwise. Validate chair/table/wall/neighbor clearances. Repetition should instance accepted source assets rather than duplicate unique geometry.
-
-## Asset reconstruction retained
-
-Inside each reference-driven asset use the existing pipeline:
-
-```text
-reference evidence
--> property-level authority/conflict decisions
--> Shape Graph
--> Appearance Contract
--> Assembly Relation Contract
--> RDL0..RDL5 node-scoped execution
--> mutation postcondition
--> source QA
--> assembly/topology integrity
--> GEOMETRIC_INTEGRITY_GATE
--> APPEARANCE_FIDELITY_GATE when required
--> RECON_FIDELITY_GATE
-```
-
-Do not default compound primary forms to `cube + bevel`. Representation is chosen before Blender operator.
-
-## Procedural content retained
-
-For vegetation/terrain/procedural sources preserve v0.13-v0.14 rules:
-- provider runtime probe;
-- provider quality tier appropriate to HERO/MID/BACKGROUND;
-- deterministic seed/provenance where procedural;
-- botanical/composition gates for vegetation;
-- location material-language reuse;
-- early visual-quality barrier before expensive runtime finishing.
-
-Procedural availability never overrides authored-location composition.
-
-## Location stage barriers
-
-```text
-REFERENCE
-DESIGN_SYSTEM
-ARCHITECTURE
-HERO_ANCHORS
-FIXED_ASSETS
-FURNITURE
-LIGHTING_VEGETATION_PROPS
-FINAL_FIDELITY
-RUNTIME
-```
-
-A later stage cannot become final while an earlier required stage is not PASS. Blockout may proceed with explicit proxies, but cannot mint final evidence.
-
-## Visual QA
-
-For authored locations generate at least:
-- plan/top diagnostic view;
-- orthogonal architecture views as needed;
-- hero camera aligned to main composition authority;
-- extra focal views for occluded major zones.
-
-Location-level fidelity owns global anchors, orientations, HERO scale, density/negative space and composition. Asset-level 1:1 gates still own individual objects.
-
-Default diagnostic thresholds when no stronger source authority exists:
-- layout anchor error <= 100 mm;
-- important orientation error <= 5 degrees;
-- HERO scale error <= 3%;
-- composition score >= 0.85.
-
-These are policy defaults, not universal architecture standards.
-
-## Final location gate
-
-Required PASS:
-- scene graph;
-- design system;
-- asset manifest final coverage;
-- architecture;
-- spatial relations;
-- circulation/clearance;
-- reference fidelity.
-
-Hard blockers include any proxy, missing HERO, unintended penetration or blocked required path.
-
-A beautiful render cannot compensate for physical/spatial failure. A technically clean empty room cannot compensate for missing authored content.
-
-## Runtime boundary
-
-After location completion:
-- partition static architecture by streaming/visibility needs;
-- instance repeated accepted assets;
-- preserve shared material families;
-- prepare LOD/collision on source assets, not per duplicate;
-- preserve placement transforms, clearances and HERO composition;
-- validate export/package/engine invariants.
-
-Runtime optimization must not back-propagate to overwrite failed authoring evidence.
-
-## Blender/API discipline
-
-- Prefer Data API/BMesh; use `bpy.ops` with explicit context.
-- Keep scripts idempotent/import-safe.
-- Reuse canonical executors before project-local helpers.
-- Do not generate geometry merely to hit a budget.
-- Keep acceptance validators independent from builder-local constants.
-
-## Operational location report
-
-```yaml
-location_build:
-  location_id: ...
-  target_level: ...
-  stage: ...
-  design_system: PASS|FAIL
-  scene_graph: PASS|FAIL
-  required_asset_coverage: ...
-  hero_coverage: ...
-  proxy_count: ...
-  architecture: PASS|FAIL
-  spatial_relations: PASS|FAIL
-  clearance: PASS|FAIL
-  reference_fidelity: PASS|FAIL
-  completeness: PASS|FAIL
-  highest_passed_level: ...
-  blockers: []
-```
-
-## Final principle
-
-For an asset ask: what forms, boundaries, relations and source evidence prove this object?
-
-For a location additionally ask: what zones, anchors, dependencies, circulation paths, material/light language and focal relationships make this one coherent place rather than a pile of objects?
+z PASS dla runtime discovery, realnego Geometry Nodes probe i cleanup validation.
 
 
 ---
@@ -27741,6 +26752,26 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 # Changelog
 
+## 0.18.0
+
+v0.18.0 is the **Runtime Verification & Contract Convergence** release.
+
+Key changes:
+- introduced one canonical provider state protocol and one canonical JSON provider registry;
+- removed duplicate provider metadata from active executors and retained the old catalog only as a registry-backed compatibility facade;
+- made Blender add-on discovery non-executing and preserved unknown providers as `UNKNOWN`;
+- added explicit capability-probe adapters and real cleanup validation;
+- changed Geometry Nodes discovery from implied PASS to `PROBE_REQUIRED` until a real Blender probe succeeds;
+- added dependency-free provider version constraints and a complete auditable decision pipeline;
+- added contract/executor/test parity validation, pytest/ruff structure and v0.17 compatibility fixtures;
+- introduced `MANIFEST` schema v2 and deterministic `_RUNTIME_INDEX.json`;
+- consolidated active Router/Registry/System Prompt semantics instead of stacking historical overrides;
+- split read-only normal CI, pinned Blender runtime CI and the only write-enabled release workflow;
+- removed the v0.17 metadata-upgrade chain from active CI/release;
+- added Benchmark 87 and real Blender runtime discovery/Geometry Nodes/cleanup tests.
+
+Canonical benchmark: **87 — Lafar Runtime Capability Probe v0.18 Regression**.
+
 ## 0.17.0
 
 v0.17.0 is the **Runtime Provider Discovery + Capability Inventory + Selection Transparency** release.
@@ -28246,10 +27277,18 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.17.0 — runtime provider discovery, capability inventory and selection transparency.**
+**v0.18.0 — Runtime Verification & Contract Convergence.**
 
 v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
 
+
+## v0.18 Runtime Verification & Contract Convergence
+
+v0.18 moves BlenderSkill from documented provider behavior to executable runtime evidence. Provider states and metadata are canonicalized, discovery is non-executing, capability probes are explicit and cleanup-verified, version constraints replace exact-only gating, and provider selection preserves discovery/probe/domain/compatibility/license/quality evidence independently.
+
+Normal CI is read-only. A separate pinned Blender 5.1.x workflow proves runtime discovery and a real Geometry Nodes evaluation. `MANIFEST.json` uses schema v2, `_RUNTIME_INDEX.json` is the compact routing entry point, and release tagging is isolated to the manual release workflow.
+
+Canonical regression: **Benchmark 87 — Lafar Runtime Capability Probe v0.18**.
 
 ## v0.17 runtime provider discovery and selection transparency
 
@@ -34371,56 +33410,68 @@ Registered Asset Libraries are inventoried separately from add-ons. An empty Ass
 
 # Provider Capability Probe Matrix
 
+Version: 0.18.0
+Status: EXECUTOR_READY
+Executor: `executors/provider_probe_runner.py`
+Runtime adapters: `executors/provider_probes/`
+
 ## Separation
 
 For every relevant provider keep these states independent:
 
 ```text
-discovered/enabled
-runtime execution probe
-requested-domain support
-quality tier
-license/use policy
-selection result
+discovery_state
+enabled
+probe_state
+domain_state
+compatibility_state
+license_state
+quality_state
+selection_state
 ```
 
-A provider may therefore be:
+A provider may be discovered and probe-capable while still being rejected for the requested domain or quality. It remains visible in the final report.
 
-```yaml
-provider_id: sapling_tree_gen
-discovered: true
-enabled: true
-runtime_probe_status: PASS
-domain_match: false
-quality_tier: B
-selection: REJECTED
-reason: REQUESTED_DOMAIN_GRASS_NOT_SUPPORTED
-```
+## Executable probe matrix
 
-That provider still appears in the final report.
+- Blender Geometry Nodes: real disposable geometry/node-tree/evaluation/cleanup probe; required CI.
+- Sapling: minimal disposable tree operator probe with cleanup; UI-context inability is `BLOCKED`.
+- IvyGen: disposable source surface and minimal ivy operator probe with cleanup; UI-context inability is `BLOCKED`.
+- ANT Landscape: minimal terrain generation probe with cleanup.
+- Sverchok: disposable `SverchCustomTreeType` creation and cleanup.
+- MPFB: minimal loaded API-surface capability required by BlenderSkill; no full character generation required.
+- Geo Nodes Guide: integration/API-surface capability probe.
+- MCP: integration/API-surface capability probe.
+- Meshy: non-paid plugin/API surface and auth-state inspection only.
+
+Providers with registry probe types that do not yet have a specialized adapter remain `PROBE_REQUIRED`; the runner must not manufacture `PASS`.
 
 ## Probe requirements
 
-A production-capable probe should verify, where applicable:
-- expected Python module/operator/API symbol exists;
+An executable probe verifies, where applicable:
+
+- expected API/operator/node-tree surface exists;
 - required context can be satisfied;
-- minimal disposable operation can execute;
+- minimal disposable operation executes;
 - output type is valid;
-- deterministic seed behavior when claimed;
-- cleanup succeeds.
+- deterministic behavior where claimed;
+- cleanup restores the pre-probe datablock state.
 
-If a specialized adapter does not yet exist, use `PROBE_REQUIRED`, not `UNAVAILABLE`.
+Any cleanup failure forces the canonical probe result to `FAIL`.
 
-## Failure semantics
+## Canonical failure semantics
 
 - discovery miss: `NOT_DISCOVERED`;
 - discovered but untested: `PROBE_REQUIRED`;
+- provider disabled: `DISABLED`;
+- environment/context prevents a valid test: `BLOCKED` with blocker reason;
 - probe executed and failed: `FAIL`;
-- probe passed but wrong domain: `DOMAIN_MISMATCH`;
-- correct domain but insufficient quality: `QUALITY_REJECTED`;
-- usable candidate: `ELIGIBLE`.
+- probe passed but domain mismatched: `probe=PASS`, `domain=MISMATCH`, `selection=REJECTED`;
+- insufficient quality: `quality=REJECTED`, provider remains reported;
+- usable candidate: `ELIGIBLE` or `ELIGIBLE_GENERIC`.
 
-Do not collapse these states into a single boolean.
+Do not collapse these states into one boolean.
+
 
 ---
 
@@ -34519,47 +33570,442 @@ The agent must not proceed to custom fallback until the mismatch is resolved or 
 
 ## FILE: `12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md`
 
-# Vegetation Provider Routing v0.17
+# Vegetation Provider Routing
+
+Version: 0.18.0
+Status: EXECUTOR_READY
+Executor: `executors/provider_orchestrator.py`
 
 ## Source hierarchy
 
 ```text
 approved project/Asset Library vegetation
--> specialized generator matching requested plant domain
--> general procedural backend
--> custom native generator
+→ specialized generator matching requested plant domain
+→ eligible general procedural backend
+→ custom/native generator fallback
 ```
 
-The hierarchy is evaluated only after installed-provider discovery.
+The hierarchy is evaluated only after non-executing discovery, registry classification, expected-provider gate and capability evidence.
 
-## Domain routing examples
+## Domain routing
 
-- `TREE`, `WOODY_PLANT` -> ready asset source, then Sapling if probed/suitable.
-- `VINE`, `SURFACE_GROWTH` -> ready asset source, then IvyGen if probed/suitable.
-- `GRASS`, `GROUNDCOVER`, ornamental broadleaf -> ready asset source; if no specialized provider exists, evaluate Geometry Nodes/Sverchok/general procedural route.
-- `TERRAIN` -> A.N.T. Landscape or another terrain provider; it is not a vegetation source.
+- `TREE`, `WOODY_PLANT` → ready asset source, then Sapling/other specialized tree provider if probe and quality permit.
+- `VINE`, `SURFACE_GROWTH` → ready asset source, then IvyGen/other specialized surface-growth provider if probe and quality permit.
+- `GRASS`, `GROUNDCOVER`, ornamental broadleaf → ready asset source; when no specialized provider exists evaluate Geometry Nodes/Sverchok/general procedural backends.
+- `TERRAIN` → ANT Landscape or another terrain provider; terrain capability must not be mislabeled as vegetation capability.
+
+A provider that passes its runtime probe but does not support the requested domain is explicitly rejected. Example: Sapling for `GRASS` = `probe PASS`, `domain MISMATCH`, `selection REJECTED`.
 
 ## Reporting law
 
-When a ready vegetation Asset Library is absent but generators are installed, report exactly that distinction.
+Absence of a ready vegetation Asset Library does not mean absence of procedural providers. Report ready assets, specialized generators, generic procedural backends, external generators and rejected candidates separately.
 
-Example:
+## Quality
+
+Provider runtime capability is not visual-quality suitability. A technically executable provider still passes through usage-class quality evidence (`HERO`, `MID`, `BACKGROUND`, `BLOCKOUT`) before final selection when a quality contract is required.
+
+## Custom fallback gate
+
+Custom/native vegetation generation is legal only when:
+
+- discovery is complete;
+- expected-provider gate is PASS when applicable;
+- stronger relevant candidates were evaluated;
+- rejection/block reasons are present;
+- no stronger candidate remains `ELIGIBLE` or `ELIGIBLE_GENERIC`.
+
+If an eligible provider remains, custom fallback returns `BLOCKED`.
+
+
+---
+
+## FILE: `00_governance/15_RUNTIME_VERIFICATION_EXTENSION_V018.md`
+
+# Runtime Verification Extension v0.18
+
+Version: 0.18.0
+Status: CURRENT CONTRACT
+
+## Purpose
+
+BlenderSkill v0.18 changes provider handling from documented intent to runtime-verifiable behavior. Discovery evidence, capability evidence, compatibility, domain suitability, license policy, quality and final selection are separate dimensions and must remain auditable.
+
+## Mandatory invariants
+
+1. Provider discovery is read-only and does not execute provider code.
+2. Provider identity and static metadata come only from `data/provider_registry.json`.
+3. Unknown add-ons use `source_kind=UNKNOWN`, `classification_known=false`, and no inferred domains.
+4. Discovery of a provider never implies capability `PASS`.
+5. `builtin_geometry_nodes` is `PROBE_REQUIRED` after discovery and becomes `PASS` only after the executable Geometry Nodes probe succeeds.
+6. Capability probes must be isolated and must report cleanup state and side effects.
+7. Provider selection consumes discovery, expected-provider gate, probe, Blender compatibility, domain, license and quality evidence.
+8. Rejected or blocked relevant candidates remain visible in the provider selection report.
+9. Custom/native fallback is legal only after stronger candidates have been evaluated and none remains eligible.
+10. `EXECUTOR_READY` requires a real executor and at least one executable test.
+
+## Runtime authority
+
+Runtime evidence outranks catalog assumptions. Static registry data describes expected identity and compatibility constraints; it cannot manufacture successful capability evidence.
+
+## Required release evidence
+
+A v0.18 release requires at minimum a real Blender 5.1.x process proving runtime discovery, Geometry Nodes execution and complete cleanup under `--background --factory-startup --disable-autoexec`.
+
+
+---
+
+## FILE: `00_governance/16_RUNTIME_VERIFICATION_SKILL_REGISTRY_V018.md`
+
+# Runtime Verification Skill Registry v0.18
+
+Version: 0.18.0
+Status: CURRENT CONTRACT
+
+## Registered runtime skills
+
+| Skill ID | Contract | Executor | Maturity |
+|---|---|---|---|
+| INSTALLED_PROVIDER_DISCOVERY | `12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md` | `executors/installed_provider_inventory.py` | EXECUTOR_READY |
+| BLENDER_RUNTIME_ADDON_DISCOVERY | `12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md` | `executors/blender_addon_inventory.py` | EXECUTOR_READY |
+| PROVIDER_CAPABILITY_PROBE | `12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md` | `executors/provider_probe_runner.py` | EXECUTOR_READY |
+| EXPECTED_PROVIDER_GATE | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/expected_provider_gate.py` | EXECUTOR_READY |
+| PROVIDER_QUALITY_SELECT | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/provider_quality.py` | EXECUTOR_READY |
+| PROVIDER_SELECTION_REPORT | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/provider_selection_report.py` | EXECUTOR_READY |
+| PROVIDER_DECISION_PIPELINE | `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md` | `executors/provider_orchestrator.py` | EXECUTOR_READY |
+
+## Routing
+
+For provider-sensitive tasks load the Runtime Index first, then the provider state protocol, canonical registry, non-executing discovery contract, capability-probe contract and decision-pipeline contract. Historical v0.14-v0.17 override documents are evidence and regression history, not active routing layers.
+
+## Promotion rule
+
+Changing a Markdown maturity label does not promote a skill. `EXECUTOR_READY` is valid only when contract, executor identity/version and executable tests pass parity validation.
+
+
+---
+
+## FILE: `05_execution/80_CONTRACT_EXECUTOR_TEST_PARITY_GATE.md`
+
+# Contract / Executor / Test Parity Gate
+
+Version: 0.18.0
+Status: CURRENT CONTRACT
+
+## Gate
+
+Every manifest entry with `maturity=EXECUTOR_READY` must satisfy all conditions:
+
+- contract path exists;
+- executor path exists;
+- executor is importable by the supported Python runtime;
+- `EXECUTOR_ID` equals the registered skill id;
+- `EXECUTOR_VERSION` is declared;
+- at least one executable test path exists.
+
+`tools/validate_registry_parity.py` is the release authority for this relationship.
+
+## Failure codes
+
+- `MISSING_CONTRACT`
+- `MISSING_EXECUTOR`
+- `MISSING_EXECUTOR_TEST`
+- `EXECUTOR_ID_MISMATCH`
+- `EXECUTOR_VERSION_MISSING`
+- `ORPHAN_EXECUTOR`
+- `REGISTRY_PATH_INVALID`
+
+A parity failure is release-blocking. Documentation maturity must never be promoted as a substitute for executable coverage.
+
+
+---
+
+## FILE: `05_execution/81_REAL_BLENDER_RUNTIME_VALIDATION.md`
+
+# Real Blender Runtime Validation
+
+Version: 0.18.0
+Status: CURRENT CONTRACT
+
+## Runtime requirement
+
+Tests that claim Blender capability must execute inside a real pinned Blender 5.1.x binary. CPython mocks may test normalization and decision logic, but cannot provide runtime capability evidence.
+
+Required command shape:
 
 ```text
-READY_ASSET_SOURCE: NONE
-PROCEDURAL_GENERATORS: Sapling, IvyGen, Sverchok, Geometry Nodes
-REQUESTED_DOMAIN: GRASS
-SPECIALIZED_MATCH: NONE
-SELECTED_GENERAL_BACKEND: Geometry Nodes
+blender --background --factory-startup --disable-autoexec --python tests/blender/run_suite.py
 ```
 
-Do not say `no vegetation providers`.
+## Required release checks
 
-## Custom generator fallback
+1. runtime add-on discovery returns `PASS`;
+2. built-in Geometry Nodes is discovered as `PROBE_REQUIRED` before probing;
+3. the Geometry Nodes probe creates a disposable object, node tree and modifier;
+4. evaluated output geometry satisfies the expected vertex/polygon contract;
+5. temporary object, mesh and node group are removed;
+6. before/after datablock snapshots are identical;
+7. `cleanup_state=PASS` and `side_effects_detected=false`.
 
-A custom generator requires:
-- complete discovery inventory;
-- expected-provider gate PASS when applicable;
-- visible rejection reason for every stronger candidate;
-- provider selection report;
-- existing v0.14 quality-tier gate.
+A probe that produces correct geometry but leaves persistent datablocks fails the runtime gate.
+
+
+---
+
+## FILE: `06_prompts/73_RUNTIME_VERIFICATION_PROMPT.md`
+
+# Runtime Verification Prompt
+
+Version: 0.18.0
+Status: CURRENT PROMPT
+
+When a task depends on Blender providers, do not infer capability from installation, documentation or familiarity.
+
+Execution order:
+
+1. read `_RUNTIME_INDEX.json`;
+2. inspect current Blender runtime without executing provider code;
+3. normalize discovered providers through the canonical provider registry;
+4. resolve expected-provider constraints;
+5. run only the capability probes needed for the task;
+6. evaluate Blender compatibility, requested domain, license policy and quality independently;
+7. preserve rejected and blocked candidates in the selection report;
+8. select an eligible provider only after all stronger relevant candidates have evidence;
+9. permit custom/native fallback only when no eligible stronger provider remains;
+10. execute the task and run postcondition, geometry, visual and runtime QA.
+
+Never translate `DISCOVERED` into `PASS`. Never translate an unknown add-on into `UTILITY`. Never hide a provider merely because its quality or domain gate rejected it.
+
+
+---
+
+## FILE: `07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md`
+
+# Benchmark 87 — Lafar Runtime Capability Probe v0.18
+
+Version: 0.18.0
+Status: RELEASE REGRESSION BENCHMARK
+
+## Goal
+
+Prove that provider selection for a Lafar procedural vegetation task is based on real runtime evidence rather than declared installation metadata.
+
+## Primary scenario
+
+```text
+REAL BLENDER 5.1.x
+→ runtime discovery
+→ canonical provider registry normalization
+→ expected provider gate
+→ real Geometry Nodes capability probe
+→ requested domain = GRASS
+→ domain suitability
+→ quality suitability
+→ provider selection report
+→ minimal generated output
+→ geometry validation
+→ cleanup validation
+```
+
+Required primary evidence: Geometry Nodes is `PROBE_REQUIRED` after discovery, changes to `PASS` only after real evaluation, output geometry is valid, and probe cleanup leaves no object/mesh/node-group delta.
+
+## Negative controls
+
+### NC-1 — discovery execution
+`blender_addon_inventory.py` must not import provider modules or execute provider operators.
+
+### NC-2 — built-in capability assumption
+`builtin_geometry_nodes` discovered without probe must not be `PASS`.
+
+### NC-3 — canonical probe state
+`PROBE_REQUIRED` is valid across provider executors.
+
+### NC-4 — unknown classification
+An unknown add-on remains `UNKNOWN` and is not coerced to `UTILITY`.
+
+### NC-5 — expected-provider mismatch
+Missing expected provider produces `DISCOVERY_MISMATCH` and blocks the pipeline.
+
+### NC-6 — wrong vegetation domain
+Sapling with `probe=PASS` and requested `GRASS` produces `domain=MISMATCH`, `selection=REJECTED`.
+
+### NC-7 — dirty probe
+Any remaining object, mesh, curve or node group produces `cleanup=FAIL`; probe cannot remain `PASS`.
+
+### NC-8 — insufficient quality
+A provider below the required quality tier remains visible and receives `QUALITY_REJECTED`.
+
+### NC-9 — illegal custom fallback
+Custom/native fallback while an eligible stronger provider exists produces `BLOCKED`.
+
+## Pass condition
+
+All unit/integration/regression tests pass and the required Blender runtime suite passes in a pinned 5.1.x binary under factory-startup background mode with auto-execution disabled.
+
+
+---
+
+## FILE: `12_procedural_generation/237_PROVIDER_STATE_PROTOCOL.md`
+
+# Provider State Protocol
+
+Version: 0.18.0
+Status: EXECUTOR_READY
+Executor: `executors/provider_contracts.py`
+
+## Canonical dimensions
+
+Provider evidence is represented by independent state dimensions. Do not collapse them into one status.
+
+### SourceKind
+
+`READY_ASSET_SOURCE`, `PROCEDURAL_GENERATOR`, `EXTERNAL_GENERATOR`, `UTILITY`, `BUILTIN_BACKEND`, `UNKNOWN`.
+
+### DiscoveryState
+
+`DISCOVERED`, `NOT_DISCOVERED`, `DISCOVERY_MISMATCH`.
+
+### ProbeState
+
+`PROBE_REQUIRED`, `PASS`, `FAIL`, `DISABLED`, `BLOCKED`, `NOT_APPLICABLE`.
+
+### DomainState
+
+`MATCH`, `GENERIC_MATCH`, `MISMATCH`, `UNKNOWN`.
+
+### QualityState
+
+`UNRATED`, `PASS`, `REJECTED`.
+
+### SelectionState
+
+`ELIGIBLE`, `ELIGIBLE_GENERIC`, `REJECTED`, `SELECTED`, `BLOCKED`.
+
+`executors/provider_contracts.py` is the only allowed source for these state vocabularies. Consumers use `normalize_provider_record()` and `validate_provider_record()` rather than defining local state lists.
+
+
+---
+
+## FILE: `12_procedural_generation/238_CANONICAL_PROVIDER_REGISTRY.md`
+
+# Canonical Provider Registry
+
+Version: 0.18.0
+Status: EXECUTOR_READY
+Registry: `data/provider_registry.json`
+Loader: `executors/provider_registry.py`
+
+`data/provider_registry.json` is the only authored source of provider identity and static classification metadata.
+
+Required fields include provider id, aliases/module patterns, source kind, domains, execution type, Blender compatibility constraints, seed support, probe type, license policy and role.
+
+Legacy catalog APIs may exist only as compatibility facades reading this registry. They may not duplicate domains, source kinds, compatibility ranges or licenses.
+
+An add-on that does not match the registry remains visible with:
+
+```text
+source_kind = UNKNOWN
+classification_known = false
+domains = []
+probe_state = PROBE_REQUIRED
+```
+
+Unknown providers are not automatically eligible for selection. Explicit future classification or an explicit controlled override is required.
+
+
+---
+
+## FILE: `12_procedural_generation/239_NON_EXECUTING_PROVIDER_DISCOVERY.md`
+
+# Non-Executing Provider Discovery
+
+Version: 0.18.0
+Status: EXECUTOR_READY
+Executors: `executors/blender_addon_inventory.py`, `executors/installed_provider_inventory.py`
+
+## Rule
+
+Discovery is read-only. Discovery must not execute provider code.
+
+Allowed evidence:
+
+- `bpy.context.preferences`;
+- `addon_utils` metadata already exposed by Blender;
+- already-loaded `sys.modules`;
+- Blender extension/add-on metadata;
+- Asset Library preferences;
+- Blender runtime metadata.
+
+Forbidden during discovery:
+
+- `importlib.import_module()` of a provider;
+- `__import__()` of a provider;
+- provider operators;
+- object or node-group creation;
+- network requests;
+- preference mutations.
+
+When complete metadata cannot be obtained without executing a provider, report `version=UNKNOWN`, partial metadata and `probe_state=PROBE_REQUIRED`.
+
+Built-in Geometry Nodes is always discovered separately from capability evidence and therefore enters the pipeline as `PROBE_REQUIRED`.
+
+
+---
+
+## FILE: `12_procedural_generation/240_PROVIDER_CAPABILITY_PROBE_EXECUTION.md`
+
+# Provider Capability Probe Execution
+
+Version: 0.18.0
+Status: EXECUTOR_READY
+Executor: `executors/provider_probe_runner.py`
+
+Capability probes are explicit execution and are never part of discovery.
+
+Every probe returns provider id, canonical `probe_state`, Blender/provider versions when known, capabilities, cleanup state, side-effect flag, warnings and blockers.
+
+Probe requirements:
+
+- minimal scope;
+- deterministic when provider declares seed support;
+- isolated disposable data;
+- reversible cleanup;
+- no persistent project preference changes;
+- no paid external generation.
+
+A provider requiring unavailable UI context returns canonical `BLOCKED` plus `UI_CONTEXT_REQUIRED`; this is not capability `FAIL`.
+
+The built-in Geometry Nodes probe creates and evaluates real temporary geometry and a real node group. A successful functional result is still converted to `FAIL` if cleanup fails or side effects remain.
+
+Meshy probing is restricted to plugin/API surface, credential state and network capability. It must never trigger automatic paid generation.
+
+
+---
+
+## FILE: `12_procedural_generation/241_PROVIDER_DECISION_PIPELINE.md`
+
+# Provider Decision Pipeline
+
+Version: 0.18.0
+Status: EXECUTOR_READY
+Executor: `executors/provider_orchestrator.py`
+
+Canonical order:
+
+```text
+BLENDER_RUNTIME_ADDON_DISCOVERY
+→ PROVIDER_CLASSIFICATION
+→ EXPECTED_PROVIDER_GATE
+→ CAPABILITY_PROBES
+→ BLENDER_VERSION_COMPATIBILITY
+→ DOMAIN_MATCH
+→ LICENSE_POLICY
+→ QUALITY_GATE
+→ PROVIDER_SELECTION
+→ PROVIDER_SELECTION_REPORT
+```
+
+Each evidence dimension is preserved in the report. A provider may therefore be discovered and probe-capable yet rejected because its requested domain mismatches, its Blender range is incompatible, its license policy blocks use, or its quality tier is insufficient.
+
+Custom/native fallback is evaluated after stronger candidates. It is blocked when any stronger relevant candidate remains `ELIGIBLE` or `ELIGIBLE_GENERIC`, and rejection reasons for evaluated candidates must remain visible.
+
+The expected-provider gate supports version constraints (`==`, `!=`, `>`, `>=`, `<`, `<=`) including comma-separated ranges such as `>=2.0,<3.0`.

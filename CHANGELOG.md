@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.18.0
+
+v0.18.0 is the **Runtime Verification & Contract Convergence** release.
+
+Key changes:
+- introduced one canonical provider state protocol and one canonical JSON provider registry;
+- removed duplicate provider metadata from active executors and retained the old catalog only as a registry-backed compatibility facade;
+- made Blender add-on discovery non-executing and preserved unknown providers as `UNKNOWN`;
+- added explicit capability-probe adapters and real cleanup validation;
+- changed Geometry Nodes discovery from implied PASS to `PROBE_REQUIRED` until a real Blender probe succeeds;
+- added dependency-free provider version constraints and a complete auditable decision pipeline;
+- added contract/executor/test parity validation, pytest/ruff structure and v0.17 compatibility fixtures;
+- introduced `MANIFEST` schema v2 and deterministic `_RUNTIME_INDEX.json`;
+- consolidated active Router/Registry/System Prompt semantics instead of stacking historical overrides;
+- split read-only normal CI, pinned Blender runtime CI and the only write-enabled release workflow;
+- removed the v0.17 metadata-upgrade chain from active CI/release;
+- added Benchmark 87 and real Blender runtime discovery/Geometry Nodes/cleanup tests.
+
+Canonical benchmark: **87 — Lafar Runtime Capability Probe v0.18 Regression**.
+
 ## 0.17.0
 
 v0.17.0 is the **Runtime Provider Discovery + Capability Inventory + Selection Transparency** release.
