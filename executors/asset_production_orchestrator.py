@@ -8,9 +8,10 @@ from executors.asset_state_runtime import validate_asset
 from executors.component_task_pack import build as build_task_pack
 from executors.design_binding_resolver import resolve as resolve_bindings
 from executors.parameter_graph import resolve as resolve_parameters
+from executors.reference_evidence_registry import query as query_reference_evidence
 
 EXECUTOR_ID = "ASSET_PRODUCTION_ORCHESTRATOR"
-EXECUTOR_VERSION = "0.1.1"
+EXECUTOR_VERSION = "0.1.2"
 
 
 def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
@@ -49,6 +50,46 @@ def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
             "blockers": bindings["blockers"],
         }
 
+    reference_evidence = [
+        dict(item)
+        for item in list(spec.get("reference_evidence", []) or [])
+        if isinstance(item, Mapping)
+    ]
+    registry = spec.get("reference_evidence_registry")
+    if registry is not None:
+        if not isinstance(registry, Mapping):
+            return {
+                "status": "FAIL",
+                "executor_id": EXECUTOR_ID,
+                "failed_stage": "REFERENCE_EVIDENCE",
+                "blockers": [{"reason": "REFERENCE_EVIDENCE_REGISTRY_MAPPING_REQUIRED"}],
+            }
+        queried = query_reference_evidence(
+            registry,
+            component_id=str(spec.get("component_id") or ""),
+            feature_ids=[str(value) for value in list(spec.get("reference_feature_ids", []) or [])],
+            views=[str(value) for value in list(spec.get("reference_views", []) or [])],
+            include_inspiration=bool(spec.get("include_inspiration_reference", False)),
+        )
+        if queried["status"] != "PASS":
+            return {
+                "status": "FAIL",
+                "executor_id": EXECUTOR_ID,
+                "failed_stage": "REFERENCE_EVIDENCE",
+                "blockers": queried.get("blockers", []),
+            }
+        reference_evidence.extend(queried["evidence"])
+
+    deduplicated_evidence: list[dict[str, Any]] = []
+    seen_evidence: set[str] = set()
+    for item in reference_evidence:
+        identity = str(item.get("evidence_id") or item.get("artifact_id") or item.get("reference_id") or "")
+        if identity and identity in seen_evidence:
+            continue
+        if identity:
+            seen_evidence.add(identity)
+        deduplicated_evidence.append(item)
+
     task_spec = {
         "asset": asset,
         "component_id": spec.get("component_id"),
@@ -56,7 +97,7 @@ def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
         "task_kind": spec.get("task_kind", "BUILD"),
         "resolved_parameters": parameters["resolved"],
         "resolved_bindings": bindings["resolved_bindings"],
-        "reference_evidence": spec.get("reference_evidence", []),
+        "reference_evidence": deduplicated_evidence,
     }
     if spec.get("max_input_tokens") is not None:
         task_spec["max_input_tokens"] = int(spec["max_input_tokens"])
@@ -83,6 +124,7 @@ def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
             "resolved_parameter_count": parameters["parameter_count"],
             "resolved_binding_count": len(bindings["resolved_bindings"]),
             "design_deviation_count": len(bindings["deviations"]),
+            "reference_registry_evidence_count": len(deduplicated_evidence),
         },
         "design_deviations": bindings["deviations"],
     }

@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BlenderSkill Asset Production Studio</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111418;
+      --panel: #171b20;
+      --panel-2: #1d2228;
+      --line: #2b323a;
+      --text: #e7ebef;
+      --muted: #8e99a6;
+      --accent: #5ea4ff;
+      --good: #4fb77a;
+      --warn: #d6a64a;
+      --bad: #db6a6a;
+      --selected: #23364c;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 13px/1.4 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    button {
+      background: #222a32;
+      border: 1px solid #39434e;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    button:hover { border-color: #5a6877; }
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr) 190px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+      background: #15191e;
+    }
+    .brand { font-weight: 650; letter-spacing: .02em; }
+    .asset-title { min-width: 0; flex: 1; }
+    .asset-title strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .asset-title span { color: var(--muted); font-size: 12px; }
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 8px;
+      white-space: nowrap;
+      color: var(--muted);
+    }
+    .badge.current { border-color: #3f6fa6; color: #9bc7ff; }
+    .main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 260px minmax(420px, 1fr) 380px;
+    }
+    .panel { min-height: 0; background: var(--panel); border-right: 1px solid var(--line); }
+    .panel:last-child { border-right: 0; }
+    .panel-head {
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--line);
+      color: #c6ced7;
+      font-weight: 600;
+      letter-spacing: .025em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .scroll { height: calc(100% - 38px); overflow: auto; }
+    .tree-row {
+      min-height: 34px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 10px 6px calc(10px + var(--depth, 0) * 16px);
+      border-bottom: 1px solid rgba(43, 50, 58, .55);
+      cursor: pointer;
+    }
+    .tree-row:hover { background: #1d232a; }
+    .tree-row.selected { background: var(--selected); }
+    .tree-main { min-width: 0; }
+    .tree-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tree-meta { color: var(--muted); font-size: 11px; }
+    .count {
+      min-width: 22px;
+      text-align: center;
+      border-radius: 10px;
+      padding: 1px 6px;
+      background: #252d35;
+      color: var(--muted);
+    }
+    .count.warn { color: #ffd98d; background: #3a3120; }
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: #12161b;
+    }
+    .stages {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(72px, 1fr));
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .stage {
+      min-width: 88px;
+      padding: 9px 8px;
+      border-right: 1px solid var(--line);
+      color: var(--muted);
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: .03em;
+    }
+    .stage.done { color: #a6b2be; background: #1a2025; }
+    .stage.current { color: #b8d8ff; background: #20344a; box-shadow: inset 0 -2px 0 var(--accent); }
+    .stage.pending { opacity: .58; }
+    .canvas {
+      min-height: 0;
+      overflow: auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: minmax(260px, 1.25fr) minmax(240px, .75fr);
+      gap: 14px;
+      align-content: start;
+    }
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 7px;
+      overflow: hidden;
+    }
+    .card h3 {
+      margin: 0;
+      padding: 9px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+    .card-body { padding: 11px; }
+    .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .metric { border: 1px solid var(--line); border-radius: 5px; padding: 8px; background: #14191e; }
+    .metric label { display: block; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+    .metric strong { display: block; margin-top: 2px; font-size: 16px; font-weight: 600; }
+    .evidence-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+    .evidence {
+      min-height: 104px;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 8px;
+      background: linear-gradient(145deg, #181f26, #11161b);
+    }
+    .evidence .view { color: #a8cbf8; font-weight: 600; }
+    .evidence .id { margin-top: 5px; color: var(--muted); font-size: 11px; word-break: break-all; }
+    .evidence .roi { margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    .empty { color: var(--muted); padding: 10px 0; }
+    .inspector { min-height: 0; display: grid; grid-template-rows: 38px 36px minmax(0, 1fr); background: var(--panel); }
+    .tabs { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .tab {
+      border: 0;
+      border-right: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      padding: 0 9px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .tab.active { color: var(--text); background: #20262d; box-shadow: inset 0 -2px 0 var(--accent); }
+    .inspector-body { overflow: auto; padding: 10px; }
+    .kv { display: grid; grid-template-columns: 138px minmax(0, 1fr); gap: 5px 10px; padding: 6px 0; border-bottom: 1px solid rgba(43,50,58,.55); }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+    .record { padding: 8px; border: 1px solid var(--line); border-radius: 5px; margin-bottom: 8px; background: #14191e; }
+    .record-title { font-weight: 600; margin-bottom: 4px; }
+    .record-meta { color: var(--muted); font-size: 11px; }
+    .status { font-weight: 600; }
+    .status.PASS, .status.APPROVED, .status.READY { color: var(--good); }
+    .status.BLOCKED, .status.REVIEW { color: var(--warn); }
+    .status.FAIL, .status.FAILED { color: var(--bad); }
+    .queue {
+      min-height: 0;
+      border-top: 1px solid var(--line);
+      background: #15191e;
+      display: grid;
+      grid-template-rows: 38px minmax(0, 1fr);
+    }
+    .queue-head { display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid var(--line); }
+    .queue-head strong { text-transform: uppercase; font-size: 11px; letter-spacing: .025em; }
+    .queue-grid { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid rgba(43,50,58,.7); white-space: nowrap; }
+    th { position: sticky; top: 0; background: #1b2026; color: var(--muted); font-size: 10px; text-transform: uppercase; z-index: 1; }
+    td.wide { width: 100%; }
+    .file-input { display: none; }
+    .json-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.68);
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    .json-overlay.open { display: flex; }
+    .json-dialog { width: min(900px, 90vw); height: min(680px, 84vh); background: var(--panel); border: 1px solid #44505c; border-radius: 8px; display: grid; grid-template-rows: 44px minmax(0,1fr) 48px; }
+    .json-dialog header, .json-dialog footer { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line); }
+    .json-dialog footer { border-top: 1px solid var(--line); border-bottom: 0; justify-content: flex-end; }
+    textarea { width: 100%; height: 100%; resize: none; border: 0; outline: 0; background: #101419; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .error { color: #ff9a9a; margin-right: auto; }
+    @media (max-width: 1100px) {
+      .main { grid-template-columns: 220px minmax(360px,1fr) 320px; }
+      .canvas { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">BlenderSkill Studio</div>
+    <div class="asset-title">
+      <strong id="assetName">Asset</strong>
+      <span id="assetMeta"></span>
+    </div>
+    <span id="stageBadge" class="badge current"></span>
+    <span id="revisionBadge" class="badge"></span>
+    <button id="pasteJsonButton">Paste JSON</button>
+    <button id="loadFileButton">Load JSON</button>
+    <input id="fileInput" class="file-input" type="file" accept="application/json,.json">
+  </header>
+
+  <main class="main">
+    <section class="panel">
+      <div class="panel-head"><span>Components</span><span id="componentCount"></span></div>
+      <div id="componentTree" class="scroll"></div>
+    </section>
+
+    <section class="workspace">
+      <div id="stages" class="stages"></div>
+      <div class="canvas">
+        <div class="card">
+          <h3>Selected component</h3>
+          <div class="card-body">
+            <div id="componentMetrics" class="metrics"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Production state</h3>
+          <div class="card-body">
+            <div id="productionMetrics" class="metrics"></div>
+          </div>
+        </div>
+        <div class="card" style="grid-column: 1 / -1">
+          <h3>Reference evidence</h3>
+          <div class="card-body"><div id="referenceEvidence" class="evidence-grid"></div></div>
+        </div>
+        <div class="card">
+          <h3>Open corrections</h3>
+          <div id="correctionList" class="card-body"></div>
+        </div>
+        <div class="card">
+          <h3>Design-system impact</h3>
+          <div id="impactList" class="card-body"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="inspector">
+      <div class="panel-head"><span>Inspector</span><span id="selectedLabel"></span></div>
+      <div id="tabs" class="tabs"></div>
+      <div id="inspectorBody" class="inspector-body"></div>
+    </aside>
+  </main>
+
+  <section class="queue">
+    <div class="queue-head"><strong>Production task queue</strong><span id="taskSummary" class="badge"></span></div>
+    <div class="queue-grid">
+      <table>
+        <thead><tr><th>Task</th><th>Component</th><th>Kind</th><th>Status</th><th>Priority</th><th>Attempt</th><th class="wide">Dependencies</th></tr></thead>
+        <tbody id="taskTable"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div id="jsonOverlay" class="json-overlay">
+  <div class="json-dialog">
+    <header><strong>Load Studio view-model JSON</strong></header>
+    <textarea id="jsonTextarea" spellcheck="false"></textarea>
+    <footer><span id="jsonError" class="error"></span><button id="cancelJsonButton">Cancel</button><button id="applyJsonButton">Apply</button></footer>
+  </div>
+</div>
+
+<script>
+const DEFAULT_MODEL = {
+  schema_version: 1,
+  asset: {
+    asset_id: "ASSET-005",
+    name: "Lafar Street Bench 3470",
+    revision: 17,
+    stage: "STRUCTURAL_GEOMETRY",
+    progress: 0.44,
+    design_system_ids: ["LAFAR", "ASTERA_CIVIC"],
+    global_dimensions_mm: {width: 2000, depth: 550, height: 820, seat_height: 460}
+  },
+  stages: [
+    ["BRIEF","DONE"],["REFERENCE_ANALYSIS","DONE"],["RECONSTRUCTION_MANIFEST","DONE"],["BLOCKOUT","DONE"],
+    ["STRUCTURAL_GEOMETRY","CURRENT"],["DETAILS","PENDING"],["MATERIALS","PENDING"],["GAME_READY","PENDING"],
+    ["FIDELITY_AUDIT","PENDING"],["APPROVED","PENDING"]
+  ].map(([stage,state]) => ({stage,state})),
+  components: [
+    {component_id:"BENCH",parent:null,state:"CONSTRAINED",shape_class:"ASSEMBLY",binding_count:0,open_correction_count:0,task_statuses:[]},
+    {component_id:"LEFT_SUPPORT",parent:"BENCH",state:"CONSTRAINED",shape_class:"HARD_SURFACE",binding_count:2,open_correction_count:0,task_statuses:["APPROVED"]},
+    {component_id:"RIGHT_SUPPORT",parent:"BENCH",state:"CONSTRAINED",shape_class:"HARD_SURFACE",binding_count:2,open_correction_count:0,task_statuses:["APPROVED"]},
+    {component_id:"SEAT",parent:"BENCH",state:"CONSTRAINED",shape_class:"HARD_SURFACE",binding_count:3,open_correction_count:0,task_statuses:["APPROVED"]},
+    {component_id:"BACKREST",parent:"BENCH",state:"DIRTY",shape_class:"HARD_SURFACE",binding_count:3,open_correction_count:1,task_statuses:["READY"]}
+  ],
+  task_summary: {APPROVED:3,READY:1,RUNNING:0,REVIEW:0,BLOCKED:0,FAILED:0},
+  selected_component_id: "BACKREST",
+  inspector: {
+    component: {
+      id:"BACKREST", parent:"BENCH", state:"DIRTY", origin:{type:"CENTER_BOTTOM"},
+      anchors:{LEFT_MOUNT:{x:-765,y:0,z:0},RIGHT_MOUNT:{x:765,y:0,z:0}},
+      shape_class:"HARD_SURFACE",
+      dimensions:{width:{value:1580,unit:"mm",locked:true},height:{value:390,unit:"mm",locked:true},thickness:{value:72,unit:"mm"},angle:{value:13,unit:"deg",locked:true}},
+      binding_ids:["ASTERA_GRAPHITE_01","ASTERA_EDGE_PROFILE_02","ASTERA_LED_INFO_BLUE_01"]
+    },
+    open_corrections:[{id:"COR-018",kind:"PARAMETER_OVERRIDE",parameter:"angle",value:13,unit:"deg",priority:"HARD",status:"OPEN"}],
+    tasks:[{task_id:"T-BACKREST",component_id:"BACKREST",task_kind:"REPAIR",status:"READY",priority:20,attempt:0,dependencies:["T-SEAT"]}],
+    scene_objects:[{object_id:"bench.backrest.shell",component_id:"BACKREST",object_type:"MESH",dimensions_mm:[1580,72,390],mesh_metrics:{vertices:128,triangles:240},material_ids:["ASTERA_GRAPHITE_01"]}],
+    reference_evidence:[
+      {evidence_id:"EV-BACKREST-SIDE",reference_id:"lafar-bench-sheet",component_id:"BACKREST",view:"SIDE",authority:"PRIMARY",feature_ids:["BACKREST_PROFILE"],roi:[690,590,840,870],artifact_id:"roi:backrest:side",registration_id:"reg:bench:side"},
+      {evidence_id:"EV-BACKREST-REAR",reference_id:"lafar-bench-sheet",component_id:"BACKREST",view:"REAR",authority:"PRIMARY",feature_ids:["BACKREST_WIDTH","INFO_STRIP"],roi:[120,420,760,710],artifact_id:"roi:backrest:rear"}
+    ],
+    resolved_parameters:{width:1580,height:390,thickness:72,angle:13,info_strip_width:1500},
+    resolved_design_bindings:{
+      ASTERA_GRAPHITE_01:{resource_id:"ASTERA_GRAPHITE_01",version:"1.0.0",locked:true},
+      ASTERA_EDGE_PROFILE_02:{resource_id:"ASTERA_EDGE_PROFILE_02",version:"1.1.0",locked:true},
+      ASTERA_LED_INFO_BLUE_01:{resource_id:"ASTERA_LED_INFO_BLUE_01",version:"1.0.0",locked:true}
+    }
+  },
+  design_impacts:[{resource_id:"ASTERA_LED_INFO_BLUE_01",current_version:"1.0.0",affected_asset_count:4,affected_assets:["ASSET-005","ASSET-012","ASSET-021","ASSET-024"]}],
+  scene_snapshot_hash:"d0c8f3a71b6d...",
+  tasks:[
+    {task_id:"T-LEFT",component_id:"LEFT_SUPPORT",task_kind:"BUILD",status:"APPROVED",priority:10,attempt:1,dependencies:[]},
+    {task_id:"T-RIGHT",component_id:"RIGHT_SUPPORT",task_kind:"BUILD",status:"APPROVED",priority:10,attempt:1,dependencies:["T-LEFT"]},
+    {task_id:"T-SEAT",component_id:"SEAT",task_kind:"BUILD",status:"APPROVED",priority:10,attempt:1,dependencies:["T-LEFT","T-RIGHT"]},
+    {task_id:"T-BACKREST",component_id:"BACKREST",task_kind:"REPAIR",status:"READY",priority:20,attempt:0,dependencies:["T-SEAT"]}
+  ]
+};
+
+let model = structuredClone(DEFAULT_MODEL);
+let selected = model.selected_component_id;
+let activeTab = "Parameters";
+const TABS = ["Parameters","Bindings","Corrections","References","Scene","Raw"];
+
+const $ = id => document.getElementById(id);
+const esc = value => String(value ?? "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
+const json = value => `<pre style="white-space:pre-wrap;margin:0;font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace">${esc(JSON.stringify(value,null,2))}</pre>`;
+
+function taskList() {
+  if (Array.isArray(model.tasks)) return model.tasks;
+  const fromInspector = model.inspector?.tasks || [];
+  return Array.isArray(fromInspector) ? fromInspector : [];
+}
+
+function componentMap() {
+  return new Map((model.components || []).map(item => [item.component_id, item]));
+}
+
+function depthOf(id, map) {
+  let depth = 0, cursor = map.get(id), guard = 0;
+  while (cursor?.parent && map.has(cursor.parent) && guard++ < 20) { depth++; cursor = map.get(cursor.parent); }
+  return depth;
+}
+
+function selectedInspector() {
+  if (selected === model.selected_component_id && model.inspector) return model.inspector;
+  const component = componentMap().get(selected) || {};
+  const tasks = taskList().filter(task => task.component_id === selected);
+  return {component, tasks, open_corrections:[], scene_objects:[], reference_evidence:[], resolved_parameters:{}, resolved_design_bindings:{}};
+}
+
+function renderTop() {
+  const a = model.asset || {};
+  $("assetName").textContent = a.name || a.asset_id || "Asset";
+  $("assetMeta").textContent = `${a.asset_id || "UNKNOWN"} · ${(a.design_system_ids || []).join(" + ") || "No design system"}`;
+  $("stageBadge").textContent = a.stage || "UNKNOWN";
+  $("revisionBadge").textContent = `revision ${a.revision ?? "?"}`;
+}
+
+function renderStages() {
+  $("stages").innerHTML = (model.stages || []).map(item => `<div class="stage ${esc(String(item.state||'').toLowerCase())}">${esc(item.stage)}</div>`).join("");
+}
+
+function renderTree() {
+  const items = model.components || [], map = componentMap();
+  $("componentCount").textContent = items.length;
+  $("componentTree").innerHTML = items.map(item => {
+    const warn = Number(item.open_correction_count || 0) > 0;
+    return `<div class="tree-row ${item.component_id === selected ? 'selected' : ''}" data-component="${esc(item.component_id)}" style="--depth:${depthOf(item.component_id,map)}">
+      <div class="tree-main"><div class="tree-name">${esc(item.component_id)}</div><div class="tree-meta">${esc(item.state || 'UNKNOWN')} · ${esc(item.shape_class || 'UNCLASSIFIED')}</div></div>
+      <span class="count ${warn ? 'warn' : ''}">${warn ? esc(item.open_correction_count) : esc((item.task_statuses||[]).length)}</span>
+    </div>`;
+  }).join("");
+  document.querySelectorAll(".tree-row").forEach(row => row.addEventListener("click", () => { selected = row.dataset.component; activeTab = "Parameters"; render(); }));
+}
+
+function metric(label, value) { return `<div class="metric"><label>${esc(label)}</label><strong>${esc(value)}</strong></div>`; }
+
+function renderWorkspace() {
+  const component = componentMap().get(selected) || {};
+  const inspector = selectedInspector();
+  const objects = inspector.scene_objects || [];
+  const params = inspector.resolved_parameters || inspector.component?.dimensions || {};
+  $("componentMetrics").innerHTML = [
+    metric("Component", selected),
+    metric("State", component.state || inspector.component?.state || "UNKNOWN"),
+    metric("Parameters", Object.keys(params).length),
+    metric("Scene objects", objects.length)
+  ].join("");
+  const tasks = taskList(), open = (model.components||[]).reduce((n,c)=>n+Number(c.open_correction_count||0),0);
+  $("productionMetrics").innerHTML = [
+    metric("Asset progress", `${Math.round(Number(model.asset?.progress || 0)*100)}%`),
+    metric("Tasks", tasks.length),
+    metric("Open corrections", open),
+    metric("Snapshot", model.scene_snapshot_hash ? "available" : "none")
+  ].join("");
+
+  const evidence = inspector.reference_evidence || [];
+  $("referenceEvidence").innerHTML = evidence.length ? evidence.map(item => `<div class="evidence">
+    <div class="view">${esc(item.view || 'DETAIL')} · ${esc(item.authority || 'PRIMARY')}</div>
+    <div class="id">${esc(item.evidence_id || item.reference_id || '')}</div>
+    <div class="roi">ROI ${esc(JSON.stringify(item.roi || []))}</div>
+    <div class="record-meta">${esc((item.feature_ids || []).join(', '))}</div>
+  </div>`).join("") : `<div class="empty">No evidence routed to this component.</div>`;
+
+  const corrections = inspector.open_corrections || [];
+  $("correctionList").innerHTML = corrections.length ? corrections.map(item => `<div class="record"><div class="record-title">${esc(item.id || item.kind || 'Correction')}</div><div>${esc(item.parameter || '')} ${item.value !== undefined ? '= ' + esc(item.value) : ''} ${esc(item.unit || '')}</div><div class="record-meta">${esc(item.priority || '')} · ${esc(item.status || '')}</div></div>`).join("") : `<div class="empty">No open corrections.</div>`;
+
+  const impacts = model.design_impacts || [];
+  $("impactList").innerHTML = impacts.length ? impacts.map(item => `<div class="record"><div class="record-title">${esc(item.resource_id || 'Resource')}</div><div>${esc(item.affected_asset_count ?? 0)} affected assets</div><div class="record-meta">${esc((item.affected_assets || []).join(', '))}</div></div>`).join("") : `<div class="empty">No design-system impact records.</div>`;
+}
+
+function renderTabs() {
+  $("tabs").innerHTML = TABS.map(tab => `<button class="tab ${tab === activeTab ? 'active' : ''}" data-tab="${tab}">${tab}</button>`).join("");
+  document.querySelectorAll(".tab").forEach(button => button.addEventListener("click", () => { activeTab = button.dataset.tab; renderInspector(); renderTabs(); }));
+}
+
+function renderKv(record) {
+  return Object.entries(record || {}).map(([key,value]) => `<dl class="kv"><dt>${esc(key)}</dt><dd>${typeof value === 'object' ? esc(JSON.stringify(value)) : esc(value)}</dd></dl>`).join("");
+}
+
+function renderInspector() {
+  const inspector = selectedInspector();
+  $("selectedLabel").textContent = selected;
+  let html = "";
+  if (activeTab === "Parameters") html = renderKv(inspector.resolved_parameters || inspector.component?.dimensions || {});
+  if (activeTab === "Bindings") html = Object.entries(inspector.resolved_design_bindings || {}).map(([id,value]) => `<div class="record"><div class="record-title">${esc(id)}</div>${renderKv(value)}</div>`).join("") || `<div class="empty">No resolved bindings.</div>`;
+  if (activeTab === "Corrections") html = (inspector.open_corrections || []).map(item => `<div class="record">${renderKv(item)}</div>`).join("") || `<div class="empty">No open corrections.</div>`;
+  if (activeTab === "References") html = (inspector.reference_evidence || []).map(item => `<div class="record">${renderKv(item)}</div>`).join("") || `<div class="empty">No routed reference evidence.</div>`;
+  if (activeTab === "Scene") html = (inspector.scene_objects || []).map(item => `<div class="record">${renderKv(item)}</div>`).join("") || `<div class="empty">No scoped scene objects.</div>`;
+  if (activeTab === "Raw") html = json(inspector);
+  $("inspectorBody").innerHTML = html;
+}
+
+function renderQueue() {
+  const tasks = taskList();
+  const ready = tasks.filter(t => t.status === "READY").length;
+  const blocked = tasks.filter(t => t.status === "BLOCKED").length;
+  $("taskSummary").textContent = `${tasks.length} tasks · ${ready} ready · ${blocked} blocked`;
+  $("taskTable").innerHTML = tasks.map(task => `<tr>
+    <td>${esc(task.task_id)}</td><td>${esc(task.component_id)}</td><td>${esc(task.task_kind || '')}</td>
+    <td><span class="status ${esc(task.status)}">${esc(task.status)}</span></td><td>${esc(task.priority ?? '')}</td><td>${esc(task.attempt ?? 0)}</td>
+    <td class="wide">${esc((task.dependencies || []).join(', '))}</td>
+  </tr>`).join("") || `<tr><td colspan="7" class="empty">No tasks.</td></tr>`;
+}
+
+function normalizeLoaded(payload) {
+  if (payload.view_model) payload = payload.view_model;
+  if (!payload.asset || !Array.isArray(payload.components)) throw new Error("Expected ASSET_STUDIO_VIEW_MODEL payload with asset and components.");
+  payload.tasks = payload.tasks || payload.inspector?.tasks || [];
+  return payload;
+}
+
+function render() { renderTop(); renderStages(); renderTree(); renderWorkspace(); renderTabs(); renderInspector(); renderQueue(); }
+
+$("loadFileButton").addEventListener("click", () => $("fileInput").click());
+$("fileInput").addEventListener("change", async event => {
+  const file = event.target.files?.[0]; if (!file) return;
+  try { model = normalizeLoaded(JSON.parse(await file.text())); selected = model.selected_component_id || model.components[0]?.component_id || ""; activeTab = "Parameters"; render(); }
+  catch (error) { alert(error.message); }
+  event.target.value = "";
+});
+$("pasteJsonButton").addEventListener("click", () => { $("jsonTextarea").value = JSON.stringify(model,null,2); $("jsonError").textContent = ""; $("jsonOverlay").classList.add("open"); });
+$("cancelJsonButton").addEventListener("click", () => $("jsonOverlay").classList.remove("open"));
+$("applyJsonButton").addEventListener("click", () => {
+  try { model = normalizeLoaded(JSON.parse($("jsonTextarea").value)); selected = model.selected_component_id || model.components[0]?.component_id || ""; activeTab = "Parameters"; $("jsonOverlay").classList.remove("open"); render(); }
+  catch (error) { $("jsonError").textContent = error.message; }
+});
+
+render();
+</script>
+</body>
+</html>
