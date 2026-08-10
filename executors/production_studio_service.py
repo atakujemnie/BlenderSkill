@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from executors.asset_envelope_gate import validate as validate_asset_envelope
+from executors.asset_execution_authorization_gate import evaluate as evaluate_asset_execution_authorization
 from executors.asset_production_orchestrator import prepare_component_task
 from executors.asset_repository import initialize as initialize_asset
 from executors.asset_repository import load as load_asset
@@ -326,10 +327,11 @@ def authorize_component(
     root: str | Path,
     asset_id: str,
     component_id: str,
-    authorization: Mapping[str, Any],
+    authorization: Mapping[str, Any] | None = None,
     *,
     expected_asset_revision: int,
 ) -> dict[str, Any]:
+    """Request authorization; PASS is derived only from persisted system state."""
     loaded = load_asset(root, asset_id)
     if loaded.get("status") != "PASS":
         return loaded
@@ -337,36 +339,40 @@ def authorize_component(
     current_revision = int(asset.get("revision", 0))
     if current_revision != int(expected_asset_revision):
         return _revision_conflict("ASSET_REVISION_CONFLICT", expected_asset_revision, current_revision)
-    components = {str(key): dict(value) for key, value in dict(asset.get("components", {}) or {}).items()}
-    component = components.get(str(component_id))
-    if component is None:
-        return {"status": "FAIL", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "COMPONENT_NOT_FOUND", "component_id": str(component_id)}]}
-    if str(authorization.get("status") or "").upper() != "PASS" or not str(authorization.get("validator_id") or ""):
-        return {"status": "BLOCKED", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "EXECUTION_AUTHORIZATION_PASS_REQUIRED"}]}
-    dependencies = [str(value) for value in list(component.get("depends_on", []) or [])]
-    incomplete = [dep for dep in dependencies if str(components.get(dep, {}).get("state") or "") != "ACCEPTED"]
-    if incomplete:
-        return {
-            "status": "BLOCKED",
-            "executor_id": EXECUTOR_ID,
-            "blockers": [{"reason": "COMPONENT_DEPENDENCY_NOT_ACCEPTED", "component_ids": sorted(incomplete)}],
-        }
-    state = str(component.get("state") or "DECLARED").upper()
-    if state not in {"CONSTRAINED", "DIRTY", "UNVERIFIED", "FAIL"}:
-        return {"status": "BLOCKED", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "COMPONENT_STATE_NOT_AUTHORIZABLE", "state": state}]}
+
+    gate = evaluate_asset_execution_authorization(asset, str(component_id))
+    if gate.get("status") != "PASS":
+        return {**gate, "executor_id": EXECUTOR_ID}
+
     cp = deepcopy(dict(asset))
     cp_components = {str(key): dict(value) for key, value in dict(cp.get("components", {}) or {}).items()}
     cp_component = dict(cp_components[str(component_id)])
     cp_component["state"] = "READY_TO_BUILD"
-    cp_component["execution_authorization"] = dict(authorization)
+    cp_component["execution_authorization"] = {
+        **dict(gate),
+        "request_actor": str((authorization or {}).get("actor") or "SYSTEM"),
+        "request_reason": str((authorization or {}).get("reason") or "AUTHORIZE_COMPONENT"),
+    }
     cp_components[str(component_id)] = cp_component
     cp["components"] = cp_components
     cp["revision"] = current_revision + 1
     history = list(cp.get("history", []) or [])
-    history.append({"revision": cp["revision"], "event": "COMPONENT_AUTHORIZED", "component_id": str(component_id), "validator_id": authorization.get("validator_id")})
+    history.append(
+        {
+            "revision": cp["revision"],
+            "event": "COMPONENT_AUTHORIZED",
+            "component_id": str(component_id),
+            "validator_id": gate.get("validator_id"),
+        }
+    )
     cp["history"] = history
     saved = save_asset(root, cp, expected_revision=current_revision)
-    return {**saved, "executor_id": EXECUTOR_ID, "asset_revision": cp["revision"] if saved.get("status") == "PASS" else current_revision}
+    return {
+        **saved,
+        "executor_id": EXECUTOR_ID,
+        "asset_revision": cp["revision"] if saved.get("status") == "PASS" else current_revision,
+        "authorization": gate if saved.get("status") == "PASS" else None,
+    }
 
 
 def _geometry_task_authorization(asset: Mapping[str, Any], component: Mapping[str, Any], requested_stage: str, task_kind: str) -> dict[str, Any]:
@@ -461,9 +467,51 @@ def create_production_task(
     return {**saved, "executor_id": EXECUTOR_ID, "task": task if saved.get("status") == "PASS" else None}
 
 
-def publish_validation_receipt(root: str | Path, asset_id: str, receipt: Mapping[str, Any], *, expected_validation_revision: int | None = None) -> dict[str, Any]:
+def publish_validation_receipt(
+    root: str | Path,
+    asset_id: str,
+    receipt: Mapping[str, Any],
+    *,
+    expected_validation_revision: int | None = None,
+) -> dict[str, Any]:
+    """Persist a trusted receipt only for the current persisted asset and scene."""
+    loaded = load_asset(root, asset_id)
+    if loaded.get("status") != "PASS":
+        return loaded
+    current_asset_revision = int(loaded["asset"].get("revision", 0))
+    if int(receipt.get("asset_revision", 0)) != current_asset_revision:
+        return _revision_conflict(
+            "VALIDATION_RECEIPT_ASSET_REVISION_STALE",
+            current_asset_revision,
+            int(receipt.get("asset_revision", 0)),
+        )
+    scene, current_scene_revision = _scene_or_none(root, asset_id)
+    if scene is None:
+        return {
+            "status": "BLOCKED",
+            "executor_id": EXECUTOR_ID,
+            "blockers": [{"reason": "VALIDATION_RECEIPT_SCENE_REQUIRED"}],
+        }
+    if int(receipt.get("scene_revision", 0)) != current_scene_revision:
+        return _revision_conflict(
+            "VALIDATION_RECEIPT_SCENE_REVISION_STALE",
+            current_scene_revision,
+            int(receipt.get("scene_revision", 0)),
+        )
+    component_id = str(receipt.get("component_id") or "")
+    if component_id not in dict(loaded["asset"].get("components", {}) or {}):
+        return {
+            "status": "FAIL",
+            "executor_id": EXECUTOR_ID,
+            "blockers": [{"reason": "VALIDATION_RECEIPT_COMPONENT_NOT_FOUND", "component_id": component_id}],
+        }
     return {
-        **publish_validation_receipt_record(root, asset_id, receipt, expected_revision=expected_validation_revision),
+        **publish_validation_receipt_record(
+            root,
+            asset_id,
+            receipt,
+            expected_revision=expected_validation_revision,
+        ),
         "executor_id": EXECUTOR_ID,
     }
 

@@ -1086,6 +1086,27 @@
       "tests": [
         "tests/blender/test_v021_component_execution.py"
       ]
+    },
+    {
+      "id": "ASSET_EXECUTION_AUTHORIZATION_GATE",
+      "purpose": "Derive component build authorization from persisted asset state instead of caller-supplied PASS claims.",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/asset_execution_authorization_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "authorization",
+        "component",
+        "build",
+        "v0.21"
+      ],
+      "tests": [
+        "tests/unit/test_asset_execution_authorization_gate.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
     }
   ],
   "executors": [
@@ -1248,11 +1269,12 @@
     },
     {
       "id": "COMPONENT_TASK_PACK",
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "executor": "executors/component_task_pack.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/unit/test_component_task_pack.py"
+        "tests/unit/test_component_task_pack.py",
+        "tests/regression/test_benchmark_91.py"
       ]
     },
     {
@@ -1275,11 +1297,12 @@
     },
     {
       "id": "BLENDER_HARD_SURFACE_BUILDER",
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "executor": "executors/blender_hard_surface_builder.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/blender/test_hard_surface_builder.py"
+        "tests/blender/test_hard_surface_builder.py",
+        "tests/blender/test_v021_component_execution.py"
       ]
     },
     {
@@ -1302,11 +1325,12 @@
     },
     {
       "id": "PRODUCTION_TASK_LIFECYCLE",
-      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "executor": "executors/production_task_lifecycle.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/unit/test_production_task_lifecycle.py"
+        "tests/unit/test_production_task_lifecycle.py",
+        "tests/unit/test_v021_trusted_task_approval.py"
       ]
     },
     {
@@ -1376,13 +1400,15 @@
     },
     {
       "id": "PRODUCTION_STUDIO_SERVICE",
-      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
       "executor": "executors/production_studio_service.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/integration/test_production_studio_service.py",
         "tests/integration/test_production_studio_http.py",
-        "tests/regression/test_benchmark_90.py"
+        "tests/regression/test_benchmark_90.py",
+        "tests/integration/test_v021_studio_http.py",
+        "tests/regression/test_benchmark_91.py"
       ]
     },
     {
@@ -1392,6 +1418,84 @@
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/integration/test_production_studio_http.py"
+      ]
+    },
+    {
+      "id": "COMPONENT_TRANSFORM",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/component_transform.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_component_transform.py"
+      ]
+    },
+    {
+      "id": "ASSET_ENVELOPE_GATE",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/asset_envelope_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_envelope_gate.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
+    },
+    {
+      "id": "REPRESENTATION_CONTRACT_GATE",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/representation_contract_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_representation_contract_gate.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
+    },
+    {
+      "id": "COMPONENT_EXECUTION_GATE",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/component_execution_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_component_execution_gate.py",
+        "tests/blender/test_v021_component_execution.py"
+      ]
+    },
+    {
+      "id": "VALIDATION_RECEIPT_REPOSITORY",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/validation_receipt_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_validation_receipt_repository.py",
+        "tests/unit/test_v021_trusted_task_approval.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
+    },
+    {
+      "id": "REFERENCE_EVIDENCE_MATERIALIZER",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/reference_evidence_materializer.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_reference_evidence_materializer.py"
+      ]
+    },
+    {
+      "id": "BLENDER_DESIGN_RESOURCE_ADAPTER",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/blender_design_resource_adapter.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/blender/test_v021_component_execution.py"
+      ]
+    },
+    {
+      "id": "ASSET_EXECUTION_AUTHORIZATION_GATE",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/asset_execution_authorization_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_execution_authorization_gate.py",
+        "tests/regression/test_benchmark_91.py"
       ]
     }
   ],
@@ -1446,7 +1550,8 @@
     "tests/unit/test_reference_evidence_materializer.py",
     "tests/unit/test_representation_contract_gate.py",
     "tests/unit/test_v021_trusted_task_approval.py",
-    "tests/unit/test_validation_receipt_repository.py"
+    "tests/unit/test_validation_receipt_repository.py",
+    "tests/unit/test_asset_execution_authorization_gate.py"
   ],
   "generated_artifacts": [
     {

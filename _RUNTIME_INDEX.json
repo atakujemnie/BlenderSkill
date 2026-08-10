@@ -39,6 +39,23 @@
       "skill_id": "ASSET_ENVELOPE_GATE"
     },
     {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "ASSET_STATE_RUNTIME"
+      ],
+      "executor": "executors/asset_execution_authorization_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Derive component build authorization from persisted asset state instead of caller-supplied PASS claims.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "authorization",
+        "build",
+        "component",
+        "v0.21"
+      ],
+      "skill_id": "ASSET_EXECUTION_AUTHORIZATION_GATE"
+    },
+    {
       "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
       "dependencies": [
         "ASSET_STATE_RUNTIME",
