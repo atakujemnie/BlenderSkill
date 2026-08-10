@@ -160,7 +160,7 @@ def test_benchmark_89_full_production_runtime(tmp_path):
     approved = transition(reviewed["task"], "APPROVED", actor="REVIEWER", reason="VALIDATED")
     assert approved["status"] == "PASS"
 
-    saved_queue = save(
+    saved_queue = save_queue(
         tmp_path,
         asset["asset_id"],
         {approved["task"]["task_id"]: approved["task"]},
