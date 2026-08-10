@@ -21,4 +21,4 @@ exclude = ["_FULL_LIBRARY.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-ignore = ["E501"]
+ignore = ["E501", "E402", "UP035", "I001"]

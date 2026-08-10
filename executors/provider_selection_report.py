@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 EXECUTOR_ID = "PROVIDER_SELECTION_REPORT"
-EXECUTOR_VERSION = "0.18.0"
+EXECUTOR_VERSION = "0.18.2"
 
 VEGETATION_DOMAINS = {"TREE", "WOODY_PLANT", "GRASS", "GROUNDCOVER", "VINE", "SURFACE_GROWTH", "VEGETATION"}
 
@@ -15,9 +15,13 @@ def _broadly_relevant(provider: Mapping[str, Any], requested_domains: set[str]) 
     kind = str(provider.get("source_kind") or "")
     if domains & requested_domains:
         return True
+    # Unknown providers must remain visible so they can be explicitly BLOCKED
+    # instead of disappearing from the auditable selection report.
+    if kind == "UNKNOWN":
+        return True
     if requested_domains & VEGETATION_DOMAINS:
         return bool(domains & VEGETATION_DOMAINS) or "GENERIC_PROCEDURAL" in domains or kind == "READY_ASSET_SOURCE"
-    return kind in {"READY_ASSET_SOURCE", "PROCEDURAL_GENERATOR", "EXTERNAL_GENERATOR", "BUILTIN_BACKEND", "UNKNOWN"}
+    return kind in {"READY_ASSET_SOURCE", "PROCEDURAL_GENERATOR", "EXTERNAL_GENERATOR", "BUILTIN_BACKEND"}
 
 
 def build_report(
@@ -40,7 +44,13 @@ def build_report(
         exact_domain = bool(domains & requested)
         generic_domain = "GENERIC_PROCEDURAL" in domains
         state = dict(eligibility.get(provider_id) or {})
-        probe_state = str(state.get("probe_state") or state.get("runtime_probe_status") or provider.get("probe_state") or provider.get("runtime_probe_status") or "PROBE_REQUIRED")
+        probe_state = str(
+            state.get("probe_state")
+            or state.get("runtime_probe_status")
+            or provider.get("probe_state")
+            or provider.get("runtime_probe_status")
+            or "PROBE_REQUIRED"
+        )
         quality_state = str(state.get("quality_state") or "UNRATED")
         compatibility_state = str(state.get("compatibility_state") or "UNKNOWN")
         license_state = str(state.get("license_state") or "UNKNOWN")
@@ -82,25 +92,33 @@ def build_report(
             decision = "BLOCKED"
             reasons.append("DOMAIN_CLASSIFICATION_REQUIRED")
 
-        selection_state = "SELECTED" if provider_id == selected_provider_id and decision in {"ELIGIBLE", "ELIGIBLE_GENERIC"} else decision
+        selection_state = (
+            "SELECTED"
+            if provider_id == selected_provider_id and decision in {"ELIGIBLE", "ELIGIBLE_GENERIC"}
+            else decision
+        )
 
-        candidates.append({
-            "provider_id": provider_id,
-            "display_name": provider.get("display_name"),
-            "version": provider.get("version"),
-            "source_kind": provider.get("source_kind"),
-            "domains": sorted(domains),
-            "enabled": bool(provider.get("enabled", False)),
-            "discovery_state": provider.get("discovery_state") or ("DISCOVERED" if provider.get("discovered", True) else "NOT_DISCOVERED"),
-            "probe_state": probe_state,
-            "domain_state": domain_state,
-            "compatibility_state": compatibility_state,
-            "license_state": license_state,
-            "quality_state": quality_state,
-            "selection_state": selection_state,
-            "reason": reasons,
-            "selected": provider_id == selected_provider_id,
-        })
+        candidates.append(
+            {
+                "provider_id": provider_id,
+                "display_name": provider.get("display_name"),
+                "version": provider.get("version"),
+                "source_kind": provider.get("source_kind"),
+                "domains": sorted(domains),
+                "enabled": bool(provider.get("enabled", False)),
+                "discovery_state": provider.get("discovery_state")
+                or ("DISCOVERED" if provider.get("discovered", True) else "NOT_DISCOVERED"),
+                "probe_state": probe_state,
+                "domain_state": domain_state,
+                "compatibility_state": compatibility_state,
+                "license_state": license_state,
+                "quality_state": quality_state,
+                "decision": decision,
+                "selection_state": selection_state,
+                "reason": reasons,
+                "selected": provider_id == selected_provider_id,
+            }
+        )
 
     blockers: list[dict[str, Any]] = []
     if expected_provider_gate_status != "PASS":
@@ -110,7 +128,13 @@ def build_report(
         if not selected:
             blockers.append({"reason": "SELECTED_PROVIDER_NOT_IN_RELEVANT_INVENTORY", "provider_id": selected_provider_id})
         elif selected["selection_state"] != "SELECTED":
-            blockers.append({"reason": "SELECTED_PROVIDER_NOT_ELIGIBLE", "provider_id": selected_provider_id, "decision": selected["selection_state"]})
+            blockers.append(
+                {
+                    "reason": "SELECTED_PROVIDER_NOT_ELIGIBLE",
+                    "provider_id": selected_provider_id,
+                    "decision": selected["selection_state"],
+                }
+            )
 
     buckets: dict[str, list[dict[str, Any]]] = {}
     for provider in inventory.get("providers", []) or []:
