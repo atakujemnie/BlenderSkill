@@ -368,7 +368,7 @@
   "source_of_truth": "github_repository",
   "environment_assembly_layer": "13_environment_assembly",
   "design_system_layer": "14_design_system",
-  "provider_discovery_version": "0.17.0",
+  "provider_discovery_version": "0.18.0",
   "manifest_schema_version": 2,
   "skills": [
     {
@@ -645,5 +645,6 @@
       "builder": "tools/build_runtime_index.py",
       "max_bytes": 153600
     }
-  ]
+  ],
+  "runtime_verification_version": "0.18.0"
 }
