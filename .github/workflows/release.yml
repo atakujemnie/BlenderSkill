@@ -45,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           ruff check executors tests tools
-          pytest tests/unit tests/integration
+          pytest tests/unit tests/integration tests/regression
           python tools/test_v09_shape_graph.py
           python tools/test_v010_reference_fidelity.py
           python tools/test_v011_execution_enforcement.py
