@@ -11,7 +11,7 @@ from typing import Any, Mapping
 from executors.reference_evidence_registry import validate
 
 EXECUTOR_ID = "REFERENCE_EVIDENCE_REPOSITORY"
-EXECUTOR_VERSION = "0.20.0-dev"
+EXECUTOR_VERSION = "0.20.0"
 SCHEMA_VERSION = 1
 
 

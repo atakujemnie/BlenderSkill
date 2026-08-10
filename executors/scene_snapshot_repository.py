@@ -11,7 +11,7 @@ from typing import Any, Mapping
 from executors.scene_component_snapshot import build as build_snapshot
 
 EXECUTOR_ID = "SCENE_SNAPSHOT_REPOSITORY"
-EXECUTOR_VERSION = "0.20.0-dev"
+EXECUTOR_VERSION = "0.20.0"
 SCHEMA_VERSION = 1
 
 

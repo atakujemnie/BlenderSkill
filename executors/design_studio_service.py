@@ -12,7 +12,7 @@ from executors.design_system_repository import load as load_resource
 from executors.design_system_repository import save as save_resource
 
 EXECUTOR_ID = "DESIGN_STUDIO_SERVICE"
-EXECUTOR_VERSION = "0.20.0-dev"
+EXECUTOR_VERSION = "0.20.0"
 
 
 def _root(root: str | Path) -> Path:

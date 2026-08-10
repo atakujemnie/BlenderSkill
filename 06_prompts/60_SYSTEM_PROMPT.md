@@ -89,3 +89,5 @@ z PASS dla runtime discovery, realnego Geometry Nodes probe i cleanup validation
 
 
 Runtime release: v0.19.0. Component production MUST route through persistent asset state, scoped task packs and validation gates when applicable.
+
+Runtime release: v0.20.0. Operational asset production MUST route through persistent repositories, component-scoped task packs and the Production Studio service/API when applicable.

@@ -1,4 +1,4 @@
-> Current production runtime: v0.19.0 — persistent asset/design/task state and Production Studio.
+> Current production runtime: v0.20.0 — operational persistent Production Studio API and live GUI.
 
 # BlenderSkill
 

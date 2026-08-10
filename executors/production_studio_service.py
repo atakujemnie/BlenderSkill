@@ -32,7 +32,7 @@ from executors.scene_snapshot_repository import load as load_scene_snapshot
 from executors.scene_snapshot_repository import publish as publish_scene_snapshot
 
 EXECUTOR_ID = "PRODUCTION_STUDIO_SERVICE"
-EXECUTOR_VERSION = "0.20.0-dev"
+EXECUTOR_VERSION = "0.20.0"
 
 
 def _assets_dir(root: str | Path) -> Path:

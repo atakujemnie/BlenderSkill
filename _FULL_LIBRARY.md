@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.19.0 — Full compiled snapshot
+# Blender AI Agent Library v0.20.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -12830,6 +12830,8 @@ z PASS dla runtime discovery, realnego Geometry Nodes probe i cleanup validation
 
 
 Runtime release: v0.19.0. Component production MUST route through persistent asset state, scoped task packs and validation gates when applicable.
+
+Runtime release: v0.20.0. Operational asset production MUST route through persistent repositories, component-scoped task packs and the Production Studio service/API when applicable.
 
 
 ---
@@ -26753,6 +26755,15 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## FILE: `CHANGELOG.md`
 
+## 0.20.0 — Operational Production Studio
+
+- Promoted the local Production Studio from inspection shell to operational workflow engine.
+- Added revisioned scene-snapshot and reference-evidence repositories with optimistic concurrency.
+- Added read-only Blender 5.1 scene snapshot adapter and real Blender regression coverage.
+- Added Production Studio and Design Studio service layers over canonical repositories.
+- Added loopback-first JSON HTTP API and live asset/design-system Studio interfaces.
+- Added canonical Benchmark 90 for persistent operational Studio workflow, scoped context and restart-safe state.
+
 ## 0.19.0 — Production Studio Runtime
 
 - Promoted persistent asset/component production state and relational parameter graph to release executors.
@@ -27284,7 +27295,7 @@ Architecture retained across releases:
 
 ## FILE: `README.md`
 
-> Current production runtime: v0.19.0 — persistent asset/design/task state and Production Studio.
+> Current production runtime: v0.20.0 — operational persistent Production Studio API and live GUI.
 
 # BlenderSkill
 
@@ -34645,3 +34656,294 @@ Component execution remains token-bounded:
 ## Source-of-truth invariant
 
 Conversation history, prompt text and `.blend` state are never the canonical production database. They may provide evidence or implementation output, but persistent asset/design/task repositories own production truth.
+
+
+---
+
+## FILE: `07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md`
+
+# Benchmark 90 — Lafar Operational Production Studio v0.20 Regression
+
+Status: canonical v0.20 release benchmark
+
+## Objective
+
+Prove that the v0.19 Production Studio architecture is operational rather than only inspectable. A user must be able to manage one asset, its components, reference evidence, corrections, tasks, scene snapshots and shared design resources through a persistent service/API without treating Blender state or conversation history as the database.
+
+## Primary fixture
+
+`tests/fixtures/lafar_street_bench_vnext.json`
+
+The benchmark retains the Lafar street bench dimensions and component graph from Benchmarks 88–89 and exercises the operational service layer added in v0.20.
+
+## Required v0.20 behavior
+
+### 1. Persistent workspace operations
+
+`PRODUCTION_STUDIO_SERVICE` must create/load an asset and initialize its task queue and reference-evidence registry. Restarting the service over the same filesystem root must reconstruct the same canonical state.
+
+### 2. Optimistic concurrency
+
+Writes to asset state, task queue, reference evidence, scene snapshots and shared design resources must use explicit expected revisions. Stale writes must fail with machine-readable conflict reasons instead of silently overwriting newer state.
+
+### 3. Component-scoped Studio view
+
+A Studio request for `BACKREST` must return a compact inspector containing only relevant component parameters, corrections, bindings, evidence and scene records. The UI must not require a full `.blend` dump or `_FULL_LIBRARY.md`.
+
+### 4. Operational task flow
+
+The service must support:
+
+```text
+create task -> dependency promotion -> READY -> RUNNING -> result -> REVIEW -> APPROVED
+```
+
+Task preparation must still respect the v0.19 token budgets and mutation scope.
+
+### 5. Reference evidence persistence
+
+`REFERENCE_EVIDENCE_REPOSITORY` must persist component/feature ROI evidence with immutable revisions. Updating or deleting evidence creates a new revision. BACKREST task preparation must route BACKREST evidence and exclude unrelated SEAT evidence.
+
+### 6. Scene snapshot persistence
+
+`SCENE_SNAPSHOT_REPOSITORY` stores compact production snapshots independently from `.blend`. A new snapshot revision must preserve immutable history and reject stale publication.
+
+### 7. Blender measurement adapter
+
+`BLENDER_SCENE_SNAPSHOT_ADAPTER` must read Blender 5.1 scene data without mutating it and emit the compact `SCENE_COMPONENT_SNAPSHOT` schema: component IDs, transforms, dimensions, mesh metrics, material IDs, modifier summaries, binding IDs, anchors and visibility.
+
+### 8. Shared design resources
+
+`DESIGN_STUDIO_SERVICE` must list versioned resources, update them through `DESIGN_SYSTEM_REPOSITORY` and expose impact information before a shared Astera resource change affects consuming assets.
+
+### 9. HTTP boundary
+
+`studio/server.py` must expose the operational service through a loopback-first JSON API. HTTP is an adapter only; production truth remains in the repositories.
+
+### 10. Live GUI
+
+`studio/asset_production_studio.html` must operate against the server API and support at minimum:
+
+- asset selection and refresh;
+- component selection;
+- stage advancement;
+- add/resolve correction;
+- add/delete reference evidence;
+- prepare task pack;
+- create/promote/transition tasks;
+- inspect runtime revisions and scoped scene state.
+
+The offline JSON inspection mode may remain as fallback but is not the canonical operational path.
+
+## Regression acceptance
+
+Benchmark 90 passes only when:
+
+1. Benchmarks 88–89 remain green;
+2. asset/task/evidence/scene/design repositories preserve immutable revisions;
+3. stale writes are rejected across repository boundaries;
+4. the Studio service reconstructs state after a fresh process/service instance;
+5. BACKREST Studio view remains component-scoped;
+6. BACKREST repair task remains within the 4k estimated input-token target;
+7. reference evidence routing excludes unrelated component ROIs;
+8. the production task lifecycle cannot bypass validation/review rules;
+9. the HTTP integration tests pass;
+10. the Blender scene snapshot adapter passes in real Blender 5.1;
+11. generated library/runtime artifacts are deterministic and committed cleanly.
+
+## Architectural invariant
+
+```text
+GUI != SOURCE OF TRUTH
+HTTP != SOURCE OF TRUTH
+BLENDER != SOURCE OF TRUTH
+CHAT != SOURCE OF TRUTH
+
+PERSISTENT REPOSITORIES + VERSIONED CONTRACTS = SOURCE OF TRUTH
+```
+
+The v0.20 release is successful when the user can operate the production workflow from the Studio interface while the same deterministic runtime remains usable from CLI, tests or future desktop adapters.
+
+
+---
+
+## FILE: `15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md`
+
+# Operational Production Studio API
+
+Status: v0.20.0 implementation contract
+
+## Purpose
+
+v0.20 turns the v0.19 Production Studio model into an operational local workflow engine. The user-facing Studio, HTTP API, CLI adapters and Blender adapters all compose the same persistent repositories; none of those adapters owns canonical production truth.
+
+## Runtime boundary
+
+```text
+ASSET REPOSITORY
+TASK REPOSITORY
+REFERENCE EVIDENCE REPOSITORY
+SCENE SNAPSHOT REPOSITORY
+DESIGN SYSTEM REPOSITORY
+        |
+        v
+PRODUCTION STUDIO SERVICE / DESIGN STUDIO SERVICE
+        |
+        +--------------------+
+        |                    |
+        v                    v
+LOCAL HTTP API          CLI / FUTURE DESKTOP
+        |
+        v
+LIVE STUDIO GUI
+
+BLENDER -> READ-ONLY SCENE SNAPSHOT ADAPTER -> SCENE SNAPSHOT REPOSITORY
+```
+
+## Production Studio service
+
+`PRODUCTION_STUDIO_SERVICE` composes existing v0.19 executors and repositories. It must provide deterministic operations for:
+
+- listing and creating assets;
+- loading a component-scoped Studio view;
+- adding/resolving corrections;
+- advancing asset stages;
+- creating production tasks;
+- promoting dependency-ready tasks;
+- task transitions and review lifecycle;
+- preparing token-bounded component task packs;
+- adding/removing reference evidence;
+- publishing compact scene snapshots.
+
+Every mutating operation must preserve optimistic concurrency. The service may not hide repository revision conflicts.
+
+## Reference Evidence Repository
+
+`REFERENCE_EVIDENCE_REPOSITORY` persists the validated evidence registry per asset.
+
+Required behavior:
+
+- immutable revision files plus current state;
+- atomic writes;
+- explicit asset ID safety;
+- stale-writer rejection;
+- evidence upsert and delete as new revisions;
+- compatibility with `REFERENCE_EVIDENCE_REGISTRY` query semantics.
+
+Whole source images remain external artifacts referenced by IDs/ROIs. The repository stores evidence metadata, not repeated image payloads.
+
+## Scene Snapshot Repository
+
+`SCENE_SNAPSHOT_REPOSITORY` persists compact scene snapshots produced by `SCENE_COMPONENT_SNAPSHOT` or the Blender adapter.
+
+Required behavior:
+
+- one current snapshot and immutable revision history per asset;
+- atomic publish;
+- expected scene revision checks;
+- deterministic snapshot validation/hash preservation;
+- no full `.blend` serialization.
+
+## Blender Scene Snapshot Adapter
+
+`BLENDER_SCENE_SNAPSHOT_ADAPTER` is a read-only Blender 5.1 data-API adapter. It must emit only production-relevant records:
+
+```yaml
+object_id
+component_id
+object_type
+parent_id
+transform
+  location_mm
+  rotation_rad
+  scale
+dimensions_mm
+mesh_metrics
+material_ids
+modifier_stack
+binding_ids
+anchor_ids
+visibility
+```
+
+The adapter must not mutate scene data while measuring it. Objects without `blenderskill_component_id` are excluded from production snapshots by default.
+
+## Design Studio service
+
+`DESIGN_STUDIO_SERVICE` exposes operational listing and versioned mutation of shared design-system resources. It must preserve the semantics of `DESIGN_SYSTEM_REPOSITORY`:
+
+- immutable revisions;
+- lock state;
+- semantic resource versions;
+- optimistic concurrency;
+- reverse usage;
+- impact inspection before shared changes.
+
+A GUI edit to an Astera LED/profile is therefore a repository revision, not an untracked Blender change.
+
+## HTTP API
+
+`studio/server.py` is a loopback-first JSON adapter over the service layer.
+
+Rules:
+
+1. HTTP handlers must delegate domain behavior to service/executor functions.
+2. Repository roots must be explicit and local by default.
+3. Errors must return machine-readable JSON and appropriate HTTP status classes.
+4. Request bodies must be bounded and parsed as JSON.
+5. The server must not become a second persistence implementation.
+6. Asset/task/reference/scene/design-resource routes must expose runtime revision data required for optimistic writes.
+
+## Live Studio GUI
+
+`studio/asset_production_studio.html` is the operational UI for asset production. It should use the HTTP API for live mode and retain offline JSON loading only as a fallback inspection mode.
+
+The UI is expected to surface:
+
+- asset selector and asset/stage state;
+- component tree;
+- component inspector;
+- resolved parameters and bindings;
+- corrections;
+- reference evidence;
+- task queue and task state actions;
+- scene snapshot records;
+- runtime revision counters;
+- task-pack preparation metrics.
+
+`studio/design_system_studio.html` provides the corresponding shared-resource view and mutation surface.
+
+## Required v0.20 executors
+
+- `REFERENCE_EVIDENCE_REPOSITORY`
+- `SCENE_SNAPSHOT_REPOSITORY`
+- `BLENDER_SCENE_SNAPSHOT_ADAPTER`
+- `PRODUCTION_STUDIO_SERVICE`
+- `DESIGN_STUDIO_SERVICE`
+
+They depend on the released v0.19 asset-production executors rather than replacing them.
+
+## Token policy
+
+The service layer must not expand context merely because a GUI/API exists. v0.19 limits remain mandatory:
+
+- repair task <= 4k estimated input tokens;
+- build task <= 8k;
+- asset planning <= 15k;
+- no full-library loading for routine component execution;
+- no full scene dump where compact snapshot suffices;
+- reference evidence routed by IDs/ROIs/features instead of whole-image repetition.
+
+## Source-of-truth invariant
+
+The canonical state hierarchy is:
+
+```text
+PERSISTENT REPOSITORIES
+    > SERVICE/API REPRESENTATION
+    > GUI STATE
+    > BLENDER IMPLEMENTATION STATE
+    > CONVERSATION HISTORY
+```
+
+Lower layers may display or execute higher-level decisions, but may not silently override them.

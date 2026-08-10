@@ -14,7 +14,7 @@ from typing import Any
 from executors.scene_component_snapshot import build as build_snapshot
 
 EXECUTOR_ID = "BLENDER_SCENE_SNAPSHOT_ADAPTER"
-EXECUTOR_VERSION = "0.20.0-dev"
+EXECUTOR_VERSION = "0.20.0"
 M_TO_MM = 1000.0
 
 
