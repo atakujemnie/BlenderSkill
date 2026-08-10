@@ -1,0 +1,271 @@
+from executors.asset_envelope_gate import validate as validate_envelope
+from executors.component_execution_gate import authorize as authorize_recipe
+from executors.production_studio_service import (
+    authorize_component,
+    create_asset,
+    create_production_task,
+    get_studio,
+    prepare_task,
+    promote_production_tasks,
+    publish_scene,
+    publish_validation_receipt,
+    transition_production_task,
+)
+
+
+def _asset(*, stage="BLOCKOUT", slab_width=994):
+    return {
+        "asset_id": "ACS-SM-SIDEWALK-3470-S-B91",
+        "name": "Lafar Sidewalk Benchmark 91",
+        "revision": 1,
+        "stage": stage,
+        "enforce_asset_envelope": False,
+        "components": {
+            "ROOT": {
+                "parent": None,
+                "state": "ACCEPTED",
+                "shape_class": "ASSEMBLY",
+                "dimensions": {
+                    "width": {"value": 2000, "unit": "mm", "locked": True},
+                    "depth": {"value": 2000, "unit": "mm", "locked": True},
+                    "height": {"value": 160, "unit": "mm", "locked": True},
+                },
+                "anchors": {},
+            },
+            "SLAB_L": {
+                "parent": "ROOT",
+                "state": "CONSTRAINED",
+                "shape_class": "ROUNDED_BOX",
+                "placement_required": True,
+                "transform": {"location_mm": [-500, 0, 120], "coordinate_space": "ASSET_LOCAL"},
+                "depends_on": ["ROOT"],
+                "dimensions": {
+                    "width": {"value": slab_width, "unit": "mm", "locked": True},
+                    "depth": {"value": 1000, "unit": "mm", "locked": True},
+                    "height": {"value": 40, "unit": "mm", "locked": True},
+                },
+                "anchors": {},
+                "validation": {"required_validator_ids": ["SCENE_COMPONENT_VALIDATION", "REPRESENTATION_CONTRACT_GATE"]},
+            },
+            "SLAB_R": {
+                "parent": "ROOT",
+                "state": "CONSTRAINED",
+                "shape_class": "ROUNDED_BOX",
+                "placement_required": True,
+                "transform": {"location_mm": [500, 0, 120], "coordinate_space": "ASSET_LOCAL"},
+                "depends_on": ["ROOT"],
+                "dimensions": {
+                    "width": {"value": slab_width, "unit": "mm", "locked": True},
+                    "depth": {"value": 1000, "unit": "mm", "locked": True},
+                    "height": {"value": 40, "unit": "mm", "locked": True},
+                },
+                "anchors": {},
+            },
+            "TACTILE": {
+                "parent": "ROOT",
+                "state": "CONSTRAINED",
+                "shape_class": "TACTILE_GRID_PANEL",
+                "placement_required": True,
+                "transform": {"location_mm": [0, -800, 150], "coordinate_space": "ASSET_LOCAL"},
+                "depends_on": ["ROOT"],
+                "dimensions": {
+                    "width": {"value": 2000, "unit": "mm"},
+                    "depth": {"value": 150, "unit": "mm"},
+                    "height": {"value": 10, "unit": "mm"},
+                },
+                "anchors": {},
+            },
+            "GRATE": {
+                "parent": "ROOT",
+                "state": "CONSTRAINED",
+                "shape_class": "SLOTTED_GRATE_PLATE",
+                "placement_required": True,
+                "transform": {"location_mm": [0, -930, 105], "coordinate_space": "ASSET_LOCAL"},
+                "depends_on": ["ROOT"],
+                "dimensions": {
+                    "width": {"value": 1900, "unit": "mm"},
+                    "depth": {"value": 100, "unit": "mm"},
+                    "height": {"value": 8, "unit": "mm"},
+                },
+                "anchors": {},
+            },
+        },
+        "seam_constraints": [
+            {"a": "SLAB_L", "b": "SLAB_R", "axis": "X", "expected_gap_mm": 6, "tolerance_mm": 0.5}
+        ],
+        "bindings": {},
+        "corrections": [],
+        "history": [],
+    }
+
+
+def _receipt(receipt_id, validator_id, *, asset_revision=2, scene_revision=1):
+    return {
+        "receipt_id": receipt_id,
+        "validator_id": validator_id,
+        "validator_version": "0.21.0",
+        "asset_id": "ACS-SM-SIDEWALK-3470-S-B91",
+        "asset_revision": asset_revision,
+        "component_id": "SLAB_L",
+        "scene_revision": scene_revision,
+        "status": "PASS",
+        "source": "SYSTEM",
+    }
+
+
+def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acceptance(tmp_path):
+    # Negative control from the blind test: 996 mm slabs at +/-500 measure a 4 mm seam,
+    # so a declared 6 mm seam cannot pass merely because both values look plausible.
+    broken = _asset(slab_width=996)
+    envelope = validate_envelope(broken)
+    assert envelope["status"] == "FAIL"
+    assert any(item["reason"] == "SEAM_GAP_MISMATCH" for item in envelope["blockers"])
+
+    asset = _asset()
+    assert validate_envelope(asset)["status"] == "PASS"
+    created = create_asset(tmp_path, asset)
+    assert created["status"] == "PASS", created
+
+    # A component-scoped task must preserve the actual asset-local placement.
+    prepared = prepare_task(tmp_path, asset["asset_id"], "SLAB_L", task_kind="BUILD")
+    assert prepared["status"] == "PASS", prepared
+    assert prepared["task_pack"]["component"]["transform"]["location_mm"] == [-500.0, 0.0, 120.0]
+    assert prepared["metrics"]["estimated_input_tokens"] < 8000
+
+    # Representation cannot silently collapse a tactile panel into one generic box.
+    tactile_pack = prepare_task(tmp_path, asset["asset_id"], "TACTILE", task_kind="BUILD")["task_pack"]
+    bad_tactile_recipe = {
+        "component_id": "TACTILE",
+        "operations": [
+            {"id": "body", "op": "ROUNDED_BOX", "output": "BODY", "dimensions": {"width": 2000, "depth": 150, "height": 10}}
+        ],
+        "final_outputs": ["BODY"],
+    }
+    blocked_recipe = authorize_recipe(tactile_pack, bad_tactile_recipe)
+    assert blocked_recipe["status"] == "BLOCKED"
+    assert any(item["reason"] == "REPRESENTATION_REQUIRED_OPERATION_MISSING" for item in blocked_recipe["blockers"])
+
+    # Component must receive explicit execution authorization before a geometry BUILD task exists.
+    unauthorized = create_production_task(
+        tmp_path,
+        asset["asset_id"],
+        {"task_id": "T-SLAB-L", "component_id": "SLAB_L", "task_kind": "BUILD", "stage": "BLOCKOUT"},
+        expected_queue_revision=1,
+    )
+    assert unauthorized["status"] == "BLOCKED"
+    assert unauthorized["blockers"][0]["reason"] == "COMPONENT_BUILD_NOT_AUTHORIZED"
+
+    authorized = authorize_component(
+        tmp_path,
+        asset["asset_id"],
+        "SLAB_L",
+        {"status": "PASS", "validator_id": "EXECUTION_AUTHORIZATION_GATE", "validator_version": "0.21.0"},
+        expected_asset_revision=1,
+    )
+    assert authorized["status"] == "PASS", authorized
+    assert authorized["asset_revision"] == 2
+
+    task = create_production_task(
+        tmp_path,
+        asset["asset_id"],
+        {"task_id": "T-SLAB-L", "component_id": "SLAB_L", "task_kind": "BUILD", "stage": "BLOCKOUT"},
+        expected_queue_revision=1,
+    )
+    assert task["status"] == "PASS", task
+    assert task["task"]["asset_revision"] == 2
+    assert set(task["task"]["required_validation_ids"]) == {"SCENE_COMPONENT_VALIDATION", "REPRESENTATION_CONTRACT_GATE"}
+
+    promoted = promote_production_tasks(tmp_path, asset["asset_id"], expected_queue_revision=2)
+    assert promoted["promoted"] == ["T-SLAB-L"]
+    running = transition_production_task(
+        tmp_path,
+        asset["asset_id"],
+        "T-SLAB-L",
+        "RUNNING",
+        expected_queue_revision=3,
+        actor="WORKER",
+        reason="CLAIM",
+        worker_id="worker-91",
+    )
+    assert running["status"] == "PASS"
+
+    scene = publish_scene(
+        tmp_path,
+        asset["asset_id"],
+        {
+            "asset_revision": 2,
+            "scene_revision": 1,
+            "objects": [
+                {
+                    "object_id": "sidewalk.slab.left",
+                    "component_id": "SLAB_L",
+                    "object_type": "MESH",
+                    "transform": {"location_mm": [-500, 0, 120]},
+                    "dimensions_mm": [994, 1000, 40],
+                }
+            ],
+        },
+    )
+    assert scene["status"] == "PASS", scene
+
+    reviewed = transition_production_task(
+        tmp_path,
+        asset["asset_id"],
+        "T-SLAB-L",
+        "REVIEW",
+        expected_queue_revision=4,
+        actor="WORKER",
+        reason="DONE",
+        result={"validation_status": "PASS", "scene_revision": 1},
+    )
+    assert reviewed["status"] == "PASS"
+
+    # This is the critical v0.21 negative control: worker self-certification is not approval.
+    self_certified = transition_production_task(
+        tmp_path,
+        asset["asset_id"],
+        "T-SLAB-L",
+        "APPROVED",
+        expected_queue_revision=5,
+        actor="WORKER",
+        reason="SELF_CERTIFIED",
+    )
+    assert self_certified["status"] == "FAIL"
+    assert self_certified["blockers"][0]["reason"] == "TRUSTED_VALIDATION_RECEIPTS_REQUIRED"
+
+    first = publish_validation_receipt(tmp_path, asset["asset_id"], _receipt("VR-SCENE", "SCENE_COMPONENT_VALIDATION"), expected_validation_revision=1)
+    assert first["status"] == "PASS", first
+    second = publish_validation_receipt(tmp_path, asset["asset_id"], _receipt("VR-REP", "REPRESENTATION_CONTRACT_GATE"), expected_validation_revision=2)
+    assert second["status"] == "PASS", second
+
+    approved = transition_production_task(
+        tmp_path,
+        asset["asset_id"],
+        "T-SLAB-L",
+        "APPROVED",
+        expected_queue_revision=5,
+        actor="REVIEWER",
+        reason="TRUSTED_GATES_PASS",
+    )
+    assert approved["status"] == "PASS", approved
+    assert approved["component_state"] == "ACCEPTED"
+    assert approved["asset_revision"] == 3
+
+    studio = get_studio(tmp_path, asset["asset_id"], component_id="SLAB_L")
+    assert studio["status"] == "PASS"
+    component = next(item for item in studio["view_model"]["components"] if item["component_id"] == "SLAB_L")
+    assert component["state"] == "ACCEPTED"
+
+
+def test_benchmark_91_blocks_task_stage_bypass(tmp_path):
+    asset = _asset(stage="RECONSTRUCTION_MANIFEST")
+    asset["components"]["SLAB_L"]["state"] = "READY_TO_BUILD"
+    assert create_asset(tmp_path, asset)["status"] == "PASS"
+    result = create_production_task(
+        tmp_path,
+        asset["asset_id"],
+        {"task_id": "T-BYPASS", "component_id": "SLAB_L", "task_kind": "BUILD", "stage": "STRUCTURAL_GEOMETRY"},
+        expected_queue_revision=1,
+    )
+    assert result["status"] == "BLOCKED"
+    assert result["blockers"][0]["reason"] == "TASK_STAGE_NOT_AUTHORIZED"
