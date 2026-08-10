@@ -71,13 +71,30 @@ def execute(task_pack: Mapping[str, Any], recipe: Mapping[str, Any], *, collecti
     authorized = authorize(task_pack, recipe)
     if authorized["status"] != "PASS":
         return authorized
+    from executors.blender_design_resource_adapter import apply_bindings
     from executors.blender_hard_surface_builder import execute as execute_blender_recipe
 
     result = execute_blender_recipe(authorized["recipe"], collection_name=collection_name)
+    if result.get("status") != "PASS":
+        return {
+            **result,
+            "execution_gate": EXECUTOR_ID,
+            "representation_status": authorized["representation"]["status"],
+        }
+    materials = apply_bindings(task_pack, list(result.get("created_objects", []) or []))
+    if materials.get("status") != "PASS":
+        return {
+            "status": "FAIL",
+            "executor_id": EXECUTOR_ID,
+            "component_id": authorized["component_id"],
+            "build_result": result,
+            "blockers": materials.get("blockers", []),
+        }
     return {
         **result,
         "execution_gate": EXECUTOR_ID,
         "representation_status": authorized["representation"]["status"],
+        "materialization": materials,
     }
 
 
