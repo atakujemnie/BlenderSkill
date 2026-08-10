@@ -34,7 +34,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add pyproject.toml MANIFEST.json README.md CHANGELOG.md \
             06_prompts/60_SYSTEM_PROMPT.md 06_prompts/62_REVIEWER_PROMPT.md \
-            .github/workflows/release.yml tools/validate_release_metadata.py \
-            _FULL_LIBRARY.md _RUNTIME_INDEX.json
+            tools/validate_release_metadata.py _FULL_LIBRARY.md _RUNTIME_INDEX.json
           git commit -m "release: promote BlenderSkill v0.22.0 metadata"
           git push
