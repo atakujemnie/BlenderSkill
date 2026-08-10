@@ -25,8 +25,9 @@ ACCEPTANCE_LEVELS = {
     "FIDELITY": 6,
     "FINAL": 7,
 }
+# The requirement applies when *leaving* a production stage. Entering
+# STRUCTURAL_GEOMETRY must remain possible before structural tasks exist.
 TARGET_REQUIREMENTS = {
-    "STRUCTURAL_GEOMETRY": "BLOCKOUT",
     "DETAILS": "STRUCTURAL",
     "MATERIALS": "DETAILS",
     "GAME_READY": "MATERIALS",
