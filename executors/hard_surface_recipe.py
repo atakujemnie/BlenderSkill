@@ -5,18 +5,25 @@ from __future__ import annotations
 The recipe is an intermediate representation between LLM planning and Blender
 mutation. Agents select primitives/operations and parameters; a Blender adapter
 executes the approved recipe. This keeps repetitive geometry out of prompts.
+
+v0.22 adds first-class circular/ring/capsule primitives so reference-critical
+cameras, fasteners and rounded ventilation slots do not need to degrade to boxes
+or hand-authored polygon approximations.
 """
 
 from typing import Any, Mapping
 
 EXECUTOR_ID = "HARD_SURFACE_RECIPE"
-EXECUTOR_VERSION = "0.19.0"
+EXECUTOR_VERSION = "0.22.0"
 
 OPERATIONS = {
     "BOX",
     "ROUNDED_BOX",
     "WEDGE",
     "PROFILE_PRISM",
+    "CYLINDER",
+    "RING",
+    "CAPSULE_PRISM",
     "BOOLEAN_CUT",
     "BOOLEAN_UNION",
     "BEVEL",
@@ -26,8 +33,23 @@ OPERATIONS = {
     "ASSIGN_BINDING",
     "ANCHOR",
 }
-GEOMETRY_OPERATIONS = {"BOX", "ROUNDED_BOX", "WEDGE", "PROFILE_PRISM"}
+GEOMETRY_OPERATIONS = {
+    "BOX",
+    "ROUNDED_BOX",
+    "WEDGE",
+    "PROFILE_PRISM",
+    "CYLINDER",
+    "RING",
+    "CAPSULE_PRISM",
+}
 SOURCE_OPERATIONS = {"MIRROR", "ARRAY", "INSTANCE"}
+
+
+def _positive(value: Any) -> bool:
+    try:
+        return float(value) > 0.0
+    except (TypeError, ValueError):
+        return False
 
 
 def validate(recipe: Mapping[str, Any]) -> dict[str, Any]:
@@ -75,6 +97,34 @@ def validate(recipe: Mapping[str, Any]) -> dict[str, Any]:
                     blockers.append({"reason": "PROFILE_REQUIRED", "operation_id": op_id})
                 if op.get("length_mm") is None:
                     blockers.append({"reason": "PROFILE_LENGTH_REQUIRED", "operation_id": op_id})
+            if op_type == "CYLINDER":
+                if not _positive(op.get("diameter_mm")):
+                    blockers.append({"reason": "CYLINDER_DIAMETER_POSITIVE_REQUIRED", "operation_id": op_id})
+                if not _positive(op.get("length_mm")):
+                    blockers.append({"reason": "CYLINDER_LENGTH_POSITIVE_REQUIRED", "operation_id": op_id})
+                if int(op.get("segments", 32)) < 8:
+                    blockers.append({"reason": "CYLINDER_SEGMENTS_TOO_LOW", "operation_id": op_id})
+            if op_type == "RING":
+                outer = op.get("outer_diameter_mm")
+                inner = op.get("inner_diameter_mm")
+                if not _positive(outer) or not _positive(inner):
+                    blockers.append({"reason": "RING_DIAMETERS_POSITIVE_REQUIRED", "operation_id": op_id})
+                else:
+                    if float(inner) >= float(outer):
+                        blockers.append({"reason": "RING_INNER_DIAMETER_MUST_BE_SMALLER", "operation_id": op_id})
+                if not _positive(op.get("length_mm")):
+                    blockers.append({"reason": "RING_LENGTH_POSITIVE_REQUIRED", "operation_id": op_id})
+                if int(op.get("segments", 32)) < 8:
+                    blockers.append({"reason": "RING_SEGMENTS_TOO_LOW", "operation_id": op_id})
+            if op_type == "CAPSULE_PRISM":
+                if not _positive(op.get("width_mm")) or not _positive(op.get("height_mm")):
+                    blockers.append({"reason": "CAPSULE_DIMENSIONS_POSITIVE_REQUIRED", "operation_id": op_id})
+                elif float(op.get("height_mm")) < float(op.get("width_mm")):
+                    blockers.append({"reason": "CAPSULE_HEIGHT_MUST_BE_AT_LEAST_WIDTH", "operation_id": op_id})
+                if not _positive(op.get("length_mm")):
+                    blockers.append({"reason": "CAPSULE_LENGTH_POSITIVE_REQUIRED", "operation_id": op_id})
+                if int(op.get("arc_segments", 8)) < 3:
+                    blockers.append({"reason": "CAPSULE_ARC_SEGMENTS_TOO_LOW", "operation_id": op_id})
 
         if op_type in SOURCE_OPERATIONS:
             source = str(op.get("source") or "")
@@ -103,6 +153,8 @@ def validate(recipe: Mapping[str, Any]) -> dict[str, Any]:
                 blockers.append({"reason": "BEVEL_TARGET_NOT_AVAILABLE", "operation_id": op_id, "target": target})
             if op.get("width") is None:
                 blockers.append({"reason": "BEVEL_WIDTH_REQUIRED", "operation_id": op_id})
+            elif not _positive(op.get("width")):
+                blockers.append({"reason": "BEVEL_WIDTH_POSITIVE_REQUIRED", "operation_id": op_id})
 
         if op_type == "ASSIGN_BINDING":
             target = str(op.get("target") or "")
