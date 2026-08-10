@@ -56,6 +56,8 @@ def authorize(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[s
         "scale": list(transform.get("scale", [1.0, 1.0, 1.0])),
         "coordinate_space": str(transform.get("coordinate_space") or "ASSET_LOCAL"),
     }
+    origin = component.get("origin") if isinstance(component, Mapping) else None
+    prepared["component_origin"] = dict(origin) if isinstance(origin, Mapping) else {"type": "CENTER"}
     prepared["task_pack_asset_revision"] = task_pack.get("asset_revision")
     return {
         "status": "PASS",
