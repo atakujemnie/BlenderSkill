@@ -1,0 +1,39 @@
+name: Promote v0.21 Metadata (temporary)
+
+on:
+  push:
+    branches:
+      - release/v0.21.0-fidelity-enforcement
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/v0.21.0-fidelity-enforcement
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Promote release metadata
+        run: |
+          python tools/promote_v021_release.py
+          python tools/build_full_library.py
+          python tools/build_runtime_index.py
+          python tools/validate_release_metadata.py
+      - name: Commit materialized artifacts
+        run: |
+          if git diff --quiet; then
+            echo "No release metadata changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md CHANGELOG.md MANIFEST.json _FULL_LIBRARY.md _RUNTIME_INDEX.json
+          git commit -m "release: materialize v0.21 metadata and runtime artifacts"
+          git push origin HEAD:release/v0.21.0-fidelity-enforcement
