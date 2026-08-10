@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   promote:
-    if: ${{ hashFiles('tools/_promote_v019.py') != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout release branch
