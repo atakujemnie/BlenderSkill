@@ -11,7 +11,7 @@ from math import sqrt
 from typing import Any, Mapping
 
 EXECUTOR_ID = "ASSEMBLY_ANCHOR_GATE"
-EXECUTOR_VERSION = "0.1.1"
+EXECUTOR_VERSION = "0.19.0"
 RELATION_TYPES = {"COINCIDENT", "OFFSET", "ALIGNED_AXIS", "CLEARANCE"}
 
 

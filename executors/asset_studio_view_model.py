@@ -9,7 +9,7 @@ from executors.asset_state_runtime import ASSET_STAGES, validate_asset
 from executors.production_task_lifecycle import TASK_STATUSES
 
 EXECUTOR_ID = "ASSET_STUDIO_VIEW_MODEL"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 
 
 def _components(asset: Mapping[str, Any]) -> dict[str, dict[str, Any]]:

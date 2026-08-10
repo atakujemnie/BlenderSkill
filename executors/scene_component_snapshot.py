@@ -7,7 +7,7 @@ import json
 from typing import Any, Mapping
 
 EXECUTOR_ID = "SCENE_COMPONENT_SNAPSHOT"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 SCHEMA_VERSION = 1
 ALLOWED_OBJECT_FIELDS = (
     "object_id",

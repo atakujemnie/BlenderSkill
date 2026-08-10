@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.18.0 — Full compiled snapshot
+# Blender AI Agent Library v0.19.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -12827,6 +12827,9 @@ Dla v0.18 minimalny release proof to pinned Blender 5.1.x uruchomiony jako:
 ```
 
 z PASS dla runtime discovery, realnego Geometry Nodes probe i cleanup validation.
+
+
+Runtime release: v0.19.0. Component production MUST route through persistent asset state, scoped task packs and validation gates when applicable.
 
 
 ---
@@ -26750,6 +26753,16 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## FILE: `CHANGELOG.md`
 
+## 0.19.0 — Production Studio Runtime
+
+- Promoted persistent asset/component production state and relational parameter graph to release executors.
+- Added versioned design-system repository with reverse usage and impact reporting.
+- Added persistent dependency-aware production task queues and approval lifecycle.
+- Added compact scene/component snapshots, structural diffs and mutation-scope enforcement.
+- Routed component/feature reference evidence into token-bounded task packs.
+- Added Production Iteration Gate and standalone Asset Production Studio GUI.
+- Added canonical Benchmark 89 for the Lafar street-bench production workflow.
+
 # Changelog
 
 ## 0.18.0
@@ -27270,6 +27283,8 @@ Architecture retained across releases:
 ---
 
 ## FILE: `README.md`
+
+> Current production runtime: v0.19.0 — persistent asset/design/task state and Production Studio.
 
 # BlenderSkill
 
@@ -34009,3 +34024,624 @@ Each evidence dimension is preserved in the report. A provider may therefore be 
 Custom/native fallback is evaluated after stronger candidates. It is blocked when any stronger relevant candidate remains `ELIGIBLE` or `ELIGIBLE_GENERIC`, and rejection reasons for evaluated candidates must remain visible.
 
 The expected-provider gate supports version constraints (`==`, `!=`, `>`, `>=`, `<`, `<=`) including comma-separated ranges such as `>=2.0,<3.0`.
+
+
+---
+
+## FILE: `07_examples/88_LAFAR_STREET_BENCH_ASSET_RUNTIME_BENCHMARK.md`
+
+# Benchmark 88 — Lafar Street Bench Asset Production Runtime
+
+Status: vNext regression target
+
+## Failure being prevented
+
+The input is a normal manufactured civic bench, not an exotic modeling case. A system failure occurs when an agent sees the complete reference sheet, cognitively compresses it into a generic seat/back/support silhouette, drops secondary geometry and then spends repeated long-context turns rediscovering dimensions, materials and corrections.
+
+The benchmark therefore measures architecture, not prompt eloquence.
+
+## Canonical source fixture
+
+`tests/fixtures/lafar_street_bench_vnext.json`
+
+Known global dimensions:
+
+- width: 2000 mm;
+- depth: 550 mm;
+- total height: 820 mm;
+- seat height: 460 mm.
+
+Required initial component tree:
+
+```text
+BENCH
+├── LEFT_SUPPORT
+├── RIGHT_SUPPORT
+├── SEAT
+└── BACKREST
+```
+
+Lighting, trim, utility panel and later microdetails are design bindings or child components rather than free-form prose.
+
+## Required behavior
+
+### 1. Persistent state
+
+`ASSET_STATE_RUNTIME` validates the external state. Human corrections create new revisions and are not lost when a model/session changes. An accepted component receiving a hard correction becomes `DIRTY`.
+
+### 2. Relational dimensions
+
+`PARAMETER_GRAPH` must derive at least:
+
+```text
+LEFT_SUPPORT.depth = BENCH.depth - 15 = 535 mm
+RIGHT_SUPPORT.width = LEFT_SUPPORT.width = 210 mm
+SEAT.width = BENCH.width - LEFT_SUPPORT.width - RIGHT_SUPPORT.width = 1580 mm
+BACKREST.width = SEAT.width = 1580 mm
+BACKREST.info_strip_width = BACKREST.width - 80 = 1500 mm
+```
+
+The LLM must not repeatedly calculate these values in prose.
+
+### 3. Design-system reuse
+
+The benchmark binds shared Astera resources by ID:
+
+- `ASTERA_GRAPHITE_01`;
+- `ASTERA_TRIM_PROFILE_01`;
+- `ASTERA_EDGE_PROFILE_02`;
+- `ASTERA_LED_UNDERGLOW_01`;
+- `ASTERA_LED_INFO_BLUE_01`;
+- `ASTERA_UTILITY_PANEL_01`.
+
+A locked inherited resource cannot be silently modified. An override requires an explicit authority record and remains visible as a deviation.
+
+### 4. Component-scoped work
+
+A BACKREST task must produce:
+
+```text
+allowed_to_modify = [BACKREST]
+read_only includes SEAT, LEFT_SUPPORT, RIGHT_SUPPORT
+```
+
+The task pack contains only relevant parameters, anchors, bindings, corrections, relations, validation contract and reference evidence. Full history, full asset JSON and full library content are forbidden in normal component tasks.
+
+### 5. Token budget
+
+Hard targets:
+
+- component repair pack: <= 4k estimated input tokens;
+- component build pack: <= 8k estimated input tokens;
+- asset planning: <= 15k input tokens;
+- full `_FULL_LIBRARY.md`: forbidden during normal execution.
+
+The fixture BACKREST task is expected to remain below 4k estimated tokens before any LLM-specific wrapper text.
+
+### 6. Deterministic hard-surface execution
+
+`HARD_SURFACE_RECIPE` is the intermediate representation between planning and Blender mutation.
+
+The Blender runtime must prove at least:
+
+- millimetre contract boundary;
+- deterministic rounded-box creation;
+- explicit bevel modifier;
+- design binding metadata;
+- named anchors;
+- cleanup with no leaked test datablocks.
+
+The benchmark does not claim the entire bench is solved by one rounded box. It proves that manufactured subproblems are executable primitives rather than regenerated Python code per agent turn.
+
+### 7. Assembly
+
+Anchor relations are explicit. A 7.3 mm BACKREST mount error must fail `ASSEMBLY_ANCHOR_GATE`; a worker may not distort the backrest body to conceal the mismatch.
+
+Geometric contact/interpenetration remains separately governed by the existing `ASSEMBLY_INTEGRITY_GATE`.
+
+## Acceptance criteria
+
+Benchmark 88 passes only when all of the following are true:
+
+1. the structured bench fixture passes asset-state validation;
+2. relational dimensions resolve deterministically;
+3. missing parameter references and cycles fail explicitly;
+4. locked design-system resources cannot be overridden without authority;
+5. BACKREST task mutation scope is isolated;
+6. component task pack is within the declared token budget;
+7. corrections survive revisioned persistence and stale writers are rejected;
+8. hard-surface recipe validation rejects invalid operation order;
+9. real Blender runtime creates and cleans a deterministic hard-surface test component;
+10. assembly anchor tolerance violations are machine-detected.
+
+## Architectural invariant
+
+```text
+REFERENCE / HUMAN DECISION
+        ↓
+PERSISTENT ASSET STATE
+        ↓
+PARAMETER GRAPH + DESIGN BINDINGS
+        ↓
+COMPONENT TASK PACK
+        ↓
+LLM PLAN / DIAGNOSIS
+        ↓
+HARD-SURFACE RECIPE
+        ↓
+BLENDER EXECUTOR
+        ↓
+NUMERIC / ASSEMBLY / VISUAL GATES
+        ↓
+NEW REVISION
+```
+
+No conversational transcript is a required source of truth anywhere in this chain.
+
+
+---
+
+## FILE: `07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md`
+
+# Benchmark 89 — Lafar Production Studio v0.19 Regression
+
+Status: canonical v0.19 release benchmark
+
+## Objective
+
+Prove that the Lafar street-bench workflow is no longer a long conversational modeling session. The production system must preserve reusable Astera resources, component-scoped work, task dependencies, scene deltas and validation state as machine-readable persistent records.
+
+## Fixture
+
+Primary asset fixture:
+
+`tests/fixtures/lafar_street_bench_vnext.json`
+
+The asset contains `BENCH`, `LEFT_SUPPORT`, `RIGHT_SUPPORT`, `SEAT` and `BACKREST` with relational dimensions, assembly anchors and Astera design bindings.
+
+## Required v0.19 behavior
+
+### 1. Design resource reuse
+
+A shared design-system resource has one canonical identity and revision history. Reverse usage can answer which assets/components consume the resource before a change is promoted.
+
+### 2. Persistent task queue
+
+Production tasks are revisioned independently from the asset. A stale queue writer is rejected. Dependencies prevent BACKREST work from becoming ready before its required structural predecessors are approved.
+
+### 3. Compact scene snapshots
+
+The worker receives and returns component-relevant scene state rather than a full Blender dump. Snapshot hashes are deterministic. A structural diff identifies changed objects and fields.
+
+### 4. Mutation scope
+
+For a BACKREST task:
+
+```text
+allowed_to_modify = [BACKREST]
+read_only includes LEFT_SUPPORT, RIGHT_SUPPORT, SEAT
+```
+
+Changing the BACKREST is valid. Changing BACKREST and SEAT in the same worker result must fail `PRODUCTION_ITERATION_GATE`.
+
+### 5. Reference evidence routing
+
+When the worker requests `BACKREST_PROFILE`, the orchestrator routes the BACKREST evidence ROI and does not include an unrelated SEAT ROI.
+
+### 6. Review barrier
+
+A task cannot enter `REVIEW` without a result. It cannot become `APPROVED` unless the iteration result records `validation_status=PASS`.
+
+### 7. Studio view model
+
+The UI view model must expose:
+
+- asset ID, revision and stage;
+- stage progression;
+- component tree;
+- task summary;
+- selected component inspector;
+- corrections;
+- scoped scene objects;
+- design-system impact information.
+
+The standalone Studio HTML must consume this compact model instead of requiring direct access to the Blender scene or full library.
+
+## Regression acceptance
+
+Benchmark 89 passes only when:
+
+1. Benchmark 88 relational dimensions and component scope remain valid;
+2. design-system resource revision history is immutable;
+3. reverse usage identifies affected assets;
+4. stale resource writes are rejected;
+5. task queue revisions are immutable and stale writes are rejected;
+6. task dependencies gate readiness;
+7. scene snapshot hashes are deterministic;
+8. scene diff detects only changed production fields;
+9. mutation outside `allowed_to_modify` fails;
+10. stale asset revision fails the production iteration;
+11. failing validation blocks review acceptance;
+12. reference evidence is filtered by component/feature;
+13. component repair remains within the 4k task-pack token target;
+14. the production Studio view model can be built from the canonical records;
+15. the real Blender hard-surface runtime suite remains green.
+
+## Architectural invariant
+
+```text
+SHARED RESOURCE != COPIED DETAIL
+TASK != CHAT TURN
+SCENE SNAPSHOT != FULL .BLEND DUMP
+REVIEW != VISUAL GUESS
+APPROVAL != UNVALIDATED WORKER OUTPUT
+```
+
+A production decision must survive model changes, Blender restarts and future asset revisions without requiring reconstruction from conversation history.
+
+
+---
+
+## FILE: `15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md`
+
+# Asset Production Runtime
+
+Status: vNext implementation contract
+
+## Purpose
+
+BlenderSkill MUST persist production truth outside the conversational context and outside the `.blend` file. The LLM plans or diagnoses; deterministic executors own state mutation, parameter resolution, task packing and validation.
+
+## Canonical hierarchy
+
+```text
+PROJECT
+  -> DESIGN_SYSTEM
+  -> ASSET
+  -> COMPONENT
+  -> GEOMETRY / DETAIL / MATERIAL BINDINGS
+```
+
+An asset is not one opaque modeling task. It is a component tree with explicit local frames, anchors, relationships, constraints and stage state.
+
+## Asset record
+
+Minimum record:
+
+```yaml
+asset_id: ASSET-005
+name: Lafar Street Bench 3470
+revision: 17
+stage: STRUCTURAL_GEOMETRY
+design_system_ids: [LAFAR, ASTERA_CIVIC]
+global_dimensions_mm: {width: 2000, depth: 550, height: 820, seat_height: 460}
+components: {}
+corrections: []
+history: []
+bindings: {}
+```
+
+`.blend` is an implementation artifact. This record is authoring truth.
+
+## Component contract
+
+Each component owns a local coordinate system and may contain children.
+
+```yaml
+id: BACKREST
+parent: BENCH
+state: CONSTRAINED
+origin: {type: CENTER_BOTTOM}
+dimensions:
+  width: {expr: "FRAME.inner_width", unit: mm, locked: true}
+  height: {value: 390, unit: mm, locked: true}
+  thickness: {value: 72, unit: mm}
+  angle: {value: 13, unit: deg, locked: true}
+anchors:
+  LEFT_MOUNT: {x: -765, y: 0, z: 0}
+  RIGHT_MOUNT: {x: 765, y: 0, z: 0}
+allowed_mutation_scope: [BACKREST]
+```
+
+Global dimensions do not replace component dimensions. Derived dimensions SHOULD use relations instead of duplicated literals.
+
+## Assembly contract
+
+Component assembly is defined by anchor relations, not prose.
+
+```yaml
+relations:
+  - id: BACKREST_LEFT
+    type: COINCIDENT
+    a: BACKREST.LEFT_MOUNT
+    b: LEFT_SUPPORT.BACKREST_MOUNT
+    tolerance_mm: 0.5
+```
+
+Supported initial relation types:
+
+- `COINCIDENT`
+- `OFFSET`
+- `ALIGNED_AXIS`
+- `CLEARANCE`
+
+A component task may not mutate siblings simply to hide an assembly error.
+
+## Persistent corrections
+
+Human review is converted into machine state.
+
+```yaml
+id: COR-018
+component_id: DRAINAGE_CHANNEL
+stage: BLOCKOUT
+kind: PARAMETER_OVERRIDE
+parameter: z
+value: -12
+unit: mm
+priority: HARD
+status: OPEN
+```
+
+Resolved corrections remain in history with `resolved_in_revision`.
+
+## Stage model
+
+Asset stages:
+
+```text
+BRIEF
+REFERENCE_ANALYSIS
+RECONSTRUCTION_MANIFEST
+BLOCKOUT
+STRUCTURAL_GEOMETRY
+DETAILS
+MATERIALS
+GAME_READY
+FIDELITY_AUDIT
+APPROVED
+```
+
+Components additionally use the canonical reconstruction states already defined by `NODE_STATE_STORE`.
+
+## Mutation isolation
+
+Every worker task MUST include:
+
+```yaml
+asset_id
+asset_revision
+component_id
+stage
+allowed_to_modify
+read_only
+resolved_parameters
+anchors
+open_corrections
+resolved_design_bindings
+validation_contract
+```
+
+The worker is not given the entire library or conversation by default.
+
+## Blender boundary
+
+External runtime owns:
+
+- asset/component state;
+- constraints;
+- corrections;
+- design-system bindings;
+- revisions;
+- routing and task queue;
+- evidence references.
+
+Blender owns:
+
+- current scene implementation;
+- deterministic geometry execution;
+- renders;
+- scene/mesh measurements;
+- export artifacts.
+
+No `.blend` datablock may silently override a locked external constraint.
+
+## Required executors
+
+- `ASSET_STATE_RUNTIME`
+- `PARAMETER_GRAPH`
+- `DESIGN_BINDING_RESOLVER`
+- `COMPONENT_TASK_PACK`
+- existing `ASSEMBLY_INTEGRITY_GATE`
+- existing reconstruction and appearance gates
+
+## Token policy
+
+Normal component iteration MUST route through a compact task pack. Full source echo, whole-library loading and unchanged scene/source rereads are forbidden unless a concrete diagnostic requires them.
+
+Targets for reference-driven hard-surface work:
+
+- routine component repair: <= 4k input tokens;
+- component build task: <= 8k input tokens;
+- asset-level planning pass: <= 15k input tokens;
+- full-library snapshot: never loaded for normal execution.
+
+
+---
+
+## FILE: `15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md`
+
+# Production Studio Runtime
+
+Status: v0.19.0 implementation contract
+
+## Purpose
+
+This layer turns the v0.18/vNext component runtime into a persistent production system. The canonical workflow state, reusable design resources, task queue, scene deltas and human corrections live outside Blender and outside conversational context.
+
+## Runtime chain
+
+```text
+REFERENCE EVIDENCE REGISTRY
+        +
+VERSIONED DESIGN SYSTEM REPOSITORY
+        +
+PERSISTENT ASSET STATE
+        |
+        v
+PARAMETER GRAPH + DESIGN BINDINGS
+        |
+        v
+COMPONENT TASK PACK
+        |
+        v
+PERSISTENT TASK QUEUE / LIFECYCLE
+        |
+        v
+LLM PLAN OR DIAGNOSIS
+        |
+        v
+DETERMINISTIC BLENDER EXECUTION
+        |
+        v
+COMPACT SCENE COMPONENT SNAPSHOT
+        |
+        v
+MUTATION SCOPE + VALIDATION GATES
+        |
+        v
+REVIEW -> APPROVAL -> NEW REVISION
+```
+
+## Design-system repository
+
+`DESIGN_SYSTEM_REPOSITORY` owns reusable resources such as materials, texture sets, edge profiles, trim profiles, LED profiles, decals, fasteners, geometry modules and node groups.
+
+Required behavior:
+
+- immutable resource revision snapshots;
+- semantic resource version stored independently from repository revision;
+- optimistic concurrency when updating resources;
+- explicit locked-resource state;
+- binding resolution by design-system ID and resource ID;
+- reverse-usage records from resource -> asset -> component -> binding;
+- impact report before a shared resource change is promoted.
+
+A shared Astera LED or profile is therefore one versioned resource referenced by many assets rather than duplicated geometry/prose.
+
+## Task lifecycle
+
+`PRODUCTION_TASK_LIFECYCLE` uses these states:
+
+```text
+QUEUED
+READY
+RUNNING
+REVIEW
+APPROVED
+BLOCKED
+FAILED
+CANCELLED
+```
+
+Dependencies must be approved before a task becomes `READY`. A worker result cannot enter `REVIEW` without a result record. `APPROVED` requires a result with `validation_status=PASS`.
+
+`PRODUCTION_TASK_REPOSITORY` persists the queue using immutable queue revisions and rejects stale writers.
+
+## Scene boundary
+
+Normal agent work MUST NOT depend on full Blender scene dumps.
+
+`SCENE_COMPONENT_SNAPSHOT` retains only stable production-relevant data:
+
+- object ID;
+- component ID;
+- object type and parent;
+- transform and dimensions;
+- mesh metrics;
+- material IDs;
+- modifier stack summary;
+- design binding IDs;
+- anchor IDs;
+- visibility state.
+
+Snapshots have deterministic hashes. Structural diffs report added, removed and changed objects. Volatile UI/session state is excluded.
+
+## Mutation isolation
+
+`PRODUCTION_ITERATION_GATE` checks the worker iteration before review:
+
+1. task is still `RUNNING`;
+2. task input asset revision is not stale;
+3. scene before/after snapshots exist;
+4. every changed object belongs to `allowed_to_modify`;
+5. required validators return `PASS` or `NOT_REQUIRED`.
+
+A BACKREST repair that modifies SEAT must fail even if the final render looks acceptable.
+
+## Reference evidence routing
+
+`REFERENCE_EVIDENCE_REGISTRY` is queried by component, feature and optional view. The orchestrator sends only matching evidence records to the task pack.
+
+A routed record may include:
+
+```yaml
+evidence_id
+reference_id
+component_id
+view
+authority
+feature_ids
+roi
+artifact_id
+registration_id
+```
+
+Whole concept sheets are not normal task context when component-specific ROI evidence exists.
+
+## Studio UI model
+
+`ASSET_STUDIO_VIEW_MODEL` joins, without changing source-of-truth ownership:
+
+- asset identity, revision and stage;
+- component tree and component states;
+- task summary and selected-component tasks;
+- open corrections;
+- scoped scene objects;
+- design-system impact records;
+- scene snapshot hash.
+
+`studio/asset_production_studio.html` is a standalone inspection shell for this view model. It supports component selection, stage overview, task queue inspection, reference evidence, corrections, bindings and scoped scene records.
+
+## Required v0.19 executors
+
+- `ASSET_STATE_RUNTIME`
+- `ASSET_REPOSITORY`
+- `PARAMETER_GRAPH`
+- `DESIGN_BINDING_RESOLVER`
+- `REFERENCE_EVIDENCE_REGISTRY`
+- `COMPONENT_TASK_PACK`
+- `ASSET_PRODUCTION_ORCHESTRATOR`
+- `HARD_SURFACE_RECIPE`
+- `BLENDER_HARD_SURFACE_BUILDER`
+- `ASSEMBLY_ANCHOR_GATE`
+- `DESIGN_SYSTEM_REPOSITORY`
+- `PRODUCTION_TASK_LIFECYCLE`
+- `PRODUCTION_TASK_REPOSITORY`
+- `SCENE_COMPONENT_SNAPSHOT`
+- `PRODUCTION_ITERATION_GATE`
+- `ASSET_STUDIO_VIEW_MODEL`
+
+## Token and context invariant
+
+Component execution remains token-bounded:
+
+- repair task <= 4k estimated input tokens;
+- build task <= 8k estimated input tokens;
+- asset planning <= 15k input tokens;
+- `_FULL_LIBRARY.md` forbidden for routine component execution;
+- full scene dump forbidden when a component snapshot is sufficient.
+
+## Source-of-truth invariant
+
+Conversation history, prompt text and `.blend` state are never the canonical production database. They may provide evidence or implementation output, but persistent asset/design/task repositories own production truth.

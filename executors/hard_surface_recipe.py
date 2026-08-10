@@ -10,7 +10,7 @@ executes the approved recipe. This keeps repetitive geometry out of prompts.
 from typing import Any, Mapping
 
 EXECUTOR_ID = "HARD_SURFACE_RECIPE"
-EXECUTOR_VERSION = "0.1.1"
+EXECUTOR_VERSION = "0.19.0"
 
 OPERATIONS = {
     "BOX",

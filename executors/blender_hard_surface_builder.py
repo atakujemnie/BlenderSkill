@@ -14,7 +14,7 @@ from typing import Any, Mapping
 from executors.hard_surface_recipe import validate as validate_recipe
 
 EXECUTOR_ID = "BLENDER_HARD_SURFACE_BUILDER"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 MM = 0.001
 
 

@@ -1,3 +1,5 @@
+> Current production runtime: v0.19.0 — persistent asset/design/task state and Production Studio.
+
 # BlenderSkill
 
 Canonical knowledge repository for the Blender AI Agent Library.

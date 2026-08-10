@@ -11,7 +11,7 @@ from typing import Any, Mapping
 from executors.production_task_lifecycle import validate_task
 
 EXECUTOR_ID = "PRODUCTION_TASK_REPOSITORY"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 SCHEMA_VERSION = 1
 
 

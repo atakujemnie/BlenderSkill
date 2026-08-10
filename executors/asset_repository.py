@@ -15,7 +15,7 @@ from typing import Any, Mapping
 from executors.asset_state_runtime import validate_asset
 
 EXECUTOR_ID = "ASSET_REPOSITORY"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 SCHEMA_VERSION = 1
 
 

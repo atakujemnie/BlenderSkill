@@ -6,7 +6,7 @@ import ast
 from typing import Any, Mapping
 
 EXECUTOR_ID = "PARAMETER_GRAPH"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 
 _ALLOWED_BINOPS = {
     ast.Add: lambda a, b: a + b,

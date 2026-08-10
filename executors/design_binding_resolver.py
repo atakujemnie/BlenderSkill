@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 EXECUTOR_ID = "DESIGN_BINDING_RESOLVER"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 BINDING_MODES = {"INHERITED", "OVERRIDDEN", "CUSTOM"}
 
 

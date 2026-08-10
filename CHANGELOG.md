@@ -1,3 +1,13 @@
+## 0.19.0 — Production Studio Runtime
+
+- Promoted persistent asset/component production state and relational parameter graph to release executors.
+- Added versioned design-system repository with reverse usage and impact reporting.
+- Added persistent dependency-aware production task queues and approval lifecycle.
+- Added compact scene/component snapshots, structural diffs and mutation-scope enforcement.
+- Routed component/feature reference evidence into token-bounded task packs.
+- Added Production Iteration Gate and standalone Asset Production Studio GUI.
+- Added canonical Benchmark 89 for the Lafar street-bench production workflow.
+
 # Changelog
 
 ## 0.18.0

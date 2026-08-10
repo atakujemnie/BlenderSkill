@@ -11,7 +11,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 EXECUTOR_ID = "ASSET_STATE_RUNTIME"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.19.0"
 
 ASSET_STAGES = (
     "BRIEF",
