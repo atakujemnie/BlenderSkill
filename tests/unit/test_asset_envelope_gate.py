@@ -5,6 +5,7 @@ def _asset(slab_width: int, *, outside=False):
     components = {
         "ROOT": {
             "parent": None,
+            "origin": {"type": "CENTER_XY_BOTTOM_Z"},
             "dimensions": {
                 "width": {"value": 2000, "unit": "mm"},
                 "depth": {"value": 2000, "unit": "mm"},
@@ -13,6 +14,7 @@ def _asset(slab_width: int, *, outside=False):
         },
         "SLAB_L": {
             "parent": "ROOT",
+            "origin": {"type": "CENTER_BOTTOM"},
             "transform": {"location_mm": [-500, 0, 120]},
             "dimensions": {
                 "width": {"value": slab_width, "unit": "mm"},
@@ -22,6 +24,7 @@ def _asset(slab_width: int, *, outside=False):
         },
         "SLAB_R": {
             "parent": "ROOT",
+            "origin": {"type": "CENTER_BOTTOM"},
             "transform": {"location_mm": [500, 0, 120]},
             "dimensions": {
                 "width": {"value": slab_width, "unit": "mm"},
@@ -33,6 +36,7 @@ def _asset(slab_width: int, *, outside=False):
     if outside:
         components["DRAIN"] = {
             "parent": "ROOT",
+            "origin": {"type": "CENTER_BOTTOM"},
             "transform": {"location_mm": [0, -1060, 40]},
             "dimensions": {
                 "width": {"value": 2000, "unit": "mm"},
@@ -60,6 +64,9 @@ def test_declared_six_mm_seam_rejects_geometry_that_measures_four_mm():
 def test_six_mm_seam_passes_when_geometry_is_consistent():
     result = validate(_asset(994))
     assert result["status"] == "PASS", result
+    assert result["root_aabb"] == {"min": [-1000.0, -1000.0, 0.0], "max": [1000.0, 1000.0, 160.0]}
+    assert result["aabbs"]["SLAB_L"]["min"][2] == 120.0
+    assert result["aabbs"]["SLAB_L"]["max"][2] == 160.0
 
 
 def test_component_outside_nominal_footprint_is_rejected():
