@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Generate v0.18 metadata and committed artifacts
-        run: python tools/_bootstrap_v018.py
+        run: PYTHONPATH=. python tools/_bootstrap_v018.py
       - name: Commit generated v0.18 metadata
         shell: bash
         run: |
