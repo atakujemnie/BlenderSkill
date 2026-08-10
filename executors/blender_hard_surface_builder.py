@@ -2,10 +2,9 @@ from __future__ import annotations
 
 """Blender 5.1 adapter for HARD_SURFACE_RECIPE.
 
-All recipe values use millimetres at the contract boundary. The adapter uses the
-Blender data API for primitive creation and only creates named datablocks owned
-by the requested component. It deliberately returns compact evidence instead of
-scene dumps.
+All recipe values use millimetres at the contract boundary. v0.21 executes local
+recipe geometry under a canonical component transform so placement cannot be
+silently lost between asset state, task pack and Blender mutation.
 """
 
 from math import radians
@@ -14,7 +13,7 @@ from typing import Any, Mapping
 from executors.hard_surface_recipe import validate as validate_recipe
 
 EXECUTOR_ID = "BLENDER_HARD_SURFACE_BUILDER"
-EXECUTOR_VERSION = "0.19.0"
+EXECUTOR_VERSION = "0.21.0"
 MM = 0.001
 
 
@@ -30,6 +29,23 @@ def _vec3(raw: Any, *, default=(0.0, 0.0, 0.0)) -> tuple[float, float, float]:
     if not isinstance(raw, (list, tuple)) or len(raw) != 3:
         raise ValueError("VEC3_REQUIRED")
     return tuple(float(x) for x in raw)
+
+
+def _component_transform(recipe: Mapping[str, Any]) -> dict[str, tuple[float, float, float] | str]:
+    raw = recipe.get("component_transform", {})
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, Mapping):
+        raise ValueError("COMPONENT_TRANSFORM_MAPPING_REQUIRED")
+    coordinate_space = str(raw.get("coordinate_space") or "ASSET_LOCAL").upper()
+    if coordinate_space != "ASSET_LOCAL":
+        raise ValueError("BLENDER_BUILDER_REQUIRES_ASSET_LOCAL_TRANSFORM")
+    return {
+        "location_mm": _vec3(raw.get("location_mm")),
+        "rotation_deg": _vec3(raw.get("rotation_deg")),
+        "scale": _vec3(raw.get("scale"), default=(1.0, 1.0, 1.0)),
+        "coordinate_space": coordinate_space,
+    }
 
 
 def _box_mesh(name: str, dimensions_mm: Mapping[str, Any]):
@@ -113,17 +129,23 @@ def _profile_prism_mesh(name: str, profile: Any, length_mm: float, axis: str = "
     return mesh
 
 
-def _create_object(collection, component_id: str, output_id: str, mesh, raw: Mapping[str, Any]):
+def _create_object(collection, component_id: str, output_id: str, mesh, raw: Mapping[str, Any], transform: Mapping[str, Any]):
     bpy = _bpy()
     name = f"BS_{component_id}_{output_id}"
     obj = bpy.data.objects.new(name, mesh)
     collection.objects.link(obj)
-    loc = _vec3(raw.get("location_mm"))
-    obj.location = tuple(v * MM for v in loc)
-    rot = _vec3(raw.get("rotation_deg"))
-    obj.rotation_euler = tuple(radians(v) for v in rot)
+    local_loc = _vec3(raw.get("location_mm"))
+    base_loc = tuple(transform["location_mm"])
+    obj.location = tuple((base_loc[index] + local_loc[index]) * MM for index in range(3))
+    local_rot = _vec3(raw.get("rotation_deg"))
+    base_rot = tuple(transform["rotation_deg"])
+    obj.rotation_euler = tuple(radians(base_rot[index] + local_rot[index]) for index in range(3))
+    base_scale = tuple(transform["scale"])
+    local_scale = _vec3(raw.get("scale"), default=(1.0, 1.0, 1.0))
+    obj.scale = tuple(base_scale[index] * local_scale[index] for index in range(3))
     obj["blenderskill_component_id"] = component_id
     obj["blenderskill_output_id"] = output_id
+    obj["blenderskill_component_location_mm"] = list(base_loc)
     return obj
 
 
@@ -134,6 +156,10 @@ def execute(recipe: Mapping[str, Any], *, collection_name: str | None = None) ->
 
     bpy = _bpy()
     component_id = str(recipe["component_id"])
+    try:
+        component_transform = _component_transform(recipe)
+    except ValueError as exc:
+        return {"status": "FAIL", "executor_id": EXECUTOR_ID, "blockers": [{"reason": str(exc)}]}
     collection_name = collection_name or f"BS_{component_id}"
     collection = bpy.data.collections.get(collection_name)
     if collection is None:
@@ -168,7 +194,7 @@ def execute(recipe: Mapping[str, Any], *, collection_name: str | None = None) ->
                     float(op["length_mm"]),
                     str(op.get("axis", "X")),
                 )
-            obj = _create_object(collection, component_id, output_id, mesh, op)
+            obj = _create_object(collection, component_id, output_id, mesh, op, component_transform)
             outputs[output_id] = obj
             created_objects.append(obj.name)
             created_meshes.append(mesh.name)
@@ -229,8 +255,9 @@ def execute(recipe: Mapping[str, Any], *, collection_name: str | None = None) ->
             obj.data = source.data
             obj.name = f"BS_{component_id}_{output_id}"
             collection.objects.link(obj)
-            loc = _vec3(op.get("location_mm"))
-            obj.location = tuple(v * MM for v in loc)
+            local = _vec3(op.get("location_mm"))
+            base_loc = tuple(component_transform["location_mm"])
+            obj.location = tuple((base_loc[index] + local[index]) * MM for index in range(3))
             outputs[output_id] = obj
             created_objects.append(obj.name)
             continue
@@ -249,12 +276,14 @@ def execute(recipe: Mapping[str, Any], *, collection_name: str | None = None) ->
             }
             continue
 
+    bpy.context.view_layer.update()
     final_objects = [outputs[str(output)].name for output in recipe.get("final_outputs", [])]
     return {
         "status": "PASS",
         "executor_id": EXECUTOR_ID,
         "executor_version": EXECUTOR_VERSION,
         "component_id": component_id,
+        "component_transform": component_transform,
         "collection": collection.name,
         "created_objects": created_objects,
         "created_meshes": created_meshes,
