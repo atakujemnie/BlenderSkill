@@ -25,6 +25,7 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
                 "parent": None,
                 "state": "ACCEPTED",
                 "shape_class": "ASSEMBLY",
+                "origin": {"type": "CENTER_XY_BOTTOM_Z"},
                 "dimensions": {
                     "width": {"value": 2000, "unit": "mm", "locked": True},
                     "depth": {"value": 2000, "unit": "mm", "locked": True},
@@ -36,6 +37,7 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
                 "parent": "ROOT",
                 "state": "CONSTRAINED",
                 "shape_class": "ROUNDED_BOX",
+                "origin": {"type": "CENTER_BOTTOM"},
                 "placement_required": True,
                 "transform": {"location_mm": [-500, 0, 120], "coordinate_space": "ASSET_LOCAL"},
                 "depends_on": ["ROOT"],
@@ -51,6 +53,7 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
                 "parent": "ROOT",
                 "state": "CONSTRAINED",
                 "shape_class": "ROUNDED_BOX",
+                "origin": {"type": "CENTER_BOTTOM"},
                 "placement_required": True,
                 "transform": {"location_mm": [500, 0, 120], "coordinate_space": "ASSET_LOCAL"},
                 "depends_on": ["ROOT"],
@@ -65,6 +68,7 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
                 "parent": "ROOT",
                 "state": "CONSTRAINED",
                 "shape_class": "TACTILE_GRID_PANEL",
+                "origin": {"type": "CENTER_BOTTOM"},
                 "placement_required": True,
                 "transform": {"location_mm": [0, -800, 150], "coordinate_space": "ASSET_LOCAL"},
                 "depends_on": ["ROOT"],
@@ -79,6 +83,7 @@ def _asset(*, stage="BLOCKOUT", slab_width=994):
                 "parent": "ROOT",
                 "state": "CONSTRAINED",
                 "shape_class": "SLOTTED_GRATE_PLATE",
+                "origin": {"type": "CENTER_BOTTOM"},
                 "placement_required": True,
                 "transform": {"location_mm": [0, -930, 105], "coordinate_space": "ASSET_LOCAL"},
                 "depends_on": ["ROOT"],
@@ -114,8 +119,6 @@ def _receipt(receipt_id, validator_id, *, asset_revision=2, scene_revision=1):
 
 
 def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acceptance(tmp_path):
-    # Negative control from the blind test: 996 mm slabs at +/-500 measure a 4 mm seam,
-    # so a declared 6 mm seam cannot pass merely because both values look plausible.
     broken = _asset(slab_width=996)
     envelope = validate_envelope(broken)
     assert envelope["status"] == "FAIL"
@@ -126,13 +129,11 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
     created = create_asset(tmp_path, asset)
     assert created["status"] == "PASS", created
 
-    # A component-scoped task must preserve the actual asset-local placement.
     prepared = prepare_task(tmp_path, asset["asset_id"], "SLAB_L", task_kind="BUILD")
     assert prepared["status"] == "PASS", prepared
     assert prepared["task_pack"]["component"]["transform"]["location_mm"] == [-500.0, 0.0, 120.0]
     assert prepared["metrics"]["estimated_input_tokens"] < 8000
 
-    # Representation cannot silently collapse a tactile panel into one generic box.
     tactile_pack = prepare_task(tmp_path, asset["asset_id"], "TACTILE", task_kind="BUILD")["task_pack"]
     bad_tactile_recipe = {
         "component_id": "TACTILE",
@@ -145,7 +146,6 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
     assert blocked_recipe["status"] == "BLOCKED"
     assert any(item["reason"] == "REPRESENTATION_REQUIRED_OPERATION_MISSING" for item in blocked_recipe["blockers"])
 
-    # Component must receive explicit execution authorization before a geometry BUILD task exists.
     unauthorized = create_production_task(
         tmp_path,
         asset["asset_id"],
@@ -159,11 +159,13 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
         tmp_path,
         asset["asset_id"],
         "SLAB_L",
-        {"status": "PASS", "validator_id": "EXECUTION_AUTHORIZATION_GATE", "validator_version": "0.21.0"},
+        {"actor": "TEST", "reason": "BENCHMARK_91_AUTHORIZATION_REQUEST", "status": "FAIL", "validator_id": "UNTRUSTED_CALLER"},
         expected_asset_revision=1,
     )
     assert authorized["status"] == "PASS", authorized
     assert authorized["asset_revision"] == 2
+    assert authorized["authorization"]["validator_id"] == "ASSET_EXECUTION_AUTHORIZATION_GATE"
+    assert authorized["authorization"]["source"] == "SYSTEM"
 
     task = create_production_task(
         tmp_path,
@@ -220,7 +222,6 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
     )
     assert reviewed["status"] == "PASS"
 
-    # This is the critical v0.21 negative control: worker self-certification is not approval.
     self_certified = transition_production_task(
         tmp_path,
         asset["asset_id"],
@@ -233,9 +234,19 @@ def test_benchmark_91_blocks_known_blind_test_failures_and_requires_trusted_acce
     assert self_certified["status"] == "FAIL"
     assert self_certified["blockers"][0]["reason"] == "TRUSTED_VALIDATION_RECEIPTS_REQUIRED"
 
-    first = publish_validation_receipt(tmp_path, asset["asset_id"], _receipt("VR-SCENE", "SCENE_COMPONENT_VALIDATION"), expected_validation_revision=1)
+    first = publish_validation_receipt(
+        tmp_path,
+        asset["asset_id"],
+        _receipt("VR-SCENE", "SCENE_COMPONENT_VALIDATION"),
+        expected_validation_revision=1,
+    )
     assert first["status"] == "PASS", first
-    second = publish_validation_receipt(tmp_path, asset["asset_id"], _receipt("VR-REP", "REPRESENTATION_CONTRACT_GATE"), expected_validation_revision=2)
+    second = publish_validation_receipt(
+        tmp_path,
+        asset["asset_id"],
+        _receipt("VR-REP", "REPRESENTATION_CONTRACT_GATE"),
+        expected_validation_revision=2,
+    )
     assert second["status"] == "PASS", second
 
     approved = transition_production_task(
