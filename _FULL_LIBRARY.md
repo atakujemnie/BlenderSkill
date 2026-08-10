@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.20.0 — Full compiled snapshot
+# Blender AI Agent Library v0.21.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -12739,7 +12739,7 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset and Location Agent v0.18.0
+# System Prompt — Blender Asset and Location Agent v0.21.0
 
 Jesteś technical artistem/modelerem 3D pracującym w Blender 5.1.x nad reference reconstruction, procedural content i runtime game environments. Nie masz tylko wygenerować geometrii. Masz przeprowadzić audytowalny pipeline od źródła i aktualnego runtime do zwalidowanego assetu lub lokacji.
 
@@ -12808,6 +12808,41 @@ node/RDL closure
 
 Wysoki globalny visual score nie może przykryć błędu MUST feature.
 
+## v0.21 fidelity enforcement
+
+Dla komponentowej produkcji geometrii obowiązuje dodatkowo:
+
+```text
+persistent component state
+→ canonical component transform + origin
+→ asset envelope / seam constraints when declared
+→ execution authorization
+→ READY_TO_BUILD
+→ component-scoped task pack
+→ representation contract
+→ deterministic Blender mutation
+→ real design-resource materialization
+→ current scene snapshot
+→ trusted revision-bound validation receipts
+→ REVIEW
+→ APPROVED
+→ component ACCEPTED
+```
+
+Twarde reguły v0.21:
+
+- `executor.status == PASS` nie oznacza poprawności assetu;
+- worker nie może zatwierdzić własnej pracy przez wpisanie `validation_status: PASS`;
+- strict geometry task wymaga `SYSTEM` validation receipts dla dokładnego `asset_revision`, `component_id` i `scene_revision`;
+- task stage nie może wyprzedzać persisted `asset.stage`;
+- `BUILD` geometrii wymaga `component.state == READY_TO_BUILD`;
+- `placement_required: true` wymaga jawnego canonical transform; implicit `(0,0,0)` jest blockerem;
+- Task Pack musi zachować placement/origin i nie może zgubić `center_offset`/`location_mm` podczas kompilacji;
+- `TACTILE_GRID_PANEL`, `SLOTTED_GRATE_PLATE`, `RECESSED_CHANNEL`, `RECESSED_HOUSING` i podobne reprezentacje nie mogą cicho degradować się do generic box, jeżeli representation contract wymaga cechy fizycznej;
+- design binding do `MATERIAL` musi zostać zmaterializowany jako rzeczywisty Blender material slot, jeśli task wykonuje Blender materialization;
+- po trusted approval `task.status=APPROVED` i `component.state=ACCEPTED` muszą być spójne;
+- live Studio nie może zastępować błędu API ukrytym demo assetem.
+
 ## Location design system
 
 Dla znanej lokacji/fakcji/rodziny najpierw resolve canonical design system. Reużywaj istniejących materiałów, branding IDs, tekstur i języka form. Asset-local techniczne wymiary pozostają własnością authoritative asset reference.
@@ -12816,22 +12851,33 @@ Dla znanej lokacji/fakcji/rodziny najpierw resolve canonical design system. Reu�
 
 Nie rediscoveruj stabilnych faktów projektu. Nie ładuj całej biblioteki. Nie replayuj całego pipeline po lokalnej poprawce: invaliduj zależne evidence i wykonuj tylko dirty dependency closure.
 
+Limity component production pozostają:
+
+```text
+REPAIR <= 4k estimated input tokens
+BUILD <= 8k
+ASSET PLANNING <= 15k
+```
+
+Nie optymalizuj kontekstu kosztem utraty placement, reference evidence, representation requirements lub validation evidence.
+
 ## Runtime evidence
 
 Twierdzenie zależne od Blender runtime musi pochodzić z prawdziwego procesu Blendera. Mock/CPython może testować parsing, normalizację, registry, constraints i routing, ale nie zastępuje `bpy` runtime evidence.
 
-Dla v0.18 minimalny release proof to pinned Blender 5.1.x uruchomiony jako:
+Minimalny release proof nadal używa pinned Blender 5.1.x uruchomionego jako:
 
 ```text
 --background --factory-startup --disable-autoexec
 ```
 
-z PASS dla runtime discovery, realnego Geometry Nodes probe i cleanup validation.
-
+z PASS dla wymaganych runtime probes, cleanup validation oraz aktualnych Blender executor tests.
 
 Runtime release: v0.19.0. Component production MUST route through persistent asset state, scoped task packs and validation gates when applicable.
 
 Runtime release: v0.20.0. Operational asset production MUST route through persistent repositories, component-scoped task packs and the Production Studio service/API when applicable.
+
+Runtime release: v0.21.0. Geometry production MUST preserve canonical placement and representation, and strict APPROVED state MUST be derived from trusted revision-bound validation evidence rather than worker self-certification.
 
 
 ---
@@ -26755,6 +26801,20 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## FILE: `CHANGELOG.md`
 
+## 0.21.0 — Fidelity Enforcement & Deterministic Assembly
+
+- Added canonical component transforms/origin semantics so placement cannot disappear between asset state, task packs and Blender execution.
+- Added asset-envelope and seam validation, including mathematical negative controls from the Lafar sidewalk blind test.
+- Added representation-contract enforcement so tactile grids, slotted grates and recessed features cannot silently degrade to generic boxes.
+- Added component execution authorization and blocked geometry tasks that request a stage ahead of persisted asset state.
+- Added immutable trusted validation receipts bound to validator, asset revision, component and scene revision; worker self-certification no longer approves strict geometry tasks.
+- Converged task approval back into persistent `component.state=ACCEPTED`.
+- Added reference-evidence materialization into concrete local attachment descriptors while preserving component token budgets.
+- Added Blender design-resource materialization so resolved MATERIAL bindings become real Blender material slots.
+- Added immediate Blender view-layer refresh after deterministic mutations and a real Blender 5.1 proof for transform/origin/material behavior.
+- Removed demo-specific Studio startup state and silent live-to-demo fallback.
+- Added canonical Benchmark 91 — Lafar Sidewalk Fidelity Enforcement.
+
 ## 0.20.0 — Operational Production Studio
 
 - Promoted the local Production Studio from inspection shell to operational workflow engine.
@@ -27295,7 +27355,7 @@ Architecture retained across releases:
 
 ## FILE: `README.md`
 
-> Current production runtime: v0.20.0 — operational persistent Production Studio API and live GUI.
+> Current production runtime: v0.21.0 — fidelity enforcement, deterministic assembly and trusted validation.
 
 # BlenderSkill
 
@@ -27303,10 +27363,26 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.18.0 — Runtime Verification & Contract Convergence.**
+**v0.21.0 — Fidelity Enforcement & Deterministic Assembly.**
 
-v0.13 adds a second authoring domain beside reference reconstruction: procedural organic/environment generation. The first benchmark target is a Lafar planter containing a reconstructed hard-surface container plus generated vegetation.
+v0.21 closes the false-success path exposed by the blind Lafar sidewalk test. Canonical component placement now survives task compilation, representation contracts fail closed, geometry tasks cannot bypass persisted stage/build authorization, design-system MATERIAL bindings are materialized in Blender, and strict task approval requires trusted revision-bound validation receipts rather than worker self-certification. Task approval converges back to `component.state=ACCEPTED`.
 
+Canonical regression: **Benchmark 91 — Lafar Sidewalk Fidelity Enforcement v0.21**.
+
+## v0.21 Fidelity Enforcement & Deterministic Assembly
+
+```text
+persistent asset state
+-> canonical component transform + origin
+-> envelope / seam constraints
+-> execution authorization
+-> scoped task pack
+-> representation contract
+-> deterministic Blender execution + real material binding
+-> current scene snapshot
+-> trusted validation receipts
+-> APPROVED + component ACCEPTED
+```
 
 ## v0.18 Runtime Verification & Contract Convergence
 
@@ -34947,3 +35023,538 @@ PERSISTENT REPOSITORIES
 ```
 
 Lower layers may display or execute higher-level decisions, but may not silently override them.
+
+
+---
+
+## FILE: `07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md`
+
+# Benchmark 91 — Lafar Sidewalk Fidelity Enforcement v0.21 Regression
+
+Status: canonical v0.21 release benchmark
+
+## Origin
+
+This benchmark is derived from the first blind end-to-end Production Studio test performed after v0.20. The test used a new Lafar Standard Sidewalk Module rather than the known Lafar bench fixture. The orchestration stack reported successful task execution and ultimately approved nineteen build tasks, while the resulting Blender asset was visually and structurally inconsistent with the supplied concept.
+
+The benchmark exists to prevent that class of false success.
+
+## Asset target
+
+Canonical module family:
+
+```text
+LAFAR STANDARD SIDEWALK MODULE
+Astera Civic Systems
+nominal envelope: 2000 x 2000 x 160 mm
+```
+
+Reference-critical physical features include:
+
+- four primary sidewalk slabs;
+- controlled slab seams;
+- tactile / anti-slip band with repeated raised detail;
+- brushed aluminium curb trim;
+- recessed linear drainage channel;
+- drainage grate with repeated slots;
+- two recessed guidance LED emitters rather than one continuous neon;
+- graphite structural base body;
+- consistent modular footprint and height.
+
+The benchmark does not require production textures for every negative-control test. It does require the runtime to reject representations that cannot physically encode the declared feature.
+
+## Blind-test failure signature
+
+The known-broken v0.20 pattern was:
+
+```text
+manifest PASS
+parameter graph PASS
+task pack PASS
+recipe validation PASS
+Blender executor PASS
+scene snapshot PASS
+task lifecycle 19/19 APPROVED
+
+human/reference result: FAIL
+```
+
+v0.21 must instead make every `APPROVED` traceable to current geometry and trusted validation evidence.
+
+## Required negative controls
+
+### 1. Placement preservation
+
+A component with an explicit asset-local location must carry the same canonical transform into its task pack and Blender execution.
+
+Known failure:
+
+```text
+manifest.center_offset = [500, -500]
+-> field omitted from task pack
+-> builder default location = [0, 0, 0]
+```
+
+Required v0.21 result: impossible when `placement_required: true`.
+
+### 2. Seam mathematics
+
+Two slabs centered at `x=-500` and `x=+500`, each `996 mm` wide, measure a `4 mm` gap.
+
+If the declared constraint is:
+
+```text
+expected_gap_mm = 6
+Tolerance = 0.5 mm
+```
+
+`ASSET_ENVELOPE_GATE` must return `FAIL / SEAM_GAP_MISMATCH`.
+
+A consistent `994 mm + 994 mm` pair at the same centers measures `6 mm` and may pass.
+
+### 3. Footprint escape
+
+A component whose measured AABB extends beyond the 2000 x 2000 mm root footprint must fail unless the component explicitly permits an envelope exception.
+
+### 4. Tactile representation
+
+A component declared `TACTILE_GRID_PANEL` cannot pass with a recipe containing only one generic `BOX` or `ROUNDED_BOX`.
+
+It must demonstrate repeated geometry/instances or a stronger explicit representation contract.
+
+### 5. Drain grate representation
+
+A component declared `SLOTTED_GRATE_PLATE` cannot pass as one unmodified rounded box. The representation must include repeated/removed slot structure according to its contract.
+
+### 6. Recess representation
+
+`RECESSED_CHANNEL` and `RECESSED_HOUSING` must contain a physical recess operation. A dark material or flat overlay is insufficient.
+
+### 7. Stage bypass
+
+When:
+
+```text
+asset.stage = RECONSTRUCTION_MANIFEST
+requested task.stage = STRUCTURAL_GEOMETRY
+```
+
+Production Studio must return `BLOCKED / TASK_STAGE_NOT_AUTHORIZED`.
+
+### 8. Build authorization
+
+A geometry `BUILD` task for a component not in `READY_TO_BUILD` must return `BLOCKED / COMPONENT_BUILD_NOT_AUTHORIZED`.
+
+### 9. Worker self-certification
+
+A worker task result containing:
+
+```json
+{"validation_status":"PASS","scene_revision":1}
+```
+
+must not be enough to transition a strict geometry task from `REVIEW` to `APPROVED`.
+
+Without all required trusted receipts, expected result:
+
+```text
+FAIL / TRUSTED_VALIDATION_RECEIPTS_REQUIRED
+```
+
+### 10. Revision-bound trusted approval
+
+Required validation receipts must match the task's exact:
+
+```text
+asset_id
+asset_revision
+component_id
+scene_revision
+validator_id
+```
+
+and must have `source=SYSTEM`, `status=PASS`.
+
+Stale scene receipts, stale asset receipts or worker-originated receipts must not authorize approval.
+
+### 11. Component/task state convergence
+
+After trusted approval:
+
+```text
+task.status == APPROVED
+component.state == ACCEPTED
+```
+
+must both be persisted. The v0.20 state split (`APPROVED` task + `CONSTRAINED` component) is a regression failure.
+
+### 12. Real Blender material
+
+A recipe `ASSIGN_BINDING` operation for a resolved `MATERIAL` resource must result in a real Blender material slot assignment. A custom property containing only the binding ID is insufficient.
+
+### 13. Dependency-graph freshness
+
+Immediately after the deterministic Blender builder returns, `matrix_world` and scene-snapshot measurements must reflect the executed transform without requiring an unrelated later redraw or user action.
+
+### 14. Asset-generic Studio UI
+
+The live Studio HTML must not contain a hard-coded production selection for the old bench component. Starting with a different asset must not request a nonexistent demo component and must not silently substitute offline demo data after a live API error.
+
+### 15. Reference attachments
+
+When a task requests reference evidence and an artifact catalog is available, evidence must be materializable to a concrete local attachment descriptor with a bounded ROI and an allowed-root path check.
+
+## Positive component lifecycle
+
+The expected strict component path is:
+
+```text
+CONSTRAINED
+-> deterministic execution authorization
+-> READY_TO_BUILD
+-> task QUEUED
+-> dependency promotion
+-> READY
+-> RUNNING
+-> Blender mutation
+-> scene snapshot
+-> trusted validators
+-> REVIEW
+-> trusted receipt set complete
+-> APPROVED
+-> component ACCEPTED
+```
+
+No transition may use worker confidence as a substitute for a required trusted validator.
+
+## Real Blender 5.1 proof
+
+The release runtime suite must prove at minimum:
+
+1. a component task pack with an explicit transform is executed at that transform;
+2. `CENTER_BOTTOM` semantics place the primitive above its declared bottom origin;
+3. `matrix_world` is current immediately after execution;
+4. dimensions remain numerically correct;
+5. a resolved Astera-style MATERIAL binding creates/assigns a real Blender material;
+6. test-created objects, meshes, collections and materials clean up completely.
+
+## Token acceptance
+
+The correctness fixes must preserve the component-scoped context policy:
+
+```text
+BUILD <= 8000 estimated input tokens
+REPAIR <= 4000 estimated input tokens
+```
+
+Reference attachment descriptors may be added without replacing the text budget with repeated full-image descriptions.
+
+## Release acceptance
+
+Benchmark 91 passes only when:
+
+1. Benchmarks 87–90 remain green;
+2. all v0.21 unit and integration negative controls pass;
+3. the geometry-stage bypass is blocked;
+4. generic-box fallback for tactile/slotted/recessed representations is blocked;
+5. canonical component placement survives task compilation;
+6. the envelope/seam negative controls fail as expected and known-good controls pass;
+7. worker self-certification cannot approve strict tasks;
+8. exact trusted receipts can approve strict tasks;
+9. trusted approval persists `component.state=ACCEPTED`;
+10. the Studio UI is asset-generic;
+11. the Blender 5.1 runtime proof passes;
+12. generated library/runtime-index artifacts are deterministic and committed cleanly.
+
+## Architectural invariant
+
+```text
+PERSISTENT STATE
++ EXECUTABLE CONSTRAINTS
++ CANONICAL PLACEMENT
++ REPRESENTATION CONTRACT
++ CURRENT BLENDER MEASUREMENTS
++ TRUSTED REVISION-BOUND VALIDATION
+= APPROVABLE COMPONENT
+```
+
+A green task queue without those properties is not production success.
+
+
+---
+
+## FILE: `15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md`
+
+# Fidelity Enforcement and Deterministic Assembly
+
+Status: v0.21.0 implementation contract
+
+## Purpose
+
+v0.21 closes the gap exposed by the Lafar Standard Sidewalk blind end-to-end test: a production workflow may not report success merely because repositories, task queues and Blender executors ran without exceptions. `APPROVED` must mean that the component was placed where the asset state says it belongs, represented with the required geometric features, measured from the current Blender scene and accepted by trusted validators bound to the exact asset/scene revision.
+
+The release invariant is:
+
+```text
+EXECUTOR_RAN_SUCCESSFULLY != ASSET_IS_CORRECT
+WORKER_SAYS_PASS != TRUSTED_VALIDATION_PASS
+METADATA_BINDING != BLENDER_MATERIAL
+DECLARED_PLACEMENT != EXECUTED_PLACEMENT
+CALLER_REQUESTS_AUTHORIZATION != AUTHORIZATION_PASS
+```
+
+## Blind-test failures fixed by this contract
+
+The v0.20 blind test exposed these failure classes:
+
+1. component placement such as `center_offset` could disappear between asset state and Blender recipe;
+2. a geometry task could be created for a stage ahead of the persisted asset stage;
+3. a component could remain `CONSTRAINED` while its task reached `APPROVED`;
+4. a worker-supplied `validation_status: PASS` could satisfy approval;
+5. semantic representations such as tactile grids or slotted drainage grates could collapse into generic boxes;
+6. reference ROI records did not guarantee a concrete worker attachment;
+7. design bindings could remain Blender custom properties without a real material slot;
+8. immediately sampled Blender transforms could observe stale dependency-graph state;
+9. footprint/seam contradictions could survive manifest validation;
+10. Studio startup contained a demo-specific selected component and could silently display the demo asset after a live error.
+
+## Canonical component transform
+
+Every component task pack carries one normalized transform:
+
+```yaml
+transform:
+  location_mm: [x, y, z]
+  rotation_deg: [rx, ry, rz]
+  scale: [sx, sy, sz]
+  coordinate_space: ASSET_LOCAL | PARENT_LOCAL
+  explicit: true | false
+  source: TRANSFORM | LEGACY_LOCATION_MM | LEGACY_CENTER_OFFSET | IMPLICIT_ORIGIN
+```
+
+`COMPONENT_TRANSFORM` converts legacy placement records to this schema. A component marked `placement_required: true` cannot be executed when placement is implicit.
+
+`component.origin.type` remains independent from transform. The transform locates the declared component origin. Blender primitive construction and envelope validation must therefore honor origins such as:
+
+- `CENTER`;
+- `CENTER_BOTTOM` / `CENTER_XY_BOTTOM_Z`;
+- `FRONT_EDGE_CENTER_BOTTOM`;
+- `REAR_EDGE_CENTER_BOTTOM`;
+- `LEFT_EDGE_CENTER_BOTTOM`;
+- `RIGHT_EDGE_CENTER_BOTTOM`.
+
+Local recipe offsets are added only after canonical component placement is resolved.
+
+## Asset envelope and seams
+
+`ASSET_ENVELOPE_GATE` evaluates resolved component dimensions, origin semantics and canonical transforms against the root envelope.
+
+When `enforce_asset_envelope: true`:
+
+- child extents outside the nominal asset envelope are blockers unless explicitly allowed;
+- `seam_constraints` compare declared and mathematically measured gaps;
+- relational dimensions are resolved before bounds are evaluated;
+- inconsistent values cannot be accepted independently merely because each is individually plausible.
+
+Example negative control from the blind sidewalk test:
+
+```text
+centres = -500 mm / +500 mm
+slab widths = 996 mm / 996 mm
+measured gap = 4 mm
+specified gap = 6 mm +/- 0.5 mm
+=> FAIL: SEAM_GAP_MISMATCH
+```
+
+## Representation contract
+
+`REPRESENTATION_CONTRACT_GATE` validates what a recipe actually builds, not only whether recipe syntax is valid.
+
+Default fail-closed representation requirements include:
+
+```text
+PROFILE_PRISM          -> PROFILE_PRISM
+TACTILE_GRID_PANEL     -> ARRAY or INSTANCE
+SLOTTED_GRATE_PLATE    -> ARRAY or BOOLEAN_CUT
+RECESSED_CHANNEL       -> BOOLEAN_CUT
+RECESSED_HOUSING       -> BOOLEAN_CUT
+EMISSIVE_STRIP         -> ASSIGN_BINDING
+```
+
+Components may additionally declare:
+
+```yaml
+representation_contract:
+  required_operations: []
+  required_any_operations: []
+  forbidden_operations: []
+  required_feature_ids: []
+  minimum_repeat_count: 0
+```
+
+A weaker representation must return `BLOCKED`, not silently fall back to a box.
+
+## Component execution authorization
+
+Geometry mutation is split into two barriers:
+
+```text
+persistent component constraints/dependencies
+-> ASSET_EXECUTION_AUTHORIZATION_GATE
+-> component.state = READY_TO_BUILD
+-> component-scoped task
+-> COMPONENT_EXECUTION_GATE
+-> Blender mutation
+```
+
+Authorization is system-derived. The UI/API may request authorization and provide actor/reason metadata, but caller-provided `status`, `validator_id` or confidence cannot create PASS evidence. `ASSET_EXECUTION_AUTHORIZATION_GATE` derives the verdict from persisted state, including:
+
+- current asset stage is buildable;
+- component state is authorizable;
+- declared component dependencies are already `ACCEPTED`;
+- no open HARD/CANONICAL correction targets the component.
+
+For Studio-created geometry tasks:
+
+- the requested task stage cannot be ahead of `asset.stage`;
+- `BUILD` requires `component.state == READY_TO_BUILD`;
+- mutation scope and recipe component ID must match the task pack;
+- the representation contract must pass before Blender is called.
+
+This makes the prior `RECONSTRUCTION_MANIFEST -> STRUCTURAL_GEOMETRY task` bypass illegal.
+
+## Trusted validation receipts
+
+Workers may propose task results. They do not own approval.
+
+A trusted validation receipt is persistent evidence with at least:
+
+```yaml
+receipt_id:
+validator_id:
+validator_version:
+asset_id:
+asset_revision:
+component_id:
+scene_revision:
+status: PASS | FAIL | BLOCKED
+source: SYSTEM
+```
+
+`VALIDATION_RECEIPT_REPOSITORY` stores immutable receipt revisions separately from task results.
+
+`SCENE_COMPONENT_VALIDATION` evaluates current component-scoped scene evidence against the exact task-pack asset revision and canonical placement. When requested by the component validation contract it also enforces dimensions and resolved material resources.
+
+`COMPONENT_VALIDATION_RUNNER` executes the deterministic `REPRESENTATION_CONTRACT_GATE` and `SCENE_COMPONENT_VALIDATION`, then persists their PASS/FAIL receipts. This is the normal receipt-production path; workers do not manufacture receipt payloads.
+
+Strict geometry tasks declare `required_validation_ids`. Approval requires one current `PASS` receipt for every required validator, matching exactly:
+
+```text
+asset_id
+asset_revision
+component_id
+scene_revision
+validator_id
+source == SYSTEM
+```
+
+Therefore:
+
+```text
+worker result: {validation_status: PASS}
+without trusted receipts
+=> APPROVED forbidden
+```
+
+The task stores the receipt IDs used for approval. Service-level direct receipt publication is additionally constrained to the currently persisted asset revision and current scene revision and is not exposed as an arbitrary browser route.
+
+## Component/task convergence
+
+After a strict task is successfully approved, Production Studio persists:
+
+```text
+task.status = APPROVED
+component.state = ACCEPTED
+asset.revision += 1
+```
+
+The previous split-brain state where all tasks were approved while components remained `CONSTRAINED` is not a valid v0.21 completion state.
+
+## Reference evidence materialization
+
+Reference routing remains component/feature scoped, but metadata alone is insufficient for a multimodal worker.
+
+`REFERENCE_EVIDENCE_MATERIALIZER` resolves evidence `artifact_id` records through an explicit local artifact catalog and produces attachment descriptors containing:
+
+```text
+path
+media_type
+roi
+view
+authority
+feature_ids
+```
+
+Paths are resolved locally and can be confined to an allowed root. Task-pack token budgets remain unchanged because image attachments are not expanded into repeated textual scene descriptions.
+
+## Blender design-resource materialization
+
+`ASSIGN_BINDING` remains the recipe-level semantic operation, but `COMPONENT_EXECUTION_GATE` now follows successful geometry execution with `BLENDER_DESIGN_RESOURCE_ADAPTER`.
+
+For `MATERIAL` resources the adapter creates/reuses a real `bpy.data.materials` datablock and assigns it to the object material slot. Supported runtime fields include:
+
+- Base Color;
+- Metallic;
+- Roughness;
+- Emission Color / Strength.
+
+A binding custom property may remain as provenance, but it is no longer treated as proof that the Blender material exists.
+
+## Blender runtime coherence
+
+`BLENDER_HARD_SURFACE_BUILDER` updates the active view layer before returning. A snapshot taken immediately after execution therefore observes the current transform/dependency-graph state rather than relying on a later UI refresh.
+
+## Studio UI invariant
+
+The live Studio UI is asset-generic:
+
+- no demo component ID is selected by default;
+- a component removed or renamed between requests causes a retry without the stale component selector;
+- a live API failure remains visibly a live API failure;
+- the client does not silently substitute a bundled demo asset;
+- `REVIEW -> APPROVED` is sent as an intent and the server remains authoritative for trusted validation requirements.
+
+## v0.21 execution chain
+
+```text
+reference source
+-> scoped evidence + concrete attachment
+-> persistent asset/component state
+-> canonical component transform + origin
+-> asset envelope / seam constraints
+-> system-derived component authorization
+-> component task pack
+-> compact recipe
+-> representation contract gate
+-> deterministic Blender mutation
+-> real design-resource materialization
+-> view-layer update
+-> compact scene snapshot
+-> deterministic scene + representation validation
+-> trusted validation receipts
+-> REVIEW
+-> APPROVED
+-> component ACCEPTED
+```
+
+## Token policy
+
+v0.20 limits remain mandatory:
+
+```text
+REPAIR <= 4k estimated input tokens
+BUILD <= 8k
+ASSET PLANNING <= 15k
+```
+
+v0.21 optimizes correctness before further context reduction. Passing token budgets never compensates for a failed representation, envelope, placement or validation gate.

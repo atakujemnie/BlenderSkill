@@ -1,3 +1,17 @@
+## 0.21.0 — Fidelity Enforcement & Deterministic Assembly
+
+- Added canonical component transforms/origin semantics so placement cannot disappear between asset state, task packs and Blender execution.
+- Added asset-envelope and seam validation, including mathematical negative controls from the Lafar sidewalk blind test.
+- Added representation-contract enforcement so tactile grids, slotted grates and recessed features cannot silently degrade to generic boxes.
+- Added component execution authorization and blocked geometry tasks that request a stage ahead of persisted asset state.
+- Added immutable trusted validation receipts bound to validator, asset revision, component and scene revision; worker self-certification no longer approves strict geometry tasks.
+- Converged task approval back into persistent `component.state=ACCEPTED`.
+- Added reference-evidence materialization into concrete local attachment descriptors while preserving component token budgets.
+- Added Blender design-resource materialization so resolved MATERIAL bindings become real Blender material slots.
+- Added immediate Blender view-layer refresh after deterministic mutations and a real Blender 5.1 proof for transform/origin/material behavior.
+- Removed demo-specific Studio startup state and silent live-to-demo fallback.
+- Added canonical Benchmark 91 — Lafar Sidewalk Fidelity Enforcement.
+
 ## 0.20.0 — Operational Production Studio
 
 - Promoted the local Production Studio from inspection shell to operational workflow engine.

@@ -5,8 +5,8 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET_VERSION = "0.20.0"
-TARGET_BENCHMARK = "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md"
+TARGET_VERSION = "0.21.0"
+TARGET_BENCHMARK = "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md"
 
 
 def main() -> None:
@@ -23,11 +23,11 @@ def main() -> None:
         errors.append("MANIFEST_SCHEMA_NOT_V2")
     if manifest.get("benchmark") != TARGET_BENCHMARK:
         errors.append("CANONICAL_BENCHMARK_MISMATCH")
-    if not re.search(r"\bv?0\.20\.0\b", readme):
+    if not re.search(r"\bv?0\.21\.0\b", readme):
         errors.append("README_VERSION_MISSING")
-    if not re.search(r"(?:^|\n)#+\s*(?:\[)?0\.20\.0", changelog):
+    if not re.search(r"(?:^|\n)#+\s*(?:\[)?0\.21\.0", changelog):
         errors.append("CHANGELOG_VERSION_MISSING")
-    if "0.20.0" not in system_prompt:
+    if "0.21.0" not in system_prompt:
         errors.append("SYSTEM_PROMPT_VERSION_MISSING")
     if runtime_index.get("library_version") != TARGET_VERSION:
         errors.append("RUNTIME_INDEX_VERSION_MISMATCH")

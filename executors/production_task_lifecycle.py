@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Any, Mapping
 
 EXECUTOR_ID = "PRODUCTION_TASK_LIFECYCLE"
-EXECUTOR_VERSION = "0.19.0"
+EXECUTOR_VERSION = "0.21.0"
 TASK_STATUSES = {
     "QUEUED",
     "READY",
@@ -49,6 +49,9 @@ def validate_task(task: Mapping[str, Any]) -> dict[str, Any]:
     dependencies = [str(value) for value in list(task.get("dependencies", []) or [])]
     if str(task.get("task_id") or "") in dependencies:
         blockers.append({"reason": "TASK_SELF_DEPENDENCY"})
+    required_validators = [str(value) for value in list(task.get("required_validation_ids", []) or [])]
+    if any(not value for value in required_validators):
+        blockers.append({"reason": "TASK_REQUIRED_VALIDATOR_ID_EMPTY"})
     return {
         "status": "PASS" if not blockers else "FAIL",
         "validator_id": EXECUTOR_ID,
@@ -58,7 +61,7 @@ def validate_task(task: Mapping[str, Any]) -> dict[str, Any]:
 
 def create(spec: Mapping[str, Any]) -> dict[str, Any]:
     task = {
-        "schema_version": 1,
+        "schema_version": 2,
         "task_id": str(spec.get("task_id") or ""),
         "asset_id": str(spec.get("asset_id") or ""),
         "asset_revision": spec.get("asset_revision"),
@@ -70,12 +73,16 @@ def create(spec: Mapping[str, Any]) -> dict[str, Any]:
         "dependencies": sorted(str(value) for value in list(spec.get("dependencies", []) or [])),
         "allowed_to_modify": sorted(str(value) for value in list(spec.get("allowed_to_modify", []) or [])),
         "read_only": sorted(str(value) for value in list(spec.get("read_only", []) or [])),
+        "required_validation_ids": sorted(
+            {str(value) for value in list(spec.get("required_validation_ids", []) or []) if str(value)}
+        ),
         "input_revision": spec.get("input_revision", spec.get("asset_revision")),
         "task_pack_hash": spec.get("task_pack_hash"),
         "worker_id": None,
         "attempt": 0,
         "blockers": [],
         "result": None,
+        "approval_receipt_ids": [],
         "history": [
             {
                 "from": None,
@@ -117,6 +124,49 @@ def dependency_state(task: Mapping[str, Any], tasks: Mapping[str, Mapping[str, A
     }
 
 
+def _trusted_approval_receipts(task: Mapping[str, Any], receipts: list[Mapping[str, Any]] | None) -> dict[str, Any]:
+    required = {str(value) for value in list(task.get("required_validation_ids", []) or [])}
+    if not required:
+        return {"status": "PASS", "receipt_ids": [], "blockers": []}
+    result = task.get("result")
+    if not isinstance(result, Mapping):
+        return {"status": "FAIL", "receipt_ids": [], "blockers": [{"reason": "TASK_RESULT_REQUIRED_FOR_APPROVAL"}]}
+    scene_revision = result.get("scene_revision")
+    if scene_revision is None:
+        return {"status": "FAIL", "receipt_ids": [], "blockers": [{"reason": "TASK_SCENE_REVISION_REQUIRED_FOR_APPROVAL"}]}
+
+    matched: dict[str, Mapping[str, Any]] = {}
+    for raw in list(receipts or []):
+        if not isinstance(raw, Mapping):
+            continue
+        validator_id = str(raw.get("validator_id") or "")
+        if validator_id not in required:
+            continue
+        if str(raw.get("source") or "").upper() != "SYSTEM":
+            continue
+        if str(raw.get("status") or "").upper() != "PASS":
+            continue
+        if str(raw.get("asset_id") or "") != str(task.get("asset_id") or ""):
+            continue
+        if int(raw.get("asset_revision", 0)) != int(task.get("asset_revision", 0)):
+            continue
+        if str(raw.get("component_id") or "") != str(task.get("component_id") or ""):
+            continue
+        if int(raw.get("scene_revision", 0)) != int(scene_revision):
+            continue
+        matched[validator_id] = raw
+
+    missing = sorted(required - set(matched))
+    if missing:
+        return {
+            "status": "FAIL",
+            "receipt_ids": [],
+            "blockers": [{"reason": "TRUSTED_VALIDATION_RECEIPTS_REQUIRED", "validator_ids": missing}],
+        }
+    receipt_ids = sorted(str(matched[validator_id].get("receipt_id")) for validator_id in required)
+    return {"status": "PASS", "receipt_ids": receipt_ids, "blockers": []}
+
+
 def transition(
     task: Mapping[str, Any],
     target_status: str,
@@ -126,6 +176,7 @@ def transition(
     worker_id: str | None = None,
     blockers: list[Mapping[str, Any]] | None = None,
     result: Mapping[str, Any] | None = None,
+    validation_receipts: list[Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     verdict = validate_task(task)
     if verdict["status"] != "PASS":
@@ -165,13 +216,22 @@ def transition(
             "blockers": [{"reason": "TASK_RESULT_REQUIRED_FOR_REVIEW"}],
         }
     if target == "APPROVED":
-        result_record = next_task.get("result")
-        if not isinstance(result_record, Mapping) or str(result_record.get("validation_status") or "").upper() != "PASS":
-            return {
-                "status": "FAIL",
-                "validator_id": EXECUTOR_ID,
-                "blockers": [{"reason": "PASSING_VALIDATION_REQUIRED_FOR_APPROVAL"}],
-            }
+        required_validators = list(next_task.get("required_validation_ids", []) or [])
+        if required_validators:
+            trusted = _trusted_approval_receipts(next_task, validation_receipts)
+            if trusted["status"] != "PASS":
+                return {"status": "FAIL", "validator_id": EXECUTOR_ID, "blockers": trusted["blockers"]}
+            next_task["approval_receipt_ids"] = trusted["receipt_ids"]
+        else:
+            # Compatibility path for pre-v0.21 direct lifecycle callers. Production Studio
+            # tasks created in v0.21 always declare trusted validator requirements.
+            result_record = next_task.get("result")
+            if not isinstance(result_record, Mapping) or str(result_record.get("validation_status") or "").upper() != "PASS":
+                return {
+                    "status": "FAIL",
+                    "validator_id": EXECUTOR_ID,
+                    "blockers": [{"reason": "PASSING_VALIDATION_REQUIRED_FOR_APPROVAL"}],
+                }
     history = list(next_task.get("history", []) or [])
     history.append(
         {

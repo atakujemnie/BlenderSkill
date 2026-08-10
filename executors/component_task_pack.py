@@ -5,8 +5,11 @@ from __future__ import annotations
 import json
 from typing import Any, Mapping
 
+from executors.component_transform import normalize as normalize_transform
+from executors.reference_evidence_materializer import materialize as materialize_reference_evidence
+
 EXECUTOR_ID = "COMPONENT_TASK_PACK"
-EXECUTOR_VERSION = "0.19.0"
+EXECUTOR_VERSION = "0.21.0"
 DEFAULT_BUILD_TOKEN_BUDGET = 8000
 DEFAULT_REPAIR_TOKEN_BUDGET = 4000
 
@@ -56,6 +59,14 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
     mutable = _descendants(components, component_id) if include_descendants else {component_id}
     read_only = sorted(set(components) - mutable)
     component = components[component_id]
+
+    transform = normalize_transform(component)
+    if transform["status"] != "PASS":
+        return {
+            "status": "FAIL",
+            "validator_id": EXECUTOR_ID,
+            "blockers": transform["blockers"],
+        }
 
     resolved_parameters = spec.get("resolved_parameters", {})
     component_parameters = {}
@@ -116,6 +127,22 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
                 }
             )
 
+    reference_attachments: list[dict[str, Any]] = []
+    artifact_catalog = spec.get("reference_artifacts")
+    if isinstance(artifact_catalog, Mapping) and references:
+        materialized = materialize_reference_evidence(
+            references,
+            artifact_catalog,
+            allowed_root=spec.get("reference_artifact_root"),
+        )
+        if materialized["status"] != "PASS":
+            return {
+                "status": "FAIL",
+                "validator_id": EXECUTOR_ID,
+                "blockers": materialized["blockers"],
+            }
+        reference_attachments = materialized["attachments"]
+
     task_kind = str(spec.get("task_kind", "BUILD")).upper()
     token_budget = int(
         spec.get(
@@ -125,7 +152,7 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
     )
 
     task_pack = {
-        "schema_version": 1,
+        "schema_version": 2,
         "asset_id": asset.get("asset_id"),
         "asset_revision": asset.get("revision"),
         "stage": asset.get("stage"),
@@ -139,6 +166,9 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
             "anchors": component.get("anchors", {}),
             "shape_class": component.get("shape_class"),
             "construction_recipe": component.get("construction_recipe"),
+            "transform": transform["transform"],
+            "placement_required": bool(component.get("placement_required", False)),
+            "representation_contract": component.get("representation_contract", {}),
         },
         "allowed_to_modify": sorted(mutable),
         "read_only": read_only,
@@ -147,6 +177,7 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
         "open_corrections": open_corrections,
         "assembly_relations": relations,
         "reference_evidence": references,
+        "reference_attachments": reference_attachments,
         "validation_contract": component.get("validation", {}),
     }
 
@@ -174,6 +205,8 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
             "read_only_component_count": len(read_only),
             "correction_count": len(open_corrections),
             "reference_evidence_count": len(references),
+            "reference_attachment_count": len(reference_attachments),
+            "placement_explicit": bool(transform["transform"]["explicit"]),
         },
         "blockers": blockers,
     }
