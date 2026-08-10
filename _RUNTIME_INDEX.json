@@ -1,6 +1,6 @@
 {
-  "canonical_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
-  "library_version": "0.21.1",
+  "canonical_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+  "library_version": "0.22.0",
   "runtime_index_schema_version": 1,
   "skills": [
     {
@@ -39,24 +39,27 @@
       "skill_id": "ASSET_ENVELOPE_GATE"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "ASSET_STATE_RUNTIME"
       ],
       "executor": "executors/asset_execution_authorization_gate.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Derive component build authorization from persisted asset state instead of caller-supplied PASS claims.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Authorize persisted component work across structural and later production stages.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "authorization",
         "build",
         "component",
-        "v0.21"
+        "feature",
+        "fidelity",
+        "v0.21",
+        "v0.22"
       ],
       "skill_id": "ASSET_EXECUTION_AUTHORIZATION_GATE"
     },
     {
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "ASSET_STATE_RUNTIME",
         "COMPONENT_TASK_PACK",
@@ -65,13 +68,16 @@
       ],
       "executor": "executors/asset_production_orchestrator.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Prepare one component production task from persistent asset truth.",
-      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "purpose": "Compile persistent asset/design/reference state into scoped v0.22 production tasks.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "asset",
         "component",
+        "feature",
+        "fidelity",
         "orchestrator",
-        "production"
+        "production",
+        "v0.22"
       ],
       "skill_id": "ASSET_PRODUCTION_ORCHESTRATOR"
     },
@@ -91,6 +97,24 @@
         "revision"
       ],
       "skill_id": "ASSET_REPOSITORY"
+    },
+    {
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "dependencies": [
+        "FEATURE_CONTRACT_GATE",
+        "FIDELITY_REVIEW_REPOSITORY"
+      ],
+      "executor": "executors/asset_stage_completion_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Prevent structural acceptance from being reported as later-stage or final completion.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "approval",
+        "completion",
+        "fidelity",
+        "stage"
+      ],
+      "skill_id": "ASSET_STAGE_COMPLETION_GATE"
     },
     {
       "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
@@ -145,19 +169,22 @@
       "skill_id": "BLENDER_DESIGN_RESOURCE_ADAPTER"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "HARD_SURFACE_RECIPE"
       ],
       "executor": "executors/blender_hard_surface_builder.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Blender 5.1 executor for deterministic hard-surface recipe operations.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Execute deterministic Blender geometry and emit measured feature/Boolean proof.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "blender",
         "builder",
+        "feature",
+        "fidelity",
         "hard surface",
-        "recipe"
+        "recipe",
+        "v0.22"
       ],
       "skill_id": "BLENDER_HARD_SURFACE_BUILDER"
     },
@@ -177,19 +204,22 @@
       "skill_id": "BLENDER_RUNTIME_ADDON_DISCOVERY"
     },
     {
-      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "SCENE_COMPONENT_SNAPSHOT"
       ],
       "executor": "executors/blender_scene_snapshot_adapter.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Read Blender 5.1 scene data into compact production snapshots without mutating the scene.",
-      "relevant_benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "purpose": "Measure Blender 5.1 scene state and feature proof without mutating the scene.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "blender",
+        "feature",
+        "fidelity",
         "measurement",
         "scene",
-        "snapshot"
+        "snapshot",
+        "v0.22"
       ],
       "skill_id": "BLENDER_SCENE_SNAPSHOT_ADAPTER"
     },
@@ -209,7 +239,7 @@
       "skill_id": "CANONICAL_PROVIDER_REGISTRY"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "BLENDER_HARD_SURFACE_BUILDER",
         "COMPONENT_TRANSFORM",
@@ -217,18 +247,20 @@
       ],
       "executor": "executors/component_execution_gate.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Authorize scoped recipes, preserve canonical placement and gate Blender mutation.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Block incomplete feature recipes before deterministic Blender mutation.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "asset",
+        "feature",
         "fidelity",
         "geometry",
-        "v0.21"
+        "v0.21",
+        "v0.22"
       ],
       "skill_id": "COMPONENT_EXECUTION_GATE"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "DESIGN_BINDING_RESOLVER",
         "PARAMETER_GRAPH",
@@ -236,13 +268,16 @@
       ],
       "executor": "executors/component_task_pack.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Token-bounded component mutation pack with explicit mutable/read-only scope.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Scope Feature Contract, QA views and edge/profile requirements into compact component tasks.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "component",
         "context",
+        "feature",
+        "fidelity",
         "task",
-        "token"
+        "token",
+        "v0.22"
       ],
       "skill_id": "COMPONENT_TASK_PACK"
     },
@@ -262,7 +297,7 @@
       "skill_id": "COMPONENT_TRANSFORM"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "REPRESENTATION_CONTRACT_GATE",
         "SCENE_COMPONENT_VALIDATION",
@@ -270,12 +305,15 @@
       ],
       "executor": "executors/component_validation_runner.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Run trusted deterministic component validators and persist their revision-bound receipts.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Publish trusted representation, scene and feature-completion receipts.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "approval",
+        "feature",
+        "fidelity",
         "receipt",
         "trusted",
+        "v0.22",
         "validation"
       ],
       "skill_id": "COMPONENT_VALIDATION_RUNNER"
@@ -347,19 +385,57 @@
       "skill_id": "EXPECTED_PROVIDER_GATE"
     },
     {
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "dependencies": [
+        "COMPONENT_TASK_PACK",
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "executor": "executors/feature_contract_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Require every reference-critical MUST feature to have recipe intent and measured scene proof.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "completion",
+        "feature",
+        "fidelity",
+        "must"
+      ],
+      "skill_id": "FEATURE_CONTRACT_GATE"
+    },
+    {
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "dependencies": [
+        "VISUAL_FIDELITY_REVIEW_GATE"
+      ],
+      "executor": "executors/fidelity_review_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Persist revision-bound independent visual fidelity reviews.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "fidelity",
+        "persistence",
+        "review",
+        "revision"
+      ],
+      "skill_id": "FIDELITY_REVIEW_REPOSITORY"
+    },
+    {
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "COMPONENT_TASK_PACK"
       ],
       "executor": "executors/hard_surface_recipe.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Deterministic intermediate representation for manufactured hard-surface construction.",
-      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "purpose": "Validate deterministic hard-surface recipes including sensor/detail primitives.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
+        "feature",
+        "fidelity",
         "geometry",
         "hard surface",
         "manufactured",
-        "recipe"
+        "recipe",
+        "v0.22"
       ],
       "skill_id": "HARD_SURFACE_RECIPE"
     },
@@ -429,7 +505,7 @@
       "skill_id": "PRODUCTION_ITERATION_GATE"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "ASSET_PRODUCTION_ORCHESTRATOR",
         "ASSET_REPOSITORY",
@@ -440,13 +516,16 @@
       ],
       "executor": "executors/production_studio_service.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Operational service layer for asset, correction, task, evidence, scene and task-pack workflows.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Operational production service with feature validation, acceptance levels and fidelity review persistence.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "api",
         "asset",
+        "feature",
+        "fidelity",
         "production",
-        "studio"
+        "studio",
+        "v0.22"
       ],
       "skill_id": "PRODUCTION_STUDIO_SERVICE"
     },
@@ -625,36 +704,41 @@
       "skill_id": "REFERENCE_EVIDENCE_REPOSITORY"
     },
     {
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "HARD_SURFACE_RECIPE"
       ],
       "executor": "executors/representation_contract_gate.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Reject recipes that cannot represent required physical component features.",
-      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "purpose": "Reject semantically weaker recipes for reference-critical representations.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "asset",
+        "feature",
         "fidelity",
         "geometry",
-        "v0.21"
+        "v0.21",
+        "v0.22"
       ],
       "skill_id": "REPRESENTATION_CONTRACT_GATE"
     },
     {
-      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "dependencies": [
         "BLENDER_HARD_SURFACE_BUILDER"
       ],
       "executor": "executors/scene_component_snapshot.py",
       "maturity": "EXECUTOR_READY",
-      "purpose": "Compact deterministic Blender scene/component snapshots and structural diffs.",
-      "relevant_benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "purpose": "Persist compact scene evidence including evaluated metrics and feature proof.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "diff",
+        "feature",
+        "fidelity",
         "scene",
         "scope",
-        "snapshot"
+        "snapshot",
+        "v0.22"
       ],
       "skill_id": "SCENE_COMPONENT_SNAPSHOT"
     },
@@ -725,6 +809,23 @@
         "vegetation"
       ],
       "skill_id": "VEGETATION_PROVIDER_ROUTE"
+    },
+    {
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "dependencies": [
+        "FEATURE_CONTRACT_GATE"
+      ],
+      "executor": "executors/visual_fidelity_review_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Validate independent per-MUST multi-view fidelity review bound to current revisions.",
+      "relevant_benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "fidelity",
+        "multiview",
+        "review",
+        "visual"
+      ],
+      "skill_id": "VISUAL_FIDELITY_REVIEW_GATE"
     }
   ]
 }

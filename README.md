@@ -1,4 +1,4 @@
-> Current production runtime: v0.21.1 — fidelity enforcement, deterministic assembly and trusted validation.
+> Current production runtime: v0.22.0 — visual fidelity, feature completion and measured geometry proof.
 
 # BlenderSkill
 
@@ -6,26 +6,28 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.21.1 — Fidelity Enforcement & Deterministic Assembly.**
+**v0.22.0 — Visual Fidelity & Feature Completion.**
 
-v0.21 closes the false-success path exposed by the blind Lafar sidewalk test. Canonical component placement now survives task compilation, representation contracts fail closed, geometry tasks cannot bypass persisted stage/build authorization, design-system MATERIAL bindings are materialized in Blender, and strict task approval requires trusted revision-bound validation receipts rather than worker self-certification. Task approval converges back to `component.state=ACCEPTED`.
+v0.22 is driven by the Lafar Public Service Terminal blind test. v0.21 proved placement, envelope, materials and trusted task receipts, but a human could still rate the final reconstruction roughly 3/10 because reference-critical details were omitted or simplified. v0.22 makes visible MUST features explicit production data, requires measured scene proof for deterministic geometry, adds independent multi-view visual review and prevents `STRUCTURAL_GEOMETRY` from being reported as final quality.
 
-Canonical regression: **Benchmark 91 — Lafar Sidewalk Fidelity Enforcement v0.21**.
+Canonical regression: **Benchmark 92 — Lafar Public Service Terminal Visual Fidelity v0.22**.
 
-## v0.21 Fidelity Enforcement & Deterministic Assembly
+## v0.22 Visual Fidelity & Feature Completion
 
 ```text
-persistent asset state
--> canonical component transform + origin
--> envelope / seam constraints
--> execution authorization
--> scoped task pack
--> representation contract
--> deterministic Blender execution + real material binding
--> current scene snapshot
--> trusted validation receipts
--> APPROVED + component ACCEPTED
+reference evidence
+-> Feature Contract (MUST / SHOULD / OPTIONAL)
+-> component-scoped task pack + QA views
+-> representation + deterministic detail primitives
+-> measured Blender feature proof
+-> structural/details/material/game-ready acceptance levels
+-> registered multi-view QA renders
+-> independent per-MUST visual review
+-> current revision-bound fidelity review
+-> final APPROVED
 ```
+
+Hard rules include: a Boolean must prove material effect, repeated details must prove count/pitch when contracted, newly discovered reference-critical details block final approval until mapped, a global similarity score cannot override a failed MUST feature, and final approval cannot reuse a stale visual review.
 
 ## v0.18 Runtime Verification & Contract Convergence
 

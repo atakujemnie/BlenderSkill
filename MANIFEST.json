@@ -1,12 +1,12 @@
 {
   "name": "Blender AI Agent Library",
-  "version": "0.21.1",
+  "version": "0.22.0",
   "target_blender": "5.1.x",
   "canonical_source": "modular_md_files",
   "compiled_snapshot": "_FULL_LIBRARY.md",
   "reconstruction_layer": "10_reconstruction",
   "procedural_generation_layer": "12_procedural_generation",
-  "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+  "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
   "benchmarks": [
     "07_examples/73_LAFAR_STREET_BENCH_RECONSTRUCTION_BENCHMARK.md",
     "07_examples/74_LAFAR_CIVIC_BOLLARD_BENCHMARK.md",
@@ -26,9 +26,10 @@
     "07_examples/88_LAFAR_STREET_BENCH_ASSET_RUNTIME_BENCHMARK.md",
     "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
     "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
-    "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md"
+    "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+    "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md"
   ],
-  "module_count": 345,
+  "module_count": 347,
   "modules": [
     "00_governance/00_AGENT_CHARTER.md",
     "00_governance/01_SOURCE_OF_TRUTH.md",
@@ -374,7 +375,9 @@
     "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
     "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
     "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
-    "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md"
+    "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+    "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+    "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md"
   ],
   "repository": "https://github.com/atakujemnie/BlenderSkill",
   "source_of_truth": "github_repository",
@@ -651,8 +654,8 @@
     },
     {
       "id": "COMPONENT_TASK_PACK",
-      "purpose": "Token-bounded component mutation pack with explicit mutable/read-only scope.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Scope Feature Contract, QA views and edge/profile requirements into compact component tasks.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/component_task_pack.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
@@ -660,18 +663,25 @@
         "DESIGN_BINDING_RESOLVER",
         "REFERENCE_EVIDENCE_REGISTRY"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "component",
         "context",
+        "feature",
+        "fidelity",
         "task",
-        "token"
+        "token",
+        "v0.22"
+      ],
+      "tests": [
+        "tests/unit/test_component_task_pack.py",
+        "tests/unit/test_feature_contract_gate.py"
       ]
     },
     {
       "id": "ASSET_PRODUCTION_ORCHESTRATOR",
-      "purpose": "Prepare one component production task from persistent asset truth.",
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "purpose": "Compile persistent asset/design/reference state into scoped v0.22 production tasks.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/asset_production_orchestrator.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
@@ -680,49 +690,68 @@
         "DESIGN_BINDING_RESOLVER",
         "COMPONENT_TASK_PACK"
       ],
-      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "asset",
         "component",
+        "feature",
+        "fidelity",
         "orchestrator",
-        "production"
+        "production",
+        "v0.22"
+      ],
+      "tests": [
+        "tests/unit/test_asset_production_orchestrator.py"
       ]
     },
     {
       "id": "HARD_SURFACE_RECIPE",
-      "purpose": "Deterministic intermediate representation for manufactured hard-surface construction.",
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "purpose": "Validate deterministic hard-surface recipes including sensor/detail primitives.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/hard_surface_recipe.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
         "COMPONENT_TASK_PACK"
       ],
-      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
-        "hard surface",
-        "recipe",
+        "feature",
+        "fidelity",
         "geometry",
-        "manufactured"
+        "hard surface",
+        "manufactured",
+        "recipe",
+        "v0.22"
+      ],
+      "tests": [
+        "tests/unit/test_hard_surface_recipe.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
       "id": "BLENDER_HARD_SURFACE_BUILDER",
-      "purpose": "Blender 5.1 executor for deterministic hard-surface recipe operations.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Execute deterministic Blender geometry and emit measured feature/Boolean proof.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/blender_hard_surface_builder.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
         "HARD_SURFACE_RECIPE"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "blender",
         "builder",
+        "feature",
+        "fidelity",
         "hard surface",
-        "recipe"
+        "recipe",
+        "v0.22"
       ],
       "tests": [
-        "tests/blender/test_v021_component_execution.py"
+        "tests/blender/test_hard_surface_builder.py",
+        "tests/blender/test_v021_component_execution.py",
+        "tests/blender/test_v0211_primitive_winding_and_boolean.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
@@ -798,19 +827,26 @@
     },
     {
       "id": "SCENE_COMPONENT_SNAPSHOT",
-      "purpose": "Compact deterministic Blender scene/component snapshots and structural diffs.",
-      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "purpose": "Persist compact scene evidence including evaluated metrics and feature proof.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/scene_component_snapshot.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
         "BLENDER_HARD_SURFACE_BUILDER"
       ],
-      "benchmark": "07_examples/89_LAFAR_PRODUCTION_STUDIO_V019_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "diff",
+        "feature",
+        "fidelity",
         "scene",
+        "scope",
         "snapshot",
-        "scope"
+        "v0.22"
+      ],
+      "tests": [
+        "tests/unit/test_scene_component_snapshot.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
@@ -887,25 +923,32 @@
     },
     {
       "id": "BLENDER_SCENE_SNAPSHOT_ADAPTER",
-      "purpose": "Read Blender 5.1 scene data into compact production snapshots without mutating the scene.",
-      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "purpose": "Measure Blender 5.1 scene state and feature proof without mutating the scene.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/blender_scene_snapshot_adapter.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
         "SCENE_COMPONENT_SNAPSHOT"
       ],
-      "benchmark": "07_examples/90_LAFAR_OPERATIONAL_PRODUCTION_STUDIO_V020_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "blender",
+        "feature",
+        "fidelity",
         "measurement",
         "scene",
-        "snapshot"
+        "snapshot",
+        "v0.22"
+      ],
+      "tests": [
+        "tests/blender/test_scene_snapshot_adapter.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
       "id": "PRODUCTION_STUDIO_SERVICE",
-      "purpose": "Operational service layer for asset, correction, task, evidence, scene and task-pack workflows.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Operational production service with feature validation, acceptance levels and fidelity review persistence.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/production_studio_service.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
@@ -916,16 +959,20 @@
         "REFERENCE_EVIDENCE_REPOSITORY",
         "SCENE_SNAPSHOT_REPOSITORY"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "api",
         "asset",
+        "feature",
+        "fidelity",
         "production",
-        "studio"
+        "studio",
+        "v0.22"
       ],
       "tests": [
         "tests/integration/test_v021_studio_http.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/integration/test_v022_fidelity_review_http.py",
+        "tests/regression/test_benchmark_92.py"
       ]
     },
     {
@@ -987,29 +1034,31 @@
     },
     {
       "id": "REPRESENTATION_CONTRACT_GATE",
-      "purpose": "Reject recipes that cannot represent required physical component features.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Reject semantically weaker recipes for reference-critical representations.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/representation_contract_gate.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
         "HARD_SURFACE_RECIPE"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "asset",
+        "feature",
         "fidelity",
         "geometry",
-        "v0.21"
+        "v0.21",
+        "v0.22"
       ],
       "tests": [
         "tests/unit/test_representation_contract_gate.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/regression/test_benchmark_92.py"
       ]
     },
     {
       "id": "COMPONENT_EXECUTION_GATE",
-      "purpose": "Authorize scoped recipes, preserve canonical placement and gate Blender mutation.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Block incomplete feature recipes before deterministic Blender mutation.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/component_execution_gate.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
@@ -1017,16 +1066,18 @@
         "REPRESENTATION_CONTRACT_GATE",
         "BLENDER_HARD_SURFACE_BUILDER"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "asset",
+        "feature",
         "fidelity",
         "geometry",
-        "v0.21"
+        "v0.21",
+        "v0.22"
       ],
       "tests": [
         "tests/unit/test_component_execution_gate.py",
-        "tests/blender/test_v021_component_execution.py"
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
@@ -1089,23 +1140,26 @@
     },
     {
       "id": "ASSET_EXECUTION_AUTHORIZATION_GATE",
-      "purpose": "Derive component build authorization from persisted asset state instead of caller-supplied PASS claims.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Authorize persisted component work across structural and later production stages.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/asset_execution_authorization_gate.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
         "ASSET_STATE_RUNTIME"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
         "authorization",
-        "component",
         "build",
-        "v0.21"
+        "component",
+        "feature",
+        "fidelity",
+        "v0.21",
+        "v0.22"
       ],
       "tests": [
         "tests/unit/test_asset_execution_authorization_gate.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/regression/test_benchmark_92.py"
       ]
     },
     {
@@ -1133,8 +1187,8 @@
     },
     {
       "id": "COMPONENT_VALIDATION_RUNNER",
-      "purpose": "Run trusted deterministic component validators and persist their revision-bound receipts.",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "purpose": "Publish trusted representation, scene and feature-completion receipts.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/component_validation_runner.py",
       "maturity": "EXECUTOR_READY",
       "dependencies": [
@@ -1142,16 +1196,105 @@
         "REPRESENTATION_CONTRACT_GATE",
         "VALIDATION_RECEIPT_REPOSITORY"
       ],
-      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
       "routing_keywords": [
-        "trusted",
-        "validation",
+        "approval",
+        "feature",
+        "fidelity",
         "receipt",
-        "approval"
+        "trusted",
+        "v0.22",
+        "validation"
       ],
       "tests": [
         "tests/unit/test_component_validation_runner.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/unit/test_feature_contract_gate.py",
+        "tests/regression/test_benchmark_92.py"
+      ]
+    },
+    {
+      "id": "FEATURE_CONTRACT_GATE",
+      "purpose": "Require every reference-critical MUST feature to have recipe intent and measured scene proof.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/feature_contract_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "COMPONENT_TASK_PACK",
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "feature",
+        "must",
+        "completion",
+        "fidelity"
+      ],
+      "tests": [
+        "tests/unit/test_feature_contract_gate.py",
+        "tests/regression/test_benchmark_92.py"
+      ]
+    },
+    {
+      "id": "VISUAL_FIDELITY_REVIEW_GATE",
+      "purpose": "Validate independent per-MUST multi-view fidelity review bound to current revisions.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/visual_fidelity_review_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "FEATURE_CONTRACT_GATE"
+      ],
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "visual",
+        "review",
+        "multiview",
+        "fidelity"
+      ],
+      "tests": [
+        "tests/unit/test_visual_fidelity_review_gate.py",
+        "tests/regression/test_benchmark_92.py"
+      ]
+    },
+    {
+      "id": "FIDELITY_REVIEW_REPOSITORY",
+      "purpose": "Persist revision-bound independent visual fidelity reviews.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/fidelity_review_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "VISUAL_FIDELITY_REVIEW_GATE"
+      ],
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "fidelity",
+        "review",
+        "revision",
+        "persistence"
+      ],
+      "tests": [
+        "tests/integration/test_v022_fidelity_review_http.py"
+      ]
+    },
+    {
+      "id": "ASSET_STAGE_COMPLETION_GATE",
+      "purpose": "Prevent structural acceptance from being reported as later-stage or final completion.",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/asset_stage_completion_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "FEATURE_CONTRACT_GATE",
+        "FIDELITY_REVIEW_REPOSITORY"
+      ],
+      "benchmark": "07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "stage",
+        "completion",
+        "approval",
+        "fidelity"
+      ],
+      "tests": [
+        "tests/unit/test_asset_stage_completion_gate.py",
+        "tests/regression/test_benchmark_92.py"
       ]
     }
   ],
@@ -1315,17 +1458,17 @@
     },
     {
       "id": "COMPONENT_TASK_PACK",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/component_task_pack.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/unit/test_component_task_pack.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/unit/test_feature_contract_gate.py"
       ]
     },
     {
       "id": "ASSET_PRODUCTION_ORCHESTRATOR",
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/asset_production_orchestrator.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
@@ -1334,22 +1477,24 @@
     },
     {
       "id": "HARD_SURFACE_RECIPE",
-      "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/hard_surface_recipe.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/unit/test_hard_surface_recipe.py"
+        "tests/unit/test_hard_surface_recipe.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
       "id": "BLENDER_HARD_SURFACE_BUILDER",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/blender_hard_surface_builder.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/blender/test_hard_surface_builder.py",
         "tests/blender/test_v021_component_execution.py",
-        "tests/blender/test_v0211_primitive_winding_and_boolean.py"
+        "tests/blender/test_v0211_primitive_winding_and_boolean.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
@@ -1391,11 +1536,12 @@
     },
     {
       "id": "SCENE_COMPONENT_SNAPSHOT",
-      "contract": "15_asset_production/501_PRODUCTION_STUDIO_RUNTIME.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/scene_component_snapshot.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/unit/test_scene_component_snapshot.py"
+        "tests/unit/test_scene_component_snapshot.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
@@ -1438,24 +1584,23 @@
     },
     {
       "id": "BLENDER_SCENE_SNAPSHOT_ADAPTER",
-      "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/blender_scene_snapshot_adapter.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/blender/test_scene_snapshot_adapter.py"
+        "tests/blender/test_scene_snapshot_adapter.py",
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
       "id": "PRODUCTION_STUDIO_SERVICE",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/production_studio_service.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
-        "tests/integration/test_production_studio_service.py",
-        "tests/integration/test_production_studio_http.py",
-        "tests/regression/test_benchmark_90.py",
         "tests/integration/test_v021_studio_http.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/integration/test_v022_fidelity_review_http.py",
+        "tests/regression/test_benchmark_92.py"
       ]
     },
     {
@@ -1488,22 +1633,22 @@
     },
     {
       "id": "REPRESENTATION_CONTRACT_GATE",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/representation_contract_gate.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/unit/test_representation_contract_gate.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/regression/test_benchmark_92.py"
       ]
     },
     {
       "id": "COMPONENT_EXECUTION_GATE",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/component_execution_gate.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/unit/test_component_execution_gate.py",
-        "tests/blender/test_v021_component_execution.py"
+        "tests/blender/test_v022_feature_primitives_and_proof.py"
       ]
     },
     {
@@ -1537,12 +1682,12 @@
     },
     {
       "id": "ASSET_EXECUTION_AUTHORIZATION_GATE",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/asset_execution_authorization_gate.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/unit/test_asset_execution_authorization_gate.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/regression/test_benchmark_92.py"
       ]
     },
     {
@@ -1557,12 +1702,52 @@
     },
     {
       "id": "COMPONENT_VALIDATION_RUNNER",
-      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
       "executor": "executors/component_validation_runner.py",
       "maturity": "EXECUTOR_READY",
       "tests": [
         "tests/unit/test_component_validation_runner.py",
-        "tests/regression/test_benchmark_91.py"
+        "tests/unit/test_feature_contract_gate.py",
+        "tests/regression/test_benchmark_92.py"
+      ]
+    },
+    {
+      "id": "FEATURE_CONTRACT_GATE",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/feature_contract_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_feature_contract_gate.py",
+        "tests/regression/test_benchmark_92.py"
+      ]
+    },
+    {
+      "id": "VISUAL_FIDELITY_REVIEW_GATE",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/visual_fidelity_review_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_visual_fidelity_review_gate.py",
+        "tests/regression/test_benchmark_92.py"
+      ]
+    },
+    {
+      "id": "FIDELITY_REVIEW_REPOSITORY",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/fidelity_review_repository.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/integration/test_v022_fidelity_review_http.py"
+      ]
+    },
+    {
+      "id": "ASSET_STAGE_COMPLETION_GATE",
+      "contract": "15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md",
+      "executor": "executors/asset_stage_completion_gate.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_asset_stage_completion_gate.py",
+        "tests/regression/test_benchmark_92.py"
       ]
     }
   ],
@@ -1621,7 +1806,13 @@
     "tests/unit/test_asset_execution_authorization_gate.py",
     "tests/unit/test_scene_component_validation.py",
     "tests/unit/test_component_validation_runner.py",
-    "tests/blender/test_v0211_primitive_winding_and_boolean.py"
+    "tests/blender/test_v0211_primitive_winding_and_boolean.py",
+    "tests/unit/test_feature_contract_gate.py",
+    "tests/unit/test_visual_fidelity_review_gate.py",
+    "tests/unit/test_asset_stage_completion_gate.py",
+    "tests/integration/test_v022_fidelity_review_http.py",
+    "tests/regression/test_benchmark_92.py",
+    "tests/blender/test_v022_feature_primitives_and_proof.py"
   ],
   "generated_artifacts": [
     {
@@ -1634,5 +1825,5 @@
       "max_bytes": 153600
     }
   ],
-  "runtime_verification_version": "0.21.0"
+  "runtime_verification_version": "0.22.0"
 }

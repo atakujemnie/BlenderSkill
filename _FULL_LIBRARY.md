@@ -1,4 +1,4 @@
-# Blender AI Agent Library v0.21.1 — Full compiled snapshot
+# Blender AI Agent Library v0.22.0 — Full compiled snapshot
 
 > GENERATED FILE. Do not edit directly. Canonical source: modular files listed in MANIFEST.json.
 
@@ -12739,7 +12739,7 @@ Image/geometry validators remain separate producers of evidence.
 
 ## FILE: `06_prompts/60_SYSTEM_PROMPT.md`
 
-# System Prompt — Blender Asset and Location Agent v0.21.1
+# System Prompt — Blender Asset and Location Agent v0.22.0
 
 Jesteś technical artistem/modelerem 3D pracującym w Blender 5.1.x nad reference reconstruction, procedural content i runtime game environments. Nie masz tylko wygenerować geometrii. Masz przeprowadzić audytowalny pipeline od źródła i aktualnego runtime do zwalidowanego assetu lub lokacji.
 
@@ -12843,6 +12843,50 @@ Twarde reguły v0.21:
 - po trusted approval `task.status=APPROVED` i `component.state=ACCEPTED` muszą być spójne;
 - live Studio nie może zastępować błędu API ukrytym demo assetem.
 
+## v0.22 visual fidelity and feature completion
+
+Dla production reference reconstruction po `REFERENCE_ANALYSIS` utwórz jawny Feature Contract zanim wejdziesz w poważną geometrię. Dla assetów wymagających zgodności z referencją ustaw `enforce_feature_contracts: true` i przypisz każdy widoczny, reference-critical feature do komponentu.
+
+Feature Contract rozróżnia:
+
+- `MUST` — brak lub błędna reprezentacja blokuje akceptację;
+- `SHOULD` — błąd jest jawny, ale może nie blokować;
+- `OPTIONAL` — nigdy nie kompensuje brakującego MUST.
+
+Nie zakładaj, że tekstowy brief wymienia wszystkie detale. Jeżeli śruba, ring sensora, podcięcie, bezel, kanał LED, szczelina lub inny element jest jednoznacznie widoczny w authoritative reference, musi zostać zmapowany albo jawnie sklasyfikowany jako nieistotny zgodnie z polityką źródła.
+
+Pipeline v0.22:
+
+```text
+reference evidence + registered views
+→ Shape Graph
+→ Feature Contract + Visual Feature Map + edge/profile requirements
+→ component-scoped task pack
+→ representation contract
+→ deterministic Blender mutation
+→ measured feature proof (nie tylko obecność operacji)
+→ trusted component receipts
+→ stage-specific acceptance level
+→ registered multi-view QA renders
+→ independent visual reviewer
+→ per-MUST fidelity verdict
+→ current asset+scene+reference-bound fidelity review
+→ final APPROVED
+```
+
+Twarde reguły v0.22:
+
+- `BOOLEAN_CUT` / `BOOLEAN_UNION` musi wykazać rzeczywisty efekt geometryczny w ewaluowanej siatce; sam modifier nie jest dowodem;
+- contracted repeat/detail musi udowodnić wymaganą liczbę/pitch/miarę, jeśli takie parametry są authoritative;
+- sensor/camera wymagający ring/housing/lens nie może zostać uznany za poprawny jako pojedyncza płaska kropka/cylinder;
+- jeden globalny bevel nie zastępuje reference-specific edge language; zachowuj wymagane edge profiles;
+- `STRUCTURAL_GEOMETRY` oznacza wyłącznie structural acceptance; nie wolno raportować final completion bez przejścia wymaganych późniejszych poziomów;
+- independent visual reviewer musi pracować na renderach QA i reference evidence dla dokładnego asset/scene/reference revision;
+- wynik global similarity jest pomocniczy i nigdy nie nadpisuje FAIL/MISSING dla MUST feature;
+- jeśli reviewer odkryje reference-critical detal nieobecny w Feature Contract (`discovered_unmapped_features`), final approval jest zablokowany do czasu aktualizacji kontraktu i modelu;
+- po każdej mutacji unieważnij stale fidelity evidence przez revision binding zamiast ponownie używać poprzedniego PASS;
+- reviewer nie może być builderem tej samej iteracji.
+
 ## Location design system
 
 Dla znanej lokacji/fakcji/rodziny najpierw resolve canonical design system. Reużywaj istniejących materiałów, branding IDs, tekstur i języka form. Asset-local techniczne wymiary pozostają własnością authoritative asset reference.
@@ -12878,6 +12922,9 @@ Runtime release: v0.19.0. Component production MUST route through persistent ass
 Runtime release: v0.20.0. Operational asset production MUST route through persistent repositories, component-scoped task packs and the Production Studio service/API when applicable.
 
 Runtime release: v0.21.1. Geometry production MUST preserve canonical placement and representation, and strict APPROVED state MUST be derived from trusted revision-bound validation evidence rather than worker self-certification.
+
+
+Runtime release: v0.22.0. Reference-driven production MUST use Feature Contracts for reference-critical details, measured feature proof and current independent multi-view fidelity review before final APPROVED.
 
 
 ---
@@ -12936,35 +12983,55 @@ Zbuduj / popraw:
 
 ## FILE: `06_prompts/62_REVIEWER_PROMPT.md`
 
-# Reviewer Prompt
+# Reviewer Prompt — Independent Visual Fidelity Reviewer v0.22
 
-Jesteś niezależnym reviewerem assetu 3D.
+Jesteś **niezależnym** reviewerem assetu 3D. Nie jesteś builderem tej iteracji i nie poprawiasz modelu.
 
-Nie poprawiaj modelu.
-
-Dane:
-- Feature Contract,
-- referencja,
-- rendery kontrolne,
-- Scene Snapshot,
+Dane wejściowe:
+- exact `asset_revision`, `scene_revision`, `reference_revision`;
+- Feature Contract z priorytetami MUST / SHOULD / OPTIONAL;
+- Visual Feature Map i edge/profile requirements;
+- authoritative reference evidence / ROI;
+- zarejestrowane rendery QA (FRONT/REAR/SIDE/TOP/PERSPECTIVE/DETAIL według kontraktu);
+- Scene Snapshot i measured feature proofs;
 - mesh/material/runtime stats.
 
-Dla każdego Feature ID zwróć:
-- PASS / MINOR / FAIL,
-- dowód,
-- rodzaj błędu: silhouette / proportion / geometry / shading / material / runtime,
-- minimalną korektę,
+## Zasada główna
+
+Nie oceniaj wyłącznie bounding boxa, liczby obiektów ani globalnego podobieństwa. Jeżeli człowiek widzi reference-critical różnicę, reviewer ma ją nazwać i przypisać do Feature ID albo do `discovered_unmapped_features`.
+
+## Per-feature review
+
+Dla każdego visual `MUST` zwróć:
+- `feature_id`;
+- `status`: `PASS` / `FAIL` / `BLOCKED` / `NOT_VISIBLE`;
+- `view_ids`, na których oceniono feature;
+- evidence: konkretna różnica między reference i renderem;
+- failure class: silhouette / proportion / geometry / negative_space / placement / orientation / edge_profile / material_region / shading / runtime;
+- minimalną korektę;
 - etap, do którego należy wrócić.
 
-Dodatkowo sprawdź:
-- czy agent nie dodał niezatwierdzonych elementów,
-- czy optymalizacja nie usunęła cechy,
-- czy model nie jest przesadnie gęsty,
-- czy stack modifierów pozostaje sensowny,
-- czy pivot/transform/export są poprawne.
+`SHOULD` i `OPTIONAL` raportuj osobno, ale nie używaj ich do kompensowania FAIL dla MUST.
 
-Nie używaj oceny "wygląda dobrze".
-Każda ocena musi wskazywać kryterium.
+## Obowiązkowe kontrole
+
+Sprawdź co najmniej:
+- silhouette i major/secondary boundaries;
+- negative spaces, recesses, trims, lips, bezels, channels i junctions;
+- liczbę, spacing i orientację powtarzalnych feature'ów;
+- edge language / bevel / chamfer / undercut względem referencji;
+- material-region boundaries i emissive placement;
+- czy mały detal nie został zastąpiony semantycznie słabszą bryłą (np. kamera → płaska kropka);
+- czy model nie pominął elementów widocznych w authoritative reference tylko dlatego, że brief tekstowy ich nie nazwał;
+- czy optymalizacja/LOD nie usunęły cechy;
+- czy agent nie dodał niezatwierdzonych elementów;
+- czy pivot/transform/export/runtime są poprawne, gdy dany etap tego wymaga.
+
+Jeżeli widzisz reference-critical feature, którego nie ma w Feature Contract, dodaj go do `discovered_unmapped_features` z komponentem i view ID. Taki przypadek blokuje final fidelity PASS do czasu aktualizacji kontraktu.
+
+Globalny similarity score może być podany jako sygnał pomocniczy, ale **nie może** nadpisać brakującego lub błędnego MUST feature.
+
+Nie używaj oceny „wygląda dobrze”. Każdy PASS i FAIL musi wskazywać kryterium i evidence.
 
 
 ---
@@ -26801,6 +26868,21 @@ ale przed automatycznym użyciem konkretnego API agent powinien weryfikować zgo
 
 ## FILE: `CHANGELOG.md`
 
+## 0.22.0 — Visual Fidelity & Feature Completion
+
+- Added machine-enforced `feature_contract` records with `MUST` / `SHOULD` / `OPTIONAL` priorities, reference ownership, representation requirements, counts and measurable scene proof.
+- Added `FEATURE_CONTRACT_GATE`; missing reference-critical features, wrong repeat counts, missing proof types or out-of-tolerance feature measurements now fail closed.
+- Added first-class deterministic `CYLINDER`, `RING` and `CAPSULE_PRISM` primitives for sensor lenses/rings, fasteners and rounded ventilation slots instead of generic-box approximations.
+- Strengthened `BOOLEAN_CUT` / `BOOLEAN_UNION`: the real Blender executor measures evaluated volume before/after and fails when no material effect is observed.
+- Scene snapshots now carry compact evaluated-mesh metrics plus `feature_ids` and deterministic `feature_proofs`.
+- Added component acceptance levels (`BLOCKOUT` through `FIDELITY`/`FINAL`) and `ASSET_STAGE_COMPLETION_GATE`; structural success can no longer be declared final success.
+- Added revisioned `FIDELITY_REVIEW_REPOSITORY` and `VISUAL_FIDELITY_REVIEW_GATE` for independent multi-view review bound to exact asset, scene and reference revisions.
+- A global visual score is secondary: every visual MUST feature is reviewed separately, and newly discovered unmapped reference details block final approval.
+- Added HTTP endpoints for publishing/reading current fidelity reviews and wired final `APPROVED` stage to current fidelity evidence.
+- Preserved component-scoped token budgets while carrying Feature Contract, visual feature map, QA views, edge profiles and materialized reference attachments.
+- Added real Blender 5.1 tests for semantic detail primitives and measured feature/Boolean proof.
+- Added canonical Benchmark 92 — Lafar Public Service Terminal Visual Fidelity — based directly on the blind terminal reconstruction failure classes.
+
 ## 0.21.1 — Boolean Winding Hotfix
 
 - Fixed `BLENDER_HARD_SURFACE_BUILDER` emitting `BOX`, `ROUNDED_BOX`, `WEDGE` and `PROFILE_PRISM` with inward-facing normals; every generated closed solid is now normalized to outward orientation by the builder itself.
@@ -27363,7 +27445,7 @@ Architecture retained across releases:
 
 ## FILE: `README.md`
 
-> Current production runtime: v0.21.1 — fidelity enforcement, deterministic assembly and trusted validation.
+> Current production runtime: v0.22.0 — visual fidelity, feature completion and measured geometry proof.
 
 # BlenderSkill
 
@@ -27371,26 +27453,28 @@ Canonical knowledge repository for the Blender AI Agent Library.
 
 ## Current release
 
-**v0.21.1 — Fidelity Enforcement & Deterministic Assembly.**
+**v0.22.0 — Visual Fidelity & Feature Completion.**
 
-v0.21 closes the false-success path exposed by the blind Lafar sidewalk test. Canonical component placement now survives task compilation, representation contracts fail closed, geometry tasks cannot bypass persisted stage/build authorization, design-system MATERIAL bindings are materialized in Blender, and strict task approval requires trusted revision-bound validation receipts rather than worker self-certification. Task approval converges back to `component.state=ACCEPTED`.
+v0.22 is driven by the Lafar Public Service Terminal blind test. v0.21 proved placement, envelope, materials and trusted task receipts, but a human could still rate the final reconstruction roughly 3/10 because reference-critical details were omitted or simplified. v0.22 makes visible MUST features explicit production data, requires measured scene proof for deterministic geometry, adds independent multi-view visual review and prevents `STRUCTURAL_GEOMETRY` from being reported as final quality.
 
-Canonical regression: **Benchmark 91 — Lafar Sidewalk Fidelity Enforcement v0.21**.
+Canonical regression: **Benchmark 92 — Lafar Public Service Terminal Visual Fidelity v0.22**.
 
-## v0.21 Fidelity Enforcement & Deterministic Assembly
+## v0.22 Visual Fidelity & Feature Completion
 
 ```text
-persistent asset state
--> canonical component transform + origin
--> envelope / seam constraints
--> execution authorization
--> scoped task pack
--> representation contract
--> deterministic Blender execution + real material binding
--> current scene snapshot
--> trusted validation receipts
--> APPROVED + component ACCEPTED
+reference evidence
+-> Feature Contract (MUST / SHOULD / OPTIONAL)
+-> component-scoped task pack + QA views
+-> representation + deterministic detail primitives
+-> measured Blender feature proof
+-> structural/details/material/game-ready acceptance levels
+-> registered multi-view QA renders
+-> independent per-MUST visual review
+-> current revision-bound fidelity review
+-> final APPROVED
 ```
+
+Hard rules include: a Boolean must prove material effect, repeated details must prove count/pitch when contracted, newly discovered reference-critical details block final approval until mapped, a global similarity score cannot override a failed MUST feature, and final approval cannot reuse a stale visual review.
 
 ## v0.18 Runtime Verification & Contract Convergence
 
@@ -35566,3 +35650,307 @@ ASSET PLANNING <= 15k
 ```
 
 v0.21 optimizes correctness before further context reduction. Passing token budgets never compensates for a failed representation, envelope, placement or validation gate.
+
+
+---
+
+## FILE: `07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md`
+
+# Benchmark 92 — Lafar Public Service Terminal Visual Fidelity (v0.22)
+
+## Purpose
+
+Benchmark 92 is the release gate created from the blind end-to-end production test of `LAFAR-SERVICE-TERMINAL-BLIND-001`.
+
+The v0.21 run proved that dimensional correctness, trusted receipts and successful executor calls are not enough to guarantee a visually faithful asset. The human result was approximately 3/10: the envelope and major parts were correct, but reference-critical detail was lost or simplified.
+
+v0.22 must therefore prove **feature completion and visual fidelity**, not only outer geometry.
+
+## Known-broken cases that MUST fail
+
+1. Three sensor locations exist but each is only a flat cylinder/dot; visible housing ring/depth structure is absent.
+2. Service panel has eight slots but the four visible corner fasteners from the reference are omitted.
+3. A `BOOLEAN_CUT` operation exists in the recipe but evaluated geometry shows no material removal.
+4. LED count and symmetry are mathematically correct but the independent visual reviewer reports wrong surface/orientation relative to the side/detail reference.
+5. `TOP_CAP` has the correct bounding box but its stepped/undercut profile is replaced by a generic rounded box.
+6. A high global visual similarity score attempts to hide one missing MUST feature.
+7. The reviewer discovers a reference-critical feature that was never entered into the Feature Contract.
+8. All structural component tasks are `APPROVED`, but the asset is still at `STRUCTURAL_GEOMETRY`; this may not be declared final.
+9. A stale visual review is reused after the asset, scene, or reference revision changes.
+
+## Required v0.22 behavior
+
+### Feature Contract
+
+Every reference-critical visible detail is represented as a feature record with:
+
+- `feature_id`
+- `priority` (`MUST`, `SHOULD`, `OPTIONAL`)
+- owning component
+- reference evidence
+- required/forbidden representation operations when applicable
+- measurable expectations such as count, pitch, diameter, recess depth, material removal or bevel width
+- QA view(s)
+
+Missing MUST features block acceptance.
+
+### Measured execution proof
+
+`BOOLEAN_CUT` is not accepted merely because the modifier exists. The Blender executor measures evaluated solid volume before and after the operation and emits `BOOLEAN_EFFECT` proof. A cut with no observed material removal fails execution.
+
+Repeated detail such as eight vent slots emits `REPEAT` proof with count/pitch. Detail primitives such as `CYLINDER`, `RING` and `CAPSULE_PRISM` provide explicit representation for cameras, fasteners and rounded slots.
+
+### Independent visual review
+
+The final fidelity review is performed independently of the builder and is bound to exact:
+
+- asset revision
+- scene revision
+- reference revision
+- QA render artifacts
+- reference evidence IDs
+
+Every visual MUST feature is reviewed separately. A global score is secondary and cannot override a missing MUST feature.
+
+If the reviewer notices an important reference feature absent from the Feature Contract, `discovered_unmapped_features` blocks final approval until the contract/model is corrected.
+
+### Stage semantics
+
+`STRUCTURAL_GEOMETRY` means structural acceptance only. The asset cannot advance through `DETAILS`, `MATERIALS`, `GAME_READY`, `FIDELITY_AUDIT`, and finally `APPROVED` unless each production component proves the required acceptance level.
+
+`APPROVED` additionally requires a current PASS visual fidelity review.
+
+## Canonical terminal regression features
+
+The benchmark uses the blind-test failure classes, not the original production files:
+
+- service-panel vent slots: 8, rounded slot representation, repeated deterministically
+- service-panel fasteners: 4 visible fasteners
+- sensor cluster: 3 sensors with separate housing/ring/lens semantics
+- display: physical recess rather than a surface patch
+- top cap: explicit profile/undercut feature
+- side LED: feature must be visually reviewed in side/detail QA views
+
+## Acceptance
+
+Benchmark 92 passes only if known-broken recipes/reviews are rejected and the complete feature/review contracts are accepted. Real Blender runtime tests separately prove the new primitives and boolean material-removal evidence.
+
+
+---
+
+## FILE: `15_asset_production/504_VISUAL_FIDELITY_AND_FEATURE_COMPLETION.md`
+
+# 504 — Visual Fidelity and Feature Completion
+
+## Scope
+
+This contract defines BlenderSkill v0.22 behavior after the Lafar Public Service Terminal blind test showed that a dimensionally correct, fully `APPROVED` structural asset can still be a poor reconstruction of its reference.
+
+The governing invariant is:
+
+> **Correct envelope + successful executor + trusted structural receipts != visually faithful asset.**
+
+v0.22 makes visible reference features explicit, measurable and independently reviewable before final approval.
+
+## 1. Feature Contract is production data
+
+For every reference-critical component, the planner records a `feature_contract`. Features use three priorities:
+
+- `MUST` — missing/incorrect blocks the component or final fidelity review;
+- `SHOULD` — deviation is reported but may proceed;
+- `OPTIONAL` — documented but never allowed to hide a missing MUST feature.
+
+A feature record may contain:
+
+```yaml
+feature_id: SERVICE_PANEL_VENTS
+priority: MUST
+owner_component_id: SERVICE_PANEL
+required_operations: [CAPSULE_PRISM, ARRAY, BOOLEAN_CUT]
+forbidden_operations: []
+expected_count: 8
+requires_reference_evidence: true
+evidence_ids: [EV-DETAIL-B]
+require_scene_proof: true
+required_proof_types: [REPEAT, BOOLEAN_EFFECT]
+expected_measurements:
+  repeat_count: {value: 8}
+  pitch_mm: {value: 36, tolerance_mm: 0.5}
+  material_removed_mm3: {min: 1}
+visual_required: true
+qa_views: [FRONT, DETAIL_B]
+```
+
+The Feature Contract supplements — and does not replace — the component tree, dimensional graph, assembly relations and representation contract.
+
+## 2. Reference features cannot disappear because the brief omitted their names
+
+The reference remains authoritative for visible shape/features according to the existing authority and conflict-resolution rules.
+
+If an independent reviewer sees a reference-critical detail that is not represented in the Feature Contract, it records that detail in `discovered_unmapped_features`. Final fidelity review fails until the contract and model are updated.
+
+This prevents the terminal-test failure where obvious panel screws, sensor housing rings and top-cap profile transitions disappeared simply because the numerical brief did not enumerate them.
+
+## 3. Recipe intent requires scene proof
+
+`FEATURE_CONTRACT_GATE` verifies both authoring intent and measured result.
+
+Recipe-level proof may include:
+
+- required/forbidden operations;
+- repeat count;
+- explicit feature ownership.
+
+Scene proof is emitted by deterministic executors and carried through `SCENE_COMPONENT_SNAPSHOT` as compact `feature_ids` / `feature_proofs`.
+
+Typical proof types:
+
+- `GEOMETRY_OUTPUT`
+- `BOOLEAN_EFFECT`
+- `REPEAT`
+- `BEVEL`
+- `INSTANCE`
+- `MATERIAL_BINDING`
+
+A MUST feature is not accepted solely because its operation name appears in a recipe.
+
+## 4. Boolean material-removal proof
+
+`BLENDER_HARD_SURFACE_BUILDER` measures evaluated signed volume before and after `BOOLEAN_CUT` / `BOOLEAN_UNION`.
+
+The operation fails when its expected direction produces no material effect above epsilon.
+
+For `BOOLEAN_CUT` the proof contains at least:
+
+- `volume_before_mm3`
+- `volume_after_mm3`
+- `boolean_effect_mm3`
+- `material_removed_mm3`
+
+This is the direct regression for the v0.21 blind-test failure where a modifier existed and received trusted PASS receipts despite no cavity being produced.
+
+## 5. Detail primitives are semantic tools, not decoration
+
+v0.22 adds first-class deterministic primitives:
+
+- `CYLINDER` — sensor lenses, bores/cutters, screws/fasteners;
+- `RING` — sensor bezels, camera housing rings;
+- `CAPSULE_PRISM` — rounded ventilation slots and elongated recessed features.
+
+`PROFILE_PRISM`, explicit `BEVEL`, booleans, arrays and instances remain the preferred construction methods for non-box hard-surface language.
+
+A generic box is not an acceptable substitute when the Feature Contract requires a more specific representation.
+
+## 6. Edge profiles are part of design fidelity
+
+A single global bevel is not a design system.
+
+Components may carry `edge_profiles` and feature-level bevel requirements. Task packs preserve these records. Builders/reviewers must distinguish, for example:
+
+- main body corner radius;
+- front transition radius;
+- display bezel outer/inner edge;
+- service panel edge;
+- top-cap outer edge;
+- top-cap undercut/chamfer;
+- LED channel termination.
+
+When an edge profile is a MUST visual feature, it requires both deterministic geometry proof where measurable and visual QA in an appropriate view.
+
+## 7. Structural acceptance is not final acceptance
+
+Component acceptance has an `acceptance_level`:
+
+`NONE < BLOCKOUT < STRUCTURAL < DETAILS < MATERIALS < GAME_READY < FIDELITY < FINAL`
+
+`APPROVED` task status updates a component to the acceptance level corresponding to the task stage. A structural task cannot silently grant later-stage completion.
+
+Stage transition requirements are evaluated when leaving each production stage:
+
+- enter `DETAILS` only after structural acceptance;
+- enter `MATERIALS` only after details acceptance;
+- enter `GAME_READY` only after materials acceptance;
+- enter `FIDELITY_AUDIT` only after game-ready acceptance;
+- enter final `APPROVED` only after fidelity acceptance and a current independent visual review.
+
+This intentionally makes the terminal-test statement “asset complete” invalid while the asset is only at `STRUCTURAL_GEOMETRY`.
+
+## 8. Independent multi-view visual reviewer
+
+Visual fidelity is not reduced to pixel equality or one scalar similarity score.
+
+The builder and reviewer are separate roles. `VISUAL_FIDELITY_REVIEW_GATE` requires:
+
+- exact asset revision;
+- exact scene revision;
+- exact reference revision;
+- independent reviewer identity/role;
+- QA render artifact(s);
+- reference evidence IDs for every QA view;
+- per-MUST-feature review results.
+
+Recommended QA views are registered/calibrated to the reference using the existing camera/reference protocols:
+
+- FRONT
+- REAR
+- LEFT/RIGHT or SIDE
+- TOP where relevant
+- PERSPECTIVE
+- DETAIL crops for critical features
+
+Review focuses on:
+
+- silhouette;
+- major/secondary edges;
+- negative spaces and recesses;
+- feature location/orientation;
+- relative proportions;
+- material region boundaries;
+- profile/edge character;
+- visible feature completeness.
+
+A global score may be reported, but **cannot override a failed or missing MUST feature**.
+
+## 9. Revision binding
+
+Fidelity reviews are persisted separately in `FIDELITY_REVIEW_REPOSITORY`.
+
+A PASS review is valid only for the exact:
+
+`asset_revision + scene_revision + reference_revision`
+
+Any mutation or reference change invalidates its use for final approval.
+
+## 10. Task-pack constraints remain component scoped
+
+Feature contracts, visual feature maps, QA view requirements and edge profiles are carried into the component-scoped task pack. The runtime still forbids routine full-library/full-history context.
+
+Target budgets remain:
+
+- REPAIR <= 4k estimated input tokens;
+- BUILD <= 8k;
+- asset planning <= 15k.
+
+Visual evidence should be delivered as materialized ROI/view attachments, not repeated as verbose text descriptions.
+
+## 11. Failure behavior
+
+The runtime must fail or block rather than silently simplify when:
+
+- a MUST feature is missing;
+- required repeat count is wrong;
+- a boolean has no measured material effect;
+- a required proof type is absent;
+- visual reviewer marks a MUST feature FAIL/NOT_VISIBLE;
+- reviewer discovers an unmapped reference-critical feature;
+- a stale fidelity review is reused;
+- a later production stage is entered before the previous acceptance level is complete;
+- final approval is requested without a current independent visual fidelity review.
+
+## 12. Release regression
+
+Canonical v0.22 regression:
+
+`07_examples/92_LAFAR_SERVICE_TERMINAL_VISUAL_FIDELITY_V022_REGRESSION_BENCHMARK.md`
+
+The benchmark intentionally encodes the human-visible failures from the blind terminal run: flat sensor dots, missing panel fasteners, generic top-cap profile, wrong LED interpretation, ineffective booleans, structural-success/final-success confusion and stale or incomplete visual review.
