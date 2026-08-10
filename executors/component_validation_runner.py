@@ -93,6 +93,13 @@ def _publish_or_reuse(
     return {**published, "reused": False}
 
 
+def _feature_validation_enabled(task_pack: Mapping[str, Any]) -> bool:
+    component = task_pack.get("component")
+    if not isinstance(component, Mapping):
+        return False
+    return bool(component.get("feature_contract_required", False) or component.get("feature_contract"))
+
+
 def validate_and_publish(
     root: str | Path,
     task_pack: Mapping[str, Any],
@@ -101,13 +108,16 @@ def validate_and_publish(
 ) -> dict[str, Any]:
     representation = validate_representation(task_pack, recipe)
     scene = validate_scene_component(task_pack, snapshot)
-    feature = validate_feature_contract(task_pack, recipe, snapshot)
+    feature_enabled = _feature_validation_enabled(task_pack)
+    feature = validate_feature_contract(task_pack, recipe, snapshot) if feature_enabled else None
 
-    validations = (
+    validations: list[tuple[Mapping[str, Any], str]] = [
         (representation, REPRESENTATION_VERSION),
         (scene, SCENE_VALIDATION_VERSION),
-        (feature, FEATURE_VERSION),
-    )
+    ]
+    if isinstance(feature, Mapping):
+        validations.append((feature, FEATURE_VERSION))
+
     persisted = [
         _publish_or_reuse(root, task_pack, snapshot, verdict, validator_version=version)
         for verdict, version in validations
@@ -116,9 +126,15 @@ def validate_and_publish(
     validation_blockers = [
         *list(representation.get("blockers", []) or []),
         *list(scene.get("blockers", []) or []),
-        *list(feature.get("blockers", []) or []),
+        *list(feature.get("blockers", []) or []) if isinstance(feature, Mapping) else [],
     ]
     status = "PASS" if not persistence_failures and not validation_blockers else "FAIL"
+    validators: dict[str, Any] = {
+        "REPRESENTATION_CONTRACT_GATE": representation,
+        "SCENE_COMPONENT_VALIDATION": scene,
+    }
+    if isinstance(feature, Mapping):
+        validators["FEATURE_CONTRACT_GATE"] = feature
     return {
         "status": status,
         "executor_id": EXECUTOR_ID,
@@ -126,11 +142,7 @@ def validate_and_publish(
         "component_id": task_pack.get("component_id"),
         "asset_revision": task_pack.get("asset_revision"),
         "scene_revision": snapshot.get("scene_revision"),
-        "validators": {
-            "REPRESENTATION_CONTRACT_GATE": representation,
-            "SCENE_COMPONENT_VALIDATION": scene,
-            "FEATURE_CONTRACT_GATE": feature,
-        },
+        "validators": validators,
         "receipts": [
             result.get("receipt")
             for result in persisted
