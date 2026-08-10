@@ -2,18 +2,22 @@ from __future__ import annotations
 
 """Operational service layer for the local Asset Production Studio.
 
-The service composes persistent repositories and deterministic executors. HTTP,
-CLI or desktop adapters can call these functions without owning production truth.
+v0.21 closes the blind-test gaps between persistent production state and actual
+geometry execution: stage authorization, component execution authorization,
+trusted validation receipts, envelope validation and component/task state
+convergence are enforced here instead of being prompt-only conventions.
 """
 
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping
 
+from executors.asset_envelope_gate import validate as validate_asset_envelope
 from executors.asset_production_orchestrator import prepare_component_task
 from executors.asset_repository import initialize as initialize_asset
 from executors.asset_repository import load as load_asset
 from executors.asset_repository import save as save_asset
-from executors.asset_state_runtime import add_correction, advance_stage, resolve_correction
+from executors.asset_state_runtime import ASSET_STAGES, add_correction, advance_stage, resolve_correction
 from executors.asset_studio_view_model import build as build_studio_view
 from executors.design_system_repository import impact_report, load as load_design_resource
 from executors.parameter_graph import resolve as resolve_parameters
@@ -30,9 +34,14 @@ from executors.reference_evidence_repository import upsert as upsert_evidence_re
 from executors.scene_component_snapshot import build as build_scene_snapshot
 from executors.scene_snapshot_repository import load as load_scene_snapshot
 from executors.scene_snapshot_repository import publish as publish_scene_snapshot
+from executors.validation_receipt_repository import initialize as initialize_validation_receipts
+from executors.validation_receipt_repository import publish as publish_validation_receipt_record
+from executors.validation_receipt_repository import query as query_validation_receipts
 
 EXECUTOR_ID = "PRODUCTION_STUDIO_SERVICE"
-EXECUTOR_VERSION = "0.20.0"
+EXECUTOR_VERSION = "0.21.0"
+_GEOMETRY_STAGE_INDEX = ASSET_STAGES.index("BLOCKOUT")
+_DEFAULT_GEOMETRY_VALIDATORS = ("SCENE_COMPONENT_VALIDATION", "REPRESENTATION_CONTRACT_GATE")
 
 
 def _assets_dir(root: str | Path) -> Path:
@@ -149,17 +158,21 @@ def list_assets(root: str | Path) -> dict[str, Any]:
 
 
 def create_asset(root: str | Path, asset: Mapping[str, Any]) -> dict[str, Any]:
+    if bool(asset.get("enforce_asset_envelope", False)):
+        envelope = validate_asset_envelope(asset)
+        if envelope.get("status") != "PASS":
+            return {**envelope, "executor_id": EXECUTOR_ID, "failed_stage": "ASSET_ENVELOPE"}
     created = initialize_asset(root, asset)
     if created.get("status") != "PASS":
         return created
     asset_id = str(asset["asset_id"])
     queue = initialize_task_queue(root, asset_id, {})
     evidence = initialize_evidence(root, asset_id, {"evidence": []})
+    validation = initialize_validation_receipts(root, asset_id)
     blockers: list[dict[str, Any]] = []
-    if queue.get("status") != "PASS":
-        blockers.extend(queue.get("blockers", []))
-    if evidence.get("status") != "PASS":
-        blockers.extend(evidence.get("blockers", []))
+    for result in (queue, evidence, validation):
+        if result.get("status") != "PASS":
+            blockers.extend(result.get("blockers", []))
     return {
         "status": "PASS" if not blockers else "PARTIAL",
         "executor_id": EXECUTOR_ID,
@@ -167,6 +180,7 @@ def create_asset(root: str | Path, asset: Mapping[str, Any]) -> dict[str, Any]:
         "asset_revision": int(asset.get("revision", 0)),
         "queue_revision": queue.get("queue", {}).get("queue_revision"),
         "reference_revision": evidence.get("registry", {}).get("revision"),
+        "validation_revision": validation.get("revision"),
         "blockers": blockers,
     }
 
@@ -219,6 +233,15 @@ def get_studio(root: str | Path, asset_id: str, *, component_id: str | None = No
         "reference_evidence": reference_revision,
         "scene": scene_revision,
     }
+    validation = query_validation_receipts(
+        root,
+        asset_id,
+        component_id=selected,
+        asset_revision=int(asset.get("revision", 0)),
+    )
+    model["validation_revision"] = validation.get("revision", 0)
+    inspector["validation_receipts"] = list(validation.get("receipts", []) or [])
+    model["inspector"] = inspector
     return {"status": "PASS", "executor_id": EXECUTOR_ID, "view_model": model, "blockers": []}
 
 
@@ -284,6 +307,10 @@ def advance_asset_stage(
     current_revision = int(loaded["asset"].get("revision", 0))
     if current_revision != int(expected_asset_revision):
         return _revision_conflict("ASSET_REVISION_CONFLICT", expected_asset_revision, current_revision)
+    if bool(loaded["asset"].get("enforce_asset_envelope", False)):
+        envelope = validate_asset_envelope(loaded["asset"])
+        if envelope.get("status") != "PASS":
+            return {**envelope, "executor_id": EXECUTOR_ID, "failed_stage": "ASSET_ENVELOPE"}
     changed = advance_stage(loaded["asset"], new_stage)
     if changed.get("status") != "PASS":
         return changed
@@ -293,6 +320,75 @@ def advance_asset_stage(
         "executor_id": EXECUTOR_ID,
         "asset_revision": changed.get("revision") if saved.get("status") == "PASS" else current_revision,
     }
+
+
+def authorize_component(
+    root: str | Path,
+    asset_id: str,
+    component_id: str,
+    authorization: Mapping[str, Any],
+    *,
+    expected_asset_revision: int,
+) -> dict[str, Any]:
+    loaded = load_asset(root, asset_id)
+    if loaded.get("status") != "PASS":
+        return loaded
+    asset = loaded["asset"]
+    current_revision = int(asset.get("revision", 0))
+    if current_revision != int(expected_asset_revision):
+        return _revision_conflict("ASSET_REVISION_CONFLICT", expected_asset_revision, current_revision)
+    components = {str(key): dict(value) for key, value in dict(asset.get("components", {}) or {}).items()}
+    component = components.get(str(component_id))
+    if component is None:
+        return {"status": "FAIL", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "COMPONENT_NOT_FOUND", "component_id": str(component_id)}]}
+    if str(authorization.get("status") or "").upper() != "PASS" or not str(authorization.get("validator_id") or ""):
+        return {"status": "BLOCKED", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "EXECUTION_AUTHORIZATION_PASS_REQUIRED"}]}
+    dependencies = [str(value) for value in list(component.get("depends_on", []) or [])]
+    incomplete = [dep for dep in dependencies if str(components.get(dep, {}).get("state") or "") != "ACCEPTED"]
+    if incomplete:
+        return {
+            "status": "BLOCKED",
+            "executor_id": EXECUTOR_ID,
+            "blockers": [{"reason": "COMPONENT_DEPENDENCY_NOT_ACCEPTED", "component_ids": sorted(incomplete)}],
+        }
+    state = str(component.get("state") or "DECLARED").upper()
+    if state not in {"CONSTRAINED", "DIRTY", "UNVERIFIED", "FAIL"}:
+        return {"status": "BLOCKED", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "COMPONENT_STATE_NOT_AUTHORIZABLE", "state": state}]}
+    cp = deepcopy(dict(asset))
+    cp_components = {str(key): dict(value) for key, value in dict(cp.get("components", {}) or {}).items()}
+    cp_component = dict(cp_components[str(component_id)])
+    cp_component["state"] = "READY_TO_BUILD"
+    cp_component["execution_authorization"] = dict(authorization)
+    cp_components[str(component_id)] = cp_component
+    cp["components"] = cp_components
+    cp["revision"] = current_revision + 1
+    history = list(cp.get("history", []) or [])
+    history.append({"revision": cp["revision"], "event": "COMPONENT_AUTHORIZED", "component_id": str(component_id), "validator_id": authorization.get("validator_id")})
+    cp["history"] = history
+    saved = save_asset(root, cp, expected_revision=current_revision)
+    return {**saved, "executor_id": EXECUTOR_ID, "asset_revision": cp["revision"] if saved.get("status") == "PASS" else current_revision}
+
+
+def _geometry_task_authorization(asset: Mapping[str, Any], component: Mapping[str, Any], requested_stage: str, task_kind: str) -> dict[str, Any]:
+    current_stage = str(asset.get("stage") or "").upper()
+    try:
+        current_index = ASSET_STAGES.index(current_stage)
+        requested_index = ASSET_STAGES.index(requested_stage)
+    except ValueError:
+        return {"status": "FAIL", "blockers": [{"reason": "TASK_STAGE_INVALID", "stage": requested_stage}]}
+    if requested_index > current_index:
+        return {
+            "status": "BLOCKED",
+            "blockers": [{"reason": "TASK_STAGE_NOT_AUTHORIZED", "asset_stage": current_stage, "task_stage": requested_stage}],
+        }
+    if requested_index < _GEOMETRY_STAGE_INDEX:
+        return {"status": "PASS", "blockers": []}
+    state = str(component.get("state") or "DECLARED").upper()
+    if task_kind == "BUILD" and state != "READY_TO_BUILD":
+        return {"status": "BLOCKED", "blockers": [{"reason": "COMPONENT_BUILD_NOT_AUTHORIZED", "state": state}]}
+    if task_kind == "REPAIR" and state not in {"READY_TO_BUILD", "DIRTY", "UNVERIFIED", "FAIL", "ACCEPTED"}:
+        return {"status": "BLOCKED", "blockers": [{"reason": "COMPONENT_REPAIR_NOT_AUTHORIZED", "state": state}]}
+    return {"status": "PASS", "blockers": []}
 
 
 def create_production_task(
@@ -314,13 +410,27 @@ def create_production_task(
             "executor_id": EXECUTOR_ID,
             "blockers": [{"reason": "COMPONENT_NOT_FOUND", "component_id": component_id}],
         }
+    requested_stage = str(spec.get("stage") or asset.get("stage") or "").upper()
+    task_kind = str(spec.get("task_kind", "BUILD")).upper()
+    authorization = _geometry_task_authorization(asset, components[component_id], requested_stage, task_kind)
+    if authorization["status"] != "PASS":
+        return {**authorization, "executor_id": EXECUTOR_ID}
+    validation_contract = components[component_id].get("validation", {})
+    declared_validators = []
+    if isinstance(validation_contract, Mapping):
+        declared_validators = list(validation_contract.get("required_validator_ids", []) or [])
+    required_validators = list(spec.get("required_validation_ids", []) or declared_validators)
+    if ASSET_STAGES.index(requested_stage) >= _GEOMETRY_STAGE_INDEX and not required_validators:
+        required_validators = list(_DEFAULT_GEOMETRY_VALIDATORS)
     task_spec = {
         **dict(spec),
         "asset_id": asset_id,
         "asset_revision": int(asset.get("revision", 0)),
-        "stage": spec.get("stage") or asset.get("stage"),
+        "stage": requested_stage,
+        "task_kind": task_kind,
         "allowed_to_modify": list(spec.get("allowed_to_modify", []) or [component_id]),
         "read_only": list(spec.get("read_only", []) or sorted(set(components) - {component_id})),
+        "required_validation_ids": required_validators,
     }
     created = create_task_record(task_spec)
     if created.get("status") != "PASS":
@@ -351,6 +461,37 @@ def create_production_task(
     return {**saved, "executor_id": EXECUTOR_ID, "task": task if saved.get("status") == "PASS" else None}
 
 
+def publish_validation_receipt(root: str | Path, asset_id: str, receipt: Mapping[str, Any], *, expected_validation_revision: int | None = None) -> dict[str, Any]:
+    return {
+        **publish_validation_receipt_record(root, asset_id, receipt, expected_revision=expected_validation_revision),
+        "executor_id": EXECUTOR_ID,
+    }
+
+
+def _accept_component_state(root: str | Path, asset_id: str, component_id: str) -> dict[str, Any]:
+    loaded = load_asset(root, asset_id)
+    if loaded.get("status") != "PASS":
+        return loaded
+    asset = loaded["asset"]
+    current_revision = int(asset.get("revision", 0))
+    components = {str(key): dict(value) for key, value in dict(asset.get("components", {}) or {}).items()}
+    component = components.get(str(component_id))
+    if component is None:
+        return {"status": "FAIL", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "COMPONENT_NOT_FOUND", "component_id": str(component_id)}]}
+    cp = deepcopy(dict(asset))
+    cp_components = {str(key): dict(value) for key, value in dict(cp.get("components", {}) or {}).items()}
+    updated = dict(cp_components[str(component_id)])
+    updated["state"] = "ACCEPTED"
+    cp_components[str(component_id)] = updated
+    cp["components"] = cp_components
+    cp["revision"] = current_revision + 1
+    history = list(cp.get("history", []) or [])
+    history.append({"revision": cp["revision"], "event": "COMPONENT_ACCEPTED", "component_id": str(component_id)})
+    cp["history"] = history
+    saved = save_asset(root, cp, expected_revision=current_revision)
+    return {**saved, "executor_id": EXECUTOR_ID, "asset_revision": cp["revision"] if saved.get("status") == "PASS" else current_revision}
+
+
 def transition_production_task(
     root: str | Path,
     asset_id: str,
@@ -374,6 +515,22 @@ def transition_production_task(
             "executor_id": EXECUTOR_ID,
             "blockers": [{"reason": "TASK_NOT_FOUND", "task_id": str(task_id)}],
         }
+    receipts: list[Mapping[str, Any]] | None = None
+    if str(target_status).upper() == "APPROVED" and list(task.get("required_validation_ids", []) or []):
+        result_record = task.get("result")
+        if result is not None:
+            result_record = result
+        if not isinstance(result_record, Mapping) or result_record.get("scene_revision") is None:
+            return {"status": "FAIL", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "TASK_SCENE_REVISION_REQUIRED_FOR_APPROVAL"}]}
+        validation = query_validation_receipts(
+            root,
+            asset_id,
+            component_id=str(task.get("component_id")),
+            asset_revision=int(task.get("asset_revision", 0)),
+            scene_revision=int(result_record["scene_revision"]),
+            validator_ids=[str(value) for value in list(task.get("required_validation_ids", []) or [])],
+        )
+        receipts = list(validation.get("receipts", []) or [])
     changed = transition(
         task,
         target_status,
@@ -382,12 +539,26 @@ def transition_production_task(
         worker_id=worker_id,
         blockers=blockers,
         result=result,
+        validation_receipts=receipts,
     )
     if changed.get("status") != "PASS":
         return changed
     tasks[str(task_id)] = changed["task"]
     saved = save_task_queue(root, asset_id, tasks, expected_queue_revision=queue_revision)
-    return {**saved, "executor_id": EXECUTOR_ID, "task": changed["task"] if saved.get("status") == "PASS" else None}
+    if saved.get("status") != "PASS":
+        return {**saved, "executor_id": EXECUTOR_ID, "task": None}
+    response = {**saved, "executor_id": EXECUTOR_ID, "task": changed["task"]}
+    if str(target_status).upper() == "APPROVED":
+        accepted = _accept_component_state(root, asset_id, str(task.get("component_id")))
+        if accepted.get("status") != "PASS":
+            return {
+                **response,
+                "status": "PARTIAL",
+                "blockers": [{"reason": "TASK_APPROVED_COMPONENT_STATE_SYNC_FAILED", "details": accepted.get("blockers", [])}],
+            }
+        response["asset_revision"] = accepted.get("asset_revision")
+        response["component_state"] = "ACCEPTED"
+    return response
 
 
 def promote_production_tasks(
@@ -511,6 +682,8 @@ def prepare_task(
     feature_ids: list[str] | None = None,
     views: list[str] | None = None,
     max_input_tokens: int | None = None,
+    reference_artifacts: Mapping[str, Mapping[str, Any]] | None = None,
+    reference_artifact_root: str | Path | None = None,
 ) -> dict[str, Any]:
     loaded = load_asset(root, asset_id)
     if loaded.get("status") != "PASS":
@@ -527,6 +700,9 @@ def prepare_task(
         "reference_feature_ids": list(feature_ids or []),
         "reference_views": list(views or []),
     }
+    if reference_artifacts is not None:
+        spec["reference_artifacts"] = reference_artifacts
+        spec["reference_artifact_root"] = reference_artifact_root
     if max_input_tokens is not None:
         spec["max_input_tokens"] = int(max_input_tokens)
     result = prepare_component_task(spec)
@@ -546,6 +722,7 @@ __all__ = [
     "EXECUTOR_VERSION",
     "add_asset_correction",
     "advance_asset_stage",
+    "authorize_component",
     "create_asset",
     "create_production_task",
     "delete_reference_evidence",
@@ -554,6 +731,7 @@ __all__ = [
     "prepare_task",
     "promote_production_tasks",
     "publish_scene",
+    "publish_validation_receipt",
     "resolve_asset_correction",
     "transition_production_task",
     "upsert_reference_evidence",
