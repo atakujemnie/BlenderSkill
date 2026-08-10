@@ -10,7 +10,7 @@ executes the approved recipe. This keeps repetitive geometry out of prompts.
 from typing import Any, Mapping
 
 EXECUTOR_ID = "HARD_SURFACE_RECIPE"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.1.1"
 
 OPERATIONS = {
     "BOX",
@@ -27,7 +27,7 @@ OPERATIONS = {
     "ANCHOR",
 }
 GEOMETRY_OPERATIONS = {"BOX", "ROUNDED_BOX", "WEDGE", "PROFILE_PRISM"}
-REFERENCE_OPERATIONS = {"BOOLEAN_CUT", "BOOLEAN_UNION", "MIRROR", "ARRAY", "INSTANCE"}
+SOURCE_OPERATIONS = {"MIRROR", "ARRAY", "INSTANCE"}
 
 
 def validate(recipe: Mapping[str, Any]) -> dict[str, Any]:
@@ -65,19 +65,29 @@ def validate(recipe: Mapping[str, Any]) -> dict[str, Any]:
                 blockers.append({"reason": "GEOMETRY_OUTPUT_REQUIRED", "operation_id": op_id})
             elif output_id in output_ids:
                 blockers.append({"reason": "DUPLICATE_GEOMETRY_OUTPUT", "output": output_id})
-            output_ids.add(output_id)
+            else:
+                output_ids.add(output_id)
             dimensions = op.get("dimensions")
             if op_type in {"BOX", "ROUNDED_BOX", "WEDGE"} and not isinstance(dimensions, Mapping):
                 blockers.append({"reason": "DIMENSIONS_REQUIRED", "operation_id": op_id})
-            if op_type == "PROFILE_PRISM" and not op.get("profile"):
-                blockers.append({"reason": "PROFILE_REQUIRED", "operation_id": op_id})
+            if op_type == "PROFILE_PRISM":
+                if not op.get("profile"):
+                    blockers.append({"reason": "PROFILE_REQUIRED", "operation_id": op_id})
+                if op.get("length_mm") is None:
+                    blockers.append({"reason": "PROFILE_LENGTH_REQUIRED", "operation_id": op_id})
 
-        if op_type in REFERENCE_OPERATIONS:
+        if op_type in SOURCE_OPERATIONS:
             source = str(op.get("source") or "")
             if not source:
                 blockers.append({"reason": "SOURCE_REQUIRED", "operation_id": op_id})
             elif source not in output_ids and not bool(op.get("external_source", False)):
                 blockers.append({"reason": "SOURCE_NOT_AVAILABLE_YET", "operation_id": op_id, "source": source})
+            if op_type == "INSTANCE":
+                output_id = str(op.get("output") or op_id)
+                if output_id in output_ids:
+                    blockers.append({"reason": "DUPLICATE_GEOMETRY_OUTPUT", "output": output_id})
+                else:
+                    output_ids.add(output_id)
 
         if op_type in {"BOOLEAN_CUT", "BOOLEAN_UNION"}:
             target = str(op.get("target") or "")
@@ -91,17 +101,22 @@ def validate(recipe: Mapping[str, Any]) -> dict[str, Any]:
             target = str(op.get("target") or "")
             if target not in output_ids:
                 blockers.append({"reason": "BEVEL_TARGET_NOT_AVAILABLE", "operation_id": op_id, "target": target})
-            width = op.get("width")
-            if width is None:
+            if op.get("width") is None:
                 blockers.append({"reason": "BEVEL_WIDTH_REQUIRED", "operation_id": op_id})
 
         if op_type == "ASSIGN_BINDING":
-            if not op.get("target") or not op.get("binding_id"):
-                blockers.append({"reason": "BINDING_TARGET_AND_ID_REQUIRED", "operation_id": op_id})
+            target = str(op.get("target") or "")
+            if target not in output_ids:
+                blockers.append({"reason": "BINDING_TARGET_NOT_AVAILABLE", "operation_id": op_id, "target": target})
+            if not op.get("binding_id"):
+                blockers.append({"reason": "BINDING_ID_REQUIRED", "operation_id": op_id})
 
         if op_type == "ANCHOR":
-            if not op.get("anchor_id") or not op.get("target"):
-                blockers.append({"reason": "ANCHOR_TARGET_REQUIRED", "operation_id": op_id})
+            target = str(op.get("target") or "")
+            if target not in output_ids:
+                blockers.append({"reason": "ANCHOR_TARGET_NOT_AVAILABLE", "operation_id": op_id, "target": target})
+            if not op.get("anchor_id"):
+                blockers.append({"reason": "ANCHOR_ID_REQUIRED", "operation_id": op_id})
 
     final_outputs = list(recipe.get("final_outputs", []) or [])
     if not final_outputs:
