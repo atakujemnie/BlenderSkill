@@ -36,6 +36,10 @@ def test_http_api_serves_gui_and_persistent_asset_routes(tmp_path):
         assert status == 200
         assert "BlenderSkill Studio" in html
 
+        status, design_html = _request(port, "GET", "/design")
+        assert status == 200
+        assert "Design System Studio" in design_html
+
         asset = json.loads(FIXTURE.read_text(encoding="utf-8"))
         status, created = _request(port, "POST", "/api/assets", {"asset": asset})
         assert status == 201
