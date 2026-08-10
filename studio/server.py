@@ -4,6 +4,7 @@ from __future__ import annotations
 
 The server binds to loopback by default and exposes only explicit JSON API
 routes plus the Studio HTML shell. Persistent state remains owned by executors.
+Trusted validation-receipt publication is intentionally not exposed over HTTP.
 """
 
 import argparse
@@ -23,6 +24,7 @@ from executors.design_studio_service import upsert_resource
 from executors.production_studio_service import (
     add_asset_correction,
     advance_asset_stage,
+    authorize_component,
     create_asset,
     create_production_task,
     delete_reference_evidence,
@@ -37,7 +39,7 @@ from executors.production_studio_service import (
 )
 
 SERVER_ID = "PRODUCTION_STUDIO_HTTP"
-SERVER_VERSION = "0.20.0-dev"
+SERVER_VERSION = "0.21.0"
 MAX_JSON_BYTES = 4 * 1024 * 1024
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STUDIO_HTML = REPO_ROOT / "studio" / "asset_production_studio.html"
@@ -83,10 +85,7 @@ def make_handler(data_root: str | Path):
             try:
                 callback()
             except ValueError as exc:
-                self._json(
-                    HTTPStatus.BAD_REQUEST,
-                    {"status": "FAIL", "blockers": [{"reason": str(exc)}]},
-                )
+                self._json(HTTPStatus.BAD_REQUEST, {"status": "FAIL", "blockers": [{"reason": str(exc)}]})
             except (BrokenPipeError, ConnectionResetError):
                 return
             except Exception as exc:  # pragma: no cover - defensive adapter boundary
@@ -162,13 +161,10 @@ def make_handler(data_root: str | Path):
                 resource = body.get("resource")
                 if not isinstance(resource, Mapping):
                     raise ValueError("DESIGN_RESOURCE_MAPPING_REQUIRED")
+                expected_revision = self._required_int(body, "expected_revision")
                 self._result(
-                    upsert_resource(
-                        runtime_root,
-                        resource,
-                        expected_revision=self._required_int(body, "expected_revision"),
-                    ),
-                    created=self._required_int(body, "expected_revision") == 0,
+                    upsert_resource(runtime_root, resource, expected_revision=expected_revision),
+                    created=expected_revision == 0,
                 )
                 return
 
@@ -178,6 +174,20 @@ def make_handler(data_root: str | Path):
                 return
             asset_id = parts[2]
 
+            if len(parts) == 6 and parts[3] == "components" and parts[5] == "authorize":
+                authorization = body.get("authorization")
+                if not isinstance(authorization, Mapping):
+                    raise ValueError("AUTHORIZATION_MAPPING_REQUIRED")
+                self._result(
+                    authorize_component(
+                        runtime_root,
+                        asset_id,
+                        parts[4],
+                        authorization,
+                        expected_asset_revision=self._required_int(body, "expected_asset_revision"),
+                    )
+                )
+                return
             if len(parts) == 4 and parts[3] == "corrections":
                 correction = body.get("correction")
                 if not isinstance(correction, Mapping):
