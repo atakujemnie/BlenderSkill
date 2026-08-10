@@ -113,7 +113,7 @@ def test_studio_service_manages_asset_evidence_tasks_corrections_and_scene(tmp_p
     assert view["selected_component_id"] == "BACKREST"
     assert view["runtime_revisions"] == {"asset": 1, "task_queue": 3, "reference_evidence": 2, "scene": 0}
     assert view["inspector"]["reference_evidence"][0]["evidence_id"] == "EV-BACKREST-SIDE"
-    assert view["inspector"]["resolved_parameters"]["width"] == 1580.0
+    assert view["inspector"]["resolved_parameters"]["width"]["value"] == 1580.0
 
     correction = add_asset_correction(
         tmp_path,
