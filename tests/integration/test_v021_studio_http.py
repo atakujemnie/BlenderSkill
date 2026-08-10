@@ -64,7 +64,7 @@ def test_v021_http_is_asset_generic_and_exposes_authorization(tmp_path):
         port = server.server_port
         status, health = _request(port, "GET", "/api/health")
         assert status == 200
-        assert health["version"] == "0.21.0"
+        assert health["version"] == "0.22.0"
 
         status, html = _request(port, "GET", "/")
         assert status == 200
