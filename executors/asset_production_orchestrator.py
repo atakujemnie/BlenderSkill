@@ -10,7 +10,7 @@ from executors.design_binding_resolver import resolve as resolve_bindings
 from executors.parameter_graph import resolve as resolve_parameters
 
 EXECUTOR_ID = "ASSET_PRODUCTION_ORCHESTRATOR"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.1.1"
 
 
 def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
@@ -49,18 +49,19 @@ def prepare_component_task(spec: Mapping[str, Any]) -> dict[str, Any]:
             "blockers": bindings["blockers"],
         }
 
-    task = build_task_pack(
-        {
-            "asset": asset,
-            "component_id": spec.get("component_id"),
-            "include_descendants": bool(spec.get("include_descendants", False)),
-            "task_kind": spec.get("task_kind", "BUILD"),
-            "max_input_tokens": spec.get("max_input_tokens", 8000),
-            "resolved_parameters": parameters["resolved"],
-            "resolved_bindings": bindings["resolved_bindings"],
-            "reference_evidence": spec.get("reference_evidence", []),
-        }
-    )
+    task_spec = {
+        "asset": asset,
+        "component_id": spec.get("component_id"),
+        "include_descendants": bool(spec.get("include_descendants", False)),
+        "task_kind": spec.get("task_kind", "BUILD"),
+        "resolved_parameters": parameters["resolved"],
+        "resolved_bindings": bindings["resolved_bindings"],
+        "reference_evidence": spec.get("reference_evidence", []),
+    }
+    if spec.get("max_input_tokens") is not None:
+        task_spec["max_input_tokens"] = int(spec["max_input_tokens"])
+
+    task = build_task_pack(task_spec)
     if task["status"] != "PASS":
         return {
             "status": "FAIL",
