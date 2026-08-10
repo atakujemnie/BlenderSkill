@@ -4,7 +4,9 @@ from __future__ import annotations
 
 The adapter is read-only. It imports bpy only at execution time and emits the
 stable metadata consumed by the external Studio runtime instead of serializing
-the Blender scene or datablocks.
+the Blender scene or datablocks. v0.22 additionally carries compact feature
+proof produced by deterministic executors so a successful modifier is not
+mistaken for proof that a reference-critical feature exists.
 """
 
 import hashlib
@@ -14,7 +16,7 @@ from typing import Any
 from executors.scene_component_snapshot import build as build_snapshot
 
 EXECUTOR_ID = "BLENDER_SCENE_SNAPSHOT_ADAPTER"
-EXECUTOR_VERSION = "0.20.0"
+EXECUTOR_VERSION = "0.22.0"
 M_TO_MM = 1000.0
 MM_DIGITS = 3
 
@@ -94,6 +96,44 @@ def _anchor_ids(obj: Any) -> list[str]:
     return sorted(values)
 
 
+def _json_property(obj: Any, key: str, default: Any) -> Any:
+    raw = obj.get(key)
+    if raw in (None, ""):
+        return default
+    if isinstance(raw, str):
+        try:
+            return json.loads(raw)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return default
+    return raw
+
+
+def _feature_ids(obj: Any) -> list[str]:
+    values: set[str] = set()
+    decoded = _json_property(obj, "blenderskill_feature_ids_json", [])
+    if isinstance(decoded, (list, tuple)):
+        values.update(str(value) for value in decoded if str(value))
+    legacy = obj.get("blenderskill_feature_id")
+    if legacy:
+        values.add(str(legacy))
+    return sorted(values)
+
+
+def _feature_proofs(obj: Any) -> list[dict[str, Any]]:
+    decoded = _json_property(obj, "blenderskill_feature_proofs_json", [])
+    if not isinstance(decoded, list):
+        return []
+    proofs = [dict(item) for item in decoded if isinstance(item, dict)]
+    proofs.sort(
+        key=lambda item: (
+            str(item.get("feature_id") or ""),
+            str(item.get("proof_type") or ""),
+            str(item.get("operation_id") or ""),
+        )
+    )
+    return proofs
+
+
 def _mesh_metrics(obj: Any) -> dict[str, int]:
     if obj.type != "MESH" or obj.data is None:
         return {}
@@ -109,6 +149,26 @@ def _mesh_metrics(obj: Any) -> dict[str, int]:
         "polygons": len(mesh.polygons),
         "triangles": int(triangles),
     }
+
+
+def _evaluated_mesh_metrics(obj: Any) -> dict[str, int]:
+    if obj.type != "MESH":
+        return {}
+    bpy = _bpy()
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = obj.evaluated_get(depsgraph)
+    mesh = evaluated.to_mesh()
+    try:
+        mesh.calc_loop_triangles()
+        triangles = len(mesh.loop_triangles)
+        return {
+            "vertices": len(mesh.vertices),
+            "edges": len(mesh.edges),
+            "polygons": len(mesh.polygons),
+            "triangles": int(triangles),
+        }
+    finally:
+        evaluated.to_mesh_clear()
 
 
 def measure_object(obj: Any) -> dict[str, Any]:
@@ -142,10 +202,13 @@ def measure_object(obj: Any) -> dict[str, Any]:
         },
         "dimensions_mm": _mm_vector(obj.dimensions),
         "mesh_metrics": _mesh_metrics(obj),
+        "evaluated_mesh_metrics": _evaluated_mesh_metrics(obj),
         "material_ids": sorted(material_ids),
         "modifier_stack": modifier_stack,
         "binding_ids": _binding_ids(obj),
         "anchor_ids": _anchor_ids(obj),
+        "feature_ids": _feature_ids(obj),
+        "feature_proofs": _feature_proofs(obj),
         "visibility": {
             "hide_viewport": bool(obj.hide_viewport),
             "hide_render": bool(obj.hide_render),

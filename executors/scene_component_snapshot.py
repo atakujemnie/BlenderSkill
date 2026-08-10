@@ -7,8 +7,8 @@ import json
 from typing import Any, Mapping
 
 EXECUTOR_ID = "SCENE_COMPONENT_SNAPSHOT"
-EXECUTOR_VERSION = "0.19.0"
-SCHEMA_VERSION = 1
+EXECUTOR_VERSION = "0.22.0"
+SCHEMA_VERSION = 2
 ALLOWED_OBJECT_FIELDS = (
     "object_id",
     "component_id",
@@ -17,10 +17,13 @@ ALLOWED_OBJECT_FIELDS = (
     "transform",
     "dimensions_mm",
     "mesh_metrics",
+    "evaluated_mesh_metrics",
     "material_ids",
     "modifier_stack",
     "binding_ids",
     "anchor_ids",
+    "feature_ids",
+    "feature_proofs",
     "visibility",
 )
 VOLATILE_FIELDS = {"selected", "active", "viewport_color", "session_uid", "runtime_pointer"}
@@ -46,12 +49,9 @@ def _normalize_object(raw: Mapping[str, Any]) -> dict[str, Any]:
     item["object_id"] = str(item.get("object_id") or raw.get("name") or "")
     item["component_id"] = str(item.get("component_id") or "")
     item["object_type"] = str(item.get("object_type") or raw.get("type") or "UNKNOWN").upper()
-    if "material_ids" in item:
-        item["material_ids"] = sorted(str(value) for value in list(item.get("material_ids") or []))
-    if "binding_ids" in item:
-        item["binding_ids"] = sorted(str(value) for value in list(item.get("binding_ids") or []))
-    if "anchor_ids" in item:
-        item["anchor_ids"] = sorted(str(value) for value in list(item.get("anchor_ids") or []))
+    for list_field in ("material_ids", "binding_ids", "anchor_ids", "feature_ids"):
+        if list_field in item:
+            item[list_field] = sorted({str(value) for value in list(item.get(list_field) or []) if str(value)})
     if "modifier_stack" in item:
         item["modifier_stack"] = [
             {
@@ -62,6 +62,16 @@ def _normalize_object(raw: Mapping[str, Any]) -> dict[str, Any]:
             for modifier in list(item.get("modifier_stack") or [])
             if isinstance(modifier, Mapping)
         ]
+    if "feature_proofs" in item:
+        normalized_proofs = [dict(proof) for proof in list(item.get("feature_proofs") or []) if isinstance(proof, Mapping)]
+        normalized_proofs.sort(
+            key=lambda proof: (
+                str(proof.get("feature_id") or ""),
+                str(proof.get("proof_type") or ""),
+                str(proof.get("operation_id") or ""),
+            )
+        )
+        item["feature_proofs"] = normalized_proofs
     item["object_hash"] = _hash({key: value for key, value in item.items() if key != "object_hash"})
     return item
 
@@ -114,6 +124,7 @@ def build(report: Mapping[str, Any], *, component_ids: list[str] | None = None) 
             "object_count": len(objects),
             "estimated_tokens": estimated,
             "component_count": len({item["component_id"] for item in objects if item.get("component_id")}),
+            "feature_proof_count": sum(len(list(item.get("feature_proofs", []) or [])) for item in objects),
         },
         "blockers": blockers,
     }

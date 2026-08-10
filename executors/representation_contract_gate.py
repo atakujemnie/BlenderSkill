@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 EXECUTOR_ID = "REPRESENTATION_CONTRACT_GATE"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.22.0"
 
 _DEFAULT_REQUIREMENTS: dict[str, set[str]] = {
     "PROFILE_PRISM": {"PROFILE_PRISM"},
@@ -14,11 +14,23 @@ _DEFAULT_REQUIREMENTS: dict[str, set[str]] = {
     "RECESSED_CHANNEL": {"BOOLEAN_CUT"},
     "RECESSED_HOUSING": {"BOOLEAN_CUT"},
     "EMISSIVE_STRIP": {"ASSIGN_BINDING"},
+    "SENSOR_LENS": {"CYLINDER"},
+    "SENSOR_RING": {"RING"},
+    "FASTENER": {"CYLINDER"},
+    "ROUNDED_SLOT": {"CAPSULE_PRISM"},
 }
 
 
 def _ops(recipe: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [dict(item) for item in list(recipe.get("operations", []) or []) if isinstance(item, Mapping)]
+
+
+def _feature_ids(operation: Mapping[str, Any]) -> set[str]:
+    values: set[str] = set()
+    if operation.get("feature_id") not in (None, ""):
+        values.add(str(operation.get("feature_id")))
+    values.update(str(value) for value in list(operation.get("feature_ids", []) or []) if str(value))
+    return values
 
 
 def validate(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[str, Any]:
@@ -85,11 +97,7 @@ def validate(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[st
         blockers.append({"reason": "REPRESENTATION_FORBIDDEN_OPERATION_USED", "operations": present_forbidden})
 
     required_features = {str(value) for value in list(contract.get("required_feature_ids", []) or [])}
-    actual_features = {
-        str(item.get("feature_id"))
-        for item in operations
-        if item.get("feature_id") not in (None, "")
-    }
+    actual_features = {feature_id for item in operations for feature_id in _feature_ids(item)}
     missing_features = sorted(required_features - actual_features)
     if missing_features:
         blockers.append({"reason": "REPRESENTATION_REQUIRED_FEATURES_MISSING", "feature_ids": missing_features})
@@ -112,12 +120,27 @@ def validate(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[st
                 }
             )
 
+    minimum_geometry_outputs = contract.get("minimum_geometry_outputs")
+    if minimum_geometry_outputs is not None:
+        geometry_types = {"BOX", "ROUNDED_BOX", "WEDGE", "PROFILE_PRISM", "CYLINDER", "RING", "CAPSULE_PRISM", "INSTANCE"}
+        geometry_outputs = sum(1 for item in operations if str(item.get("op") or "").upper() in geometry_types)
+        if geometry_outputs < int(minimum_geometry_outputs):
+            blockers.append(
+                {
+                    "reason": "REPRESENTATION_GEOMETRY_OUTPUT_COUNT_TOO_LOW",
+                    "minimum": int(minimum_geometry_outputs),
+                    "actual": geometry_outputs,
+                }
+            )
+
     return {
         "status": "PASS" if not blockers else "FAIL",
         "validator_id": EXECUTOR_ID,
+        "validator_version": EXECUTOR_VERSION,
         "component_id": component_id,
         "shape_class": shape_class,
         "operation_types": sorted(op_types),
+        "feature_ids": sorted(actual_features),
         "blockers": blockers,
     }
 

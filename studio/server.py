@@ -28,10 +28,12 @@ from executors.production_studio_service import (
     create_asset,
     create_production_task,
     delete_reference_evidence,
+    get_fidelity_review,
     get_studio,
     list_assets,
     prepare_task,
     promote_production_tasks,
+    publish_fidelity_review,
     publish_scene,
     resolve_asset_correction,
     transition_production_task,
@@ -39,7 +41,7 @@ from executors.production_studio_service import (
 )
 
 SERVER_ID = "PRODUCTION_STUDIO_HTTP"
-SERVER_VERSION = "0.21.0"
+SERVER_VERSION = "0.22.0"
 MAX_JSON_BYTES = 4 * 1024 * 1024
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STUDIO_HTML = REPO_ROOT / "studio" / "asset_production_studio.html"
@@ -132,6 +134,9 @@ def make_handler(data_root: str | Path):
                 query = parse_qs(parsed.query)
                 component = query.get("component", [None])[0]
                 self._result(get_studio(runtime_root, parts[2], component_id=component))
+                return
+            if len(parts) == 4 and parts[:2] == ["api", "assets"] and parts[3] == "fidelity-review":
+                self._result(get_fidelity_review(runtime_root, parts[2]))
                 return
             if len(parts) == 5 and parts[:2] == ["api", "design-systems"] and parts[3] == "resources":
                 self._result(get_resource(runtime_root, parts[2], parts[4]))
@@ -268,6 +273,19 @@ def make_handler(data_root: str | Path):
                         worker_id=str(body["worker_id"]) if body.get("worker_id") is not None else None,
                         blockers=[dict(item) for item in blockers or [] if isinstance(item, Mapping)],
                         result=result,
+                    )
+                )
+                return
+            if len(parts) == 4 and parts[3] == "fidelity-review":
+                review = body.get("review")
+                if not isinstance(review, Mapping):
+                    raise ValueError("FIDELITY_REVIEW_MAPPING_REQUIRED")
+                self._result(
+                    publish_fidelity_review(
+                        runtime_root,
+                        asset_id,
+                        review,
+                        expected_review_revision=self._required_int(body, "expected_review_revision"),
                     )
                 )
                 return

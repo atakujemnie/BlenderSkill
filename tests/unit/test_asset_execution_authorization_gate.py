@@ -24,7 +24,7 @@ def test_authorization_is_derived_from_persisted_state():
     result = evaluate(_asset(), "PART")
     assert result["status"] == "PASS", result
     assert result["validator_id"] == "ASSET_EXECUTION_AUTHORIZATION_GATE"
-    assert result["validator_version"] == "0.21.0"
+    assert result["validator_version"] == "0.22.0"
     assert result["source"] == "SYSTEM"
     assert result["asset_revision"] == 3
 
@@ -51,3 +51,11 @@ def test_open_hard_component_correction_blocks_authorization():
     result = evaluate(asset, "PART")
     assert result["status"] == "BLOCKED"
     assert any(item["reason"] == "OPEN_HARD_COMPONENT_CORRECTIONS" for item in result["blockers"])
+
+
+def test_structurally_accepted_component_can_be_reauthorized_for_details_stage():
+    asset = _asset(stage="DETAILS", state="ACCEPTED")
+    asset["components"]["PART"]["acceptance_level"] = "STRUCTURAL"
+    result = evaluate(asset, "PART")
+    assert result["status"] == "PASS", result
+    assert result["component_acceptance_level"] == "STRUCTURAL"

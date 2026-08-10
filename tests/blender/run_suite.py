@@ -16,6 +16,7 @@ TESTS = [
     ROOT / "tests/blender/test_scene_snapshot_adapter.py",
     ROOT / "tests/blender/test_v021_component_execution.py",
     ROOT / "tests/blender/test_v0211_primitive_winding_and_boolean.py",
+    ROOT / "tests/blender/test_v022_feature_primitives_and_proof.py",
 ]
 
 
@@ -37,7 +38,7 @@ def main() -> None:
             print(f"FAIL {path.name}: {exc!r}")
     if failures:
         raise SystemExit(f"Blender runtime suite failed: {failures}")
-    print("BlenderSkill v0.21 Blender runtime suite PASS")
+    print("BlenderSkill v0.22 Blender runtime suite PASS")
 
 
 if __name__ == "__main__":

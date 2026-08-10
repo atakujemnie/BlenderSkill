@@ -5,11 +5,19 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Mapping
 
+from executors.feature_contract_gate import validate as validate_features
 from executors.hard_surface_recipe import validate as validate_recipe
 from executors.representation_contract_gate import validate as validate_representation
 
 EXECUTOR_ID = "COMPONENT_EXECUTION_GATE"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.22.0"
+
+
+def _feature_validation_enabled(task_pack: Mapping[str, Any]) -> bool:
+    component = task_pack.get("component")
+    if not isinstance(component, Mapping):
+        return False
+    return bool(component.get("feature_contract_required", False) or component.get("feature_contract"))
 
 
 def authorize(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[str, Any]:
@@ -33,6 +41,9 @@ def authorize(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[s
     representation = validate_representation(task_pack, recipe)
     if representation.get("status") != "PASS":
         blockers.extend(representation.get("blockers", []))
+    feature = validate_features(task_pack, recipe, None) if _feature_validation_enabled(task_pack) else None
+    if isinstance(feature, Mapping) and feature.get("status") != "PASS":
+        blockers.extend(feature.get("blockers", []))
 
     component = task_pack.get("component")
     transform = component.get("transform") if isinstance(component, Mapping) else None
@@ -46,6 +57,7 @@ def authorize(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[s
             "status": "BLOCKED",
             "executor_id": EXECUTOR_ID,
             "component_id": component_id,
+            "feature_contract": feature,
             "blockers": blockers,
         }
 
@@ -65,6 +77,7 @@ def authorize(task_pack: Mapping[str, Any], recipe: Mapping[str, Any]) -> dict[s
         "component_id": component_id,
         "recipe": prepared,
         "representation": representation,
+        "feature_contract": feature,
         "blockers": [],
     }
 
@@ -96,6 +109,7 @@ def execute(task_pack: Mapping[str, Any], recipe: Mapping[str, Any], *, collecti
         **result,
         "execution_gate": EXECUTOR_ID,
         "representation_status": authorized["representation"]["status"],
+        "feature_contract_status": authorized["feature_contract"].get("status") if isinstance(authorized.get("feature_contract"), Mapping) else None,
         "materialization": materials,
     }
 

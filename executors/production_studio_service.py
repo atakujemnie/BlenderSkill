@@ -19,8 +19,13 @@ from executors.asset_repository import initialize as initialize_asset
 from executors.asset_repository import load as load_asset
 from executors.asset_repository import save as save_asset
 from executors.asset_state_runtime import ASSET_STAGES, add_correction, advance_stage, resolve_correction
+from executors.asset_stage_completion_gate import acceptance_level_for_stage
+from executors.asset_stage_completion_gate import validate as validate_stage_completion
 from executors.asset_studio_view_model import build as build_studio_view
 from executors.design_system_repository import impact_report, load as load_design_resource
+from executors.fidelity_review_repository import initialize as initialize_fidelity_reviews
+from executors.fidelity_review_repository import load as load_fidelity_review
+from executors.fidelity_review_repository import publish as publish_fidelity_review_record
 from executors.parameter_graph import resolve as resolve_parameters
 from executors.production_task_lifecycle import create as create_task_record
 from executors.production_task_lifecycle import promote_ready, transition
@@ -38,9 +43,10 @@ from executors.scene_snapshot_repository import publish as publish_scene_snapsho
 from executors.validation_receipt_repository import initialize as initialize_validation_receipts
 from executors.validation_receipt_repository import publish as publish_validation_receipt_record
 from executors.validation_receipt_repository import query as query_validation_receipts
+from executors.visual_fidelity_review_gate import validate as validate_visual_fidelity_review
 
 EXECUTOR_ID = "PRODUCTION_STUDIO_SERVICE"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.22.0"
 _GEOMETRY_STAGE_INDEX = ASSET_STAGES.index("BLOCKOUT")
 _DEFAULT_GEOMETRY_VALIDATORS = ("SCENE_COMPONENT_VALIDATION", "REPRESENTATION_CONTRACT_GATE")
 
@@ -170,8 +176,9 @@ def create_asset(root: str | Path, asset: Mapping[str, Any]) -> dict[str, Any]:
     queue = initialize_task_queue(root, asset_id, {})
     evidence = initialize_evidence(root, asset_id, {"evidence": []})
     validation = initialize_validation_receipts(root, asset_id)
+    fidelity = initialize_fidelity_reviews(root, asset_id)
     blockers: list[dict[str, Any]] = []
-    for result in (queue, evidence, validation):
+    for result in (queue, evidence, validation, fidelity):
         if result.get("status") != "PASS":
             blockers.extend(result.get("blockers", []))
     return {
@@ -182,6 +189,7 @@ def create_asset(root: str | Path, asset: Mapping[str, Any]) -> dict[str, Any]:
         "queue_revision": queue.get("queue", {}).get("queue_revision"),
         "reference_revision": evidence.get("registry", {}).get("revision"),
         "validation_revision": validation.get("revision"),
+        "fidelity_review_revision": fidelity.get("revision", 0),
         "blockers": blockers,
     }
 
@@ -242,6 +250,9 @@ def get_studio(root: str | Path, asset_id: str, *, component_id: str | None = No
     )
     model["validation_revision"] = validation.get("revision", 0)
     inspector["validation_receipts"] = list(validation.get("receipts", []) or [])
+    fidelity = load_fidelity_review(root, asset_id)
+    model["fidelity_review_revision"] = fidelity.get("revision", 0) if fidelity.get("status") == "PASS" else 0
+    inspector["fidelity_review"] = fidelity.get("review") if fidelity.get("status") == "PASS" else None
     model["inspector"] = inspector
     return {"status": "PASS", "executor_id": EXECUTOR_ID, "view_model": model, "blockers": []}
 
@@ -312,6 +323,19 @@ def advance_asset_stage(
         envelope = validate_asset_envelope(loaded["asset"])
         if envelope.get("status") != "PASS":
             return {**envelope, "executor_id": EXECUTOR_ID, "failed_stage": "ASSET_ENVELOPE"}
+    scene, scene_revision = _scene_or_none(root, asset_id)
+    _registry, reference_revision = _evidence_or_empty(root, asset_id)
+    fidelity = load_fidelity_review(root, asset_id)
+    fidelity_review = fidelity.get("review") if fidelity.get("status") == "PASS" else None
+    completion = validate_stage_completion(
+        loaded["asset"],
+        new_stage,
+        fidelity_review=fidelity_review,
+        scene_revision=scene_revision if scene is not None else 0,
+        reference_revision=reference_revision,
+    )
+    if completion.get("status") != "PASS":
+        return {**completion, "executor_id": EXECUTOR_ID, "failed_stage": "ASSET_STAGE_COMPLETION"}
     changed = advance_stage(loaded["asset"], new_stage)
     if changed.get("status") != "PASS":
         return changed
@@ -428,6 +452,13 @@ def create_production_task(
     required_validators = list(spec.get("required_validation_ids", []) or declared_validators)
     if ASSET_STAGES.index(requested_stage) >= _GEOMETRY_STAGE_INDEX and not required_validators:
         required_validators = list(_DEFAULT_GEOMETRY_VALIDATORS)
+    feature_contract_enabled = bool(
+        asset.get("enforce_feature_contracts", False)
+        or components[component_id].get("feature_contract_required", False)
+        or components[component_id].get("feature_contract")
+    )
+    if feature_contract_enabled and "FEATURE_CONTRACT_GATE" not in required_validators:
+        required_validators.append("FEATURE_CONTRACT_GATE")
     task_spec = {
         **dict(spec),
         "asset_id": asset_id,
@@ -516,7 +547,9 @@ def publish_validation_receipt(
     }
 
 
-def _accept_component_state(root: str | Path, asset_id: str, component_id: str) -> dict[str, Any]:
+def _accept_component_state(
+    root: str | Path, asset_id: str, component_id: str, *, task_stage: str, receipt_ids: list[str]
+) -> dict[str, Any]:
     loaded = load_asset(root, asset_id)
     if loaded.get("status") != "PASS":
         return loaded
@@ -530,11 +563,13 @@ def _accept_component_state(root: str | Path, asset_id: str, component_id: str) 
     cp_components = {str(key): dict(value) for key, value in dict(cp.get("components", {}) or {}).items()}
     updated = dict(cp_components[str(component_id)])
     updated["state"] = "ACCEPTED"
+    updated["acceptance_level"] = acceptance_level_for_stage(task_stage)
+    updated["last_validation_receipt_ids"] = sorted(str(value) for value in receipt_ids if str(value))
     cp_components[str(component_id)] = updated
     cp["components"] = cp_components
     cp["revision"] = current_revision + 1
     history = list(cp.get("history", []) or [])
-    history.append({"revision": cp["revision"], "event": "COMPONENT_ACCEPTED", "component_id": str(component_id)})
+    history.append({"revision": cp["revision"], "event": "COMPONENT_ACCEPTED", "component_id": str(component_id), "stage": str(task_stage), "acceptance_level": updated["acceptance_level"]})
     cp["history"] = history
     saved = save_asset(root, cp, expected_revision=current_revision)
     return {**saved, "executor_id": EXECUTOR_ID, "asset_revision": cp["revision"] if saved.get("status") == "PASS" else current_revision}
@@ -597,7 +632,7 @@ def transition_production_task(
         return {**saved, "executor_id": EXECUTOR_ID, "task": None}
     response = {**saved, "executor_id": EXECUTOR_ID, "task": changed["task"]}
     if str(target_status).upper() == "APPROVED":
-        accepted = _accept_component_state(root, asset_id, str(task.get("component_id")))
+        accepted = _accept_component_state(root, asset_id, str(task.get("component_id")), task_stage=str(task.get("stage") or ""), receipt_ids=list(changed["task"].get("approval_receipt_ids", []) or []))
         if accepted.get("status") != "PASS":
             return {
                 **response,
@@ -606,6 +641,7 @@ def transition_production_task(
             }
         response["asset_revision"] = accepted.get("asset_revision")
         response["component_state"] = "ACCEPTED"
+        response["component_acceptance_level"] = acceptance_level_for_stage(str(task.get("stage") or ""))
     return response
 
 
@@ -756,6 +792,56 @@ def prepare_task(
     result = prepare_component_task(spec)
     return {**result, "executor_id": EXECUTOR_ID}
 
+
+def publish_fidelity_review(
+    root: str | Path,
+    asset_id: str,
+    review: Mapping[str, Any],
+    *,
+    expected_review_revision: int,
+) -> dict[str, Any]:
+    loaded = load_asset(root, asset_id)
+    if loaded.get("status") != "PASS":
+        return loaded
+    asset = loaded["asset"]
+    scene, scene_revision = _scene_or_none(root, asset_id)
+    if scene is None:
+        return {"status": "BLOCKED", "executor_id": EXECUTOR_ID, "blockers": [{"reason": "FIDELITY_REVIEW_SCENE_REQUIRED"}]}
+    _registry, reference_revision = _evidence_or_empty(root, asset_id)
+    verdict = validate_visual_fidelity_review(
+        asset,
+        review,
+        scene_revision=scene_revision,
+        reference_revision=reference_revision,
+    )
+    record = {
+        **dict(review),
+        "asset_id": asset_id,
+        "asset_revision": int(asset.get("revision", 0)),
+        "scene_revision": scene_revision,
+        "reference_revision": reference_revision,
+        "status": verdict.get("status"),
+        "source": "SYSTEM",
+        "validator_id": verdict.get("validator_id"),
+        "validator_version": verdict.get("validator_version"),
+        "blockers": verdict.get("blockers", []),
+        "warnings": verdict.get("warnings", []),
+    }
+    saved = publish_fidelity_review_record(
+        root, asset_id, record, expected_revision=expected_review_revision
+    )
+    return {
+        **saved,
+        "status": verdict.get("status") if saved.get("status") == "PASS" else saved.get("status"),
+        "executor_id": EXECUTOR_ID,
+        "review": record,
+        "blockers": verdict.get("blockers", []) if saved.get("status") == "PASS" else saved.get("blockers", []),
+    }
+
+
+def get_fidelity_review(root: str | Path, asset_id: str) -> dict[str, Any]:
+    loaded = load_fidelity_review(root, asset_id)
+    return {**loaded, "executor_id": EXECUTOR_ID}
 
 def _revision_conflict(reason: str, expected: int, actual: int) -> dict[str, Any]:
     return {

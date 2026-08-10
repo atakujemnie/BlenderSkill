@@ -9,7 +9,7 @@ from executors.component_transform import normalize as normalize_transform
 from executors.reference_evidence_materializer import materialize as materialize_reference_evidence
 
 EXECUTOR_ID = "COMPONENT_TASK_PACK"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.22.0"
 DEFAULT_BUILD_TOKEN_BUDGET = 8000
 DEFAULT_REPAIR_TOKEN_BUDGET = 4000
 
@@ -151,8 +151,13 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
         )
     )
 
+    feature_contract = component.get("feature_contract", {})
+    visual_feature_map = component.get("visual_feature_map", {})
+    qa_views = component.get("qa_views", [])
+    edge_profiles = component.get("edge_profiles", {})
+
     task_pack = {
-        "schema_version": 2,
+        "schema_version": 3,
         "asset_id": asset.get("asset_id"),
         "asset_revision": asset.get("revision"),
         "stage": asset.get("stage"),
@@ -162,6 +167,7 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
             "id": component_id,
             "parent": component.get("parent"),
             "state": component.get("state"),
+            "acceptance_level": component.get("acceptance_level"),
             "origin": component.get("origin"),
             "anchors": component.get("anchors", {}),
             "shape_class": component.get("shape_class"),
@@ -169,6 +175,13 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
             "transform": transform["transform"],
             "placement_required": bool(component.get("placement_required", False)),
             "representation_contract": component.get("representation_contract", {}),
+            "feature_contract_required": bool(
+                component.get("feature_contract_required", asset.get("enforce_feature_contracts", False))
+            ),
+            "feature_contract": feature_contract,
+            "visual_feature_map": visual_feature_map,
+            "qa_views": qa_views,
+            "edge_profiles": edge_profiles,
         },
         "allowed_to_modify": sorted(mutable),
         "read_only": read_only,
@@ -206,6 +219,8 @@ def build(spec: Mapping[str, Any]) -> dict[str, Any]:
             "correction_count": len(open_corrections),
             "reference_evidence_count": len(references),
             "reference_attachment_count": len(reference_attachments),
+            "feature_contract_present": bool(feature_contract),
+            "qa_view_count": len(list(qa_views or [])) if isinstance(qa_views, (list, tuple)) else len(dict(qa_views or {})),
             "placement_explicit": bool(transform["transform"]["explicit"]),
         },
         "blockers": blockers,

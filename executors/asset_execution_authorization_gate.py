@@ -2,9 +2,10 @@ from __future__ import annotations
 
 """Deterministic authorization for component production tasks.
 
-This adapts the older reconstruction-node authorization idea to the persistent
-asset/component runtime. The caller requests authorization; this executor owns
-the PASS/BLOCKED decision from persisted state.
+The caller requests authorization; this executor owns the PASS/BLOCKED decision
+from persisted state. v0.22 permits an already ACCEPTED component to be reopened
+for the next production stage; acceptance_level prevents a structural acceptance
+from being mistaken for final completion.
 """
 
 from typing import Any, Mapping
@@ -12,9 +13,9 @@ from typing import Any, Mapping
 from executors.asset_state_runtime import ASSET_STAGES
 
 EXECUTOR_ID = "ASSET_EXECUTION_AUTHORIZATION_GATE"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.22.0"
 
-_AUTHORIZABLE_STATES = {"CONSTRAINED", "DIRTY", "UNVERIFIED", "FAIL"}
+_AUTHORIZABLE_STATES = {"CONSTRAINED", "DIRTY", "UNVERIFIED", "FAIL", "ACCEPTED"}
 
 
 def evaluate(asset: Mapping[str, Any], component_id: str) -> dict[str, Any]:
@@ -83,6 +84,7 @@ def evaluate(asset: Mapping[str, Any], component_id: str) -> dict[str, Any]:
         "component_id": component_id,
         "asset_stage": stage,
         "component_state": state,
+        "component_acceptance_level": component.get("acceptance_level"),
         "dependencies": dependencies,
         "blockers": blockers,
     }

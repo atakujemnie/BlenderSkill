@@ -1,3 +1,18 @@
+## 0.22.0 — Visual Fidelity & Feature Completion
+
+- Added machine-enforced `feature_contract` records with `MUST` / `SHOULD` / `OPTIONAL` priorities, reference ownership, representation requirements, counts and measurable scene proof.
+- Added `FEATURE_CONTRACT_GATE`; missing reference-critical features, wrong repeat counts, missing proof types or out-of-tolerance feature measurements now fail closed.
+- Added first-class deterministic `CYLINDER`, `RING` and `CAPSULE_PRISM` primitives for sensor lenses/rings, fasteners and rounded ventilation slots instead of generic-box approximations.
+- Strengthened `BOOLEAN_CUT` / `BOOLEAN_UNION`: the real Blender executor measures evaluated volume before/after and fails when no material effect is observed.
+- Scene snapshots now carry compact evaluated-mesh metrics plus `feature_ids` and deterministic `feature_proofs`.
+- Added component acceptance levels (`BLOCKOUT` through `FIDELITY`/`FINAL`) and `ASSET_STAGE_COMPLETION_GATE`; structural success can no longer be declared final success.
+- Added revisioned `FIDELITY_REVIEW_REPOSITORY` and `VISUAL_FIDELITY_REVIEW_GATE` for independent multi-view review bound to exact asset, scene and reference revisions.
+- A global visual score is secondary: every visual MUST feature is reviewed separately, and newly discovered unmapped reference details block final approval.
+- Added HTTP endpoints for publishing/reading current fidelity reviews and wired final `APPROVED` stage to current fidelity evidence.
+- Preserved component-scoped token budgets while carrying Feature Contract, visual feature map, QA views, edge profiles and materialized reference attachments.
+- Added real Blender 5.1 tests for semantic detail primitives and measured feature/Boolean proof.
+- Added canonical Benchmark 92 — Lafar Public Service Terminal Visual Fidelity — based directly on the blind terminal reconstruction failure classes.
+
 ## 0.21.1 — Boolean Winding Hotfix
 
 - Fixed `BLENDER_HARD_SURFACE_BUILDER` emitting `BOX`, `ROUNDED_BOX`, `WEDGE` and `PROFILE_PRISM` with inward-facing normals; every generated closed solid is now normalized to outward orientation by the builder itself.
