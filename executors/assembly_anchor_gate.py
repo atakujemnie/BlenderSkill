@@ -11,7 +11,7 @@ from math import sqrt
 from typing import Any, Mapping
 
 EXECUTOR_ID = "ASSEMBLY_ANCHOR_GATE"
-EXECUTOR_VERSION = "0.1.0"
+EXECUTOR_VERSION = "0.1.1"
 RELATION_TYPES = {"COINCIDENT", "OFFSET", "ALIGNED_AXIS", "CLEARANCE"}
 
 
@@ -25,7 +25,7 @@ def _vec(value: Any, *, size: int = 3) -> tuple[float, ...] | None:
 
 
 def _distance(a: tuple[float, ...], b: tuple[float, ...]) -> float:
-    return sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+    return sqrt(sum((x - y) ** 2 for x, y in zip(a, b, strict=True)))
 
 
 def evaluate(report: Mapping[str, Any]) -> dict[str, Any]:
@@ -81,7 +81,7 @@ def evaluate(report: Mapping[str, Any]) -> dict[str, Any]:
                 if expected is None:
                     local_blockers.append({"reason": "OFFSET_VECTOR_REQUIRED"})
                 else:
-                    actual = tuple(b - a for a, b in zip(a_pos, b_pos))
+                    actual = tuple(b - a for a, b in zip(a_pos, b_pos, strict=True))
                     error = _distance(actual, expected)
                     tolerance = float(relation.get("tolerance_mm", 0.5))
                     if error > tolerance:
@@ -107,7 +107,7 @@ def evaluate(report: Mapping[str, Any]) -> dict[str, Any]:
             if a_axis is None or b_axis is None:
                 local_blockers.append({"reason": "ANCHOR_AXIS_MEASUREMENT_REQUIRED", "axis": axis})
             else:
-                dot = sum(x * y for x, y in zip(a_axis, b_axis))
+                dot = sum(x * y for x, y in zip(a_axis, b_axis, strict=True))
                 tolerance = float(relation.get("min_abs_dot", 0.999))
                 if abs(dot) < tolerance:
                     local_blockers.append(
