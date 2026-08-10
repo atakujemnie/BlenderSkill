@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 EXECUTOR_ID = "PROVIDER_SELECTION_REPORT"
-EXECUTOR_VERSION = "0.18.0"
+EXECUTOR_VERSION = "0.18.1"
 
 VEGETATION_DOMAINS = {"TREE", "WOODY_PLANT", "GRASS", "GROUNDCOVER", "VINE", "SURFACE_GROWTH", "VEGETATION"}
 
@@ -15,9 +15,13 @@ def _broadly_relevant(provider: Mapping[str, Any], requested_domains: set[str]) 
     kind = str(provider.get("source_kind") or "")
     if domains & requested_domains:
         return True
+    # Unknown providers must remain visible so they can be explicitly BLOCKED
+    # instead of disappearing from the auditable selection report.
+    if kind == "UNKNOWN":
+        return True
     if requested_domains & VEGETATION_DOMAINS:
         return bool(domains & VEGETATION_DOMAINS) or "GENERIC_PROCEDURAL" in domains or kind == "READY_ASSET_SOURCE"
-    return kind in {"READY_ASSET_SOURCE", "PROCEDURAL_GENERATOR", "EXTERNAL_GENERATOR", "BUILTIN_BACKEND", "UNKNOWN"}
+    return kind in {"READY_ASSET_SOURCE", "PROCEDURAL_GENERATOR", "EXTERNAL_GENERATOR", "BUILTIN_BACKEND"}
 
 
 def build_report(
