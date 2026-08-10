@@ -6,7 +6,7 @@ on:
       version:
         description: Release version
         required: true
-        default: '0.21.0'
+        default: '0.22.0'
 
 permissions:
   contents: write
@@ -20,12 +20,12 @@ jobs:
       BLENDER_SHA_FILE: 'blender-5.1.0.sha256'
       BLENDER_BASE_URL: 'https://download.blender.org/release/Blender5.1'
     steps:
-      - name: Require main and v0.21.0
+      - name: Require main and v0.22.0
         shell: bash
         run: |
           set -euo pipefail
           test "$GITHUB_REF_NAME" = "main"
-          test "${{ inputs.version }}" = "0.21.0"
+          test "${{ inputs.version }}" = "0.22.0"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,11 +82,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git rev-parse -q --verify refs/tags/v0.21.0 >/dev/null; then
-            echo 'Tag v0.21.0 already exists.' >&2
+          if git rev-parse -q --verify refs/tags/v0.22.0 >/dev/null; then
+            echo 'Tag v0.22.0 already exists.' >&2
             exit 1
           fi
-          test -z "$(git ls-remote --tags origin refs/tags/v0.21.0)"
+          test -z "$(git ls-remote --tags origin refs/tags/v0.22.0)"
 
       - name: Create tag and GitHub Release
         env:
@@ -96,6 +96,6 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -a v0.21.0 -m 'BlenderSkill v0.21.0 — Fidelity Enforcement & Deterministic Assembly'
-          git push origin v0.21.0
-          gh release create v0.21.0 --title 'BlenderSkill v0.21.0 — Fidelity Enforcement & Deterministic Assembly' --notes-file <(awk '/^## 0\.21\.0/{flag=1;next}/^## /{flag=0}flag' CHANGELOG.md)
+          git tag -a v0.22.0 -m 'BlenderSkill v0.22.0 — Visual Fidelity & Feature Completion'
+          git push origin v0.22.0
+          gh release create v0.22.0 --title 'BlenderSkill v0.22.0 — Visual Fidelity & Feature Completion' --notes-file <(awk '/^## 0\.22\.0/{flag=1;next}/^## /{flag=0}flag' CHANGELOG.md)
