@@ -1,0 +1,36 @@
+name: v022 branch maintenance
+
+on:
+  push:
+    branches:
+      - release/v0.22.0-visual-fidelity
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply v0.22 service patch
+        run: python tools/_v022_apply_service_patch.py
+      - name: Commit generated branch maintenance changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No maintenance changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add executors/production_studio_service.py executors/asset_production_orchestrator.py
+          git commit -m "v0.22: wire fidelity runtime into Production Studio"
+          git push
