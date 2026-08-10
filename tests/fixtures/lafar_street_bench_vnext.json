@@ -1,0 +1,142 @@
+{
+  "asset_id": "ASSET-005",
+  "name": "Lafar Street Bench 3470",
+  "revision": 1,
+  "stage": "RECONSTRUCTION_MANIFEST",
+  "design_system_ids": ["LAFAR", "ASTERA_CIVIC"],
+  "global_dimensions_mm": {
+    "width": 2000,
+    "depth": 550,
+    "height": 820,
+    "seat_height": 460
+  },
+  "components": {
+    "BENCH": {
+      "parent": null,
+      "state": "CONSTRAINED",
+      "shape_class": "ASSEMBLY",
+      "dimensions": {
+        "width": {"value": 2000, "unit": "mm", "locked": true},
+        "depth": {"value": 550, "unit": "mm", "locked": true},
+        "height": {"value": 820, "unit": "mm", "locked": true},
+        "seat_height": {"value": 460, "unit": "mm", "locked": true}
+      },
+      "anchors": {}
+    },
+    "LEFT_SUPPORT": {
+      "parent": "BENCH",
+      "state": "CONSTRAINED",
+      "shape_class": "ROUNDED_HARD_SURFACE_SUPPORT",
+      "dimensions": {
+        "width": {"value": 210, "unit": "mm", "locked": true},
+        "depth": {"expr": "BENCH.depth - 15", "unit": "mm"},
+        "height": {"expr": "BENCH.seat_height", "unit": "mm"}
+      },
+      "origin": {"type": "CENTER_BOTTOM"},
+      "anchors": {
+        "SEAT_MOUNT": {"x": 105, "y": 0, "z": 400},
+        "BACKREST_MOUNT": {"x": 105, "y": 170, "z": 455}
+      },
+      "binding_ids": ["structural_material", "trim_profile", "underglow_led"],
+      "validation": {"required_views": ["FRONT", "SIDE", "TOP", "REAR"]}
+    },
+    "RIGHT_SUPPORT": {
+      "parent": "BENCH",
+      "state": "CONSTRAINED",
+      "shape_class": "ROUNDED_HARD_SURFACE_SUPPORT",
+      "dimensions": {
+        "width": {"expr": "LEFT_SUPPORT.width", "unit": "mm"},
+        "depth": {"expr": "LEFT_SUPPORT.depth", "unit": "mm"},
+        "height": {"expr": "LEFT_SUPPORT.height", "unit": "mm"}
+      },
+      "origin": {"type": "CENTER_BOTTOM"},
+      "anchors": {
+        "SEAT_MOUNT": {"x": -105, "y": 0, "z": 400},
+        "BACKREST_MOUNT": {"x": -105, "y": 170, "z": 455},
+        "UTILITY_PANEL": {"x": 0, "y": -260, "z": 260}
+      },
+      "binding_ids": ["structural_material", "trim_profile", "underglow_led", "utility_panel"],
+      "validation": {"required_views": ["FRONT", "SIDE", "TOP", "REAR"]}
+    },
+    "SEAT": {
+      "parent": "BENCH",
+      "state": "CONSTRAINED",
+      "shape_class": "ROUNDED_BOX",
+      "dimensions": {
+        "width": {"expr": "BENCH.width - LEFT_SUPPORT.width - RIGHT_SUPPORT.width", "unit": "mm", "locked": true},
+        "depth": {"value": 420, "unit": "mm", "locked": true},
+        "thickness": {"value": 82, "unit": "mm"}
+      },
+      "origin": {"type": "CENTER_BOTTOM"},
+      "anchors": {
+        "LEFT_MOUNT": {"x": -790, "y": 0, "z": 0},
+        "RIGHT_MOUNT": {"x": 790, "y": 0, "z": 0}
+      },
+      "binding_ids": ["structural_material", "edge_profile"],
+      "construction_recipe": "ROUNDED_BOX+BEVEL",
+      "validation": {"required_views": ["FRONT", "SIDE", "TOP"]}
+    },
+    "BACKREST": {
+      "parent": "BENCH",
+      "state": "CONSTRAINED",
+      "shape_class": "PROFILE_PRISM",
+      "dimensions": {
+        "width": {"expr": "SEAT.width", "unit": "mm", "locked": true},
+        "height": {"value": 390, "unit": "mm", "locked": true},
+        "thickness": {"value": 72, "unit": "mm"},
+        "angle": {"value": 13, "unit": "deg", "locked": true},
+        "info_strip_width": {"expr": "BACKREST.width - 80", "unit": "mm"}
+      },
+      "origin": {"type": "CENTER_BOTTOM"},
+      "anchors": {
+        "LEFT_MOUNT": {"x": -790, "y": 0, "z": 0},
+        "RIGHT_MOUNT": {"x": 790, "y": 0, "z": 0},
+        "INFO_STRIP_START": {"x": -750, "y": 0, "z": 355},
+        "INFO_STRIP_END": {"x": 750, "y": 0, "z": 355}
+      },
+      "binding_ids": ["structural_material", "trim_profile", "info_strip_led"],
+      "construction_recipe": "PROFILE_PRISM+BEVEL+RECESSED_STRIP",
+      "validation": {"required_views": ["FRONT", "SIDE", "REAR"]}
+    }
+  },
+  "assembly_relations": [
+    {
+      "id": "SEAT_LEFT",
+      "type": "COINCIDENT",
+      "a": "SEAT.LEFT_MOUNT",
+      "b": "LEFT_SUPPORT.SEAT_MOUNT",
+      "tolerance_mm": 0.5
+    },
+    {
+      "id": "SEAT_RIGHT",
+      "type": "COINCIDENT",
+      "a": "SEAT.RIGHT_MOUNT",
+      "b": "RIGHT_SUPPORT.SEAT_MOUNT",
+      "tolerance_mm": 0.5
+    },
+    {
+      "id": "BACKREST_LEFT",
+      "type": "COINCIDENT",
+      "a": "BACKREST.LEFT_MOUNT",
+      "b": "LEFT_SUPPORT.BACKREST_MOUNT",
+      "tolerance_mm": 0.5
+    },
+    {
+      "id": "BACKREST_RIGHT",
+      "type": "COINCIDENT",
+      "a": "BACKREST.RIGHT_MOUNT",
+      "b": "RIGHT_SUPPORT.BACKREST_MOUNT",
+      "tolerance_mm": 0.5
+    }
+  ],
+  "bindings": {
+    "structural_material": {"resource_id": "ASTERA_GRAPHITE_01", "mode": "INHERITED"},
+    "trim_profile": {"resource_id": "ASTERA_TRIM_PROFILE_01", "mode": "INHERITED"},
+    "edge_profile": {"resource_id": "ASTERA_EDGE_PROFILE_02", "mode": "INHERITED"},
+    "underglow_led": {"resource_id": "ASTERA_LED_UNDERGLOW_01", "mode": "INHERITED"},
+    "info_strip_led": {"resource_id": "ASTERA_LED_INFO_BLUE_01", "mode": "INHERITED"},
+    "utility_panel": {"resource_id": "ASTERA_UTILITY_PANEL_01", "mode": "INHERITED"}
+  },
+  "corrections": [],
+  "history": []
+}
