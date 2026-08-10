@@ -5,6 +5,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any, Mapping
 
+EXECUTOR_ID = "PROVIDER_STATE_PROTOCOL"
 EXECUTOR_VERSION = "0.18.0"
 
 
@@ -15,12 +16,6 @@ class SourceKind(str, Enum):
     UTILITY = "UTILITY"
     BUILTIN_BACKEND = "BUILTIN_BACKEND"
     UNKNOWN = "UNKNOWN"
-
-
-class DiscoveryState(str, Enum):
-    DISCOVERED = "DISCOVERED"
-    NOT_DISCOVERED = "NOT_DISCOVERED"
-    DISCOVERY_MISMATCH = "DISCOVERY_MISMATCH"
 
 
 class ProbeState(str, Enum):
@@ -53,6 +48,12 @@ class SelectionState(str, Enum):
     BLOCKED = "BLOCKED"
 
 
+class DiscoveryState(str, Enum):
+    DISCOVERED = "DISCOVERED"
+    NOT_DISCOVERED = "NOT_DISCOVERED"
+    DISCOVERY_MISMATCH = "DISCOVERY_MISMATCH"
+
+
 SOURCE_KINDS = {item.value for item in SourceKind}
 PROBE_STATES = {item.value for item in ProbeState}
 DISCOVERY_STATES = {item.value for item in DiscoveryState}
@@ -76,12 +77,12 @@ def normalize_provider_record(record: Mapping[str, Any]) -> dict[str, Any]:
         DiscoveryState,
         DiscoveryState.NOT_DISCOVERED,
     )
-    out["probe_state"] = _enum_value(
-        out.get("probe_state") or out.get("runtime_probe_status"),
-        ProbeState,
-        ProbeState.PROBE_REQUIRED,
-    )
+    out["probe_state"] = _enum_value(out.get("probe_state") or out.get("runtime_probe_status"), ProbeState, ProbeState.PROBE_REQUIRED)
     out["runtime_probe_status"] = out["probe_state"]
+    out["domain_state"] = _enum_value(out.get("domain_state"), DomainState, DomainState.UNKNOWN)
+    out["quality_state"] = _enum_value(out.get("quality_state"), QualityState, QualityState.UNRATED)
+    if out.get("selection_state") is not None:
+        out["selection_state"] = _enum_value(out.get("selection_state"), SelectionState, SelectionState.BLOCKED)
     out["domains"] = sorted({str(x).strip().upper() for x in out.get("domains", []) or [] if str(x).strip()})
     out["enabled"] = bool(out.get("enabled", False))
     out["discovered"] = out["discovery_state"] == DiscoveryState.DISCOVERED.value
@@ -89,14 +90,20 @@ def normalize_provider_record(record: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_provider_record(record: Mapping[str, Any]) -> list[dict[str, Any]]:
-    item = normalize_provider_record(record)
+    raw = dict(record)
+    item = normalize_provider_record(raw)
     errors: list[dict[str, Any]] = []
     if not item["provider_id"]:
         errors.append({"reason": "PROVIDER_ID_REQUIRED"})
-    if item["source_kind"] not in SOURCE_KINDS:
-        errors.append({"reason": "INVALID_SOURCE_KIND", "value": item["source_kind"]})
-    if item["probe_state"] not in PROBE_STATES:
-        errors.append({"reason": "INVALID_PROBE_STATE", "value": item["probe_state"]})
-    if item["discovery_state"] not in DISCOVERY_STATES:
-        errors.append({"reason": "INVALID_DISCOVERY_STATE", "value": item["discovery_state"]})
+    checks = [
+        ("source_kind", raw.get("source_kind"), SOURCE_KINDS, "INVALID_SOURCE_KIND"),
+        ("probe_state", raw.get("probe_state") or raw.get("runtime_probe_status"), PROBE_STATES, "INVALID_PROBE_STATE"),
+        ("discovery_state", raw.get("discovery_state"), DISCOVERY_STATES, "INVALID_DISCOVERY_STATE"),
+        ("domain_state", raw.get("domain_state"), DOMAIN_STATES, "INVALID_DOMAIN_STATE"),
+        ("quality_state", raw.get("quality_state"), QUALITY_STATES, "INVALID_QUALITY_STATE"),
+        ("selection_state", raw.get("selection_state"), SELECTION_STATES, "INVALID_SELECTION_STATE"),
+    ]
+    for field, raw_value, allowed, reason in checks:
+        if raw_value is not None and str(raw_value) not in allowed:
+            errors.append({"reason": reason, "field": field, "value": raw_value})
     return errors
