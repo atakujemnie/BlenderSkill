@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET_VERSION = "0.21.0"
+TARGET_VERSION = "0.21.1"
 TARGET_BENCHMARK = "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md"
 
 
@@ -23,11 +23,12 @@ def main() -> None:
         errors.append("MANIFEST_SCHEMA_NOT_V2")
     if manifest.get("benchmark") != TARGET_BENCHMARK:
         errors.append("CANONICAL_BENCHMARK_MISMATCH")
-    if not re.search(r"\bv?0\.21\.0\b", readme):
+    version = re.escape(TARGET_VERSION)
+    if not re.search(rf"\bv?{version}\b", readme):
         errors.append("README_VERSION_MISSING")
-    if not re.search(r"(?:^|\n)#+\s*(?:\[)?0\.21\.0", changelog):
+    if not re.search(rf"(?:^|\n)#+\s*(?:\[)?{version}", changelog):
         errors.append("CHANGELOG_VERSION_MISSING")
-    if "0.21.0" not in system_prompt:
+    if TARGET_VERSION not in system_prompt:
         errors.append("SYSTEM_PROMPT_VERSION_MISSING")
     if runtime_index.get("library_version") != TARGET_VERSION:
         errors.append("RUNTIME_INDEX_VERSION_MISMATCH")

@@ -15,6 +15,7 @@ TESTS = [
     ROOT / "tests/blender/test_hard_surface_builder.py",
     ROOT / "tests/blender/test_scene_snapshot_adapter.py",
     ROOT / "tests/blender/test_v021_component_execution.py",
+    ROOT / "tests/blender/test_v0211_primitive_winding_and_boolean.py",
 ]
 
 

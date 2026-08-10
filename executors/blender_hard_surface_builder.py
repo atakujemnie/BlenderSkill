@@ -5,6 +5,12 @@ from __future__ import annotations
 All recipe values use millimetres at the contract boundary. v0.21 executes recipe
 geometry in canonical component coordinates and honors the declared component
 origin, so CENTER_BOTTOM / edge origins do not collapse into center-origin boxes.
+
+v0.21.1 makes surface orientation a builder guarantee rather than an authoring
+concern: every generated closed solid is normalized to outward-facing normals
+before it leaves the primitive constructors. Inward-facing winding made the EXACT
+boolean solver treat a cutter as its own complement, so `BOOLEAN_CUT` removed no
+material and silently degraded to a surface imprint.
 """
 
 from math import radians
@@ -13,7 +19,7 @@ from typing import Any, Mapping
 from executors.hard_surface_recipe import validate as validate_recipe
 
 EXECUTOR_ID = "BLENDER_HARD_SURFACE_BUILDER"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.21.1"
 MM = 0.001
 
 
@@ -21,6 +27,42 @@ def _bpy():
     import bpy
 
     return bpy
+
+
+def _bmesh():
+    import bmesh
+
+    return bmesh
+
+
+def _orient_outward(mesh) -> None:
+    """Force outward-facing normals on a generated solid.
+
+    Deterministic and independent of the vertex order used to construct the mesh:
+    faces are made consistent by `recalc_face_normals`, then the whole shell is
+    reversed when the signed volume proves the consistent orientation points
+    inward. Vertex positions, indices and object transforms are untouched, so
+    dimensions and placement are unaffected.
+    """
+    bmesh = _bmesh()
+    bm = bmesh.new()
+    try:
+        bm.from_mesh(mesh)
+        if bm.faces:
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            if bm.calc_volume(signed=True) < 0.0:
+                bmesh.ops.reverse_faces(bm, faces=bm.faces)
+        bm.to_mesh(mesh)
+    finally:
+        bm.free()
+    mesh.update()
+
+
+def _finalize_mesh(mesh, origin_type: str):
+    """Apply origin semantics and guarantee outward orientation."""
+    _shift_mesh_for_origin(mesh, origin_type)
+    _orient_outward(mesh)
+    return mesh
 
 
 def _vec3(raw: Any, *, default=(0.0, 0.0, 0.0)) -> tuple[float, float, float]:
@@ -118,8 +160,7 @@ def _box_mesh(name: str, dimensions_mm: Mapping[str, Any], *, origin_type: str =
     mesh = bpy.data.meshes.new(f"{name}_MESH")
     mesh.from_pydata(verts, [], faces)
     mesh.update()
-    _shift_mesh_for_origin(mesh, origin_type)
-    return mesh
+    return _finalize_mesh(mesh, origin_type)
 
 
 def _wedge_mesh(name: str, dimensions_mm: Mapping[str, Any], top_offset_mm: float = 0.0, *, origin_type: str = "CENTER"):
@@ -142,8 +183,7 @@ def _wedge_mesh(name: str, dimensions_mm: Mapping[str, Any], top_offset_mm: floa
     mesh = bpy.data.meshes.new(f"{name}_MESH")
     mesh.from_pydata(verts, [], faces)
     mesh.update()
-    _shift_mesh_for_origin(mesh, origin_type)
-    return mesh
+    return _finalize_mesh(mesh, origin_type)
 
 
 def _profile_prism_mesh(name: str, profile: Any, length_mm: float, axis: str = "X", *, origin_type: str = "CENTER"):
@@ -179,8 +219,7 @@ def _profile_prism_mesh(name: str, profile: Any, length_mm: float, axis: str = "
     mesh = bpy.data.meshes.new(f"{name}_MESH")
     mesh.from_pydata(verts, [], faces)
     mesh.update()
-    _shift_mesh_for_origin(mesh, origin_type)
-    return mesh
+    return _finalize_mesh(mesh, origin_type)
 
 
 def _create_object(collection, component_id: str, output_id: str, mesh, raw: Mapping[str, Any], transform: Mapping[str, Any]):
