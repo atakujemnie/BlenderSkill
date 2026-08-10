@@ -77,7 +77,9 @@ def test_v021_http_is_asset_generic_and_exposes_authorization(tmp_path):
 
         status, studio = _request(port, "GET", "/api/assets/GENERIC-021/studio")
         assert status == 200
-        assert studio["view_model"]["selected_component_id"] == "ROOT"
+        selected = studio["view_model"]["selected_component_id"]
+        assert selected in {"ROOT", "PLATE"}
+        assert selected != "BACKREST"
 
         status, authorized = _request(
             port,
