@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Mapping
 
+from executors.feature_contract_gate import EXECUTOR_VERSION as FEATURE_VERSION
+from executors.feature_contract_gate import validate as validate_feature_contract
 from executors.representation_contract_gate import EXECUTOR_VERSION as REPRESENTATION_VERSION
 from executors.representation_contract_gate import validate as validate_representation
 from executors.scene_component_validation import EXECUTOR_VERSION as SCENE_VALIDATION_VERSION
@@ -14,7 +16,7 @@ from executors.validation_receipt_repository import publish as publish_receipt
 from executors.validation_receipt_repository import query as query_receipts
 
 EXECUTOR_ID = "COMPONENT_VALIDATION_RUNNER"
-EXECUTOR_VERSION = "0.21.0"
+EXECUTOR_VERSION = "0.22.0"
 
 
 def _receipt_id(validator_id: str, task_pack: Mapping[str, Any], snapshot: Mapping[str, Any]) -> str:
@@ -28,6 +30,20 @@ def _receipt_id(validator_id: str, task_pack: Mapping[str, Any], snapshot: Mappi
             f"s{int(snapshot.get('scene_revision') or 0)}",
         )
     )
+
+
+def _receipt_evidence(verdict: Mapping[str, Any]) -> dict[str, Any]:
+    keys = (
+        "must_feature_count",
+        "must_feature_passed",
+        "must_feature_coverage",
+        "feature_results",
+        "object_count",
+        "operation_types",
+        "feature_ids",
+        "warnings",
+    )
+    return {key: verdict.get(key) for key in keys if verdict.get(key) is not None}
 
 
 def _publish_or_reuse(
@@ -65,6 +81,7 @@ def _publish_or_reuse(
         "status": str(verdict.get("status") or "FAIL").upper(),
         "source": "SYSTEM",
         "snapshot_hash": snapshot.get("snapshot_hash"),
+        "evidence": _receipt_evidence(verdict),
         "blockers": [dict(item) for item in list(verdict.get("blockers", []) or []) if isinstance(item, Mapping)],
     }
     published = publish_receipt(
@@ -84,29 +101,22 @@ def validate_and_publish(
 ) -> dict[str, Any]:
     representation = validate_representation(task_pack, recipe)
     scene = validate_scene_component(task_pack, snapshot)
+    feature = validate_feature_contract(task_pack, recipe, snapshot)
 
-    representation_receipt = _publish_or_reuse(
-        root,
-        task_pack,
-        snapshot,
-        representation,
-        validator_version=REPRESENTATION_VERSION,
+    validations = (
+        (representation, REPRESENTATION_VERSION),
+        (scene, SCENE_VALIDATION_VERSION),
+        (feature, FEATURE_VERSION),
     )
-    scene_receipt = _publish_or_reuse(
-        root,
-        task_pack,
-        snapshot,
-        scene,
-        validator_version=SCENE_VALIDATION_VERSION,
-    )
-    persistence_failures = [
-        result
-        for result in (representation_receipt, scene_receipt)
-        if str(result.get("status") or "").upper() != "PASS"
+    persisted = [
+        _publish_or_reuse(root, task_pack, snapshot, verdict, validator_version=version)
+        for verdict, version in validations
     ]
+    persistence_failures = [result for result in persisted if str(result.get("status") or "").upper() != "PASS"]
     validation_blockers = [
         *list(representation.get("blockers", []) or []),
         *list(scene.get("blockers", []) or []),
+        *list(feature.get("blockers", []) or []),
     ]
     status = "PASS" if not persistence_failures and not validation_blockers else "FAIL"
     return {
@@ -119,10 +129,11 @@ def validate_and_publish(
         "validators": {
             "REPRESENTATION_CONTRACT_GATE": representation,
             "SCENE_COMPONENT_VALIDATION": scene,
+            "FEATURE_CONTRACT_GATE": feature,
         },
         "receipts": [
             result.get("receipt")
-            for result in (representation_receipt, scene_receipt)
+            for result in persisted
             if isinstance(result.get("receipt"), Mapping)
         ],
         "blockers": [
