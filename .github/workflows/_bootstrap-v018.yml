@@ -1,108 +1,15 @@
-name: v0.18 Metadata Bootstrap
+name: Retired v0.18 Metadata Bootstrap
 
 on:
-  push:
-    branches:
-      - feat/v0.18-runtime-verification-completion
-    paths:
-      - '.github/workflows/_bootstrap-v018.yml'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  bootstrap:
+  retired:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: feat/v0.18-runtime-verification-completion
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Generate final v0.18 metadata and committed artifacts
-        shell: bash
+      - name: Retired workflow
         run: |
-          set -euo pipefail
-          PYTHONPATH=. python tools/_bootstrap_v018.py
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path('MANIFEST.json')
-          manifest = json.loads(path.read_text(encoding='utf-8'))
-          manifest['provider_discovery_version'] = '0.18.0'
-          manifest['runtime_verification_version'] = '0.18.0'
-          benchmark = '07_examples/87_LAFAR_RUNTIME_CAPABILITY_PROBE_V018_REGRESSION_BENCHMARK.md'
-
-          additions = [
-              {
-                  'id': 'PROVIDER_CAPABILITY_PROBE_MATRIX',
-                  'purpose': 'Executable capability-probe matrix facade over provider-specific adapters.',
-                  'contract': '12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md',
-                  'executor': 'executors/provider_capability_probe_matrix.py',
-                  'maturity': 'EXECUTOR_READY',
-                  'dependencies': ['PROVIDER_CAPABILITY_PROBE'],
-                  'benchmark': benchmark,
-                  'routing_keywords': ['capability', 'matrix', 'probe', 'provider', 'runtime'],
-              },
-              {
-                  'id': 'VEGETATION_PROVIDER_ROUTE',
-                  'purpose': 'Executable vegetation-domain provider routing with custom-fallback enforcement.',
-                  'contract': '12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md',
-                  'executor': 'executors/vegetation_provider_route.py',
-                  'maturity': 'EXECUTOR_READY',
-                  'dependencies': ['PROVIDER_DECISION_PIPELINE'],
-                  'benchmark': benchmark,
-                  'routing_keywords': ['grass', 'plant', 'provider', 'vegetation'],
-              },
-          ]
-          executor_additions = [
-              {
-                  'id': 'PROVIDER_CAPABILITY_PROBE_MATRIX',
-                  'contract': '12_procedural_generation/233_PROVIDER_CAPABILITY_PROBE_MATRIX.md',
-                  'executor': 'executors/provider_capability_probe_matrix.py',
-                  'maturity': 'EXECUTOR_READY',
-                  'tests': ['tests/unit/test_provider_capability_matrix.py'],
-              },
-              {
-                  'id': 'VEGETATION_PROVIDER_ROUTE',
-                  'contract': '12_procedural_generation/236_VEGETATION_PROVIDER_ROUTING.md',
-                  'executor': 'executors/vegetation_provider_route.py',
-                  'maturity': 'EXECUTOR_READY',
-                  'tests': ['tests/unit/test_vegetation_provider_route.py', 'tests/regression/test_benchmark_87.py'],
-              },
-          ]
-          skill_ids = {item['id'] for item in manifest.get('skills', [])}
-          for item in additions:
-              if item['id'] not in skill_ids:
-                  manifest.setdefault('skills', []).append(item)
-          executor_ids = {item['id'] for item in manifest.get('executors', [])}
-          for item in executor_additions:
-              if item['id'] not in executor_ids:
-                  manifest.setdefault('executors', []).append(item)
-          for test in [
-              'tests/unit/test_provider_capability_matrix.py',
-              'tests/unit/test_vegetation_provider_route.py',
-              'tests/regression/test_benchmark_87.py',
-          ]:
-              if test not in manifest.setdefault('tests', []):
-                  manifest['tests'].append(test)
-          manifest['tests'] = sorted(manifest['tests'])
-          path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-          PY
-          PYTHONPATH=. python tools/build_full_library.py
-          PYTHONPATH=. python tools/build_runtime_index.py
-          PYTHONPATH=. python tools/validate_registry_parity.py
-          PYTHONPATH=. python tools/validate_release_metadata.py
-      - name: Commit final v0.18 metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add MANIFEST.json README.md CHANGELOG.md _FULL_LIBRARY.md _RUNTIME_INDEX.json
-          git diff --cached --quiet && exit 0
-          git commit -m 'Finalize BlenderSkill v0.18.0 runtime registry'
-          git push origin HEAD:feat/v0.18-runtime-verification-completion
+          echo 'This one-off bootstrap is retired. v0.18 metadata is maintained explicitly in normal feature PRs.'
