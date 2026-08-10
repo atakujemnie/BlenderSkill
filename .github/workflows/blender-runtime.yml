@@ -1,0 +1,67 @@
+name: Blender Runtime
+
+on:
+  pull_request:
+    paths:
+      - 'executors/**'
+      - 'data/provider_registry.json'
+      - 'tests/blender/**'
+      - '12_procedural_generation/**'
+      - '00_governance/**'
+      - 'MANIFEST.json'
+      - '.github/workflows/blender-runtime.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'executors/**'
+      - 'data/provider_registry.json'
+      - 'tests/blender/**'
+      - '12_procedural_generation/**'
+      - '00_governance/**'
+      - 'MANIFEST.json'
+      - '.github/workflows/blender-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  blender-runtime:
+    runs-on: ubuntu-latest
+    env:
+      BLENDER_VERSION: '5.1.0'
+      BLENDER_ARCHIVE: 'blender-5.1.0-linux-x64.tar.xz'
+      BLENDER_SHA_FILE: 'blender-5.1.0.sha256'
+      BLENDER_BASE_URL: 'https://download.blender.org/release/Blender5.1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download pinned Blender
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSLO "$BLENDER_BASE_URL/$BLENDER_ARCHIVE"
+          curl -fsSLO "$BLENDER_BASE_URL/$BLENDER_SHA_FILE"
+          grep " $BLENDER_ARCHIVE$" "$BLENDER_SHA_FILE" | sha256sum -c -
+          tar -xf "$BLENDER_ARCHIVE"
+          echo "$GITHUB_WORKSPACE/blender-$BLENDER_VERSION-linux-x64" >> "$GITHUB_PATH"
+
+      - name: Verify Blender version
+        run: blender --version
+
+      - name: Run real Blender runtime suite
+        shell: bash
+        run: |
+          set -o pipefail
+          blender --background --factory-startup --disable-autoexec --python tests/blender/run_suite.py 2>&1 | tee blender-runtime.log
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blender-runtime-diagnostics
+          path: blender-runtime.log
+          if-no-files-found: ignore
+          retention-days: 7
