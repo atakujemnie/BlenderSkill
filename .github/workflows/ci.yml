@@ -7,7 +7,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -17,11 +17,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Materialize v0.20 release state
+        if: github.event_name == 'pull_request' && github.head_ref == 'release/v0.20.0-operational-production-studio'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/promote_v020_release.py
+          python tools/build_full_library.py
+          python tools/build_runtime_index.py
+          python tools/validate_release_metadata.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m 'Promote BlenderSkill v0.20.0 release state'
+            git push origin HEAD:${{ github.head_ref }}
+          fi
 
       - name: Install dev dependencies
         run: python -m pip install 'pytest>=8.3,<9' 'ruff>=0.12,<1'
@@ -47,7 +65,7 @@ jobs:
       - name: Pytest integration
         run: pytest tests/integration
 
-      - name: Benchmark 87 regression
+      - name: Benchmark regression
         run: pytest tests/regression
 
       - name: Legacy regressions v0.9-v0.17
@@ -66,7 +84,7 @@ jobs:
           python tools/test_v016_location_design_system.py
           python tools/test_v017_provider_discovery.py
 
-      - name: v0.18 registry parity
+      - name: Registry parity
         run: python tools/validate_registry_parity.py
 
       - name: Validate and build full library
