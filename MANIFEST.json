@@ -1107,6 +1107,52 @@
         "tests/unit/test_asset_execution_authorization_gate.py",
         "tests/regression/test_benchmark_91.py"
       ]
+    },
+    {
+      "id": "SCENE_COMPONENT_VALIDATION",
+      "purpose": "Validate one component against current revision-bound compact scene evidence.",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/scene_component_validation.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "SCENE_COMPONENT_SNAPSHOT",
+        "COMPONENT_TASK_PACK"
+      ],
+      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "scene",
+        "component",
+        "validation",
+        "placement",
+        "dimensions"
+      ],
+      "tests": [
+        "tests/unit/test_scene_component_validation.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
+    },
+    {
+      "id": "COMPONENT_VALIDATION_RUNNER",
+      "purpose": "Run trusted deterministic component validators and persist their revision-bound receipts.",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/component_validation_runner.py",
+      "maturity": "EXECUTOR_READY",
+      "dependencies": [
+        "SCENE_COMPONENT_VALIDATION",
+        "REPRESENTATION_CONTRACT_GATE",
+        "VALIDATION_RECEIPT_REPOSITORY"
+      ],
+      "benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "trusted",
+        "validation",
+        "receipt",
+        "approval"
+      ],
+      "tests": [
+        "tests/unit/test_component_validation_runner.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
     }
   ],
   "executors": [
@@ -1497,6 +1543,26 @@
         "tests/unit/test_asset_execution_authorization_gate.py",
         "tests/regression/test_benchmark_91.py"
       ]
+    },
+    {
+      "id": "SCENE_COMPONENT_VALIDATION",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/scene_component_validation.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_scene_component_validation.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
+    },
+    {
+      "id": "COMPONENT_VALIDATION_RUNNER",
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "executor": "executors/component_validation_runner.py",
+      "maturity": "EXECUTOR_READY",
+      "tests": [
+        "tests/unit/test_component_validation_runner.py",
+        "tests/regression/test_benchmark_91.py"
+      ]
     }
   ],
   "tests": [
@@ -1551,7 +1617,9 @@
     "tests/unit/test_representation_contract_gate.py",
     "tests/unit/test_v021_trusted_task_approval.py",
     "tests/unit/test_validation_receipt_repository.py",
-    "tests/unit/test_asset_execution_authorization_gate.py"
+    "tests/unit/test_asset_execution_authorization_gate.py",
+    "tests/unit/test_scene_component_validation.py",
+    "tests/unit/test_component_validation_runner.py"
   ],
   "generated_artifacts": [
     {

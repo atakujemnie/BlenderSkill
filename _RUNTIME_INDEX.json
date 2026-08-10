@@ -262,6 +262,25 @@
       "skill_id": "COMPONENT_TRANSFORM"
     },
     {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "REPRESENTATION_CONTRACT_GATE",
+        "SCENE_COMPONENT_VALIDATION",
+        "VALIDATION_RECEIPT_REPOSITORY"
+      ],
+      "executor": "executors/component_validation_runner.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Run trusted deterministic component validators and persist their revision-bound receipts.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "approval",
+        "receipt",
+        "trusted",
+        "validation"
+      ],
+      "skill_id": "COMPONENT_VALIDATION_RUNNER"
+    },
+    {
       "contract": "15_asset_production/500_ASSET_PRODUCTION_RUNTIME.md",
       "dependencies": [
         "ASSET_STATE_RUNTIME"
@@ -638,6 +657,25 @@
         "snapshot"
       ],
       "skill_id": "SCENE_COMPONENT_SNAPSHOT"
+    },
+    {
+      "contract": "15_asset_production/503_FIDELITY_ENFORCEMENT_AND_DETERMINISTIC_ASSEMBLY.md",
+      "dependencies": [
+        "COMPONENT_TASK_PACK",
+        "SCENE_COMPONENT_SNAPSHOT"
+      ],
+      "executor": "executors/scene_component_validation.py",
+      "maturity": "EXECUTOR_READY",
+      "purpose": "Validate one component against current revision-bound compact scene evidence.",
+      "relevant_benchmark": "07_examples/91_LAFAR_SIDEWALK_FIDELITY_ENFORCEMENT_V021_REGRESSION_BENCHMARK.md",
+      "routing_keywords": [
+        "component",
+        "dimensions",
+        "placement",
+        "scene",
+        "validation"
+      ],
+      "skill_id": "SCENE_COMPONENT_VALIDATION"
     },
     {
       "contract": "15_asset_production/502_OPERATIONAL_PRODUCTION_STUDIO_API.md",
