@@ -2,8 +2,8 @@ from __future__ import annotations
 
 """Local HTTP adapter for the BlenderSkill Asset Production Studio.
 
-The server binds to 127.0.0.1 by default and exposes only explicit JSON API
-routes plus the Studio HTML shell. Persistent state is owned by executors.
+The server binds to loopback by default and exposes only explicit JSON API
+routes plus the Studio HTML shell. Persistent state remains owned by executors.
 """
 
 import argparse
@@ -15,6 +15,11 @@ from pathlib import Path
 from typing import Any, Mapping
 from urllib.parse import parse_qs, unquote, urlsplit
 
+from executors.design_studio_service import get_resource
+from executors.design_studio_service import list_design_systems
+from executors.design_studio_service import list_resources as list_design_resources
+from executors.design_studio_service import resource_impact
+from executors.design_studio_service import upsert_resource
 from executors.production_studio_service import (
     add_asset_correction,
     advance_asset_stage,
@@ -65,6 +70,32 @@ def make_handler(data_root: str | Path):
         server_version = f"BlenderSkillStudio/{SERVER_VERSION}"
 
         def do_GET(self) -> None:  # noqa: N802
+            self._guard(self._dispatch_get)
+
+        def do_POST(self) -> None:  # noqa: N802
+            self._guard(self._dispatch_post)
+
+        def do_DELETE(self) -> None:  # noqa: N802
+            self._guard(self._dispatch_delete)
+
+        def _guard(self, callback) -> None:
+            try:
+                callback()
+            except ValueError as exc:
+                self._json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"status": "FAIL", "blockers": [{"reason": str(exc)}]},
+                )
+            except (BrokenPipeError, ConnectionResetError):
+                return
+            except Exception as exc:  # pragma: no cover - defensive adapter boundary
+                self.log_error("Unhandled Studio API error: %r", exc)
+                self._json(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    {"status": "FAIL", "blockers": [{"reason": "INTERNAL_SERVER_ERROR"}]},
+                )
+
+        def _dispatch_get(self) -> None:
             parsed = urlsplit(self.path)
             path = parsed.path.rstrip("/") or "/"
             if path in {"/", "/studio", "/index.html"}:
@@ -84,30 +115,57 @@ def make_handler(data_root: str | Path):
             if path == "/api/assets":
                 self._result(list_assets(runtime_root))
                 return
+            if path == "/api/design-systems":
+                self._result(list_design_systems(runtime_root))
+                return
+            if path == "/api/design-resources":
+                query = parse_qs(parsed.query)
+                design_system_id = query.get("design_system_id", [None])[0]
+                self._result(list_design_resources(runtime_root, design_system_id=design_system_id))
+                return
+
             parts = self._parts(path)
             if len(parts) == 4 and parts[:2] == ["api", "assets"] and parts[3] == "studio":
-                asset_id = parts[2]
                 query = parse_qs(parsed.query)
                 component = query.get("component", [None])[0]
-                self._result(get_studio(runtime_root, asset_id, component_id=component))
+                self._result(get_studio(runtime_root, parts[2], component_id=component))
+                return
+            if len(parts) == 5 and parts[:2] == ["api", "design-systems"] and parts[3] == "resources":
+                self._result(get_resource(runtime_root, parts[2], parts[4]))
+                return
+            if (
+                len(parts) == 6
+                and parts[:2] == ["api", "design-systems"]
+                and parts[3] == "resources"
+                and parts[5] == "impact"
+            ):
+                self._result(resource_impact(runtime_root, parts[2], parts[4]))
                 return
             self._not_found()
 
-        def do_POST(self) -> None:  # noqa: N802
+        def _dispatch_post(self) -> None:
             parsed = urlsplit(self.path)
             path = parsed.path.rstrip("/") or "/"
-            try:
-                body = self._read_json()
-            except ValueError as exc:
-                self._json(HTTPStatus.BAD_REQUEST, {"status": "FAIL", "blockers": [{"reason": str(exc)}]})
-                return
+            body = self._read_json()
 
             if path == "/api/assets":
                 asset = body.get("asset", body)
                 if not isinstance(asset, Mapping):
-                    self._json(HTTPStatus.BAD_REQUEST, {"status": "FAIL", "blockers": [{"reason": "ASSET_MAPPING_REQUIRED"}]})
-                    return
+                    raise ValueError("ASSET_MAPPING_REQUIRED")
                 self._result(create_asset(runtime_root, asset), created=True)
+                return
+            if path == "/api/design-resources":
+                resource = body.get("resource")
+                if not isinstance(resource, Mapping):
+                    raise ValueError("DESIGN_RESOURCE_MAPPING_REQUIRED")
+                self._result(
+                    upsert_resource(
+                        runtime_root,
+                        resource,
+                        expected_revision=self._required_int(body, "expected_revision"),
+                    ),
+                    created=self._required_int(body, "expected_revision") == 0,
+                )
                 return
 
             parts = self._parts(path)
@@ -119,8 +177,7 @@ def make_handler(data_root: str | Path):
             if len(parts) == 4 and parts[3] == "corrections":
                 correction = body.get("correction")
                 if not isinstance(correction, Mapping):
-                    self._bad_request("CORRECTION_MAPPING_REQUIRED")
-                    return
+                    raise ValueError("CORRECTION_MAPPING_REQUIRED")
                 self._result(
                     add_asset_correction(
                         runtime_root,
@@ -131,12 +188,10 @@ def make_handler(data_root: str | Path):
                     created=True,
                 )
                 return
-
             if len(parts) == 6 and parts[3] == "corrections" and parts[5] == "resolve":
                 resolution = body.get("resolution")
                 if resolution is not None and not isinstance(resolution, Mapping):
-                    self._bad_request("RESOLUTION_MAPPING_REQUIRED")
-                    return
+                    raise ValueError("RESOLUTION_MAPPING_REQUIRED")
                 self._result(
                     resolve_asset_correction(
                         runtime_root,
@@ -147,7 +202,6 @@ def make_handler(data_root: str | Path):
                     )
                 )
                 return
-
             if len(parts) == 4 and parts[3] == "stage":
                 self._result(
                     advance_asset_stage(
@@ -158,12 +212,10 @@ def make_handler(data_root: str | Path):
                     )
                 )
                 return
-
             if len(parts) == 4 and parts[3] == "tasks":
                 task = body.get("task")
                 if not isinstance(task, Mapping):
-                    self._bad_request("TASK_MAPPING_REQUIRED")
-                    return
+                    raise ValueError("TASK_MAPPING_REQUIRED")
                 self._result(
                     create_production_task(
                         runtime_root,
@@ -174,7 +226,6 @@ def make_handler(data_root: str | Path):
                     created=True,
                 )
                 return
-
             if len(parts) == 5 and parts[3] == "tasks" and parts[4] == "promote":
                 self._result(
                     promote_production_tasks(
@@ -184,16 +235,13 @@ def make_handler(data_root: str | Path):
                     )
                 )
                 return
-
             if len(parts) == 6 and parts[3] == "tasks" and parts[5] == "transition":
                 blockers = body.get("blockers")
                 if blockers is not None and not isinstance(blockers, list):
-                    self._bad_request("BLOCKERS_LIST_REQUIRED")
-                    return
+                    raise ValueError("BLOCKERS_LIST_REQUIRED")
                 result = body.get("result")
                 if result is not None and not isinstance(result, Mapping):
-                    self._bad_request("TASK_RESULT_MAPPING_REQUIRED")
-                    return
+                    raise ValueError("TASK_RESULT_MAPPING_REQUIRED")
                 self._result(
                     transition_production_task(
                         runtime_root,
@@ -209,16 +257,13 @@ def make_handler(data_root: str | Path):
                     )
                 )
                 return
-
             if len(parts) == 4 and parts[3] == "scene":
                 report = body.get("scene", body)
                 if not isinstance(report, Mapping):
-                    self._bad_request("SCENE_MAPPING_REQUIRED")
-                    return
+                    raise ValueError("SCENE_MAPPING_REQUIRED")
                 component_ids = body.get("component_ids")
                 if component_ids is not None and not isinstance(component_ids, list):
-                    self._bad_request("COMPONENT_IDS_LIST_REQUIRED")
-                    return
+                    raise ValueError("COMPONENT_IDS_LIST_REQUIRED")
                 self._result(
                     publish_scene(
                         runtime_root,
@@ -229,12 +274,10 @@ def make_handler(data_root: str | Path):
                     created=True,
                 )
                 return
-
             if len(parts) == 4 and parts[3] == "evidence":
                 evidence = body.get("evidence")
                 if not isinstance(evidence, Mapping):
-                    self._bad_request("EVIDENCE_MAPPING_REQUIRED")
-                    return
+                    raise ValueError("EVIDENCE_MAPPING_REQUIRED")
                 self._result(
                     upsert_reference_evidence(
                         runtime_root,
@@ -244,13 +287,11 @@ def make_handler(data_root: str | Path):
                     )
                 )
                 return
-
             if len(parts) == 4 and parts[3] == "task-pack":
                 features = body.get("feature_ids", [])
                 views = body.get("views", [])
                 if not isinstance(features, list) or not isinstance(views, list):
-                    self._bad_request("FEATURE_IDS_AND_VIEWS_LIST_REQUIRED")
-                    return
+                    raise ValueError("FEATURE_IDS_AND_VIEWS_LIST_REQUIRED")
                 max_tokens = body.get("max_input_tokens")
                 self._result(
                     prepare_task(
@@ -264,17 +305,12 @@ def make_handler(data_root: str | Path):
                     )
                 )
                 return
-
             self._not_found()
 
-        def do_DELETE(self) -> None:  # noqa: N802
+        def _dispatch_delete(self) -> None:
             parsed = urlsplit(self.path)
             parts = self._parts(parsed.path.rstrip("/") or "/")
-            try:
-                body = self._read_json(allow_empty=True)
-            except ValueError as exc:
-                self._json(HTTPStatus.BAD_REQUEST, {"status": "FAIL", "blockers": [{"reason": str(exc)}]})
-                return
+            body = self._read_json(allow_empty=True)
             if len(parts) == 5 and parts[:2] == ["api", "assets"] and parts[3] == "evidence":
                 self._result(
                     delete_reference_evidence(
@@ -291,10 +327,7 @@ def make_handler(data_root: str | Path):
             print(f"[{self.log_date_time_string()}] {self.address_string()} {format % args}")
 
         def _parts(self, path: str) -> list[str]:
-            try:
-                return [_safe_segment(part) for part in path.split("/") if part]
-            except ValueError:
-                return []
+            return [_safe_segment(part) for part in path.split("/") if part]
 
         def _read_json(self, *, allow_empty: bool = False) -> dict[str, Any]:
             raw_length = self.headers.get("Content-Length")
@@ -338,6 +371,7 @@ def make_handler(data_root: str | Path):
             self.send_header("Content-Type", f"{mime}; charset=utf-8" if mime.startswith("text/") else mime)
             self.send_header("Content-Length", str(len(payload)))
             self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
             self.end_headers()
             self.wfile.write(payload)
 
@@ -354,11 +388,11 @@ def make_handler(data_root: str | Path):
             self.end_headers()
             self.wfile.write(data)
 
-        def _bad_request(self, reason: str) -> None:
-            self._json(HTTPStatus.BAD_REQUEST, {"status": "FAIL", "blockers": [{"reason": reason}]})
-
         def _not_found(self) -> None:
-            self._json(HTTPStatus.NOT_FOUND, {"status": "NOT_FOUND", "blockers": [{"reason": "ROUTE_NOT_FOUND"}]})
+            self._json(
+                HTTPStatus.NOT_FOUND,
+                {"status": "NOT_FOUND", "blockers": [{"reason": "ROUTE_NOT_FOUND"}]},
+            )
 
     return StudioHandler
 
