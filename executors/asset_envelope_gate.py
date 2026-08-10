@@ -51,6 +51,43 @@ def _extent(resolved: Mapping[str, Any], component_id: str) -> tuple[float | Non
     return width, depth, height
 
 
+def _origin_type(component: Mapping[str, Any]) -> str:
+    origin = component.get("origin")
+    if isinstance(origin, Mapping):
+        return str(origin.get("type") or "CENTER").upper()
+    return str(origin or "CENTER").upper()
+
+
+def _axis_bounds(location: float, size: float, origin_type: str, axis: str) -> tuple[float, float]:
+    half = size / 2.0
+    if axis == "X":
+        if "LEFT_EDGE" in origin_type:
+            return location, location + size
+        if "RIGHT_EDGE" in origin_type:
+            return location - size, location
+        return location - half, location + half
+    if axis == "Y":
+        # BlenderSkill asset convention: FRONT is -Y and front-edge geometry extends inward +Y.
+        if "FRONT_EDGE" in origin_type:
+            return location, location + size
+        if "REAR_EDGE" in origin_type:
+            return location - size, location
+        return location - half, location + half
+    if "BOTTOM" in origin_type:
+        return location, location + size
+    if "TOP" in origin_type:
+        return location - size, location
+    return location - half, location + half
+
+
+def _aabb(component: Mapping[str, Any], location: list[float], width: float, depth: float, height: float) -> dict[str, list[float]]:
+    origin_type = _origin_type(component)
+    xmin, xmax = _axis_bounds(location[0], width, origin_type, "X")
+    ymin, ymax = _axis_bounds(location[1], depth, origin_type, "Y")
+    zmin, zmax = _axis_bounds(location[2], height, origin_type, "Z")
+    return {"min": [xmin, ymin, zmin], "max": [xmax, ymax, zmax]}
+
+
 def validate(asset: Mapping[str, Any]) -> dict[str, Any]:
     components_raw = asset.get("components", {})
     if not isinstance(components_raw, Mapping):
@@ -84,6 +121,11 @@ def validate(asset: Mapping[str, Any]) -> dict[str, Any]:
             "blockers": [{"reason": "ROOT_ENVELOPE_DIMENSIONS_REQUIRED", "component_id": root_id}],
         }
 
+    root_transform = normalize_transform(root_component)
+    if root_transform["status"] != "PASS":
+        return {"status": "FAIL", "validator_id": EXECUTOR_ID, "blockers": root_transform["blockers"]}
+    root_aabb = _aabb(root_component, root_transform["transform"]["location_mm"], root_width, root_depth, root_height)
+
     blockers: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
     aabbs: dict[str, dict[str, list[float]]] = {}
@@ -99,19 +141,19 @@ def validate(asset: Mapping[str, Any]) -> dict[str, Any]:
         if width is None or depth is None or height is None:
             warnings.append({"reason": "COMPONENT_EXTENT_NOT_FULLY_RESOLVED", "component_id": component_id})
             continue
-        half = [width / 2.0, depth / 2.0, height / 2.0]
-        minimum = [location[0] - half[0], location[1] - half[1], location[2]]
-        maximum = [location[0] + half[0], location[1] + half[1], location[2] + height]
-        aabbs[component_id] = {"min": minimum, "max": maximum}
+        measured = _aabb(component, location, width, depth, height)
+        aabbs[component_id] = measured
         if component_id == root_id or bool(component.get("allow_outside_envelope", False)):
             continue
         tolerance = float(component.get("envelope_tolerance_mm", asset.get("envelope_tolerance_mm", 0.5)))
-        if minimum[0] < -root_width / 2.0 - tolerance or maximum[0] > root_width / 2.0 + tolerance:
-            blockers.append({"reason": "COMPONENT_OUTSIDE_ASSET_ENVELOPE_X", "component_id": component_id, "aabb": aabbs[component_id]})
-        if minimum[1] < -root_depth / 2.0 - tolerance or maximum[1] > root_depth / 2.0 + tolerance:
-            blockers.append({"reason": "COMPONENT_OUTSIDE_ASSET_ENVELOPE_Y", "component_id": component_id, "aabb": aabbs[component_id]})
-        if minimum[2] < -tolerance or maximum[2] > root_height + tolerance:
-            blockers.append({"reason": "COMPONENT_OUTSIDE_ASSET_ENVELOPE_Z", "component_id": component_id, "aabb": aabbs[component_id]})
+        minimum, maximum = measured["min"], measured["max"]
+        root_min, root_max = root_aabb["min"], root_aabb["max"]
+        if minimum[0] < root_min[0] - tolerance or maximum[0] > root_max[0] + tolerance:
+            blockers.append({"reason": "COMPONENT_OUTSIDE_ASSET_ENVELOPE_X", "component_id": component_id, "aabb": measured})
+        if minimum[1] < root_min[1] - tolerance or maximum[1] > root_max[1] + tolerance:
+            blockers.append({"reason": "COMPONENT_OUTSIDE_ASSET_ENVELOPE_Y", "component_id": component_id, "aabb": measured})
+        if minimum[2] < root_min[2] - tolerance or maximum[2] > root_max[2] + tolerance:
+            blockers.append({"reason": "COMPONENT_OUTSIDE_ASSET_ENVELOPE_Z", "component_id": component_id, "aabb": measured})
 
     for raw in list(asset.get("seam_constraints", []) or []):
         if not isinstance(raw, Mapping):
@@ -129,8 +171,8 @@ def validate(asset: Mapping[str, Any]) -> dict[str, Any]:
         first, second = aabbs[a], aabbs[b]
         gap_ab = second["min"][index] - first["max"][index]
         gap_ba = first["min"][index] - second["max"][index]
-        measured = max(gap_ab, gap_ba)
-        if abs(measured - expected) > tolerance:
+        measured_gap = max(gap_ab, gap_ba)
+        if abs(measured_gap - expected) > tolerance:
             blockers.append(
                 {
                     "reason": "SEAM_GAP_MISMATCH",
@@ -138,7 +180,7 @@ def validate(asset: Mapping[str, Any]) -> dict[str, Any]:
                     "b": b,
                     "axis": axis,
                     "expected_gap_mm": expected,
-                    "measured_gap_mm": round(measured, 6),
+                    "measured_gap_mm": round(measured_gap, 6),
                     "tolerance_mm": tolerance,
                 }
             )
@@ -149,6 +191,7 @@ def validate(asset: Mapping[str, Any]) -> dict[str, Any]:
         "asset_id": asset.get("asset_id"),
         "root_component_id": root_id,
         "root_envelope_mm": [root_width, root_depth, root_height],
+        "root_aabb": root_aabb,
         "aabbs": aabbs,
         "blockers": blockers,
         "warnings": warnings,
