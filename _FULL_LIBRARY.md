@@ -35300,6 +35300,7 @@ EXECUTOR_RAN_SUCCESSFULLY != ASSET_IS_CORRECT
 WORKER_SAYS_PASS != TRUSTED_VALIDATION_PASS
 METADATA_BINDING != BLENDER_MATERIAL
 DECLARED_PLACEMENT != EXECUTED_PLACEMENT
+CALLER_REQUESTS_AUTHORIZATION != AUTHORIZATION_PASS
 ```
 
 ## Blind-test failures fixed by this contract
@@ -35333,7 +35334,7 @@ transform:
 
 `COMPONENT_TRANSFORM` converts legacy placement records to this schema. A component marked `placement_required: true` cannot be executed when placement is implicit.
 
-`component.origin.type` remains independent from transform. The transform locates the declared component origin. Blender primitive construction must therefore honor origins such as:
+`component.origin.type` remains independent from transform. The transform locates the declared component origin. Blender primitive construction and envelope validation must therefore honor origins such as:
 
 - `CENTER`;
 - `CENTER_BOTTOM` / `CENTER_XY_BOTTOM_Z`;
@@ -35346,7 +35347,7 @@ Local recipe offsets are added only after canonical component placement is resol
 
 ## Asset envelope and seams
 
-`ASSET_ENVELOPE_GATE` evaluates resolved component dimensions and canonical transforms against the root envelope.
+`ASSET_ENVELOPE_GATE` evaluates resolved component dimensions, origin semantics and canonical transforms against the root envelope.
 
 When `enforce_asset_envelope: true`:
 
@@ -35399,18 +35400,24 @@ Geometry mutation is split into two barriers:
 
 ```text
 persistent component constraints/dependencies
--> component authorization
+-> ASSET_EXECUTION_AUTHORIZATION_GATE
 -> component.state = READY_TO_BUILD
 -> component-scoped task
 -> COMPONENT_EXECUTION_GATE
 -> Blender mutation
 ```
 
+Authorization is system-derived. The UI/API may request authorization and provide actor/reason metadata, but caller-provided `status`, `validator_id` or confidence cannot create PASS evidence. `ASSET_EXECUTION_AUTHORIZATION_GATE` derives the verdict from persisted state, including:
+
+- current asset stage is buildable;
+- component state is authorizable;
+- declared component dependencies are already `ACCEPTED`;
+- no open HARD/CANONICAL correction targets the component.
+
 For Studio-created geometry tasks:
 
 - the requested task stage cannot be ahead of `asset.stage`;
 - `BUILD` requires `component.state == READY_TO_BUILD`;
-- dependencies declared by the component must already be `ACCEPTED` before authorization;
 - mutation scope and recipe component ID must match the task pack;
 - the representation contract must pass before Blender is called.
 
@@ -35436,6 +35443,10 @@ source: SYSTEM
 
 `VALIDATION_RECEIPT_REPOSITORY` stores immutable receipt revisions separately from task results.
 
+`SCENE_COMPONENT_VALIDATION` evaluates current component-scoped scene evidence against the exact task-pack asset revision and canonical placement. When requested by the component validation contract it also enforces dimensions and resolved material resources.
+
+`COMPONENT_VALIDATION_RUNNER` executes the deterministic `REPRESENTATION_CONTRACT_GATE` and `SCENE_COMPONENT_VALIDATION`, then persists their PASS/FAIL receipts. This is the normal receipt-production path; workers do not manufacture receipt payloads.
+
 Strict geometry tasks declare `required_validation_ids`. Approval requires one current `PASS` receipt for every required validator, matching exactly:
 
 ```text
@@ -35455,7 +35466,7 @@ without trusted receipts
 => APPROVED forbidden
 ```
 
-The task stores the receipt IDs used for approval.
+The task stores the receipt IDs used for approval. Service-level direct receipt publication is additionally constrained to the currently persisted asset revision and current scene revision and is not exposed as an arbitrary browser route.
 
 ## Component/task convergence
 
@@ -35519,9 +35530,9 @@ The live Studio UI is asset-generic:
 reference source
 -> scoped evidence + concrete attachment
 -> persistent asset/component state
--> canonical component transform
+-> canonical component transform + origin
 -> asset envelope / seam constraints
--> component authorization
+-> system-derived component authorization
 -> component task pack
 -> compact recipe
 -> representation contract gate
@@ -35529,6 +35540,7 @@ reference source
 -> real design-resource materialization
 -> view-layer update
 -> compact scene snapshot
+-> deterministic scene + representation validation
 -> trusted validation receipts
 -> REVIEW
 -> APPROVED
